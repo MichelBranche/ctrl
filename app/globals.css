@@ -1301,18 +1301,15 @@ button:focus-visible .swap span:last-child {
 
 .contact-meta {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--gutter);
-  padding: 1rem var(--gutter) 1.2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 0.6rem 2rem;
+  justify-content: start;
+  padding: 0 var(--gutter) 1.6rem;
   color: rgba(255, 255, 255, 0.46);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-
-.contact-meta > :first-child { grid-column: 1 / span 4; }
-.contact-meta > :last-child { grid-column: 5 / span 8; justify-self: end; text-align: right; }
 
 .footer-mark {
   display: flex;
@@ -1643,13 +1640,6 @@ button:focus-visible .swap span:last-child {
   .contact-meta {
     grid-template-columns: 1fr;
     gap: 0.45rem;
-  }
-
-  .contact-meta > :first-child,
-  .contact-meta > :last-child {
-    grid-column: auto;
-    justify-self: start;
-    text-align: left;
   }
 
   .services {

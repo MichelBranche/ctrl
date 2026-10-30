@@ -247,15 +247,6 @@ export function HomePage({ lang }: { lang: Locale }) {
           <section className="h-close" id="contact">
             <i className="h-dot" aria-hidden="true" />
             <CtrlMark className="h-mark" />
-            <h2 className="h-close-title">
-              <span className="line-mask">
-                <span data-mask="scroll">{h.closeTitle}</span>
-              </span>
-            </h2>
-            <i className="h-vline" aria-hidden="true" />
-            <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
-              <Arrow />
-            </a>
             <div className="h-close-info">
               <p className="h-small h-close-kicker">
                 <span>{h.closeKicker[0]}</span>
@@ -280,6 +271,15 @@ export function HomePage({ lang }: { lang: Locale }) {
                 ))}
               </ul>
             </div>
+            <h2 className="h-close-title">
+              <span className="line-mask">
+                <span data-mask="scroll">{h.closeTitle}</span>
+              </span>
+            </h2>
+            <i className="h-vline" aria-hidden="true" />
+            <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
+              <Arrow />
+            </a>
           </section>
         </main>
       </HomeMotion>
