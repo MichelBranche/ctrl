@@ -599,6 +599,10 @@
   text-transform: uppercase;
   white-space: nowrap;
   user-select: none;
+  /* Clip at the word's own line box: our words are shorter than the 22vw mask
+     (skiper6's Thunder fills it), so the +-100% hidden states must be clipped
+     here or they show as stacked duplicate words. */
+  overflow: hidden;
 }
 .hp-word-base { color: #fff; }
 .hp-word-hover { color: var(--accent); }

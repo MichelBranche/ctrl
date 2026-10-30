@@ -4,7 +4,7 @@
 // Same structure, springs, sizes, easing and centre-out letter stagger as the
 // original; adapted to CTRL fonts (Satoshi/Geist), accent and project data.
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useSpring } from "motion/react";
 
 export type HoverProject = { key: string; label: string; index: string; href: string; image: string | null };
@@ -69,6 +69,32 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
   const x = useSpring(0, SPRING);
   const y = useSpring(0, SPRING);
   const scale = useSpring(0, { mass: 0.1, damping: 10, stiffness: 150 });
+  const labels = Array.from(new Set(items.map((item) => item.label)));
+  const activeLabel = active === null ? null : items[active].label;
+  // Last pointer position in viewport coords, so the follower can be re-anchored
+  // when the row moves under a still pointer (wheel / Lenis smooth scroll).
+  const pointer = useRef<{ x: number; y: number; inside: boolean }>({ x: 0, y: 0, inside: false });
+  const place = () => {
+    const r = row.current?.getBoundingClientRect();
+    if (r) { x.set(pointer.current.x - r.left); y.set(pointer.current.y - r.top); }
+  };
+  useEffect(() => {
+    const onScroll = () => {
+      if (!pointer.current.inside) return;
+      const r = row.current?.getBoundingClientRect();
+      const { x: px, y: py } = pointer.current;
+      if (r && (px < r.left || px > r.right || py < r.top || py > r.bottom)) {
+        // The row scrolled out from under the pointer: no pointerleave fires.
+        pointer.current.inside = false;
+        scale.set(0);
+        setActive(null);
+        return;
+      }
+      place();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  });
 
   return (
     <div className="hp-root">
@@ -76,11 +102,17 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
         ref={row}
         className="hp-row"
         onPointerMove={(e) => {
-          const r = row.current?.getBoundingClientRect();
-          if (r) { x.set(e.clientX - r.left); y.set(e.clientY - r.top); }
+          if (e.pointerType !== "mouse") return;
+          pointer.current = { x: e.clientX, y: e.clientY, inside: true };
+          place();
         }}
-        onPointerEnter={() => scale.set(1)}
-        onPointerLeave={() => scale.set(0)}
+        onPointerEnter={(e) => {
+          if (e.pointerType !== "mouse") return;
+          pointer.current = { x: e.clientX, y: e.clientY, inside: true };
+          place();
+          scale.set(1);
+        }}
+        onPointerLeave={() => { pointer.current.inside = false; scale.set(0); }}
       >
         {items.map((item, i) => <Thumb key={item.key} item={item} i={i} onHover={setActive} />)}
         <motion.div className="hp-cursor" aria-hidden="true" style={{ x, y, scale, transformOrigin: "left top" }}>
@@ -92,19 +124,21 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
       </div>
       <div className="hp-mask" aria-live="polite">
             <AnimatePresence initial={false}>
-              {active === null && (
+              {activeLabel === null && (
                 <motion.div key="default" className="hp-layer" initial="hidden" animate="visible" exit="hidden"
                   transition={{ duration: 0.8, ease: EASE }}>
                   <Word text={defaultName} variants={base} className="hp-word-base" />
                 </motion.div>
               )}
             </AnimatePresence>
-            {items.map((item, i) => (
-              <AnimatePresence key={item.key}>
-                {active === i && (
+            {/* One layer per distinct label: tiles that share a name (all the
+                placeholders do) keep the word on screen instead of replaying it. */}
+            {labels.map((label) => (
+              <AnimatePresence key={label}>
+                {activeLabel === label && (
                   <motion.div className="hp-layer" initial="hidden" animate="visible" exit="hidden"
                     transition={{ duration: 0.8, ease: EASE }}>
-                    <Word text={item.label} variants={enter} className="hp-word-hover" />
+                    <Word text={label} variants={enter} className="hp-word-hover" />
                   </motion.div>
                 )}
               </AnimatePresence>
