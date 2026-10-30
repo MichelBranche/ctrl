@@ -103,6 +103,7 @@
 
 .h-hero-copy {
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -147,14 +148,25 @@
 }
 
 .h-hero-visual {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
-  min-height: 100%;
 }
 
 .h-hero-media {
   position: absolute;
   inset: 0;
+}
+
+.h-hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.35) 0%, transparent 22%, transparent 72%, rgba(10, 10, 10, 0.6) 100%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.75) 0%, rgba(10, 10, 10, 0.35) 45%, transparent 75%);
 }
 
 .h-tag {
@@ -586,17 +598,20 @@
 @media (max-width: 900px) {
   .h-hero {
     grid-template-columns: 1fr;
-    min-height: auto;
+    min-height: 100svh;
+  }
+  .h-img-hero {
+    object-position: 66% 50%;
+  }
+  .h-hero-media::after {
+    background:
+      linear-gradient(180deg, rgba(10, 10, 10, 0.45) 0%, rgba(10, 10, 10, 0.2) 30%, rgba(10, 10, 10, 0.55) 65%, rgba(10, 10, 10, 0.85) 100%);
   }
   .h-hero-copy {
     padding: calc(var(--header) + 2.5rem) var(--gutter) 5rem;
   }
   .h-hero-title {
     font-size: clamp(2.9rem, 13vw, 4.6rem);
-  }
-  .h-hero-visual {
-    aspect-ratio: 3 / 2;
-    min-height: 0;
   }
   .h-what {
     padding: 5rem var(--gutter) 4rem;

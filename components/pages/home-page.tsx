@@ -85,7 +85,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                   alt={h.heroAlt}
                   fill
                   priority
-                  sizes="(max-width: 900px) 100vw, 55vw"
+                  sizes="100vw"
                   className="h-img h-img-hero"
                 />
               </div>

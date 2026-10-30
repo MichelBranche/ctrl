@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 import { CommandMenu } from "@/components/command-menu";
 import { IntroLoader } from "@/components/intro-loader";
 import { Micro } from "@/components/micro";
@@ -14,6 +15,13 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
+const satoshi = localFont({
+  src: "./fonts/Satoshi-Variable.woff2",
+  variable: "--font-satoshi",
+  weight: "300 900",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: dict.it.meta.title,
@@ -25,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" className={`js ${geist.variable}`}>
+    <html lang="it" className={`js ${geist.variable} ${satoshi.variable}`}>
       <body className={geist.className}>
         <SmoothScroll />
         <IntroLoader />

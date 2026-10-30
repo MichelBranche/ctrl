@@ -10,6 +10,7 @@
   --line-ink: rgba(16, 16, 16, 0.14);
   --gutter: clamp(1.25rem, 2.5vw, 2.75rem);
   --header: 4.75rem;
+  --font-display: var(--font-satoshi), var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
   --font: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -2218,4 +2219,17 @@ kbd, .cmd .mono, .cmd-trigger {
   .notes {
     grid-template-columns: 1fr;
   }
+}
+
+/* Display font: Satoshi for all headings */
+h1,
+h2,
+h3,
+.h-hero-title,
+.h-h2 {
+  font-family: var(--font-display);
+}
+
+.h-hero-title {
+  letter-spacing: -0.045em;
 }
