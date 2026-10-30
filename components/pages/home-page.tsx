@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CtrlMascot } from "@/components/ctrl-mascot";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { TiltCard } from "@/components/tilt-card";
@@ -78,6 +79,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 01 <span>/ 05</span>
               </p>
             </div>
+            <CtrlMascot />
             <div className="h-hero-visual">
               <div className="h-hero-media" data-parallax>
                 <Image
