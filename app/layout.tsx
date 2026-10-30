@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { CtrlAssistant } from "@/components/ctrl-assistant";
 import { CommandMenu } from "@/components/command-menu";
 import { IntroLoader } from "@/components/intro-loader";
+import { BackToTop } from "@/components/back-to-top";
 import { Micro } from "@/components/micro";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { SmoothScroll } from "@/components/smooth-scroll";
@@ -35,9 +36,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" className={`js ${geist.variable} ${satoshi.variable}`}>
+    <html lang="it" suppressHydrationWarning className={`js ${geist.variable} ${satoshi.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('ctrl-intro')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('skip-intro')}catch(e){}",
+          }}
+        />
+      </head>
       <body className={geist.className}>
         <SmoothScroll />
+        <BackToTop />
         <IntroLoader />
         <Micro />
         <ScrollProgress />

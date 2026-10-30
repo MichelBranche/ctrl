@@ -245,8 +245,8 @@ export function HomePage({ lang }: { lang: Locale }) {
           {/* 5. CLOSING */}
           <section className="h-close" id="contact">
             <i className="h-dot" aria-hidden="true" />
-            <p className="h-mark" aria-label="CTRLÂ®">
-              CTRL<sup>Â®</sup>
+            <p className="h-mark" aria-label="CTRL®">
+              CTRL<sup>®</sup>
             </p>
             <h2 className="h-close-title">
               <span className="line-mask">
@@ -267,7 +267,7 @@ export function HomePage({ lang }: { lang: Locale }) {
             <div className="h-close-foot">
               <p className="h-small h-close-kicker">
                 <span>{h.location}</span>
-                <span>Â© 2026 CTRLÂ®</span>
+                <span>© 2026 CTRL®</span>
               </p>
               {/* TODO(Michel): add real social URLs, then turn these spans into links. */}
               <ul className="h-socials">

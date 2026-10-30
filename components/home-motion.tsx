@@ -4,8 +4,12 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
+
+const all = <T extends HTMLElement = HTMLElement>(root: HTMLElement, sel: string) =>
+  Array.from(root.querySelectorAll<T>(sel));
 
 export function HomeMotion({ children }: { children: React.ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
@@ -13,6 +17,8 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
   useGSAP(
     (_, contextSafe) => {
       if (!contextSafe) return;
+      const scope = root.current;
+      if (!scope) return;
 
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -25,30 +31,67 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
         });
 
         mm.add("(prefers-reduced-motion: no-preference)", () => {
+          const splits: SplitText[] = [];
+
+          /* ---------- HERO ---------- */
+          const heroChars = all(scope, "[data-mask='hero']").map((line) => {
+            const split = SplitText.create(line, { type: "words,chars", charsClass: "h-char" });
+            splits.push(split);
+            return split.chars;
+          });
+
           const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
           intro
-            .fromTo(".h-hero-media", { scale: 1.12, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.6, ease: "power3.out" }, 0)
+            .fromTo(".h-hero-media", { scale: 1.15, opacity: 0.2 }, { scale: 1, opacity: 1, duration: 1.8, ease: "power3.out" }, 0)
             .fromTo("[data-load='kicker']", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.05)
-            .fromTo("[data-mask='hero']", { y: "115%" }, { y: "0%", duration: 1.15, stagger: 0.09 }, 0.12)
-            .fromTo("[data-load='lead']", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9 }, 0.55)
-            .fromTo("[data-load='cta']", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.7);
+            .fromTo(".h-hero .h-bar", { scaleX: 0 }, { scaleX: 1, transformOrigin: "0 50%", duration: 0.9, ease: "power3.inOut" }, 0.25);
+          heroChars.forEach((chars, i) => {
+            intro.fromTo(
+              chars,
+              { yPercent: 115, rotate: 6, opacity: 0 },
+              { yPercent: 0, rotate: 0, opacity: 1, duration: 1.05, stagger: 0.028, ease: "back.out(1.4)" },
+              0.15 + i * 0.12,
+            );
+          });
+          intro
+            .fromTo("[data-load='lead']", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9 }, 0.6)
+            .fromTo("[data-load='cta']", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.75)
+            .fromTo(".h-hero .h-tag span", { yPercent: 100, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.7, stagger: 0.05 }, 0.8);
 
+          // Hero photo: parallax + slow push-in, copy drifts up slightly.
           gsap.to(".h-hero-media", {
-            yPercent: 8,
+            yPercent: 10,
+            scale: 1.08,
+            ease: "none",
+            scrollTrigger: { trigger: "[data-hero]", start: "top top", end: "bottom top", scrub: true },
+          });
+          gsap.to(".h-hero-copy", {
+            yPercent: -12,
+            opacity: 0.35,
             ease: "none",
             scrollTrigger: { trigger: "[data-hero]", start: "top top", end: "bottom top", scrub: true },
           });
 
-          gsap.utils.toArray<HTMLElement>("[data-mask='scroll']").forEach((el) => {
-            gsap.fromTo(el, { y: "115%" }, {
-              y: "0%",
-              duration: 1.1,
-              ease: "power4.out",
-              scrollTrigger: { trigger: el, start: "top 90%" },
-            });
+          /* ---------- HEADINGS: masked lines + word stagger ---------- */
+          all(scope, "[data-mask='scroll']").forEach((el) => {
+            const split = SplitText.create(el, { type: "words", wordsClass: "h-word" });
+            splits.push(split);
+            gsap.set(el, { y: "0%" });
+            gsap.fromTo(
+              split.words,
+              { yPercent: 115, rotate: 3 },
+              {
+                yPercent: 0,
+                rotate: 0,
+                duration: 1.1,
+                stagger: 0.06,
+                ease: "power4.out",
+                scrollTrigger: { trigger: el, start: "top 90%" },
+              },
+            );
           });
 
-          gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+          all(scope, "[data-reveal]").forEach((el) => {
             gsap.fromTo(el, { y: 32, opacity: 0 }, {
               y: 0,
               opacity: 1,
@@ -58,7 +101,7 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
             });
           });
 
-          gsap.utils.toArray<HTMLElement>("[data-pillars]").forEach((group) => {
+          all(scope, "[data-pillars]").forEach((group) => {
             gsap.fromTo(group.querySelectorAll("[data-pillar]"), { y: 36, opacity: 0 }, {
               y: 0,
               opacity: 1,
@@ -68,6 +111,135 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
               scrollTrigger: { trigger: group, start: "top 85%" },
             });
           });
+
+          /* ---------- Orange accent lines draw in ---------- */
+          all(scope, ".h-root > section:not(.h-hero) .h-bar").forEach((bar) => {
+            gsap.fromTo(bar, { scaleX: 0 }, {
+              scaleX: 1,
+              transformOrigin: "0 50%",
+              duration: 1,
+              ease: "power3.inOut",
+              scrollTrigger: { trigger: bar, start: "top 92%" },
+            });
+          });
+          all(scope, ".h-vline").forEach((line) => {
+            gsap.fromTo(line, { scaleY: 0 }, {
+              scaleY: 1,
+              transformOrigin: "50% 0",
+              ease: "none",
+              scrollTrigger: { trigger: line, start: "top 85%", end: "bottom 60%", scrub: true },
+            });
+          });
+
+          /* ---------- Image reveals: clip wipe + scale-down from 1.15 ---------- */
+          all(scope, ".h-portrait-img, .h-feature-media, .h-card-media, .h-why-bg").forEach((media) => {
+            const img = media.querySelector<HTMLElement>("img, .h-placeholder");
+            const tl = gsap.timeline({ scrollTrigger: { trigger: media, start: "top 88%" } });
+            tl.fromTo(
+              media,
+              { clipPath: "inset(100% 0% 0% 0%)" },
+              { clipPath: "inset(0% 0% 0% 0%)", duration: 1.3, ease: "power4.inOut", clearProps: "clipPath" },
+            );
+            if (img) tl.fromTo(img, { scale: 1.15 }, { scale: 1, duration: 1.6, ease: "power3.out" }, 0);
+          });
+
+          // "Cosa facciamo" portrait parallax (inner image drifts against scroll).
+          all(scope, ".h-portrait-img img").forEach((img) => {
+            gsap.fromTo(img, { yPercent: -6 }, {
+              yPercent: 6,
+              ease: "none",
+              scrollTrigger: { trigger: img.parentElement, start: "top bottom", end: "bottom top", scrub: true },
+            });
+          });
+
+          /* ---------- Project cards stagger ---------- */
+          const cards = all(scope, ".h-cards .work-tilt");
+          if (cards.length) {
+            gsap.fromTo(cards, { y: 60, opacity: 0 }, {
+              y: 0,
+              opacity: 1,
+              duration: 1,
+              stagger: 0.12,
+              ease: "power3.out",
+              scrollTrigger: { trigger: ".h-cards", start: "top 85%" },
+            });
+          }
+
+          /* ---------- Perché: light sweep across the photo ---------- */
+          const why = scope.querySelector<HTMLElement>(".h-why-bg");
+          let sweep: HTMLElement | null = null;
+          if (why) {
+            sweep = document.createElement("i");
+            sweep.className = "h-sweep";
+            sweep.setAttribute("aria-hidden", "true");
+            why.appendChild(sweep);
+            gsap.fromTo(sweep, { xPercent: -120 }, {
+              xPercent: 260,
+              ease: "none",
+              scrollTrigger: { trigger: why, start: "top 80%", end: "bottom 20%", scrub: 0.6 },
+            });
+          }
+
+          /* ---------- Stats count up (truthful values) ---------- */
+          all(scope, ".h-stat dt").forEach((dt) => {
+            const raw = dt.textContent ?? "";
+            const n = parseInt(raw, 10);
+            const suffix = raw.replace(/^\d+/, "");
+            if (Number.isNaN(n)) {
+              gsap.fromTo(dt, { rotate: -180, scale: 0.4, opacity: 0 }, {
+                rotate: 0, scale: 1, opacity: 1, duration: 1.4, ease: "elastic.out(1, 0.6)",
+                scrollTrigger: { trigger: dt, start: "top 90%" },
+              });
+              return;
+            }
+            const o = { v: 0 };
+            gsap.to(o, {
+              v: n,
+              duration: n > 10 ? 1.6 : 1,
+              ease: "power2.out",
+              scrollTrigger: { trigger: dt, start: "top 90%" },
+              onUpdate: () => { dt.textContent = `${Math.round(o.v)}${suffix}`; },
+              onComplete: () => { dt.textContent = raw; },
+            });
+          });
+
+          /* ---------- Closing: scrub-lit title + mark ---------- */
+          const closeTitle = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
+          if (closeTitle) {
+            const chars = closeTitle.querySelectorAll(".h-word");
+            gsap.fromTo(chars, { opacity: 0.15 }, {
+              opacity: 1,
+              stagger: 0.1,
+              ease: "none",
+              scrollTrigger: { trigger: ".h-close", start: "top 75%", end: "top 30%", scrub: true },
+            });
+          }
+          gsap.fromTo(".h-mark", { yPercent: 25, opacity: 0 }, {
+            yPercent: 0,
+            opacity: 1,
+            ease: "none",
+            scrollTrigger: { trigger: ".h-close", start: "top 90%", end: "top 40%", scrub: true },
+          });
+          gsap.fromTo(".h-circle-lg", { scale: 0.4, rotate: -90 }, {
+            scale: 1,
+            rotate: 0,
+            ease: "back.out(1.6)",
+            duration: 1.1,
+            scrollTrigger: { trigger: ".h-circle-lg", start: "top 92%" },
+          });
+          gsap.fromTo(".h-socials li", { y: 20, opacity: 0 }, {
+            y: 0,
+            opacity: 1,
+            stagger: 0.08,
+            duration: 0.7,
+            ease: "power3.out",
+            scrollTrigger: { trigger: ".h-socials", start: "top 95%" },
+          });
+
+          return () => {
+            sweep?.remove();
+            splits.forEach((s) => s.revert());
+          };
         });
 
         requestAnimationFrame(() => ScrollTrigger.refresh());
