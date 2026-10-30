@@ -6,6 +6,7 @@ import { IntroLoader } from "@/components/intro-loader";
 import { Micro } from "@/components/micro";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { dict } from "@/lib/i18n";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ScrollProgress />
         <CommandMenu />
         {children}
+        <ScrollReveal />
       </body>
     </html>
   );

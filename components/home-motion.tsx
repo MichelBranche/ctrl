@@ -286,5 +286,9 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
     { scope: root },
   );
 
-  return <div ref={root}>{children}</div>;
+  return (
+    <div ref={root} data-motion-root>
+      {children}
+    </div>
+  );
 }
