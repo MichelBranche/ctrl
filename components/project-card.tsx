@@ -2,44 +2,44 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Project } from "@/lib/content";
 import { ArrowIcon } from "@/components/icons";
-import { Wordmark } from "@/components/wordmark";
+import { dict, localize, type Locale } from "@/lib/i18n";
+
+export function ProjectTile({ project, lang }: { project: Project; lang: Locale }) {
+  return (
+    <div className="type-tile">
+      <span className="type-tile-tag">{dict[lang].work.concept}</span>
+      <strong>{project.name}</strong>
+      <span className="type-tile-meta">
+        {project.place[lang]} | {project.url.replace("https://", "")}
+      </span>
+    </div>
+  );
+}
 
 export function ProjectCard({
   project,
   index = 0,
+  lang,
 }: {
   project: Project;
   index?: number;
+  lang: Locale;
 }) {
   const number = String(index + 1).padStart(2, "0");
 
   return (
     <article className="work-card" data-tilt>
-      <Link href={`/work/${project.slug}`} className="work-card-link" data-cursor="View">
+      <Link
+        href={localize(`/work/${project.slug}`, lang)}
+        className="work-card-link"
+        data-cursor={dict[lang].home.view}
+      >
         <div className="work-media tilt-target">
           <div className="work-pan">
-            {project.kind === "phone" ? (
-              <div className="phone-scene">
-                <div className="phone">
-                  <div className="phone-screen">
-                    <Wordmark />
-                    <p>
-                      Better
-                      <br />
-                      Digital
-                      <br />
-                      Products
-                    </p>
-                  </div>
-                </div>
-              </div>
+            {project.image ? (
+              <Image src={project.image} alt="" fill sizes="(max-width: 900px) 100vw, 40vw" />
             ) : (
-              <Image
-                src={project.image ?? ""}
-                alt=""
-                fill
-                sizes="(max-width: 900px) 100vw, 40vw"
-              />
+              <ProjectTile project={project} lang={lang} />
             )}
           </div>
           <span className="work-no">{number}</span>
@@ -47,7 +47,7 @@ export function ProjectCard({
         <div className="work-caption">
           <div>
             <h3>{project.name}</h3>
-            <p>{project.meta}</p>
+            <p>{project.meta[lang]}</p>
           </div>
           <ArrowIcon />
         </div>
