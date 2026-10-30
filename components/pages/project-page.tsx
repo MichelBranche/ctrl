@@ -32,7 +32,7 @@ export function ProjectView({ slug, lang }: { slug: string; lang: Locale }) {
           {t.back}
         </Link>
         <p className="kicker">{project.meta[lang]}</p>
-        <h1>{project.name}</h1>
+        <h1 className="display case-title">{project.name}</h1>
         <div className="case-media">
           {project.image ? (
             <Image src={project.image} alt="" fill priority sizes="(max-width: 900px) 100vw, 1100px" />

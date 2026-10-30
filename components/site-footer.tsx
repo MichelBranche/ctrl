@@ -151,7 +151,7 @@ export function SiteFooter() {
         <p className="kicker" data-rise>
           {f.kicker}
         </p>
-        <h2 className="contact-title">
+        <h2 className="contact-title display">
           <span className="magnetic" data-magnetic>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
@@ -167,7 +167,7 @@ export function SiteFooter() {
         <p className="contact-lead" data-rise>
           {f.lead}
         </p>
-        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-rise data-cursor="Mail">
+        <a className="cta-button cta-accent" href={`mailto:${CONTACT_EMAIL}`} data-rise data-cursor="Mail">
           <span>{t.cta}</span>
           <ArrowIcon />
         </a>
