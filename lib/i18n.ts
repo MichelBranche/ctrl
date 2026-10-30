@@ -30,6 +30,16 @@ export const dict = {
     menu: "Menu",
     close: "Chiudi",
     langLabel: "Lingua",
+    cmd: {
+      label: "Menu rapido",
+      placeholder: "Dove vuoi andare?",
+      open: "Apri il menu rapido",
+      email: "Scrivi una email",
+      lang: "English version",
+      empty: "Nessun risultato",
+      home: "Home",
+    },
+    heroMeta: { place: "Italia | Remoto", since: "Studio indipendente", time: "Ora locale" },
     home: {
       kicker: "Studio indipendente di creative technology",
       title: ["Dall'identità", "al prodotto.", "Un unico partner."],
@@ -104,6 +114,16 @@ export const dict = {
     menu: "Menu",
     close: "Close",
     langLabel: "Language",
+    cmd: {
+      label: "Quick menu",
+      placeholder: "Where do you want to go?",
+      open: "Open the quick menu",
+      email: "Write an email",
+      lang: "Versione italiana",
+      empty: "No results",
+      home: "Home",
+    },
+    heroMeta: { place: "Italy | Remote", since: "Independent studio", time: "Local time" },
     home: {
       kicker: "Independent creative technology studio",
       title: ["From identity", "to product.", "One partner."],

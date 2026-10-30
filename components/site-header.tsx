@@ -72,6 +72,15 @@ export function SiteHeader() {
       </nav>
 
       <div className="header-end">
+        <button
+          type="button"
+          className="cmd-trigger mono"
+          aria-label={t.cmd.open}
+          onClick={() => window.dispatchEvent(new Event("ctrl:command"))}
+        >
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
         <LangSwitch />
         <span className="magnetic" data-magnetic>
           <a href={`mailto:${CONTACT_EMAIL}`} className="talk-link" data-cursor="Mail">

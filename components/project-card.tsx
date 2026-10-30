@@ -37,16 +37,21 @@ export function ProjectCard({
         <div className="work-media tilt-target">
           <div className="work-pan">
             {project.image ? (
-              <Image src={project.image} alt="" fill sizes="(max-width: 900px) 100vw, 40vw" />
+              <Image src={project.image} alt="" fill sizes="(max-width: 900px) 100vw, 55vw" />
             ) : (
               <ProjectTile project={project} lang={lang} />
             )}
           </div>
-          <span className="work-no">{number}</span>
+          <span className="work-no mono">{number}</span>
+          <span className="work-tag mono">{dict[lang].work.concept}</span>
+          <span className="work-reveal">
+            <span className="mono">{project.place[lang]}</span>
+            <span>{project.summary[lang]}</span>
+          </span>
         </div>
         <div className="work-caption">
           <div>
-            <h3>{project.name}</h3>
+            <h3 className="display">{project.name}</h3>
             <p>{project.meta[lang]}</p>
           </div>
           <ArrowIcon />
