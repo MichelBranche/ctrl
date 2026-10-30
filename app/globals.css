@@ -1214,8 +1214,11 @@ button:focus-visible .swap span:last-child {
   letter-spacing: 0.08em;
 }
 
-.clock span {
+.clock time {
+  display: inline-block;
+  min-width: 5.6em;
   margin-right: 0.55rem;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .contact-block > .magnetic {
@@ -1651,5 +1654,194 @@ button:focus-visible .swap span:last-child {
   .nav-mobile a,
   .scroll-hint i {
     animation: none;
+  }
+}
+
+/* ---------- Upgrade: language switch, CTA, concept tiles, hierarchy ---------- */
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+.lang-switch a {
+  padding: 0.35rem 0.4rem;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.lang-switch a + a::before {
+  content: "/";
+  margin-right: 0.55rem;
+  margin-left: -0.15rem;
+  opacity: 0.5;
+}
+
+.lang-switch a:hover,
+.lang-switch a.is-active {
+  opacity: 1;
+}
+
+.hero-title {
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.hero-lead {
+  max-width: 30rem;
+  font-size: clamp(0.98rem, 1.1vw, 1.08rem);
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem 2rem;
+  margin-top: 2.4rem;
+}
+
+.hero-actions .magnetic {
+  font-size: 1em;
+  margin-left: 0;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 2rem;
+  padding: 1rem 1.35rem 1rem 1.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+  transition:
+    background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-actions .cta-button {
+  margin-top: 0;
+}
+
+.cta-button svg {
+  width: 2.2rem;
+  height: 0.65rem;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cta-button:hover,
+.cta-button:focus-visible {
+  background: #f5f4f1;
+  color: var(--ink);
+}
+
+.cta-button:hover svg {
+  transform: translateX(5px);
+}
+
+.services .cta-button:hover,
+.service-page .cta-button:hover {
+  background: currentColor;
+}
+
+.service-page .cta-button:hover span,
+.service-page .cta-button:hover svg {
+  color: var(--paper);
+}
+
+.contact-main .cta-button {
+  margin-top: 2.2rem;
+}
+
+.type-tile {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.5rem, 4%, 2.6rem) clamp(1.5rem, 9%, 4rem);
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(255, 255, 255, 0.09), transparent 60%),
+    #151514;
+  color: #f5f4f1;
+}
+
+.case-media .type-tile {
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.type-tile strong {
+  font-size: clamp(2rem, 4.4vw, 4.6rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+}
+
+.type-tile-tag,
+.type-tile-meta {
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.work-note {
+  max-width: 34rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.case .work-note {
+  margin-top: 1.4rem;
+}
+
+.case-live {
+  margin-top: 1.8rem;
+}
+
+.subpage h1:has(.h-line) {
+  max-width: none;
+}
+
+.h-line {
+  display: block;
+}
+
+.subpage-copy p,
+.case-summary {
+  line-height: 1.6;
+}
+
+:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+@media (max-width: 860px) {
+  .header-end .lang-switch {
+    font-size: 0.62rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

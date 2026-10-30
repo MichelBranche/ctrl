@@ -5,6 +5,7 @@ import { IntroLoader } from "@/components/intro-loader";
 import { Micro } from "@/components/micro";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { dict } from "@/lib/i18n";
 import "./globals.css";
 
 const geist = Geist({
@@ -14,11 +15,11 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: {
-    default: "CTRL® — Design. Development. Visual Communication.",
-    template: "%s — CTRL®",
+    default: dict.it.meta.title,
+    template: "%s | CTRL®",
   },
-  description:
-    "CTRL® is an independent studio that combines design, software development and visual communication, helping brands go from identity to digital products and beyond.",
+  description: dict.it.meta.description,
+  metadataBase: new URL("https://ctrlagency.dev"),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
