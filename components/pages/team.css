@@ -1,0 +1,215 @@
+/* Team page (mockup). Scoped with the .t- prefix. */
+.t-root {
+  --t-accent: #ff4a1c;
+  --t-dim: rgba(242, 240, 234, 0.62);
+  background: #0b0b0b;
+  color: #f2f0ea;
+}
+
+.t-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(100svh, 62rem);
+  padding: calc(var(--header) + 4rem) var(--gutter) 5rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+.t-hero-img {
+  object-fit: cover;
+  object-position: 70% 50%;
+  z-index: 0;
+}
+
+.t-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 11, 11, 0.35) 0%, rgba(11, 11, 11, 0.15) 55%, #0b0b0b 100%);
+}
+
+.t-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: t-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.t-tag {
+  margin: 0;
+  padding-bottom: 0.6rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t-accent);
+  border-bottom: 2px solid var(--t-accent);
+}
+
+.t-title {
+  display: flex;
+  flex-direction: column;
+  margin: 2rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6.4vw, 6rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.t-lead {
+  max-width: 30rem;
+  margin: 2rem 0 0;
+  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+  line-height: 1.6;
+  color: var(--t-dim);
+}
+
+.t-circle {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  margin-top: 2.4rem;
+  border: 1px solid var(--t-accent);
+  border-radius: 50%;
+  color: var(--t-accent);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.t-circle:hover {
+  background: var(--t-accent);
+  color: #0b0b0b;
+}
+
+.t-arrow {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-circle:hover .t-arrow {
+  transform: translateX(3px);
+}
+
+.t-grid {
+  --t-gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--t-gap);
+  margin: 0;
+  padding: 0 var(--gutter) 6rem;
+  list-style: none;
+  scroll-margin-top: var(--header);
+}
+
+.t-card {
+  flex: 0 0 calc((100% - 2 * var(--t-gap)) / 3);
+  aspect-ratio: 1;
+}
+
+.t-card-link {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  background: #151515;
+  color: inherit;
+}
+
+.t-photo {
+  object-fit: cover;
+  object-position: 50% 30%;
+  filter: grayscale(1) contrast(1.05);
+  transform: scale(1.01);
+  transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s ease;
+}
+
+.t-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.65) 100%);
+  pointer-events: none;
+}
+
+.t-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  transition: opacity 0.6s ease;
+}
+
+.t-meta {
+  position: absolute;
+  left: 1.4rem;
+  bottom: 1.3rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.t-name {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-role {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: var(--t-dim);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.04s, color 0.4s ease;
+}
+
+.t-card-link:hover .t-photo,
+.t-card-link:focus-visible .t-photo {
+  transform: scale(1.045);
+}
+
+.t-card-link:hover .t-grain,
+.t-card-link:focus-visible .t-grain {
+  opacity: 0.18;
+}
+
+.t-card-link:hover .t-name,
+.t-card-link:hover .t-role,
+.t-card-link:focus-visible .t-name,
+.t-card-link:focus-visible .t-role {
+  transform: translateX(6px);
+}
+
+.t-card-link:hover .t-role {
+  color: var(--t-accent);
+}
+
+@keyframes t-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 700px) {
+  .t-card {
+    flex-basis: 100%;
+  }
+  .t-hero {
+    min-height: 88svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-hero-copy { animation: none; }
+  .t-photo, .t-name, .t-role { transition: none; }
+}

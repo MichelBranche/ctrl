@@ -98,8 +98,10 @@ export const dict = {
     },
     team: {
       description: "Le persone di CTRL®: design, sviluppo frontend, AI e sviluppo full stack.",
-      title: ["Poche persone,", "competenze complete."],
-      lead: "Un team piccolo che segue ogni progetto dall'idea al rilascio, senza passaggi di mano.",
+      tag: "Team",
+      title: ["Persone", "che costruiscono", "idee."],
+      lead: "Un team multidisciplinare, unito dalla passione per il digitale e dalla voglia di spingersi oltre.",
+      scroll: "Scopri il team",
     },
     journal: {
       description: "Note di CTRL® su design, prodotti digitali e comunicazione visiva.",
@@ -206,8 +208,10 @@ export const dict = {
     },
     team: {
       description: "The people behind CTRL®: design, frontend development, AI and full-stack development.",
-      title: ["A few people,", "complete skills."],
-      lead: "A small team that follows every project from idea to release, with no hand-offs.",
+      tag: "Team",
+      title: ["People", "who build", "ideas."],
+      lead: "A multidisciplinary team, united by a passion for digital and the drive to push further.",
+      scroll: "Meet the team",
     },
     journal: {
       description: "Notes from CTRL® on design, digital products and visual communication.",

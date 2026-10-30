@@ -2,100 +2,85 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { ArrowIcon } from "@/components/icons";
-import { CONTACT_EMAIL, team, type TeamMember } from "@/lib/content";
+import { team } from "@/lib/content";
 import { dict, type Locale } from "@/lib/i18n";
+import "./team.css";
 
 export function teamMetadata(lang: Locale): Metadata {
   return { title: dict[lang].nav.team, description: dict[lang].team.description };
 }
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function Portrait({ member }: { member: TeamMember }) {
-  // Real photos live at /public/images/team/<slug>.jpg (set `photo` in lib/content.ts).
-  if (member.photo) {
-    return (
-      <div className="team-photo">
-        <Image src={member.photo} alt={member.name} fill sizes="(max-width: 860px) 100vw, 40vw" />
-      </div>
-    );
-  }
+function Arrow() {
   return (
-    <div className="team-photo team-initials" aria-hidden="true">
-      <span>{initials(member.name)}</span>
-    </div>
+    <svg className="t-arrow" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
   );
 }
 
 export function TeamView({ lang }: { lang: Locale }) {
-  const t = dict[lang];
+  const t = dict[lang].team;
   return (
     <>
       <SiteHeader />
-      <main className="subpage">
-        <p className="kicker">{t.nav.team}</p>
-        <h1>
-          {t.team.title.map((line) => (
-            <span className="h-line" key={line}>
-              {line}
-            </span>
-          ))}
-        </h1>
-        <aside className="sub-aside" aria-hidden="true">
-          <span className="sub-aside-index">{String(team.length).padStart(2, "0")}</span>
-          <span className="kicker">{t.nav.team}</span>
-        </aside>
-        <div className="sub-main">
-          <div className="subpage-copy subpage-copy-single">
-            <p>{t.team.lead}</p>
+      <main className="t-root">
+        <section className="t-hero">
+          <Image
+            className="t-hero-img"
+            src="/images/home/perche.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+          />
+          <div className="t-hero-copy">
+            <p className="t-tag">{t.tag}</p>
+            <h1 className="t-title">
+              {t.title.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </h1>
+            <p className="t-lead">{t.lead}</p>
+            <a href="#team-grid" className="t-circle" aria-label={t.scroll}>
+              <Arrow />
+            </a>
           </div>
-        </div>
-        <ol className="team">
-          {team.map((member, i) => (
-            <li key={member.slug} className="team-member">
-              <Portrait member={member} />
-              <div className="team-body">
-                <span className="team-index">{String(i + 1).padStart(2, "0")}</span>
-                <h2>{member.name}</h2>
-                <p className="kicker">{member.role[lang]}</p>
-                <p className="team-bio">{member.bio[lang]}</p>
-                <ul className="team-skills">
-                  {member.skills.map((skill) => (
-                    <li key={skill}>{skill}</li>
-                  ))}
-                </ul>
-                {member.links.length ? (
-                  <div className="team-links">
-                    {member.links.map((link) => (
-                      <a
-                        key={link.href}
-                        href={link.href}
-                        className="text-link"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {link.label}
-                        <ArrowIcon />
-                      </a>
-                    ))}
-                  </div>
+        </section>
+
+        <ul className="t-grid" id="team-grid">
+          {team.map((member) => {
+            const site = member.links[0];
+            const body = (
+              <>
+                {member.photo ? (
+                  <Image
+                    className="t-photo"
+                    src={member.photo}
+                    alt={member.name}
+                    fill
+                    sizes="(max-width: 700px) 100vw, 33vw"
+                  />
                 ) : null}
-              </div>
-            </li>
-          ))}
-        </ol>
-        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`}>
-          <span>{t.cta}</span>
-          <ArrowIcon />
-        </a>
+                <span className="t-grain" aria-hidden="true" />
+                <span className="t-meta">
+                  <span className="t-name">{member.name}</span>
+                  <span className="t-role">{member.role[lang]}</span>
+                </span>
+              </>
+            );
+            return (
+              <li key={member.slug} className="t-card">
+                {site ? (
+                  <a href={site.href} target="_blank" rel="noreferrer" className="t-card-link">
+                    {body}
+                  </a>
+                ) : (
+                  <div className="t-card-link">{body}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </main>
       <SiteFooter />
     </>
