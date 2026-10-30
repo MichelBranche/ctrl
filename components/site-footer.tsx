@@ -156,7 +156,6 @@ export function SiteFooter() {
           <span className="magnetic" data-magnetic>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              data-cursor="Mail"
             >
               <span className="line-mask">
                 <span data-mask="footer">{f.title}</span>
@@ -168,7 +167,7 @@ export function SiteFooter() {
         <p className="contact-lead" data-rise>
           {f.lead}
         </p>
-        <a className="cta-button cta-accent" href={`mailto:${CONTACT_EMAIL}`} data-rise data-cursor="Mail">
+        <a className="cta-button cta-accent" href={`mailto:${CONTACT_EMAIL}`} data-rise>
           <span>{t.cta}</span>
           <ArrowIcon />
         </a>
@@ -199,14 +198,13 @@ export function SiteFooter() {
 
         <div className="contact-block" data-rise>
           <p className="kicker">{f.contact}</p>
-          <a className="mail-link" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+          <a className="mail-link" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
           <span className="magnetic" data-magnetic>
             <button
               type="button"
               className="top-link"
-              data-cursor="Top"
               onClick={() => {
                 if (window.__lenis) window.__lenis.scrollTo(0);
                 else window.scrollTo({ top: 0 });

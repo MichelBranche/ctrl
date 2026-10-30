@@ -35,7 +35,7 @@ export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
           <div>
             <p className="service-page-lead">{service.text[lang]}</p>
             <p>{service.summary[lang]}</p>
-            <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+            <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`}>
               <span>{t.cta}</span>
               <ArrowIcon />
             </a>

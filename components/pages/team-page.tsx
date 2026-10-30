@@ -92,7 +92,7 @@ export function TeamView({ lang }: { lang: Locale }) {
             </li>
           ))}
         </ol>
-        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`}>
           <span>{t.cta}</span>
           <ArrowIcon />
         </a>

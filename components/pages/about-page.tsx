@@ -33,7 +33,7 @@ export function AboutView({ lang }: { lang: Locale }) {
               <p key={p}>{p}</p>
             ))}
           </div>
-          <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+          <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`}>
             <span>{t.cta}</span>
             <ArrowIcon />
           </a>

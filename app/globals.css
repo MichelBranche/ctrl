@@ -51,7 +51,6 @@ button {
   background: none;
   border: 0;
   padding: 0;
-  cursor: pointer;
 }
 
 ::selection {
@@ -74,62 +73,39 @@ button {
   }
 }
 
-html.has-cursor,
-html.has-cursor * {
-  cursor: none;
+html,
+body {
+  cursor: url("/cursors/arrow.svg") 1 1, auto;
 }
 
-.cursor-dot,
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 80;
-  border-radius: 50%;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  opacity: 0;
+a,
+button,
+[role="button"],
+label,
+summary,
+select,
+.cmd-trigger,
+.cmd-list li,
+.work-card-link,
+.work-card-link * {
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
 }
 
-html.cursor-on .cursor-dot,
-html.cursor-on .cursor-ring {
-  opacity: 1;
+input,
+textarea,
+[contenteditable]:not([contenteditable="false"]) {
+  cursor: url("/cursors/text.svg") 9 16, text;
 }
 
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  background: #fff;
+input[type="button"],
+input[type="submit"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
 }
 
-.cursor-ring {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  margin: -21px 0 0 -21px;
-  border: 1px solid #fff;
-  color: #111;
-}
-
-.cursor-label {
-  font-size: 0.58rem;
-  font-weight: 550;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1;
-  opacity: 0;
-}
-
-.cursor-ring.has-label {
-  mix-blend-mode: normal;
-  background: #f4f3ef;
-  border-color: #f4f3ef;
-}
-
-.cursor-ring.has-label .cursor-label {
-  opacity: 1;
+.cmd-empty {
+  cursor: url("/cursors/arrow.svg") 1 1, auto !important;
 }
 
 .scroll-progress {
@@ -1874,7 +1850,7 @@ kbd, .cmd .mono, .cmd-trigger {
 .mail-link:hover { color: var(--accent); }
 
 /* Header trigger */
-.cmd-trigger { display: inline-flex; gap: .2rem; align-items: center; padding: 0; background: none; border: 0; color: inherit; cursor: pointer; }
+.cmd-trigger { display: inline-flex; gap: .2rem; align-items: center; padding: 0; background: none; border: 0; color: inherit; }
 .cmd-trigger kbd { padding: .2rem .4rem; border: 1px solid currentColor; border-radius: 4px; opacity: .7; font-size: .62rem; }
 .cmd-trigger:hover kbd { opacity: 1; border-color: var(--accent); color: var(--accent); }
 
@@ -1896,11 +1872,11 @@ kbd, .cmd .mono, .cmd-trigger {
 .cmd-head input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: inherit; font: inherit; font-size: 1.05rem; }
 .cmd-head kbd { opacity: .5; font-size: .62rem; }
 .cmd-list { list-style: none; margin: 0; padding: .4rem; max-height: 52vh; overflow: auto; }
-.cmd-list li { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .7rem .75rem; border-radius: 6px; cursor: pointer; }
+.cmd-list li { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .7rem .75rem; border-radius: 6px; }
 .cmd-list li .mono { opacity: .45; }
 .cmd-list li.is-active { background: var(--accent); color: var(--accent-ink); }
 .cmd-list li.is-active .mono { opacity: .75; }
-.cmd-empty { opacity: .5; cursor: default !important; }
+.cmd-empty { opacity: .5; }
 @keyframes cmd-fade { from { opacity: 0; } }
 @keyframes cmd-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 

@@ -33,7 +33,6 @@ export function ProjectCard({
       <Link
         href={localize(`/work/${project.slug}`, lang)}
         className="work-card-link"
-        data-cursor={dict[lang].home.view}
       >
         <TiltCard>
           <div className="work-media">

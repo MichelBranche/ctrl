@@ -33,12 +33,12 @@ export function HomePage({ lang }: { lang: Locale }) {
               </p>
               <div className="hero-actions" data-load="cta">
                 <span className="magnetic" data-magnetic>
-                  <a href={`mailto:${CONTACT_EMAIL}`} className="cta-button" data-cursor="Mail">
+                  <a href={`mailto:${CONTACT_EMAIL}`} className="cta-button">
                     <span>{t.cta}</span>
                     <ArrowIcon />
                   </a>
                 </span>
-                <Link href={localize("/#work", lang)} className="text-link" data-cursor={h.view}>
+                <Link href={localize("/#work", lang)} className="text-link">
                   {h.secondary}
                   <ArrowIcon />
                 </Link>
@@ -106,7 +106,6 @@ export function HomePage({ lang }: { lang: Locale }) {
                   key={service.slug}
                   href={localize(`/services/${service.slug}`, lang)}
                   className="service-cell"
-                  data-cursor={h.view}
                 >
                   <div className="service-meta">
                     <span>{service.index}</span>
@@ -128,7 +127,7 @@ export function HomePage({ lang }: { lang: Locale }) {
               <div className="work-head">
                 <p className="kicker">{h.workKicker}</p>
                 <span className="magnetic" data-magnetic>
-                  <Link href={localize("/work", lang)} className="text-link" data-cursor={h.view}>
+                  <Link href={localize("/work", lang)} className="text-link">
                     {h.allProjects}
                     <ArrowIcon />
                   </Link>

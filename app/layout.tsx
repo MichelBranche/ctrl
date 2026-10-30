@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { CommandMenu } from "@/components/command-menu";
-import { Cursor } from "@/components/cursor";
 import { IntroLoader } from "@/components/intro-loader";
 import { Micro } from "@/components/micro";
 import { ScrollProgress } from "@/components/scroll-progress";
@@ -30,7 +29,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className={geist.className}>
         <SmoothScroll />
         <IntroLoader />
-        <Cursor />
         <Micro />
         <ScrollProgress />
         <CommandMenu />

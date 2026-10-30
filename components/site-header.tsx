@@ -84,7 +84,7 @@ export function SiteHeader() {
         </button>
         <LangSwitch />
         <span className="magnetic" data-magnetic>
-          <a href={`mailto:${CONTACT_EMAIL}`} className="talk-link" data-cursor="Mail">
+          <a href={`mailto:${CONTACT_EMAIL}`} className="talk-link">
             <SwapText>{t.ctaShort}</SwapText>
             <ArrowIcon />
           </a>

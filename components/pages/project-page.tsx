@@ -58,7 +58,6 @@ export function ProjectView({ slug, lang }: { slug: string; lang: Locale }) {
             href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            data-cursor="Live"
           >
             <span>{t.visit}</span>
             <ArrowIcon />
