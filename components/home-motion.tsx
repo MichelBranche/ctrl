@@ -213,39 +213,6 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
             });
           });
 
-          /* ---------- Closing: scrub-lit title + mark ---------- */
-          const closeTitle = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
-          if (closeTitle) {
-            const chars = closeTitle.querySelectorAll(".h-word");
-            gsap.fromTo(chars, { opacity: 0.15 }, {
-              opacity: 1,
-              stagger: 0.1,
-              ease: "none",
-              scrollTrigger: { trigger: ".h-close", start: "top 75%", end: "top 30%", scrub: true },
-            });
-          }
-          gsap.fromTo(".h-mark", { yPercent: 25, opacity: 0 }, {
-            yPercent: 0,
-            opacity: 1,
-            ease: "none",
-            scrollTrigger: { trigger: ".h-close", start: "top 90%", end: "top 40%", scrub: true },
-          });
-          gsap.fromTo(".h-circle-lg", { scale: 0.4, rotate: -90 }, {
-            scale: 1,
-            rotate: 0,
-            ease: "back.out(1.6)",
-            duration: 1.1,
-            scrollTrigger: { trigger: ".h-circle-lg", start: "top 92%" },
-          });
-          gsap.fromTo(".h-socials li", { y: 20, opacity: 0 }, {
-            y: 0,
-            opacity: 1,
-            stagger: 0.08,
-            duration: 0.7,
-            ease: "power3.out",
-            scrollTrigger: { trigger: ".h-socials", start: "top 95%" },
-          });
-
           return () => {
             sweep?.remove();
             all(scope, ".h-stat dt").forEach((dt) => { if (dt.dataset.value) dt.textContent = dt.dataset.value; });

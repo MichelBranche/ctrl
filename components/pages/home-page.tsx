@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
-import { CtrlMark } from "@/components/letter-hover";
+import { SiteFooter } from "@/components/site-footer";
 import { TiltCard } from "@/components/tilt-card";
-import { CONTACT_EMAIL, homeFeatured, services } from "@/lib/content";
+import { homeFeatured, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import "./home.css";
 
@@ -16,30 +16,6 @@ function Arrow({ className = "" }: { className?: string }) {
   );
 }
 
-const socials = [
-  {
-    label: "LinkedIn",
-    icon: (
-      <path d="M4 9h3v11H4zM5.5 4a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5zM10 9h2.9v1.5h.1c.4-.8 1.4-1.7 3-1.7 3.1 0 3.7 2 3.7 4.7V20h-3v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9V20h-3z" fill="currentColor" />
-    ),
-  },
-  {
-    label: "Instagram",
-    icon: (
-      <g fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="4" y="4" width="16" height="16" rx="4.5" />
-        <circle cx="12" cy="12" r="3.8" />
-        <circle cx="17" cy="7" r=".6" fill="currentColor" />
-      </g>
-    ),
-  },
-  {
-    label: "Behance",
-    icon: (
-      <path d="M3 6h5.2c2 0 3.3 1 3.3 2.7 0 1.1-.6 1.9-1.5 2.3 1.3.3 2 1.3 2 2.7 0 2-1.6 3.3-3.8 3.3H3zm2.4 2v2.6h2.5c.9 0 1.4-.5 1.4-1.3S8.8 8 7.9 8zm0 4.5v3h2.8c1 0 1.6-.6 1.6-1.5s-.6-1.5-1.6-1.5zM14.5 7h5v1.3h-5zm2.6 2.4c2.4 0 3.8 1.7 3.6 4.3h-5.4c.1 1.3.9 2 2 2 .8 0 1.3-.4 1.6-.9h1.7c-.5 1.5-1.7 2.4-3.4 2.4-2.3 0-3.7-1.6-3.7-3.9s1.5-3.9 3.6-3.9zm-1.7 3h3.4c-.1-1-.7-1.6-1.7-1.6s-1.6.6-1.7 1.6z" fill="currentColor" />
-    ),
-  },
-];
 
 export function HomePage({ lang }: { lang: Locale }) {
   const h = dict[lang].home;
@@ -242,47 +218,9 @@ export function HomePage({ lang }: { lang: Locale }) {
               </dl>
             </div>
           </section>
-
-          {/* 5. CLOSING */}
-          <section className="h-close" id="contact">
-            <i className="h-dot" aria-hidden="true" />
-            <CtrlMark className="h-mark" />
-            <div className="h-close-info">
-              <p className="h-small h-close-kicker">
-                <span>{h.closeKicker[0]}</span>
-                <span>{h.closeKicker[1]}</span>
-              </p>
-              <p className="h-close-lead">{h.closeLead}</p>
-              <p className="h-small h-close-kicker">
-                <span>{h.location}</span>
-                <span>© 2026 CTRL®</span>
-              </p>
-              {/* TODO(Michel): add real social URLs, then turn these spans into links. */}
-              <ul className="h-socials">
-                {socials.map((s) => (
-                  <li key={s.label}>
-                    <span className="h-small" aria-disabled="true">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        {s.icon}
-                      </svg>
-                      {s.label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <h2 className="h-close-title">
-              <span className="line-mask">
-                <span data-mask="scroll">{h.closeTitle}</span>
-              </span>
-            </h2>
-            <i className="h-vline" aria-hidden="true" />
-            <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
-              <Arrow />
-            </a>
-          </section>
         </main>
       </HomeMotion>
+      <SiteFooter />
     </>
   );
 }

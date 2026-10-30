@@ -1,239 +1,167 @@
 "use client";
 
-import Link from "next/link";
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowIcon } from "@/components/icons";
-import { SwapText } from "@/components/swap-text";
-import { CurrentYear, LocalClock } from "@/components/local-clock";
-import { useLetterHover } from "@/components/letter-hover";
+import { SplitText } from "gsap/SplitText";
+import { CtrlMark } from "@/components/letter-hover";
 import { useLocale } from "@/components/use-locale";
 import { CONTACT_EMAIL } from "@/lib/content";
-import { localize } from "@/lib/i18n";
+import "./site-footer.css";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
+function Arrow() {
+  return (
+    <svg className="h-arrow" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+const socials = [
+  {
+    label: "LinkedIn",
+    icon: (
+      <path d="M4 9h3v11H4zM5.5 4a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5zM10 9h2.9v1.5h.1c.4-.8 1.4-1.7 3-1.7 3.1 0 3.7 2 3.7 4.7V20h-3v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9V20h-3z" fill="currentColor" />
+    ),
+  },
+  {
+    label: "Instagram",
+    icon: (
+      <g fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="4" y="4" width="16" height="16" rx="4.5" />
+        <circle cx="12" cy="12" r="3.8" />
+        <circle cx="17" cy="7" r=".6" fill="currentColor" />
+      </g>
+    ),
+  },
+  {
+    label: "Behance",
+    icon: (
+      <path d="M3 6h5.2c2 0 3.3 1 3.3 2.7 0 1.1-.6 1.9-1.5 2.3 1.3.3 2 1.3 2 2.7 0 2-1.6 3.3-3.8 3.3H3zm2.4 2v2.6h2.5c.9 0 1.4-.5 1.4-1.3S8.8 8 7.9 8zm0 4.5v3h2.8c1 0 1.6-.6 1.6-1.5s-.6-1.5-1.6-1.5zM14.5 7h5v1.3h-5zm2.6 2.4c2.4 0 3.8 1.7 3.6 4.3h-5.4c.1 1.3.9 2 2 2 .8 0 1.3-.4 1.6-.9h1.7c-.5 1.5-1.7 2.4-3.4 2.4-2.3 0-3.7-1.6-3.7-3.9s1.5-3.9 3.6-3.9zm-1.7 3h3.4c-.1-1-.7-1.6-1.7-1.6s-1.6.6-1.7 1.6z" fill="currentColor" />
+    ),
+  },
+];
+
+/** Closing footer shared by the home page and every inner page. */
 export function SiteFooter() {
-  const footer = useRef<HTMLElement>(null);
-  const shift = useRef<HTMLDivElement>(null);
-  const markRef = useRef<HTMLDivElement>(null);
-  useLetterHover(markRef);
-  const { lang, t } = useLocale();
-  const f = t.footer;
-  const links = [
-    { href: localize("/#work", lang), label: t.nav.work },
-    { href: localize("/about", lang), label: t.nav.about },
-    { href: localize("/team", lang), label: t.nav.team },
-    { href: localize("/#services", lang), label: t.nav.services },
-    { href: localize("/journal", lang), label: t.nav.journal },
-  ];
+  const root = useRef<HTMLElement>(null);
+  const { t } = useLocale();
+  const h = t.home;
 
   useGSAP(
     () => {
+      const scope = root.current;
+      if (!scope) return;
       const mm = gsap.matchMedia();
 
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        gsap.set(scope.querySelectorAll("[data-mask]"), { y: "0%" });
+      });
+
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const glyphs = gsap.utils.toArray<HTMLElement>(".footer-glyph i");
-        if (glyphs.length) {
+        const title = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
+        let split: SplitText | undefined;
+        if (title) {
+          split = SplitText.create(title, { type: "words", wordsClass: "h-word" });
+          gsap.set(title, { y: "0%" });
           gsap.fromTo(
-            glyphs,
-            { y: "115%" },
+            split.words,
+            { yPercent: 115, rotate: 3 },
             {
-              y: "0%",
-              ease: "none",
+              yPercent: 0,
+              rotate: 0,
+              duration: 1.1,
               stagger: 0.06,
-              scrollTrigger: {
-                trigger: ".footer-mark",
-                start: "top bottom",
-                end: "bottom bottom",
-                scrub: 0.6,
-              },
-            },
-          );
-        }
-
-        const line = footer.current?.querySelector<HTMLElement>(
-          "[data-mask='footer']",
-        );
-        if (line) {
-          gsap.fromTo(
-            line,
-            { y: "120%" },
-            {
-              y: "0%",
-              duration: 1.15,
               ease: "power4.out",
-              scrollTrigger: { trigger: line, start: "top 92%" },
+              scrollTrigger: { trigger: title, start: "top 90%" },
             },
           );
+          gsap.fromTo(split.words, { opacity: 0.15 }, {
+            opacity: 1,
+            stagger: 0.1,
+            ease: "none",
+            scrollTrigger: { trigger: scope, start: "top 75%", end: "top 30%", scrub: true },
+          });
         }
 
-        const mark = footer.current?.querySelector<HTMLElement>(".footer-mark sup");
-        if (mark) {
-          gsap.fromTo(
-            mark,
-            { opacity: 0 },
-            {
-              opacity: 1,
-              ease: "none",
-              scrollTrigger: {
-                trigger: ".footer-mark",
-                start: "top bottom",
-                end: "bottom bottom",
-                scrub: true,
-              },
-            },
-          );
+        const vline = scope.querySelector(".h-vline");
+        if (vline) {
+          gsap.fromTo(vline, { scaleY: 0 }, {
+            scaleY: 1,
+            transformOrigin: "50% 0",
+            ease: "none",
+            scrollTrigger: { trigger: vline, start: "top 85%", end: "bottom 60%", scrub: true },
+          });
         }
 
-        gsap.utils.toArray<HTMLElement>("[data-rise]").forEach((el) => {
-          gsap.fromTo(
-            el,
-            { y: 28, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.9,
-              ease: "power3.out",
-              scrollTrigger: { trigger: el, start: "top 92%" },
-              onComplete: () => gsap.set(el, { clearProps: "opacity" }),
-            },
-          );
+        gsap.fromTo(".h-mark", { yPercent: 25, opacity: 0 }, {
+          yPercent: 0,
+          opacity: 1,
+          ease: "none",
+          scrollTrigger: { trigger: scope, start: "top 90%", end: "top 40%", scrub: true },
         });
-
-        gsap.utils.toArray<HTMLElement>("[data-draw]").forEach((el) => {
-          gsap.fromTo(
-            el,
-            { scaleX: 0 },
-            {
-              scaleX: 1,
-              duration: 1.15,
-              ease: "power3.inOut",
-              scrollTrigger: { trigger: el, start: "top 90%" },
-            },
-          );
+        gsap.fromTo(".h-circle-lg", { scale: 0.4, rotate: -90 }, {
+          scale: 1,
+          rotate: 0,
+          ease: "back.out(1.6)",
+          duration: 1.1,
+          scrollTrigger: { trigger: ".h-circle-lg", start: "top 92%" },
         });
-
-        if (!shift.current) return;
-        const skew = gsap.quickTo(shift.current, "skewX", {
+        gsap.fromTo(".h-socials li", { y: 20, opacity: 0 }, {
+          y: 0,
+          opacity: 1,
+          stagger: 0.08,
           duration: 0.7,
           ease: "power3.out",
+          scrollTrigger: { trigger: ".h-socials", start: "top 95%" },
         });
-        const onScroll = () => {
-          const velocity = window.__lenis?.velocity ?? 0;
-          skew(gsap.utils.clamp(-7, 7, velocity * 0.018));
-        };
-        window.__lenis?.on("scroll", onScroll);
-        return () => window.__lenis?.off("scroll", onScroll);
+
+        return () => split?.revert();
       });
     },
-    { scope: footer },
+    { scope: root },
   );
 
   return (
-    <footer id="contact" className="contact" ref={footer}>
-      <div className="marquee" aria-hidden="true">
-        <div className="marquee-shift" ref={shift}>
-          <div className="marquee-track">
-            {[0, 1].map((copy) => (
-              <div className="marquee-group" key={copy}>
-                {f.ticker.map((item) => (
-                  <span key={`${copy}-${item}`}>
-                    {item}
-                    <i />
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="contact-main">
-        <p className="kicker" data-rise>
-          {f.kicker}
+    <footer className="h-close" id="contact" ref={root}>
+      <i className="h-dot" aria-hidden="true" />
+      <CtrlMark className="h-mark" />
+      <div className="h-close-info">
+        <p className="h-small h-close-kicker">
+          <span>{h.closeKicker[0]}</span>
+          <span>{h.closeKicker[1]}</span>
         </p>
-        <h2 className="contact-title">
-          <span className="magnetic" data-magnetic>
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-            >
-              <span className="line-mask">
-                <span data-mask="footer">{f.title}</span>
+        <p className="h-close-lead">{h.closeLead}</p>
+        <p className="h-small h-close-kicker">
+          <span>{h.location}</span>
+          <span>© 2026 CTRL®</span>
+        </p>
+        {/* TODO(Michel): add real social URLs, then turn these spans into links. */}
+        <ul className="h-socials">
+          {socials.map((s) => (
+            <li key={s.label}>
+              <span className="h-small" aria-disabled="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  {s.icon}
+                </svg>
+                {s.label}
               </span>
-              <ArrowIcon />
-            </a>
-          </span>
-        </h2>
-        <p className="contact-lead" data-rise>
-          {f.lead}
-        </p>
-        <a className="cta-button cta-accent" href={`mailto:${CONTACT_EMAIL}`} data-rise>
-          <span>{t.cta}</span>
-          <ArrowIcon />
-        </a>
-        <span className="draw-rule" data-draw />
+            </li>
+          ))}
+        </ul>
       </div>
-
-      <div className="contact-grid">
-        <div className="contact-block" data-rise>
-          <p className="kicker">{f.studio}</p>
-          <p className="contact-strong">{f.independent}</p>
-          <p>{f.available}</p>
-          <p className="clock">
-            <LocalClock />
-            {f.localTime}
-          </p>
-        </div>
-
-        <nav className="contact-block" data-rise aria-label="Footer">
-          <p className="kicker">{f.index}</p>
-          <div className="contact-index">
-            {links.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <SwapText>{link.label}</SwapText>
-              </Link>
-            ))}
-          </div>
-        </nav>
-
-        <div className="contact-block" data-rise>
-          <p className="kicker">{f.contact}</p>
-          <a className="mail-link" href={`mailto:${CONTACT_EMAIL}`}>
-            {CONTACT_EMAIL}
-          </a>
-          <span className="magnetic" data-magnetic>
-            <button
-              type="button"
-              className="top-link"
-              onClick={() => {
-                if (window.__lenis) window.__lenis.scrollTo(0);
-                else window.scrollTo({ top: 0 });
-              }}
-            >
-              <SwapText>{f.top}</SwapText>
-              <ArrowIcon />
-            </button>
-          </span>
-        </div>
-      </div>
-
-      <div className="footer-mark" aria-hidden="true" ref={markRef}>
-        {"CTRL".split("").map((letter) => (
-          <span className="footer-glyph" key={letter} data-letter>
-            <i>{letter}</i>
-          </span>
-        ))}
-        <sup data-letter>®</sup>
-      </div>
-
-      <div className="contact-meta">
-        <span>© <CurrentYear /> CTRL®</span>
-        <span>{f.tagline}</span>
-      </div>
-
+      <h2 className="h-close-title">
+        <span className="line-mask">
+          <span data-mask="footer">{h.closeTitle}</span>
+        </span>
+      </h2>
+      <i className="h-vline" aria-hidden="true" />
+      <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
+        <Arrow />
+      </a>
     </footer>
   );
 }
