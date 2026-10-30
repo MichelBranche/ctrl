@@ -58,7 +58,8 @@ export function TeamView({ lang }: { lang: Locale }) {
                     src={member.photo}
                     alt={member.name}
                     fill
-                    sizes="(max-width: 700px) 100vw, 33vw"
+                    sizes="(max-width: 700px) min(80vw, 320px), 320px"
+                    quality={90}
                   />
                 ) : null}
                 <span className="t-grain" aria-hidden="true" />

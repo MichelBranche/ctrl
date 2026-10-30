@@ -108,7 +108,7 @@
 }
 
 .t-card {
-  flex: 0 0 calc((100% - 2 * var(--t-gap)) / 3);
+  flex: 0 0 min(320px, calc((100% - 2 * var(--t-gap)) / 3));
   aspect-ratio: 1;
 }
 
@@ -202,7 +202,7 @@
 
 @media (max-width: 700px) {
   .t-card {
-    flex-basis: 100%;
+    flex-basis: min(80vw, 320px);
   }
   .t-hero {
     min-height: 88svh;

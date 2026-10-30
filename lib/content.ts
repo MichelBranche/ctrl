@@ -193,8 +193,8 @@ export type TeamMember = {
 };
 
 /**
- * Person -> portrait mapping (UNCONFIRMED, swap here in one line).
- * photo-a: man in suit and tie. photo-b: black t-shirt, earring.
+ * Person -> portrait mapping (confirmed by Michel).
+ * photo-a: Kallebe, suit and tie. photo-b: Michel, black t-shirt.
  */
 export const TEAM_PHOTOS: Record<string, string> = {
   "michel-branche": "/team/photo-b.webp",
