@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CtrlMascot } from "@/components/ctrl-mascot";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { TiltCard } from "@/components/tilt-card";
@@ -86,6 +87,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                   fill
                   priority
                   sizes="100vw"
+                  quality={90}
                   className="h-img h-img-hero"
                 />
               </div>
@@ -100,6 +102,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 ))}
               </p>
             </div>
+            <CtrlMascot lang={lang} />
           </section>
 
           {/* 2. COSA FACCIAMO */}
