@@ -186,6 +186,10 @@
 
 .h-tag-bottom {
   bottom: 2rem;
+  right: calc(var(--gutter) + 120px);
+}
+@media (max-width: 900px) {
+  .h-tag-bottom { right: calc(var(--gutter) + 84px); }
 }
 
 /* COSA FACCIAMO */
@@ -682,33 +686,3 @@
   }
 }
 
-/* Clay cloud mascot */
-.ctrl-mascot {
-  position: absolute;
-  z-index: 2;
-  left: 41%;
-  bottom: 6%;
-  width: clamp(180px, 17vw, 360px);
-  cursor: pointer;
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.35));
-}
-.ctrl-mascot svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-@media (min-width: 2200px) {
-  .ctrl-mascot {
-    width: clamp(360px, 15vw, 520px);
-  }
-}
-@media (max-width: 900px) {
-  .ctrl-mascot {
-    left: auto;
-    right: var(--gutter);
-    top: calc(var(--header) + 7.5rem);
-    bottom: auto;
-    width: 84px;
-  }
-}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
+import { CtrlAssistant } from "@/components/ctrl-assistant";
 import { CommandMenu } from "@/components/command-menu";
 import { IntroLoader } from "@/components/intro-loader";
 import { Micro } from "@/components/micro";
@@ -42,6 +44,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <CommandMenu />
         {children}
         <ScrollReveal />
+        <CtrlAssistant />
+        <Analytics />
       </body>
     </html>
   );
