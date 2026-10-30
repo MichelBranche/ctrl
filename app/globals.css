@@ -22,6 +22,11 @@ html {
   scroll-behavior: auto;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 html.nav-open {
   overflow: hidden;
 }

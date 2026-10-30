@@ -15,7 +15,7 @@ export interface AssistantProvider {
   answer(messages: ChatMessage[], lang: Locale): Promise<ChatReply>;
 }
 
-const contactHref = (lang: Locale) => localize("/#contact", lang);
+const contactHref = (lang: Locale) => localize("/contact", lang);
 
 const norm = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");

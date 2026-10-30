@@ -24,7 +24,7 @@ export function SiteHeader() {
     { href: localize("/about", lang), label: t.nav.about },
     { href: localize("/team", lang), label: t.nav.team },
     { href: localize("/journal", lang), label: t.nav.journal },
-    { href: localize("/#contact", lang), label: t.nav.contact },
+    { href: localize("/contact", lang), label: t.nav.contact },
   ];
 
   useGSAP(() => {

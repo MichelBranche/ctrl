@@ -1,0 +1,337 @@
+/* Hallmark · floor-only run on a mockup-driven page (contact) · genre: atmospheric (inferred from the site)
+ * critique: mockup 1:1, site's own system wins on type and labels; one idea per screen: hero, info, form, map
+ * waive 9, 67, 64 (tracked mono capitals on labels): the mockup and every existing page use them; 1:1 requested
+ * waive 13 (map split text): within budget, recorded for clarity */
+
+/* Contact page (mockup). Scoped with the .c- prefix. */
+:root {
+  --c-bg: #0b0b0b;
+  --c-fg: #f2f0ea;
+  --c-dim: rgba(242, 240, 234, 0.62);
+  --c-faint: rgba(242, 240, 234, 0.4);
+  --c-rule: rgba(242, 240, 234, 0.12);
+  --c-field: rgba(242, 240, 234, 0.03);
+  --c-field-line: rgba(242, 240, 234, 0.18);
+  --c-accent: var(--accent, #ff4a1c);
+  --c-accent-ink: var(--accent-ink, #0c0c0c);
+  --c-shade: rgba(11, 11, 11, 0.35);
+  --c-shade-lo: rgba(11, 11, 11, 0.1);
+  --c-mono-face: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --c-display-face: var(--font-display);
+  --c-max: 90rem;
+  --c-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.c-root {
+  background: var(--c-bg);
+  color: var(--c-fg);
+}
+
+.c-mono {
+  font-family: var(--c-mono-face);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.c-label { margin: 0; color: var(--c-dim); }
+
+/* 1. HERO */
+.c-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(100svh, 56rem);
+  padding: calc(var(--header) + 3rem) var(--gutter) 6rem;
+  overflow: hidden;
+  text-align: center;
+}
+.c-hero-img { object-fit: cover; object-position: 70% 50%; z-index: 0; }
+.c-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--c-shade) 0%, var(--c-shade-lo) 55%, var(--c-bg) 100%);
+}
+.c-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  animation: c-rise 1.1s var(--c-ease) both;
+}
+.c-tag {
+  margin: 0;
+  padding-bottom: 0.6rem;
+  font-family: var(--c-mono-face);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-fg);
+  border-bottom: 2px solid var(--c-accent);
+}
+.c-title {
+  margin: 1.6rem 0 0;
+  font-family: var(--c-display-face);
+  font-size: clamp(3.4rem, 9vw, 9rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.c-lead {
+  display: flex;
+  flex-direction: column;
+  margin: 1.8rem 0 0;
+  font-size: clamp(1rem, 1.35vw, 1.3rem);
+  line-height: 1.45;
+  color: var(--c-fg);
+}
+.c-write {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4rem;
+  margin-top: 2.6rem;
+  color: var(--c-fg);
+  text-decoration: none;
+}
+.c-circle {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 1px solid var(--c-accent);
+  border-radius: 50%;
+  color: var(--c-accent);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+.c-arrow { width: 1.1rem; height: 1.1rem; flex: none; transition: transform 0.45s var(--c-ease); }
+.c-line-arrow { width: 3rem; height: 0.75rem; color: var(--c-dim); transition: transform 0.45s var(--c-ease), color 0.3s ease; }
+.c-write:hover .c-circle { background: var(--c-accent); color: var(--c-accent-ink); }
+.c-write:hover .c-arrow { transform: translateY(3px) rotate(90deg); }
+.c-write:hover .c-line-arrow { transform: translateX(6px); color: var(--c-fg); }
+
+/* 2. INFO STRIP */
+.c-info {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: var(--c-max);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--c-rule);
+  border-bottom: 1px solid var(--c-rule);
+}
+.c-info-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 2.2rem var(--gutter);
+  min-width: 0;
+}
+.c-info-col + .c-info-col::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2rem;
+  bottom: 2rem;
+  width: 1px;
+  background: var(--c-rule);
+}
+.c-info-col::after {
+  content: "";
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 0;
+  height: 1px;
+  background: var(--c-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--c-ease);
+}
+.c-info-col:hover::after { transform: scaleX(1); }
+.c-info-value { font-size: 1.05rem; color: var(--c-fg); overflow-wrap: anywhere; }
+.c-info-link { text-decoration: none; transition: color 0.3s ease; }
+.c-info-link:hover { color: var(--c-accent); }
+.c-info-note { font-size: 0.82rem; color: var(--c-dim); }
+.c-socials { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: 0.85rem; color: var(--c-fg); margin-top: 0.3rem; }
+
+/* 3. FORM */
+.c-form-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 4rem;
+  max-width: var(--c-max);
+  margin: 0 auto;
+  padding: 5.5rem var(--gutter) 6rem;
+  scroll-margin-top: var(--header);
+}
+.c-h2 {
+  display: flex;
+  flex-direction: column;
+  margin: 1.6rem 0 0;
+  font-family: var(--c-display-face);
+  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.c-form-text { max-width: 26rem; margin: 1.6rem 0 0; font-size: 0.98rem; line-height: 1.55; color: var(--c-fg); }
+.c-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem 1.6rem;
+  align-content: start;
+}
+.c-full { grid-column: 1 / -1; }
+.c-field { display: flex; flex-direction: column; gap: 0.65rem; min-width: 0; }
+.c-flabel { color: var(--c-fg); }
+.c-field input,
+.c-field select,
+.c-field textarea {
+  width: 100%;
+  padding: 0.85rem 0.9rem;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--c-fg);
+  background: var(--c-field);
+  border: 1px solid var(--c-field-line);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+.c-field textarea { min-height: 8.5rem; resize: vertical; }
+.c-field ::placeholder { color: var(--c-faint); }
+.c-field input:hover,
+.c-field select:hover,
+.c-field textarea:hover { border-color: var(--c-dim); }
+.c-field input:focus-visible,
+.c-field select:focus-visible,
+.c-field textarea:focus-visible {
+  outline: 1px solid var(--c-accent);
+  outline-offset: -1px;
+  box-shadow: inset 0 -2px 0 var(--c-accent);
+}
+.c-field [aria-invalid="true"] { border-color: var(--c-accent); }
+.c-select { position: relative; display: block; }
+.c-select select { appearance: none; padding-right: 2.4rem; cursor: pointer; }
+.c-select select:invalid { color: var(--c-faint); }
+.c-select option { color: var(--c-fg); background: var(--c-bg); }
+.c-select svg {
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: translateY(-50%);
+  color: var(--c-fg);
+  pointer-events: none;
+}
+.c-error { font-size: 0.78rem; color: var(--c-accent); }
+.c-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+  padding: 0.95rem 1.5rem;
+  color: var(--c-accent-ink);
+  background: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+.c-send:hover { background: transparent; color: var(--c-accent); }
+.c-send:active { transform: scale(0.97); }
+.c-write:active .c-circle { transform: scale(0.95); }
+.c-send:hover .c-arrow { transform: translateX(4px); }
+.c-success { align-self: start; padding: 2rem 0; border-top: 2px solid var(--c-accent); }
+.c-success-title { margin: 0; font-family: var(--c-display-face); font-size: 2rem; letter-spacing: -0.03em; }
+.c-success a { color: var(--c-accent); }
+.c-link-btn {
+  margin-top: 1.6rem;
+  padding: 0 0 0.3rem;
+  color: var(--c-fg);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--c-accent);
+  cursor: pointer;
+}
+
+/* 4. MAP */
+.c-map {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  max-width: 120rem;
+  margin: 0 auto;
+  border-top: 1px solid var(--c-rule);
+  border-bottom: 1px solid var(--c-rule);
+}
+.c-map-media { position: relative; min-height: 26rem; overflow: hidden; background: var(--c-bg); }
+.c-map-media img { object-fit: cover; }
+.c-attrib { position: absolute; right: 0.6rem; bottom: 0.4rem; font-size: 0.62rem; color: var(--c-faint); }
+.c-attrib a { color: inherit; }
+.c-map-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem var(--gutter);
+  border-left: 1px solid var(--c-rule);
+}
+.c-where { margin-top: 1.2rem; }
+.c-maps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  align-self: flex-start;
+  margin-top: 2rem;
+  color: var(--c-fg);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+.c-maps:hover { color: var(--c-accent); }
+.c-maps:hover .c-arrow { transform: translateX(4px); }
+
+/* Focus */
+.c-root a:focus-visible,
+.c-root button:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 4px;
+  transition: none;
+}
+
+@keyframes c-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 1024px) {
+  .c-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .c-info-col:nth-child(3)::before { display: none; }
+  .c-info-col:nth-child(-n + 2) { border-bottom: 1px solid var(--c-rule); }
+}
+@media (max-width: 860px) {
+  .c-form-wrap { grid-template-columns: minmax(0, 1fr); gap: 2.6rem; padding: 4rem var(--gutter); }
+  .c-map { grid-template-columns: minmax(0, 1fr); }
+  .c-map-media { min-height: 18rem; }
+  .c-map-copy { border-left: 0; border-top: 1px solid var(--c-rule); }
+}
+@media (max-width: 560px) {
+  .c-info { grid-template-columns: minmax(0, 1fr); }
+  .c-info-col::before { display: none; }
+  .c-info-col { border-bottom: 1px solid var(--c-rule); padding: 1.6rem var(--gutter); }
+  .c-info-col:last-child { border-bottom: 0; }
+  .c-form { grid-template-columns: minmax(0, 1fr); }
+  .c-write { gap: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .c-hero-copy { animation: none; }
+  .c-root *,
+  .c-root *::after { transition-duration: 0.01ms !important; }
+}
