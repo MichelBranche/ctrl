@@ -681,24 +681,3 @@
     gap: 1.2rem;
   }
 }
-
-/* CTRL® mascot "Kappa" */
-.h-mascot {
-  position: absolute;
-  z-index: 3;
-  left: 42%;
-  bottom: 6%;
-  width: clamp(160px, 18vw, 380px);
-  cursor: pointer;
-  will-change: transform;
-  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 60px rgba(255, 74, 28, 0.28));
-}
-.h-mascot-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.m-body, .m-tilt, .m-pupils, .m-antenna, .m-lid, .m-bubble { transform-box: fill-box; }
-.m-tilt, .m-body { transform-box: view-box; }
-@media (min-width: 2200px) {
-  .h-mascot { left: 40%; bottom: 8%; width: clamp(380px, 17vw, 560px); }
-}
-@media (max-width: 900px) {
-  .h-mascot { left: auto; right: 7%; bottom: 10%; width: clamp(110px, 30vw, 150px); }
-}

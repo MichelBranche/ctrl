@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CtrlMascot } from "@/components/ctrl-mascot";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { TiltCard } from "@/components/tilt-card";
@@ -102,7 +101,6 @@ export function HomePage({ lang }: { lang: Locale }) {
                 ))}
               </p>
             </div>
-            <CtrlMascot lang={lang} />
           </section>
 
           {/* 2. COSA FACCIAMO */}
@@ -247,8 +245,8 @@ export function HomePage({ lang }: { lang: Locale }) {
           {/* 5. CLOSING */}
           <section className="h-close" id="contact">
             <i className="h-dot" aria-hidden="true" />
-            <p className="h-mark" aria-label="CTRL®">
-              CTRL<sup>®</sup>
+            <p className="h-mark" aria-label="CTRLÂ®">
+              CTRL<sup>Â®</sup>
             </p>
             <h2 className="h-close-title">
               <span className="line-mask">
@@ -269,7 +267,7 @@ export function HomePage({ lang }: { lang: Locale }) {
             <div className="h-close-foot">
               <p className="h-small h-close-kicker">
                 <span>{h.location}</span>
-                <span>© 2026 CTRL®</span>
+                <span>Â© 2026 CTRLÂ®</span>
               </p>
               {/* TODO(Michel): add real social URLs, then turn these spans into links. */}
               <ul className="h-socials">
