@@ -1906,3 +1906,110 @@ kbd, .cmd .mono, .cmd-trigger {
 
 @media (max-width: 899px) { .cmd-trigger { display: none; } }
 @media (prefers-reduced-motion: reduce) { .cmd, .cmd-panel { animation: none; } }
+
+/* ==========================================================
+   TEAM
+   ========================================================== */
+.team {
+  list-style: none;
+  margin: 3.5rem 0 3rem;
+  padding: 0;
+  max-width: 62rem;
+}
+
+.team-member {
+  display: grid;
+  grid-template-columns: minmax(10rem, 16rem) 1fr;
+  gap: 2.5rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.team-member:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.team-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #161616;
+}
+
+.team-photo img {
+  object-fit: cover;
+}
+
+.team-initials {
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.team-initials span {
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  font-weight: 500;
+  letter-spacing: -0.048em;
+  line-height: 0.94;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.team-index {
+  display: block;
+  margin-bottom: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.team-body h2 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.team-bio {
+  max-width: 38rem;
+  margin: 1.2rem 0 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.team-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 1.4rem 0 0;
+  padding: 0;
+}
+
+.team-skills li {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.team-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.6rem;
+  margin-top: 1.2rem;
+}
+
+@media (max-width: 860px) {
+  .team-member {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .team-photo {
+    max-width: 16rem;
+  }
+}

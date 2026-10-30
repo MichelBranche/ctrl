@@ -24,7 +24,7 @@ export function localeFromPath(pathname: string | null): Locale {
 
 export const dict = {
   it: {
-    nav: { work: "Progetti", about: "Studio", services: "Servizi", journal: "Journal" },
+    nav: { work: "Progetti", about: "Studio", team: "Team", services: "Servizi", journal: "Journal" },
     cta: "Parliamo del tuo progetto",
     ctaShort: "Parliamo",
     menu: "Menu",
@@ -76,6 +76,11 @@ export const dict = {
         "Un unico partner per progettare, costruire e far evolvere la presenza digitale di un'azienda. Uniamo creatività, tecnologia e strategia per creare esperienze che lasciano il segno.",
       ],
     },
+    team: {
+      description: "Le persone di CTRL®: design, sviluppo frontend, AI e sviluppo full stack.",
+      title: ["Poche persone,", "competenze complete."],
+      lead: "Un team piccolo che segue ogni progetto dall'idea al rilascio, senza passaggi di mano.",
+    },
     journal: {
       description: "Note di CTRL® su design, prodotti digitali e comunicazione visiva.",
       title: ["Appunti su design,", "prodotto e immagine."],
@@ -107,7 +112,7 @@ export const dict = {
     },
   },
   en: {
-    nav: { work: "Work", about: "Studio", services: "Services", journal: "Journal" },
+    nav: { work: "Work", about: "Studio", team: "Team", services: "Services", journal: "Journal" },
     cta: "Let's talk about your project",
     ctaShort: "Let's talk",
     menu: "Menu",
@@ -158,6 +163,11 @@ export const dict = {
         "CTRL® is an independent studio that combines design, software development and visual communication. We help brands go from identity to digital products and beyond.",
         "One partner to design, build and evolve a company's digital presence. We bring creativity, technology and strategy together to create experiences that leave a mark.",
       ],
+    },
+    team: {
+      description: "The people behind CTRL®: design, frontend development, AI and full-stack development.",
+      title: ["A few people,", "complete skills."],
+      lead: "A small team that follows every project from idea to release, with no hand-offs.",
     },
     journal: {
       description: "Notes from CTRL® on design, digital products and visual communication.",

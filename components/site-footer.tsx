@@ -22,6 +22,7 @@ export function SiteFooter() {
   const links = [
     { href: localize("/#work", lang), label: t.nav.work },
     { href: localize("/about", lang), label: t.nav.about },
+    { href: localize("/team", lang), label: t.nav.team },
     { href: localize("/#services", lang), label: t.nav.services },
     { href: localize("/journal", lang), label: t.nav.journal },
   ];

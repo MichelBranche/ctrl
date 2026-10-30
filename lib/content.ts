@@ -155,6 +155,57 @@ export const services: Service[] = [
   },
 ];
 
+export type TeamLink = { label: string; href: string };
+
+export type TeamMember = {
+  slug: string;
+  name: string;
+  role: L;
+  bio: L;
+  skills: string[];
+  /**
+   * Optional portrait. Put the file at /public/images/team/<slug>.jpg and set
+   * photo: "/images/team/<slug>.jpg". When null, an initials block is shown.
+   */
+  photo?: string | null;
+  links: TeamLink[];
+};
+
+/** Studio team. Add new members here; the Team page renders them in order. */
+export const team: TeamMember[] = [
+  {
+    slug: "michel-branche",
+    name: "Michel Branche",
+    role: { it: "Design e sviluppo frontend", en: "Design & frontend development" },
+    bio: {
+      it: "Frontend developer dalla Valle d'Aosta. Progetta e sviluppa siti e interfacce su misura con React, Next.js e TypeScript, curando il movimento con GSAP. Un percorso nell'ospitalità e nel lavoro creativo, da ex tatuatore, gli ha lasciato un occhio attento al dettaglio.",
+      en: "Frontend developer from Valle d'Aosta. He designs and builds custom websites and interfaces with React, Next.js and TypeScript, crafting motion with GSAP. A background in hospitality and creative work, as a former tattoo artist, gave him a sharp eye for detail.",
+    },
+    skills: ["React", "Next.js", "TypeScript", "Tailwind", "GSAP", "UI/UX"],
+    photo: null,
+    links: [
+      { label: "GitHub", href: "https://github.com/MichelBranche" },
+      // TODO: add LinkedIn profile URL.
+    ],
+  },
+  {
+    slug: "kallebe-gallo",
+    name: "Kallebe Gallo",
+    role: { it: "AI e sviluppo full stack", en: "AI & full-stack development" },
+    bio: {
+      it: "AI Full Stack Developer: unisce sviluppo web full stack e intelligenza artificiale per costruire prodotti digitali stabili e scalabili. Integra modelli LLM, pipeline RAG e automazioni, lavorando con Node.js, PostgreSQL, MongoDB e Docker. Parla italiano, inglese, francese, tedesco e portoghese.",
+      en: "AI Full Stack Developer who combines full-stack web development and artificial intelligence to build stable, scalable digital products. He integrates LLMs, RAG pipelines and automations, working with Node.js, PostgreSQL, MongoDB and Docker. He speaks Italian, English, French, German and Portuguese.",
+    },
+    skills: ["LLM", "RAG", "Node.js", "PostgreSQL", "MongoDB", "Docker"],
+    photo: null,
+    links: [
+      { label: "Portfolio", href: "https://portafoglio-alpha.vercel.app/" },
+      { label: "GitHub", href: "https://github.com/kallebesiqueira-dev" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/kallebe-gallo-a55b01211" },
+    ],
+  },
+];
+
 export function getService(slug: string) {
   return services.find((service) => service.slug === slug);
 }
