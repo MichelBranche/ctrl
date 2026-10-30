@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
+import { CtrlMark } from "@/components/letter-hover";
 import { TiltCard } from "@/components/tilt-card";
 import { CONTACT_EMAIL, homeFeatured, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
@@ -245,9 +246,7 @@ export function HomePage({ lang }: { lang: Locale }) {
           {/* 5. CLOSING */}
           <section className="h-close" id="contact">
             <i className="h-dot" aria-hidden="true" />
-            <p className="h-mark" aria-label="CTRL®">
-              CTRL<sup>®</sup>
-            </p>
+            <CtrlMark className="h-mark" />
             <h2 className="h-close-title">
               <span className="line-mask">
                 <span data-mask="scroll">{h.closeTitle}</span>
@@ -257,14 +256,12 @@ export function HomePage({ lang }: { lang: Locale }) {
             <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
               <Arrow />
             </a>
-            <div className="h-close-row">
+            <div className="h-close-info">
               <p className="h-small h-close-kicker">
                 <span>{h.closeKicker[0]}</span>
                 <span>{h.closeKicker[1]}</span>
               </p>
               <p className="h-close-lead">{h.closeLead}</p>
-            </div>
-            <div className="h-close-foot">
               <p className="h-small h-close-kicker">
                 <span>{h.location}</span>
                 <span>© 2026 CTRL®</span>

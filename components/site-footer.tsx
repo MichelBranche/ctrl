@@ -8,6 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowIcon } from "@/components/icons";
 import { SwapText } from "@/components/swap-text";
 import { CurrentYear, LocalClock } from "@/components/local-clock";
+import { useLetterHover } from "@/components/letter-hover";
 import { useLocale } from "@/components/use-locale";
 import { CONTACT_EMAIL } from "@/lib/content";
 import { localize } from "@/lib/i18n";
@@ -17,6 +18,8 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 export function SiteFooter() {
   const footer = useRef<HTMLElement>(null);
   const shift = useRef<HTMLDivElement>(null);
+  const markRef = useRef<HTMLDivElement>(null);
+  useLetterHover(markRef);
   const { lang, t } = useLocale();
   const f = t.footer;
   const links = [
@@ -217,19 +220,20 @@ export function SiteFooter() {
         </div>
       </div>
 
+      <div className="footer-mark" aria-hidden="true" ref={markRef}>
+        {"CTRL".split("").map((letter) => (
+          <span className="footer-glyph" key={letter} data-letter>
+            <i>{letter}</i>
+          </span>
+        ))}
+        <sup data-letter>®</sup>
+      </div>
+
       <div className="contact-meta">
         <span>© <CurrentYear /> CTRL®</span>
         <span>{f.tagline}</span>
       </div>
 
-      <div className="footer-mark" aria-hidden="true">
-        {"CTRL".split("").map((letter) => (
-          <span className="footer-glyph" key={letter}>
-            <i>{letter}</i>
-          </span>
-        ))}
-        <sup>®</sup>
-      </div>
     </footer>
   );
 }
