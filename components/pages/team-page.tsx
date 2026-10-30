@@ -49,8 +49,14 @@ export function TeamView({ lang }: { lang: Locale }) {
             </span>
           ))}
         </h1>
-        <div className="subpage-copy">
-          <p>{t.team.lead}</p>
+        <aside className="sub-aside" aria-hidden="true">
+          <span className="sub-aside-index">{String(team.length).padStart(2, "0")}</span>
+          <span className="kicker">{t.nav.team}</span>
+        </aside>
+        <div className="sub-main">
+          <div className="subpage-copy subpage-copy-single">
+            <p>{t.team.lead}</p>
+          </div>
         </div>
         <ol className="team">
           {team.map((member, i) => (

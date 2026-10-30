@@ -35,23 +35,35 @@ export function ProjectView({ slug, lang }: { slug: string; lang: Locale }) {
         <h1>{project.name}</h1>
         <div className="case-media">
           {project.image ? (
-            <Image src={project.image} alt="" fill priority sizes="(max-width: 900px) 100vw, 1100px" />
+            <Image
+              src={project.image}
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 900px) 100vw, 1100px"
+            />
           ) : (
             <ProjectTile project={project} lang={lang} />
           )}
         </div>
-        <p className="case-summary">{project.summary[lang]}</p>
-        <p className="work-note">{t.conceptNote}</p>
-        <a
-          className="cta-button case-live"
-          href={project.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-cursor="Live"
-        >
-          <span>{t.visit}</span>
-          <ArrowIcon />
-        </a>
+        <aside className="sub-aside case-aside">
+          <span className="sub-aside-index">{project.name}</span>
+          <span className="kicker">{project.meta[lang]}</span>
+        </aside>
+        <div className="sub-main case-body">
+          <p className="case-summary">{project.summary[lang]}</p>
+          <p className="work-note">{t.conceptNote}</p>
+          <a
+            className="cta-button case-live"
+            href={project.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-cursor="Live"
+          >
+            <span>{t.visit}</span>
+            <ArrowIcon />
+          </a>
+        </div>
       </main>
       <SiteFooter />
     </>

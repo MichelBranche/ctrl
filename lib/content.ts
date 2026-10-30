@@ -184,8 +184,9 @@ export const team: TeamMember[] = [
     skills: ["React", "Next.js", "TypeScript", "Tailwind", "GSAP", "UI/UX"],
     photo: null,
     links: [
+      { label: "Portfolio", href: "https://www.michelbranche.it" },
       { label: "GitHub", href: "https://github.com/MichelBranche" },
-      // TODO: add LinkedIn profile URL.
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/michelbranche" },
     ],
   },
   {

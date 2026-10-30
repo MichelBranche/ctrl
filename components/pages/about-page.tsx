@@ -23,15 +23,21 @@ export function AboutView({ lang }: { lang: Locale }) {
             </span>
           ))}
         </h1>
-        <div className="subpage-copy">
-          {t.about.body.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
+        <aside className="sub-aside" aria-hidden="true">
+          <span className="sub-aside-index">01</span>
+          <span className="kicker">{t.nav.about}</span>
+        </aside>
+        <div className="sub-main">
+          <div className="subpage-copy">
+            {t.about.body.map((p) => (
+              <p key={p}>{p}</p>
+            ))}
+          </div>
+          <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+            <span>{t.cta}</span>
+            <ArrowIcon />
+          </a>
         </div>
-        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
-          <span>{t.cta}</span>
-          <ArrowIcon />
-        </a>
       </main>
       <SiteFooter />
     </>

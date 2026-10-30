@@ -2013,3 +2013,233 @@ kbd, .cmd .mono, .cmd-trigger {
     max-width: 16rem;
   }
 }
+
+/* ==========================================================
+   LAYOUT | editorial 12-column grid for inner pages
+   Layout only: fonts, colors and components are unchanged.
+   ========================================================== */
+:root {
+  --container: 92rem;
+  --container-pad: max(var(--gutter), calc((100% - var(--container)) / 2));
+}
+
+.subpage,
+.case {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-content: start;
+  padding-inline: var(--container-pad);
+}
+
+.subpage > *,
+.case > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.subpage > .case-back,
+.case > .case-back,
+.subpage > .kicker,
+.case > .kicker,
+.subpage > .text-link,
+.subpage > .cta-button {
+  justify-self: start;
+}
+
+.subpage h1,
+.case h1 {
+  max-width: none;
+  font-size: clamp(2.8rem, 7.4vw, 7.2rem);
+}
+
+/* Sticky label / meta in cols 1-3, content in cols 5-12 */
+.sub-aside {
+  grid-column: 1 / span 3;
+  align-self: start;
+  position: sticky;
+  top: calc(var(--header) + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.sub-aside-index {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.sub-main {
+  grid-column: 5 / -1;
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.sub-main .subpage-copy {
+  max-width: none;
+  margin-top: 0;
+  column-gap: var(--gutter);
+}
+
+.sub-main .subpage-copy p:first-child {
+  color: #f5f4f1;
+  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+
+.subpage-copy-single {
+  grid-template-columns: minmax(0, 46rem);
+}
+
+.sub-main .cta-button {
+  margin-top: 2.5rem;
+}
+
+/* Team: two cards side by side */
+.team {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 4vw, 4rem) var(--gutter);
+  max-width: none;
+  margin: 4.5rem 0 3.5rem;
+}
+
+.team-member,
+.team-member:last-child {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--gutter);
+  padding: 1.5rem 0 0;
+  border-bottom: 0;
+}
+
+/* Services: lead left, points as a 2-column grid right */
+.service-page-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3rem var(--gutter);
+  max-width: none;
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.service-page-grid > :first-child {
+  grid-column: 1 / span 5;
+  align-self: start;
+  position: sticky;
+  top: calc(var(--header) + 1.5rem);
+}
+
+.service-page-grid > :last-child {
+  grid-column: 7 / -1;
+}
+
+.service-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+.service-points li:last-child {
+  border-bottom: 0;
+}
+
+.service-points li {
+  padding: 1.1rem 0 1.6rem;
+}
+
+.service-next {
+  max-width: none;
+}
+
+/* Journal: notes as a 3-column grid */
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3rem var(--gutter);
+  max-width: none;
+  margin: 4.5rem 0 3.5rem;
+}
+
+.notes li,
+.notes li:last-child {
+  grid-template-columns: 1fr;
+  gap: 1.4rem;
+  padding: 1rem 0 0;
+  border-bottom: 0;
+}
+
+/* Project: full-width media, meta sidebar + body */
+.case-media {
+  max-width: none;
+  margin-top: 3rem;
+}
+
+.case-aside .sub-aside-index {
+  color: #f5f4f1;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+}
+
+.case-body .case-summary {
+  max-width: 46rem;
+  margin-top: 0;
+  color: #f5f4f1;
+  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+
+/* Work index: same centered container */
+.work-index {
+  padding-inline: var(--container-pad);
+}
+
+@media (max-width: 1100px) {
+  .team {
+    grid-template-columns: 1fr;
+  }
+
+  .notes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .subpage,
+  .case {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sub-aside,
+  .sub-main,
+  .service-page-grid > :first-child,
+  .service-page-grid > :last-child {
+    grid-column: 1 / -1;
+    position: static;
+  }
+
+  .sub-aside {
+    margin-top: 2.5rem;
+  }
+
+  .sub-main {
+    margin-top: 1.5rem;
+  }
+
+  .team-member,
+  .team-member:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .service-page-grid,
+  .service-points,
+  .notes {
+    grid-template-columns: 1fr;
+  }
+}
