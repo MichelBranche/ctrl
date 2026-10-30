@@ -1,62 +1,82 @@
+import type { L, Locale } from "@/lib/i18n";
+
+/** Single source of truth for the studio contact address. */
+export const CONTACT_EMAIL = "ctrlragency@gmail.com";
+
+export const studio = {
+  email: CONTACT_EMAIL,
+};
+
 export type Project = {
   slug: string;
   name: string;
-  meta: string;
+  meta: L;
   image: string | null;
-  kind: "phone" | "photo";
-  summary: string;
+  /** Live demo URL. */
+  url: string;
+  /** Short place / sector line shown on typographic tiles. */
+  place: L;
+  summary: L;
 };
 
 export const projects: Project[] = [
   {
-    slug: "nexora",
-    name: "Nexora",
-    meta: "Brand Identity / Web Platform",
-    image: null,
-    kind: "phone",
-    summary:
-      "Identità visiva e piattaforma web. Un sistema scuro e tipografico, pensato per presentare il prodotto con la stessa precisione del brand.",
-  },
-  {
-    slug: "novara",
-    name: "Novara",
-    meta: "Digital Product / Visual Design",
-    image: "/images/novara.jpg",
-    kind: "photo",
-    summary:
-      "Prodotto digitale e direzione visiva. Geometrie, contrasto e una gerarchia che tiene insieme interfaccia e immagine.",
-  },
-  {
     slug: "altura",
-    name: "Altura",
-    meta: "Web Platform / Visual Identity",
+    name: "Maison Altura",
+    meta: { it: "Concept | Identità e sito per cantina", en: "Concept | Winery identity and website" },
     image: "/images/altura.jpg",
-    kind: "photo",
-    summary:
-      "Piattaforma web e identità visiva. Una presenza calma, costruita su paesaggio, luce e una tipografia silenziosa.",
+    url: "https://demo-vini.vercel.app",
+    place: { it: "Cantina", en: "Winery" },
+    summary: {
+      it: "Identità visiva e sito per una cantina. Una presenza calma, costruita su paesaggio, luce e una tipografia silenziosa.",
+      en: "Visual identity and website for a winery. A calm presence built on landscape, light and quiet typography.",
+    },
   },
   {
-    slug: "orbital",
-    name: "Orbital",
-    meta: "Brand Strategy / Web Platform",
-    image: "/images/orbital.jpg",
-    kind: "photo",
-    summary:
-      "Strategia di brand e piattaforma. Un linguaggio visivo ridotto all’essenziale, dal segno al sito.",
+    slug: "villa-matilde",
+    name: "Villa Matilde",
+    meta: { it: "Concept | Sito per hotel in villa storica", en: "Concept | Historic villa hotel website" },
+    image: null,
+    url: "https://demo-sina-villa-matilde.vercel.app",
+    place: { it: "Hospitality", en: "Hospitality" },
+    summary: {
+      it: "Concept di sito per un hotel in villa storica. Ritmo lento, immagini ampie e un percorso di prenotazione chiaro.",
+      en: "Website concept for a historic villa hotel. A slow rhythm, generous imagery and a clear booking path.",
+    },
+  },
+  {
+    slug: "omama",
+    name: "OMAMA",
+    meta: { it: "Concept | Sito per social hotel, Aosta", en: "Concept | Social hotel website, Aosta" },
+    image: null,
+    url: "https://demo-omama.vercel.app",
+    place: { it: "Aosta", en: "Aosta" },
+    summary: {
+      it: "Concept di sito per un social hotel nel centro di Aosta. Camere, spazi condivisi e montagna raccontati con un tono diretto e contemporaneo.",
+      en: "Website concept for a social hotel in the centre of Aosta. Rooms, shared spaces and the mountains told with a direct, contemporary tone.",
+    },
+  },
+  {
+    slug: "hotel-bijou",
+    name: "Hotel Bijou",
+    meta: { it: "Concept | Sito per boutique hotel, Saint-Vincent", en: "Concept | Boutique hotel website, Saint-Vincent" },
+    image: null,
+    url: "https://demo-hotelbijou.vercel.app",
+    place: { it: "Saint-Vincent", en: "Saint-Vincent" },
+    summary: {
+      it: "Concept di sito per un boutique hotel in piazza a Saint-Vincent. Un'esperienza raccolta ed elegante, dalla prima schermata alla richiesta di soggiorno.",
+      en: "Website concept for a boutique hotel on the square in Saint-Vincent. An intimate, elegant experience from the first screen to the booking request.",
+    },
   },
 ];
-
-export const studio = {
-  email: "hello@ctrl.studio",
-};
 
 export type Service = {
   slug: string;
   index: string;
-  title: string;
-  text: string;
-  summary: string;
-  points: string[];
+  title: L;
+  text: L;
+  summary: L;
+  points: L<string[]>;
   icon: "document" | "code" | "monitor" | "arrow";
 };
 
@@ -64,41 +84,73 @@ export const services: Service[] = [
   {
     slug: "brand-identity",
     index: "01",
-    title: "Brand & Identity",
-    text: "Strategia, design e linguaggio visivo per dare forma alla tua identità.",
-    summary:
-      "Un sistema visivo che tiene insieme nome, segno, colore e tono. Lo costruiamo per durare oltre il sito: linee guida chiare, applicabili su prodotto, contenuti e comunicazione.",
-    points: ["Strategia di marca", "Identità visiva", "Linguaggio e tono", "Linee guida"],
+    title: { it: "Brand e identità", en: "Brand & Identity" },
+    text: {
+      it: "Strategia, design e linguaggio visivo per dare forma alla tua identità.",
+      en: "Strategy, design and visual language to shape your identity.",
+    },
+    summary: {
+      it: "Un sistema visivo che tiene insieme nome, segno, colore e tono. Lo costruiamo per durare oltre il sito: linee guida chiare, applicabili su prodotto, contenuti e comunicazione.",
+      en: "A visual system that holds name, mark, colour and tone together. Built to last beyond the website: clear guidelines that work across product, content and communication.",
+    },
+    points: {
+      it: ["Strategia di marca", "Identità visiva", "Linguaggio e tono", "Linee guida"],
+      en: ["Brand strategy", "Visual identity", "Language and tone", "Guidelines"],
+    },
     icon: "document",
   },
   {
     slug: "product-development",
     index: "02",
-    title: "Product Development",
-    text: "Web e mobile app, performance, scalabilità e soluzioni su misura.",
-    summary:
-      "Progettiamo e costruiamo prodotti digitali su misura. Interfaccia, codice e performance restano nello stesso percorso, dal primo schermo al rilascio.",
-    points: ["Web e mobile app", "Architettura", "Design di prodotto", "Performance"],
+    title: { it: "Sviluppo prodotto", en: "Product Development" },
+    text: {
+      it: "Web e mobile app, performance, scalabilità e soluzioni su misura.",
+      en: "Web and mobile apps, performance, scalability and custom solutions.",
+    },
+    summary: {
+      it: "Progettiamo e costruiamo prodotti digitali su misura. Interfaccia, codice e performance restano nello stesso percorso, dal primo schermo al rilascio.",
+      en: "We design and build custom digital products. Interface, code and performance stay on the same path, from the first screen to release.",
+    },
+    points: {
+      it: ["Web e mobile app", "Architettura", "Design di prodotto", "Performance"],
+      en: ["Web and mobile apps", "Architecture", "Product design", "Performance"],
+    },
     icon: "code",
   },
   {
     slug: "visual-communication",
     index: "03",
-    title: "Visual Communication",
-    text: "Siti, contenuti, motion e direzione creativa per raccontare il tuo brand.",
-    summary:
-      "Direzione visiva per raccontare il brand fuori e dentro il prodotto. Siti, motion e contenuti con la stessa gerarchia e lo stesso carattere.",
-    points: ["Siti", "Motion", "Direzione creativa", "Contenuti"],
+    title: { it: "Comunicazione visiva", en: "Visual Communication" },
+    text: {
+      it: "Siti, contenuti, motion e direzione creativa per raccontare il tuo brand.",
+      en: "Websites, content, motion and creative direction to tell your brand's story.",
+    },
+    summary: {
+      it: "Direzione visiva per raccontare il brand fuori e dentro il prodotto. Siti, motion e contenuti con la stessa gerarchia e lo stesso carattere.",
+      en: "Visual direction to tell the brand's story inside and outside the product. Websites, motion and content with the same hierarchy and character.",
+    },
+    points: {
+      it: ["Siti", "Motion", "Direzione creativa", "Contenuti"],
+      en: ["Websites", "Motion", "Creative direction", "Content"],
+    },
     icon: "monitor",
   },
   {
     slug: "growth-support",
     index: "04",
-    title: "Growth & Support",
-    text: "Ottimizzazione, manutenzione e affiancamento continuo.",
-    summary:
-      "Dopo il lancio restiamo vicini. Misuriamo, sistemiamo e facciamo evolvere quello che abbiamo costruito, senza perdere la qualità del primo rilascio.",
-    points: ["Ottimizzazione", "Manutenzione", "Affiancamento", "Evoluzione"],
+    title: { it: "Crescita e supporto", en: "Growth & Support" },
+    text: {
+      it: "Ottimizzazione, manutenzione e affiancamento continuo.",
+      en: "Optimisation, maintenance and ongoing support.",
+    },
+    summary: {
+      it: "Dopo il lancio restiamo vicini. Misuriamo, sistemiamo e facciamo evolvere quello che abbiamo costruito, senza perdere la qualità del primo rilascio.",
+      en: "After launch we stay close. We measure, refine and evolve what we built, without losing the quality of the first release.",
+    },
+    points: {
+      it: ["Ottimizzazione", "Manutenzione", "Affiancamento", "Evoluzione"],
+      en: ["Optimisation", "Maintenance", "Ongoing support", "Evolution"],
+    },
     icon: "arrow",
   },
 ];
@@ -110,3 +162,5 @@ export function getService(slug: string) {
 export function getProject(slug: string) {
   return projects.find((project) => project.slug === slug);
 }
+
+export type { Locale };

@@ -1,53 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowIcon } from "@/components/icons";
 import { SwapText } from "@/components/swap-text";
-import { studio } from "@/lib/content";
+import { CurrentYear, LocalClock } from "@/components/local-clock";
+import { useLocale } from "@/components/use-locale";
+import { CONTACT_EMAIL } from "@/lib/content";
+import { localize } from "@/lib/i18n";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-const links = [
-  { href: "/#work", label: "Work" },
-  { href: "/about", label: "About" },
-  { href: "/#services", label: "Services" },
-  { href: "/journal", label: "Journal" },
-];
-
-const ticker = [
-  "Design",
-  "Development",
-  "Visual Communication",
-  "Brand",
-  "Product",
-  "Strategy",
-];
 
 export function SiteFooter() {
   const footer = useRef<HTMLElement>(null);
   const shift = useRef<HTMLDivElement>(null);
-  const [time, setTime] = useState("--:--:--");
-  const [year, setYear] = useState(2026);
-
-  useEffect(() => {
-    const format = () =>
-      new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      }).format(new Date());
-
-    const paint = () => setTime(format());
-    paint();
-    setYear(new Date().getFullYear());
-    const id = window.setInterval(paint, 1000);
-    return () => window.clearInterval(id);
-  }, []);
+  const { lang, t } = useLocale();
+  const f = t.footer;
+  const links = [
+    { href: localize("/#work", lang), label: t.nav.work },
+    { href: localize("/about", lang), label: t.nav.about },
+    { href: localize("/#services", lang), label: t.nav.services },
+    { href: localize("/journal", lang), label: t.nav.journal },
+  ];
 
   useGSAP(
     () => {
@@ -158,7 +135,7 @@ export function SiteFooter() {
           <div className="marquee-track">
             {[0, 1].map((copy) => (
               <div className="marquee-group" key={copy}>
-                {ticker.map((item) => (
+                {f.ticker.map((item) => (
                   <span key={`${copy}-${item}`}>
                     {item}
                     <i />
@@ -172,40 +149,44 @@ export function SiteFooter() {
 
       <div className="contact-main">
         <p className="kicker" data-rise>
-          New business
+          {f.kicker}
         </p>
         <h2 className="contact-title">
           <span className="magnetic" data-magnetic>
             <a
-              href={`mailto:${studio.email}`}
-              data-cursor="Write"
+              href={`mailto:${CONTACT_EMAIL}`}
+              data-cursor="Mail"
             >
               <span className="line-mask">
-                <span data-mask="footer">Let&apos;s talk.</span>
+                <span data-mask="footer">{f.title}</span>
               </span>
               <ArrowIcon />
             </a>
           </span>
         </h2>
         <p className="contact-lead" data-rise>
-          Tell us about the brand, the product, or the problem.
+          {f.lead}
         </p>
+        <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`} data-rise data-cursor="Mail">
+          <span>{t.cta}</span>
+          <ArrowIcon />
+        </a>
         <span className="draw-rule" data-draw />
       </div>
 
       <div className="contact-grid">
         <div className="contact-block" data-rise>
-          <p className="kicker">Studio</p>
-          <p className="contact-strong">Independent</p>
-          <p>Available for new projects</p>
+          <p className="kicker">{f.studio}</p>
+          <p className="contact-strong">{f.independent}</p>
+          <p>{f.available}</p>
           <p className="clock">
-            <span>{time}</span>
-            Local time
+            <LocalClock />
+            {f.localTime}
           </p>
         </div>
 
         <nav className="contact-block" data-rise aria-label="Footer">
-          <p className="kicker">Index</p>
+          <p className="kicker">{f.index}</p>
           <div className="contact-index">
             {links.map((link) => (
               <Link key={link.href} href={link.href}>
@@ -216,9 +197,9 @@ export function SiteFooter() {
         </nav>
 
         <div className="contact-block" data-rise>
-          <p className="kicker">Contact</p>
-          <a className="mail-link" href={`mailto:${studio.email}`} data-cursor="Write">
-            {studio.email}
+          <p className="kicker">{f.contact}</p>
+          <a className="mail-link" href={`mailto:${CONTACT_EMAIL}`} data-cursor="Mail">
+            {CONTACT_EMAIL}
           </a>
           <span className="magnetic" data-magnetic>
             <button
@@ -230,7 +211,7 @@ export function SiteFooter() {
                 else window.scrollTo({ top: 0 });
               }}
             >
-              <SwapText>Back to top</SwapText>
+              <SwapText>{f.top}</SwapText>
               <ArrowIcon />
             </button>
           </span>
@@ -238,8 +219,8 @@ export function SiteFooter() {
       </div>
 
       <div className="contact-meta">
-        <span>© {year} CTRL®</span>
-        <span>Design. Development. Visual Communication.</span>
+        <span>© <CurrentYear /> CTRL®</span>
+        <span>{f.tagline}</span>
       </div>
 
       <div className="footer-mark" aria-hidden="true">

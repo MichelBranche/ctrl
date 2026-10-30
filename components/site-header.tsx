@@ -8,19 +8,23 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowIcon } from "@/components/icons";
 import { SwapText } from "@/components/swap-text";
 import { Wordmark } from "@/components/wordmark";
+import { LangSwitch } from "@/components/lang-switch";
+import { useLocale } from "@/components/use-locale";
+import { localize } from "@/lib/i18n";
+import { CONTACT_EMAIL } from "@/lib/content";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-const links = [
-  { href: "/#work", label: "Work" },
-  { href: "/about", label: "About" },
-  { href: "/#services", label: "Services" },
-  { href: "/journal", label: "Journal" },
-];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const header = useRef<HTMLElement>(null);
+  const { lang, t } = useLocale();
+  const links = [
+    { href: localize("/#work", lang), label: t.nav.work },
+    { href: localize("/about", lang), label: t.nav.about },
+    { href: localize("/#services", lang), label: t.nav.services },
+    { href: localize("/journal", lang), label: t.nav.journal },
+  ];
 
   useGSAP(() => {
     const bar = header.current;
@@ -55,7 +59,7 @@ export function SiteHeader() {
 
   return (
     <header className="site-header" data-header ref={header}>
-      <Link href="/" className="logo-link" aria-label="CTRL home">
+      <Link href={localize("/", lang)} className="logo-link" aria-label="CTRL home">
         <Wordmark />
       </Link>
 
@@ -68,11 +72,12 @@ export function SiteHeader() {
       </nav>
 
       <div className="header-end">
+        <LangSwitch />
         <span className="magnetic" data-magnetic>
-          <Link href="/#contact" className="talk-link" data-cursor="Talk">
-            <SwapText>Let&apos;s talk</SwapText>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="talk-link" data-cursor="Mail">
+            <SwapText>{t.ctaShort}</SwapText>
             <ArrowIcon />
-          </Link>
+          </a>
         </span>
         <button
           type="button"
@@ -81,7 +86,7 @@ export function SiteHeader() {
           aria-controls="mobile-nav"
           onClick={() => setOpen((value) => !value)}
         >
-          {open ? "Close" : "Menu"}
+          {open ? t.close : t.menu}
         </button>
       </div>
 
@@ -92,9 +97,9 @@ export function SiteHeader() {
               <SwapText>{link.label}</SwapText>
             </Link>
           ))}
-          <Link href="/#contact" onClick={() => setOpen(false)}>
-            Let&apos;s talk
-          </Link>
+          <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => setOpen(false)}>
+            {t.cta}
+          </a>
         </nav>
       ) : null}
     </header>
