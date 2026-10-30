@@ -10,6 +10,8 @@ type Tilt = { rx: (value: number) => void; ry: (value: number) => void };
 
 export function Micro() {
   useGSAP((_, contextSafe) => {
+    if (!contextSafe) return;
+
     const fine = window.matchMedia("(pointer: fine)").matches;
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",

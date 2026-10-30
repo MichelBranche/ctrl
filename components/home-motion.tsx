@@ -12,6 +12,8 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
 
   useGSAP(
     (_, contextSafe) => {
+      if (!contextSafe) return;
+
       const reduce = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
