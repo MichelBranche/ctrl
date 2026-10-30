@@ -132,7 +132,7 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
           });
 
           /* ---------- Image reveals: clip wipe + scale-down from 1.15 ---------- */
-          all(scope, ".h-portrait-img, .h-feature-media, .h-card-media, .h-why-bg").forEach((media) => {
+          all(scope, ".h-portrait-img, .h-why-bg").forEach((media) => {
             const img = media.querySelector<HTMLElement>("img, .h-placeholder");
             const tl = gsap.timeline({ scrollTrigger: { trigger: media, start: "top 88%" } });
             tl.fromTo(
@@ -151,19 +151,6 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
               scrollTrigger: { trigger: img.parentElement, start: "top bottom", end: "bottom top", scrub: true },
             });
           });
-
-          /* ---------- Project cards stagger ---------- */
-          const cards = all(scope, ".h-cards .work-tilt");
-          if (cards.length) {
-            gsap.fromTo(cards, { y: 60, opacity: 0 }, {
-              y: 0,
-              opacity: 1,
-              duration: 1,
-              stagger: 0.12,
-              ease: "power3.out",
-              scrollTrigger: { trigger: ".h-cards", start: "top 85%" },
-            });
-          }
 
           /* ---------- Perché: light sweep across the photo ---------- */
           const why = scope.querySelector<HTMLElement>(".h-why-bg");

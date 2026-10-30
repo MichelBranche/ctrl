@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { TiltCard } from "@/components/tilt-card";
+import { HoverProjects } from "@/components/hover-projects";
 import { homeFeatured, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import "./home.css";
@@ -19,8 +19,6 @@ function Arrow({ className = "" }: { className?: string }) {
 
 export function HomePage({ lang }: { lang: Locale }) {
   const h = dict[lang].home;
-  const [featured, ...rest] = homeFeatured;
-  const total = String(homeFeatured.length).padStart(2, "0");
 
   return (
     <>
@@ -139,48 +137,16 @@ export function HomePage({ lang }: { lang: Locale }) {
                 {h.allProjects} <Arrow />
               </Link>
             </div>
-            <div className="h-feature">
-              <Link href={localize(featured.href, lang)} className="h-feature-media" data-reveal>
-                {featured.image ? (
-                  <Image src={featured.image} alt="" fill sizes="55vw" className="h-img" />
-                ) : (
-                  <span className="h-placeholder" aria-hidden="true" />
-                )}
-              </Link>
-              <div className="h-feature-copy" data-reveal>
-                <p className="h-small h-counter-inline">
-                  {featured.index} <span>/ {total}</span>
-                </p>
-                <h3 className="h-feature-title">{featured.title[lang]}</h3>
-                <p className="h-feature-cat h-small">{featured.category[lang]}</p>
-                <p className="h-feature-text">{featured.description[lang]}</p>
-                <Link href={localize(featured.href, lang)} className="h-small h-link">
-                  {h.discover} <Arrow />
-                </Link>
-              </div>
-            </div>
-            <div className="h-cards">
-              {rest.map((item) => (
-                <TiltCard key={item.index}>
-                  <Link href={localize(item.href, lang)} className="h-card">
-                    <div className="work-media h-card-media">
-                      {item.image ? (
-                        <Image src={item.image} alt="" fill sizes="33vw" className="h-img" />
-                      ) : (
-                        <span className="h-placeholder" aria-hidden="true" />
-                      )}
-                    </div>
-                    <span className="h-small h-card-num">
-                      {item.index} <span>/ {total}</span>
-                    </span>
-                    <div className="work-caption h-card-caption">
-                      <strong>{item.title[lang]}</strong>
-                      <span className="h-small">{item.category[lang]}</span>
-                    </div>
-                  </Link>
-                </TiltCard>
-              ))}
-            </div>
+            <HoverProjects
+              defaultName="CTRL®"
+              items={homeFeatured.map((item) => ({
+                key: item.index,
+                index: item.index,
+                label: item.title[lang],
+                href: localize(item.href, lang),
+                image: item.image,
+              }))}
+            />
           </section>
 
           {/* 4. PERCHE CTRL */}
