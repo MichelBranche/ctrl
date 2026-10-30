@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowIcon } from "@/components/icons";
 import { SwapText } from "@/components/swap-text";
 import { Wordmark } from "@/components/wordmark";
 import { LangSwitch } from "@/components/lang-switch";
@@ -21,10 +20,11 @@ export function SiteHeader() {
   const { lang, t } = useLocale();
   const links = [
     { href: localize("/#work", lang), label: t.nav.work },
+    { href: localize("/#services", lang), label: t.nav.services },
     { href: localize("/about", lang), label: t.nav.about },
     { href: localize("/team", lang), label: t.nav.team },
-    { href: localize("/#services", lang), label: t.nav.services },
     { href: localize("/journal", lang), label: t.nav.journal },
+    { href: localize("/#contact", lang), label: t.nav.contact },
   ];
 
   useGSAP(() => {
@@ -42,15 +42,6 @@ export function SiteHeader() {
       },
     });
 
-    const services = document.querySelector("#services");
-    if (!services) return;
-
-    ScrollTrigger.create({
-      trigger: services,
-      start: "top top+=70",
-      end: "bottom top+=70",
-      onToggle: (self) => bar.classList.toggle("is-ink", self.isActive),
-    });
   }, { scope: header });
 
   useEffect(() => {
@@ -83,12 +74,6 @@ export function SiteHeader() {
           <kbd>K</kbd>
         </button>
         <LangSwitch />
-        <span className="magnetic" data-magnetic>
-          <a href={`mailto:${CONTACT_EMAIL}`} className="talk-link">
-            <SwapText>{t.ctaShort}</SwapText>
-            <ArrowIcon />
-          </a>
-        </span>
         <button
           type="button"
           className="menu-toggle"
