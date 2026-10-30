@@ -182,7 +182,10 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
 
           /* ---------- Stats count up (truthful values) ---------- */
           all(scope, ".h-stat dt").forEach((dt) => {
-            const raw = dt.textContent ?? "";
+            // keep the real value even if this effect re-runs mid-count
+            if (!dt.dataset.value) dt.dataset.value = dt.textContent ?? "";
+            const raw = dt.dataset.value;
+            dt.textContent = raw;
             const n = parseInt(raw, 10);
             const suffix = raw.replace(/^\d+/, "");
             if (Number.isNaN(n)) {
@@ -193,13 +196,20 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
               return;
             }
             const o = { v: 0 };
-            gsap.to(o, {
-              v: n,
-              duration: n > 10 ? 1.6 : 1,
-              ease: "power2.out",
-              scrollTrigger: { trigger: dt, start: "top 90%" },
-              onUpdate: () => { dt.textContent = `${Math.round(o.v)}${suffix}`; },
-              onComplete: () => { dt.textContent = raw; },
+            ScrollTrigger.create({
+              trigger: dt,
+              start: "top 92%",
+              once: true,
+              onEnter: () => {
+                gsap.to(o, {
+                  v: n,
+                  duration: n > 10 ? 1.6 : 1,
+                  ease: "power2.out",
+                  onUpdate: () => { dt.textContent = `${Math.round(o.v)}${suffix}`; },
+                  onComplete: () => { dt.textContent = raw; },
+                  onInterrupt: () => { dt.textContent = raw; },
+                });
+              },
             });
           });
 
@@ -238,6 +248,7 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
 
           return () => {
             sweep?.remove();
+            all(scope, ".h-stat dt").forEach((dt) => { if (dt.dataset.value) dt.textContent = dt.dataset.value; });
             splits.forEach((s) => s.revert());
           };
         });
