@@ -39,7 +39,6 @@ export const dict = {
       empty: "Nessun risultato",
       home: "Home",
     },
-    heroMeta: { place: "Italia | Remoto", since: "Studio indipendente", time: "Ora locale" },
     home: {
       kicker: "Studio indipendente di creative technology",
       title: ["Dall'identità", "al prodotto.", "Un unico partner."],
@@ -123,7 +122,6 @@ export const dict = {
       empty: "No results",
       home: "Home",
     },
-    heroMeta: { place: "Italy | Remote", since: "Independent studio", time: "Local time" },
     home: {
       kicker: "Independent creative technology studio",
       title: ["From identity", "to product.", "One partner."],

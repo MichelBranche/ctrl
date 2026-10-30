@@ -24,7 +24,7 @@ export const projects: Project[] = [
     slug: "altura",
     name: "Maison Altura",
     meta: { it: "Concept | Identità e sito per cantina", en: "Concept | Winery identity and website" },
-    image: "/images/work/altura.svg",
+    image: "/images/altura.jpg",
     url: "https://demo-vini.vercel.app",
     place: { it: "Cantina", en: "Winery" },
     summary: {
@@ -36,7 +36,7 @@ export const projects: Project[] = [
     slug: "villa-matilde",
     name: "Villa Matilde",
     meta: { it: "Concept | Sito per hotel in villa storica", en: "Concept | Historic villa hotel website" },
-    image: "/images/work/villa-matilde.svg",
+    image: null,
     url: "https://demo-sina-villa-matilde.vercel.app",
     place: { it: "Hospitality", en: "Hospitality" },
     summary: {
@@ -48,7 +48,7 @@ export const projects: Project[] = [
     slug: "omama",
     name: "OMAMA",
     meta: { it: "Concept | Sito per social hotel, Aosta", en: "Concept | Social hotel website, Aosta" },
-    image: "/images/work/omama.svg",
+    image: null,
     url: "https://demo-omama.vercel.app",
     place: { it: "Aosta", en: "Aosta" },
     summary: {
@@ -60,7 +60,7 @@ export const projects: Project[] = [
     slug: "hotel-bijou",
     name: "Hotel Bijou",
     meta: { it: "Concept | Sito per boutique hotel, Saint-Vincent", en: "Concept | Boutique hotel website, Saint-Vincent" },
-    image: "/images/work/hotel-bijou.svg",
+    image: null,
     url: "https://demo-hotelbijou.vercel.app",
     place: { it: "Saint-Vincent", en: "Saint-Vincent" },
     summary: {

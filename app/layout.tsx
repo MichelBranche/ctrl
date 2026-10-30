@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Geist, JetBrains_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import { CommandMenu } from "@/components/command-menu";
 import { Cursor } from "@/components/cursor";
 import { IntroLoader } from "@/components/intro-loader";
@@ -14,18 +14,6 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
-const display = Bricolage_Grotesque({
-  variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["opsz", "wdth"],
-});
-
-const mono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
-
 export const metadata: Metadata = {
   title: {
     default: dict.it.meta.title,
@@ -37,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" className={`js ${geist.variable} ${display.variable} ${mono.variable}`}>
+    <html lang="it" className={`js ${geist.variable}`}>
       <body className={geist.className}>
         <SmoothScroll />
         <IntroLoader />
