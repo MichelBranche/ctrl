@@ -5,7 +5,6 @@ import { ArrowIcon, ServiceIcon } from "@/components/icons";
 import { ProjectCard } from "@/components/project-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { LocalClock } from "@/components/local-clock";
 import { CONTACT_EMAIL, projects, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
 
@@ -17,31 +16,24 @@ export function HomePage({ lang }: { lang: Locale }) {
       <SiteHeader />
       <HomeMotion>
         <main>
-          <section className="hero hero-x" data-hero id="top">
-            <div className="hero-meta mono" data-load="kicker">
-              <span>CTRL® | 2026</span>
-              <span>{h.kicker}</span>
-              <span>{t.heroMeta.place}</span>
-              <span className="hero-clock">
-                {t.heroMeta.time} <LocalClock />
-              </span>
-            </div>
-
-            <h1 className="hero-title display">
-              {h.title.map((line, i) => (
-                <span className={`line-mask hero-line hero-line-${i + 1}`} key={line}>
-                  <span data-mask="hero">{line}</span>
-                </span>
-              ))}
-            </h1>
-
-            <div className="hero-foot">
+          <section className="hero" data-hero id="top">
+            <div className="hero-copy">
+              <p className="kicker" data-load="kicker">
+                {h.kicker}
+              </p>
+              <h1 className="hero-title">
+                {h.title.map((line) => (
+                  <span className="line-mask" key={line}>
+                    <span data-mask="hero">{line}</span>
+                  </span>
+                ))}
+              </h1>
               <p className="hero-lead" data-load="lead">
                 {h.lead}
               </p>
               <div className="hero-actions" data-load="cta">
                 <span className="magnetic" data-magnetic>
-                  <a href={`mailto:${CONTACT_EMAIL}`} className="cta-button cta-accent" data-cursor="Mail">
+                  <a href={`mailto:${CONTACT_EMAIL}`} className="cta-button" data-cursor="Mail">
                     <span>{t.cta}</span>
                     <ArrowIcon />
                   </a>
@@ -60,15 +52,30 @@ export function HomePage({ lang }: { lang: Locale }) {
                   alt={h.heroAlt}
                   fill
                   priority
-                  sizes="100vw"
+                  sizes="(max-width: 860px) 100vw, 48vw"
                 />
               </div>
-              <div className="hero-visual-tags mono" data-load="scroll">
-                {h.posterTop.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
+
+              <div className="poster-slot">
+                <div className="poster-float" data-float>
+                  <figure className="poster" data-load="poster">
+                    <Image src="/images/mountain.jpg" alt="" fill priority sizes="320px" />
+                    <span className="poster-rule" aria-hidden="true" />
+                    <div className="poster-copy poster-copy-top">
+                      {h.posterTop.map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
+                    <div className="poster-copy poster-copy-bottom">
+                      {h.posterBottom.map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
+                  </figure>
+                </div>
               </div>
-              <a href="#services" className="scroll-hint mono">
+
+              <a href="#services" className="scroll-hint" data-load="scroll">
                 <span>{h.scroll}</span>
                 <i />
               </a>
@@ -80,7 +87,7 @@ export function HomePage({ lang }: { lang: Locale }) {
               <p className="kicker kicker-ink" data-reveal>
                 {h.servicesKicker}
               </p>
-              <h2 className="display">
+              <h2>
                 {h.servicesTitle.map((line) => (
                   <span className="line-mask" key={line}>
                     <span data-mask="scroll">{line}</span>
@@ -105,7 +112,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                     <span>{service.index}</span>
                     <ServiceIcon name={service.icon} />
                   </div>
-                  <h3 className="display">{service.title[lang]}</h3>
+                  <h3>{service.title[lang]}</h3>
                   <p>{service.text[lang]}</p>
                   <span className="service-go">
                     {h.view}
