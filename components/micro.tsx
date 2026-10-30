@@ -6,7 +6,6 @@ import { gsap } from "gsap";
 gsap.registerPlugin(useGSAP);
 
 type Move = { x: (value: number) => void; y: (value: number) => void };
-type Tilt = { rx: (value: number) => void; ry: (value: number) => void };
 
 export function Micro() {
   useGSAP((_, contextSafe) => {
@@ -19,8 +18,6 @@ export function Micro() {
     if (!fine || reduce) return;
 
     const magnets = new WeakMap<HTMLElement, Move>();
-    const tilts = new WeakMap<HTMLElement, Tilt>();
-    let tilted: HTMLElement | null = null;
 
     const magnetFor = contextSafe((el: HTMLElement) => {
       let move = magnets.get(el);
@@ -32,25 +29,6 @@ export function Micro() {
         magnets.set(el, move);
       }
       return move;
-    });
-
-    const tiltFor = contextSafe((el: HTMLElement) => {
-      let tilt = tilts.get(el);
-      if (!tilt) {
-        gsap.set(el, { transformPerspective: 800 });
-        tilt = {
-          rx: gsap.quickTo(el, "rotationX", {
-            duration: 0.55,
-            ease: "power3.out",
-          }),
-          ry: gsap.quickTo(el, "rotationY", {
-            duration: 0.55,
-            ease: "power3.out",
-          }),
-        };
-        tilts.set(el, tilt);
-      }
-      return tilt;
     });
 
     const onMove = contextSafe((event: PointerEvent) => {
@@ -74,23 +52,6 @@ export function Micro() {
           ),
         );
       }
-
-      const card = target?.closest<HTMLElement>("[data-tilt]");
-      const media = card?.querySelector<HTMLElement>(".tilt-target");
-      if (tilted && tilted !== media) {
-        const previous = tilts.get(tilted);
-        previous?.rx(0);
-        previous?.ry(0);
-      }
-      tilted = media ?? null;
-      if (!card || !media) return;
-
-      const bounds = card.getBoundingClientRect();
-      const tilt = tiltFor(media);
-      const px = (event.clientX - bounds.left) / bounds.width - 0.5;
-      const py = (event.clientY - bounds.top) / bounds.height - 0.5;
-      tilt.ry(px * 7);
-      tilt.rx(py * -5);
     });
 
     const onLeave = contextSafe((event: PointerEvent) => {
