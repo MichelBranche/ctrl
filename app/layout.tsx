@@ -4,7 +4,6 @@ import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { CtrlAssistant } from "@/components/ctrl-assistant";
 import { CommandMenu } from "@/components/command-menu";
-import { IntroLoader } from "@/components/intro-loader";
 import { PageTransition } from "@/components/page-transition";
 import { BackToTop } from "@/components/back-to-top";
 import { Micro } from "@/components/micro";
@@ -37,19 +36,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" suppressHydrationWarning className={`js ${geist.variable} ${satoshi.variable}`}>
+    <html lang="it" suppressHydrationWarning className={`js pt-booting ${geist.variable} ${satoshi.variable}`}>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{if(sessionStorage.getItem('ctrl-intro')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('skip-intro')}catch(e){}",
-          }}
-        />
+        <noscript>
+          <style>{".pt-root[data-boot]{display:none!important}"}</style>
+        </noscript>
       </head>
       <body className={geist.className}>
         <SmoothScroll />
         <BackToTop />
-        <IntroLoader />
         <Micro />
         <ScrollProgress />
         <CommandMenu />

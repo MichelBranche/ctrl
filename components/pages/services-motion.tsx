@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import { playWhenReady } from "@/lib/ready";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -21,7 +22,8 @@ export function ServicesMotion() {
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       // Hero: chars rise through a mask, then tag, lead and CTA fade up.
       const title = root.querySelector<HTMLElement>("[data-s-split]");
-      const intro = gsap.timeline({ delay: 0.15 });
+      const intro = gsap.timeline({ delay: 0.15, paused: true });
+      playWhenReady(intro);
       if (title) {
         const split = SplitText.create(title, { type: "words,chars", mask: "words" });
         intro.from(split.chars, { yPercent: 115, duration: 1.1, ease: "power4.out", stagger: 0.035 }, 0.1);

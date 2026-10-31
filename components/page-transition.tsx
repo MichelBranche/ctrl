@@ -13,6 +13,46 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 const COLS = 5;
 const WAIT_MS = 4000;
+const BOOT_MIN_MS = 600;
+const BOOT_MAX_MS = 2500;
+
+/** Lets the page's own entrance motion start (home hero, page titles, scroll reveals). */
+function signalReady() {
+  const html = document.documentElement;
+  if (html.classList.contains("is-ready")) return;
+  html.classList.add("is-ready");
+  window.dispatchEvent(new Event("ctrl:ready"));
+}
+
+/** Mascot pops in with a squish once the first-load cover has lifted. */
+function popMascot() {
+  document.documentElement.classList.remove("pt-booting");
+  const el = document.querySelector<HTMLElement>(".ca-root");
+  if (!el) return;
+  gsap.fromTo(
+    el,
+    { scale: 0, yPercent: 40, transformOrigin: "100% 100%" },
+    {
+      keyframes: [
+        { scale: 1.12, scaleY: 0.86, yPercent: 0, duration: 0.32, ease: "power3.out" },
+        { scale: 0.96, scaleY: 1.06, duration: 0.16, ease: "sine.inOut" },
+        { scale: 1, scaleY: 1, duration: 0.3, ease: "elastic.out(1, 0.5)" },
+      ],
+      clearProps: "transform",
+    },
+  );
+}
+
+/** Fonts loaded (at least BOOT_MIN_MS, at most BOOT_MAX_MS after start). */
+function bootReady() {
+  const start = performance.now();
+  const fonts = document.fonts?.ready ?? Promise.resolve();
+  const loaded = document.readyState === "complete" ? Promise.resolve() : new Promise<void>((r) => window.addEventListener("load", () => r(), { once: true }));
+  const ready = Promise.all([fonts, loaded]).then(
+    () => new Promise<void>((r) => window.setTimeout(r, Math.max(0, BOOT_MIN_MS - (performance.now() - start)))),
+  );
+  return Promise.race([ready, new Promise<void>((r) => window.setTimeout(r, BOOT_MAX_MS))]);
+}
 
 /** Destination label shown on the cover: the page name in the destination language. */
 function labelFor(path: string) {
@@ -157,17 +197,56 @@ export function PageTransition() {
         finish();
       });
 
+      // First load: the cover is SSR'd already covering (data-boot); letters rise, then it lifts.
+      const boot = contextSafe(async () => {
+        busy.current = true;
+        window.__lenis?.stop();
+        el.setAttribute("data-active", "");
+        const ready = bootReady();
+        if (reduce.matches) {
+          await ready;
+          signalReady();
+          await new Promise<void>((resolve) => gsap.to(el, { autoAlpha: 0, duration: 0.25, onComplete: resolve }));
+          el.removeAttribute("data-boot");
+          finish();
+          popMascot();
+          return;
+        }
+        text.textContent = labelFor(window.location.pathname);
+        const split = SplitText.create(text, { type: "chars", mask: "chars" });
+        gsap.set(el, { autoAlpha: 1 });
+        gsap.set(cols, { yPercent: 0 });
+        gsap.set(strip, { yPercent: 0, autoAlpha: 1 });
+        gsap.set(meta, { autoAlpha: 0, y: 12 });
+        el.removeAttribute("data-boot");
+        const enter = gsap.timeline();
+        enter
+          .from(split.chars, { yPercent: 110, duration: 0.5, ease: "power3.out", stagger: 0.025 }, 0.05)
+          .to(meta, { autoAlpha: 1, y: 0, duration: 0.35, ease: "power2.out" }, 0.15);
+        await Promise.all([ready, new Promise<void>((resolve) => enter.eventCallback("onComplete", () => resolve()))]);
+        if (!window.location.hash) toTop();
+        const reveal = gsap.timeline({ defaults: { ease: "power3.inOut" } });
+        reveal
+          .to(split.chars, { yPercent: -110, duration: 0.26, ease: "power2.in", stagger: 0.012 }, 0)
+          .to(meta, { autoAlpha: 0, duration: 0.2 }, 0)
+          .to(cols, { yPercent: -100, duration: 0.5, stagger: 0.04 }, 0.12)
+          .to(strip, { yPercent: -100, duration: 0.45 }, 0.3)
+          // Hero entrance starts as the columns lift, so it lands as the page appears.
+          .add(signalReady, 0.3);
+        await new Promise<void>((resolve) => reveal.eventCallback("onComplete", () => resolve()));
+        split.revert();
+        text.textContent = "";
+        finish();
+        popMascot();
+      });
+      if (el.hasAttribute("data-boot")) void boot();
+
       const onClick = (event: MouseEvent) => {
         const href = targetOf(event);
         if (!href) return;
         // Next's Link skips its own navigation when the default is prevented; its onClick (menu close) still runs.
         event.preventDefault();
         if (busy.current) return;
-        // Don't stack on the first-visit intro.
-        if (document.documentElement.classList.contains("intro-running")) {
-          router.push(href);
-          return;
-        }
         void run(href);
       };
 
@@ -178,7 +257,7 @@ export function PageTransition() {
   );
 
   return (
-    <div className="pt-root" ref={root} aria-hidden="true">
+    <div className="pt-root" ref={root} aria-hidden="true" data-boot="">
       <div className="pt-strip" />
       {Array.from({ length: COLS }, (_, i) => (
         <div className="pt-col" key={i} />

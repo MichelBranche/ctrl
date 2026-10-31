@@ -14,6 +14,13 @@
   transition: none;
 }
 
+/* First load: SSR'd already covering, so there is no flash of content before JS. */
+.pt-root[data-boot] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .pt-root[data-active] {
   pointer-events: auto;
   cursor: progress;

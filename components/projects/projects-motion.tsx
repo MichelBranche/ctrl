@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import { playWhenReady } from "@/lib/ready";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -16,7 +17,8 @@ export function ProjectsMotion() {
     const mm = gsap.matchMedia();
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
-      const intro = gsap.timeline({ delay: 0.15 });
+      const intro = gsap.timeline({ delay: 0.15, paused: true });
+      playWhenReady(intro);
       const title = root.querySelector<HTMLElement>("[data-p-split]");
       if (title) {
         const split = SplitText.create(title, { type: "words,chars", mask: "words" });

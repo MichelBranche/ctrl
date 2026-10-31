@@ -128,119 +128,6 @@ input[type="radio"] {
   pointer-events: none;
 }
 
-.intro {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  color: #f5f4f1;
-  pointer-events: auto;
-}
-
-html.skip-intro .intro {
-  display: none;
-}
-
-.intro-panel {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 50.5%;
-  background: var(--ink);
-  will-change: transform;
-}
-.intro-panel-top { top: 0; }
-.intro-panel-bottom { bottom: 0; }
-
-.intro-beam {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  margin-top: -1px;
-  background: linear-gradient(90deg, transparent, #fff 30%, #ffd9cc 50%, #fff 70%, transparent);
-  box-shadow: 0 0 24px 6px rgba(255, 236, 220, 0.55), 0 0 80px 20px rgba(255, 74, 28, 0.25);
-  transform: scaleX(0);
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-.intro-center {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 2.2rem;
-}
-
-.intro-keys {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  perspective: 600px;
-}
-
-.intro-glow {
-  position: absolute;
-  inset: -40% -20%;
-  background: radial-gradient(closest-side, rgba(255, 74, 28, 0.35), transparent);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.intro-key {
-  --key-depth: 6px;
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-width: 4.6rem;
-  height: 4.6rem;
-  padding: 0 1rem;
-  border: 1px solid #3a3a38;
-  border-radius: 0.9rem;
-  background: linear-gradient(180deg, #232321, #151514);
-  box-shadow: 0 var(--key-depth) 0 #050505, 0 calc(var(--key-depth) + 10px) 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  font-size: 1.35rem;
-  letter-spacing: 0.02em;
-  will-change: transform;
-}
-.intro-key-wide { min-width: 7.5rem; }
-.intro-key[data-key="k"] { color: var(--accent, #ff4a1c); }
-
-.intro-plus {
-  color: #777;
-  font-size: 1.1rem;
-}
-
-.intro-meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: #9a9893;
-  font-variant-numeric: tabular-nums;
-}
-
-.intro-bar {
-  position: relative;
-  display: block;
-  width: 9rem;
-  height: 1px;
-  background: #2a2a28;
-  overflow: hidden;
-}
-.intro-bar i {
-  position: absolute;
-  inset: 0;
-  background: var(--accent, #ff4a1c);
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
 .line-mask {
   display: block;
   overflow: hidden;
@@ -2444,7 +2331,7 @@ h3,
   .ca-launcher { transition: none; }
 }
 
-html.intro-running .ca-root {
+html.pt-booting .ca-root {
   visibility: hidden;
 }
 
