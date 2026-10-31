@@ -29,6 +29,16 @@ export type ProjectsCopy = {
   others: string;
   count: (n: number) => string;
   categoryMeta: (label: string) => string;
+  sites: {
+    metaDescription: string;
+    filterLabel: string;
+    madeBy: string;
+    creditTitle: string;
+    creditText: string;
+    creditCta: string;
+    visit: string;
+    portfolioTab: string;
+  };
 };
 
 export const projectsCopy: Record<Locale, ProjectsCopy> = {
@@ -61,6 +71,16 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
     others: "Altre categorie",
     count: (n) => (n === 1 ? "1 progetto" : `${n} progetti`),
     categoryMeta: (label) => `${label} | Progetti`,
+    sites: {
+      metaDescription: "Siti web per hospitality, food & wine, cultura e brand, progettati e sviluppati da Michel Branche per CTRL®: Next.js, React e GSAP.",
+      filterLabel: "Filtra i siti per settore",
+      madeBy: "Realizzato da Michel Branche",
+      creditTitle: "Tutti i siti di questa pagina sono firmati Michel Branche.",
+      creditText: "Frontend developer del team CTRL®: design, sviluppo e motion, dal primo schizzo al sito online.",
+      creditCta: "Portfolio di Michel",
+      visit: "Visita il sito",
+      portfolioTab: "(portfolio di Michel Branche, si apre in una nuova scheda)",
+    },
   },
   en: {
     metaTitle: "Projects",
@@ -91,5 +111,15 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
     others: "Other categories",
     count: (n) => (n === 1 ? "1 project" : `${n} projects`),
     categoryMeta: (label) => `${label} | Projects`,
+    sites: {
+      metaDescription: "Websites for hospitality, food & wine, culture and brands, designed and built by Michel Branche for CTRL®: Next.js, React and GSAP.",
+      filterLabel: "Filter sites by sector",
+      madeBy: "Made by Michel Branche",
+      creditTitle: "Every site on this page is made by Michel Branche.",
+      creditText: "Frontend developer on the CTRL® team: design, development and motion, from first sketch to live site.",
+      creditCta: "Michel's portfolio",
+      visit: "Visit the site",
+      portfolioTab: "(Michel Branche's portfolio, opens in a new tab)",
+    },
   },
 };

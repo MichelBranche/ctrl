@@ -105,13 +105,276 @@ export type Project = {
   /** Live site or case URL, opened in a new tab. Optional. */
   url?: string;
   year?: string;
+  /** Sub-group inside the category (WebsiteGroup.slug on /projects/websites). */
+  group?: string;
+  description?: L;
+  /** Short localized context line (city, sector). */
+  place?: L;
+  tech?: string[];
+  /** Built by Michel Branche: shows the credit linking to his portfolio. */
+  byMichel?: boolean;
 };
+
+export const MICHEL_PORTFOLIO = "https://www.michelbranche.it";
+
+export type WebsiteGroup = { slug: string; label: L };
+
+/** Filters on /projects/websites, in display order. */
+export const websiteGroups: WebsiteGroup[] = [
+  { slug: "hospitality", label: { it: "Hospitality", en: "Hospitality" } },
+  { slug: "food", label: { it: "Food & wine", en: "Food & wine" } },
+  { slug: "culture", label: { it: "Cultura & istituzioni", en: "Culture & institutions" } },
+  { slug: "brand", label: { it: "Brand & e-commerce", en: "Brand & e-commerce" } },
+  { slug: "interfaces", label: { it: "Interfacce & tool", en: "Interfaces & tools" } },
+];
 
 // TODO(Michel): add real works here; they appear on /projects/[category]
 // automatically. Example:
 // { slug: "acme", category: "websites", title: { it: "Sito istituzionale", en: "Corporate website" },
 //   client: "Acme Srl", image: "/images/projects/works/acme.webp", url: "https://acme.it", year: "2026" },
-export const projects: Project[] = [];
+/* Websites: real work from michelbranche.it/portfolio (copy condensed from it). */
+export const projects: Project[] = [
+  {
+    slug: "omama",
+    category: "websites",
+    group: "hospitality",
+    title: { it: "OMAMA Social Hotel", en: "OMAMA Social Hotel" },
+    client: "Aosta",
+    place: { it: "Aosta", en: "Aosta" },
+    image: "/images/projects/works/omama.webp",
+    url: "https://demo-omama.vercel.app/", year: "2026",
+    tech: ["Next.js", "GSAP", "Lenis", "Tailwind"],
+    description: {
+      it: "Demo hospitality multilingua: SEO statico su 4 lingue, sezione Instagram curata, mappa interattiva e motion GSAP.",
+      en: "Multilingual hospitality demo: static SEO across 4 languages, a curated Instagram section, an interactive map and GSAP motion.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "villa-matilde",
+    category: "websites",
+    group: "hospitality",
+    title: { it: "Sina Villa Matilde", en: "Sina Villa Matilde" },
+    client: "Canavese",
+    place: { it: "Canavese", en: "Canavese" },
+    image: "/images/projects/works/villa-matilde.webp",
+    url: "https://demo-sina-villa-matilde.vercel.app/", year: "2026",
+    tech: ["React", "Vite", "GSAP", "Lenis"],
+    description: {
+      it: "Demo immersiva per una villa del XVIII secolo diventata hotel: tipografia editoriale, scroll fluido e pagine delle sale.",
+      en: "Immersive demo for an 18th-century villa turned hotel: editorial typography, smooth scroll and room pages.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "sbrano",
+    category: "websites",
+    group: "food",
+    title: { it: "Sbrano", en: "Sbrano" },
+    client: "Torino",
+    place: { it: "Torino", en: "Turin" },
+    image: "/images/projects/works/sbrano.webp",
+    url: "https://demo-sbrano.vercel.app/", year: "2026",
+    tech: ["Next.js", "TypeScript", "GSAP", "Lenis"],
+    description: {
+      it: "Brand e sito per uno smash burger di strada a Vanchiglia: burger builder interattivo, drop in edizione speciale e mappa illustrata.",
+      en: "Brand and site for a street smash burger in Vanchiglia: an interactive burger builder, limited-edition drops and an illustrated map.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "orma",
+    category: "websites",
+    group: "food",
+    title: { it: "Orma", en: "Orma" },
+    client: "Valle d'Aosta",
+    place: { it: "Valle d'Aosta", en: "Aosta Valley" },
+    image: "/images/projects/works/orma.webp",
+    url: "https://demo-caff.vercel.app/", year: "2026",
+    tech: ["React", "Vite", "GSAP", "Lenis"],
+    description: {
+      it: "Landing per una microtorrefazione di specialità: origini, tostatura, selezione e capsule, con layout editoriale.",
+      en: "Landing page for a specialty micro-roastery: origins, roasting, selection and capsules, in an editorial layout.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "maison-altura",
+    category: "websites",
+    group: "food",
+    title: { it: "Maison Altura", en: "Maison Altura" },
+    client: "Cantina alpina",
+    place: { it: "Cantina alpina", en: "Alpine winery" },
+    image: "/images/projects/works/maison-altura.webp",
+    url: "https://demo-vini.vercel.app/", year: "2026",
+    tech: ["React", "Vite", "GSAP", "Lenis"],
+    description: {
+      it: "Demo di cantina di montagna: catalogo vini, storytelling di famiglia, abbinamenti e visite in cantina, in 4 lingue.",
+      en: "Alpine winery demo: wine catalogue, family storytelling, food pairings and cellar visits, in 4 languages.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "caffe-nazionale",
+    category: "websites",
+    group: "food",
+    title: { it: "Caffè Nazionale", en: "Caffè Nazionale" },
+    client: "Paolo Griffa",
+    place: { it: "Paolo Griffa", en: "Paolo Griffa" },
+    image: "/images/projects/works/caffe-nazionale.webp",
+    url: "https://demo-paologriffa.vercel.app/", year: "2026",
+    tech: ["React Router", "GSAP", "Framer Motion"],
+    description: {
+      it: "Sito editoriale multi-pagina per il Caffè Nazionale di Paolo Griffa, con routing SPA e smooth scroll.",
+      en: "Multi-page editorial showcase for Paolo Griffa's Caffè Nazionale, with SPA routing and smooth scroll.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "il-gusto",
+    category: "websites",
+    group: "food",
+    title: { it: "Il Gusto", en: "Il Gusto" },
+    client: "Pizzeria al taglio",
+    place: { it: "Pizzeria al taglio", en: "Pizza by the slice" },
+    image: "/images/projects/works/il-gusto.webp",
+    url: "https://demo-il-gusto.vercel.app/",
+    tech: ["HTML", "CSS", "JavaScript"],
+    description: {
+      it: "Sito statico per una pizzeria al taglio: layout diner-style, mobile-first, CTA verso Deliveroo e WhatsApp.",
+      en: "Static site for a pizza-by-the-slice shop: diner-style layout, mobile-first, Deliveroo and WhatsApp calls to action.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "chaumont",
+    category: "websites",
+    group: "culture",
+    title: { it: "Château de Chaumont", en: "Château de Chaumont" },
+    client: "Fan concept",
+    place: { it: "Fan concept", en: "Fan concept" },
+    image: "/images/projects/works/chaumont.webp",
+    url: "https://chateau-chaumont-concept.vercel.app/", year: "2026",
+    tech: ["Next.js", "TypeScript", "GSAP", "Lenis"],
+    description: {
+      it: "Concept non ufficiale per il canale Escape to Rural France: intro cinematografica, 5 lingue, la casa piano per piano e shop su Shopify.",
+      en: "Unofficial fan concept for Escape to Rural France: a cinematic intro, 5 languages, a floor-by-floor tour and a Shopify shop.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "museo-egizio",
+    category: "websites",
+    group: "culture",
+    title: { it: "Museo Egizio", en: "Museo Egizio" },
+    client: "Torino",
+    place: { it: "Torino", en: "Turin" },
+    image: "/images/projects/works/museo-egizio.webp",
+    url: "https://museoegiziotorino.vercel.app/",
+    tech: ["React", "Vite", "GSAP", "Lenis"],
+    description: {
+      it: "Demo front-end immersiva con pagine istituzionali, biglietteria, shop in anteprima e animazioni avanzate.",
+      en: "Immersive front-end demo with institutional pages, ticketing, a shop preview and advanced motion.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "webtec-1",
+    category: "websites",
+    group: "culture",
+    title: { it: "Webtec Agency, concept 1", en: "Webtec Agency, concept 1" },
+    client: "Stoccolma",
+    place: { it: "Stoccolma", en: "Stockholm" },
+    image: "/images/projects/works/webtec-1.webp",
+    url: "https://webtec-concept.vercel.app/", year: "2026",
+    tech: ["Next.js", "GSAP", "Lenis", "Tailwind"],
+    description: {
+      it: "Homepage per un'agenzia web di Stoccolma: hero con gradiente, servizi CRO, SEO e ads, casi studio e prenotazione call.",
+      en: "Homepage for a Stockholm web agency: gradient hero, CRO, SEO and ads services, case studies and call booking.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "webtec-2",
+    category: "websites",
+    group: "culture",
+    title: { it: "Webtec Agency, concept 2", en: "Webtec Agency, concept 2" },
+    client: "Stoccolma",
+    place: { it: "Stoccolma", en: "Stockholm" },
+    image: "/images/projects/works/webtec-2.webp",
+    url: "https://webtec-concept-2.vercel.app/", year: "2026",
+    tech: ["Next.js", "GSAP", "Lenis", "Tailwind"],
+    description: {
+      it: "Seconda direzione per la stessa homepage: layout editoriale scuro, griglia tipografica e accenti lime.",
+      en: "A second direction for the same homepage: dark editorial layout, typographic grid and lime accents.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "streetwear",
+    category: "websites",
+    group: "brand",
+    title: { it: "Streetwear", en: "Streetwear" },
+    client: "E-commerce",
+    place: { it: "E-commerce", en: "E-commerce" },
+    image: "/images/projects/works/streetwear.webp",
+    url: "https://sys-0ff.vercel.app/",
+    tech: ["React", "Router", "GSAP", "Lenis"],
+    description: {
+      it: "E-commerce sperimentale in stile brutalist con transizioni custom, carrello e checkout dimostrativo.",
+      en: "Experimental brutalist e-commerce with custom transitions, a cart and a demo checkout.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "rubina",
+    category: "websites",
+    group: "brand",
+    title: { it: "Rubina Stradella", en: "Rubina Stradella" },
+    client: "Fotografia",
+    place: { it: "Fotografia", en: "Photography" },
+    image: "/images/projects/works/rubina.webp",
+    url: "https://rubinastradella.vercel.app/",
+    tech: ["JavaScript", "GSAP", "CSS"],
+    description: {
+      it: "Portfolio fotografico editoriale con layout dinamici e approccio performance-first, senza framework.",
+      en: "Editorial photography portfolio with dynamic layouts and a performance-first, framework-free approach.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "self-order-kiosk",
+    category: "websites",
+    group: "interfaces",
+    title: { it: "Kiosk self-order", en: "Kiosk self-order" },
+    client: "Food tech",
+    place: { it: "Food tech", en: "Food tech" },
+    image: "/images/projects/works/self-order-kiosk.webp",
+    url: "https://demo-kiosk-two.vercel.app/", year: "2026",
+    tech: ["React 19", "Framer Motion", "Lenis"],
+    description: {
+      it: "Mockup touch-first di kiosk: attract loop, menu bento, composizione del menu, carrello e checkout simulato, in 5 lingue.",
+      en: "Touch-first kiosk mockup: attract loop, bento menu, meal builder, cart and simulated checkout, in 5 languages.",
+    },
+    byMichel: true,
+  },
+  {
+    slug: "spotify-clone",
+    category: "websites",
+    group: "interfaces",
+    title: { it: "Spotify UI clone", en: "Spotify UI clone" },
+    client: "Interfaccia",
+    place: { it: "Interfaccia", en: "Interface" },
+    image: "/images/projects/works/spotify-clone.webp",
+    url: "https://spotify-clone-mbdev-umber.vercel.app/",
+    tech: ["HTML", "CSS", "JavaScript"],
+    description: {
+      it: "Clone dell'interfaccia di Spotify con stack web classico, focalizzato su struttura front-end e resa visiva.",
+      en: "Spotify-style interface built with a classic web stack, focused on front-end structure and visual polish.",
+    },
+    byMichel: true,
+  },
+];
 
 export function getProjectCategory(slug: string) {
   return projectCategories.find((category) => category.slug === slug);
