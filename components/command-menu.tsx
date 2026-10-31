@@ -7,13 +7,7 @@ import { dict, localeFromPath, localize, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
 
-/** Public-site only: the admin dashboard has its own Cmd-K palette and no visitor assistant. */
 export function CommandMenu() {
-  const pathname = usePathname() ?? "/";
-  return pathname.startsWith("/admin") ? null : <SiteCommandMenu />;
-}
-
-function SiteCommandMenu() {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const lang = localeFromPath(pathname);

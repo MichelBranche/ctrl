@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
-import { Analytics } from "@vercel/analytics/next";
-import { CtrlAssistant } from "@/components/ctrl-assistant";
-import { CommandMenu } from "@/components/command-menu";
-import { PageTransition } from "@/components/page-transition";
-import { BackToTop } from "@/components/back-to-top";
-import { Micro } from "@/components/micro";
-import { ScrollProgress } from "@/components/scroll-progress";
-import { SmoothScroll } from "@/components/smooth-scroll";
-import { ScrollReveal } from "@/components/scroll-reveal";
+import { PublicChrome } from "@/components/public-chrome";
 import { dict } from "@/lib/i18n";
 import "./globals.css";
 
@@ -43,16 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </noscript>
       </head>
       <body className={geist.className}>
-        <SmoothScroll />
-        <BackToTop />
-        <Micro />
-        <ScrollProgress />
-        <CommandMenu />
+        <PublicChrome slot="before" />
         {children}
-        <ScrollReveal />
-        <PageTransition />
-        <CtrlAssistant />
-        <Analytics />
+        <PublicChrome slot="after" />
       </body>
     </html>
   );

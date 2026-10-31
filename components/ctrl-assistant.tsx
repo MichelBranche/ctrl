@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -35,13 +34,7 @@ const copy = {
   },
 };
 
-/** Public-site only: the admin dashboard has its own Cmd-K palette and no visitor assistant. */
 export function CtrlAssistant() {
-  const pathname = usePathname() ?? "/";
-  return pathname.startsWith("/admin") ? null : <SiteCtrlAssistant />;
-}
-
-function SiteCtrlAssistant() {
   const { lang } = useLocale();
   const c = copy[lang];
   const [open, setOpen] = useState(false);

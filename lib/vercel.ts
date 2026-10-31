@@ -25,9 +25,9 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T |
 export type Bucket = { key: string; pageviews: number; visitors: number };
 type AggRow = Record<string, string | number> & { pageviews: number; visitors: number };
 
-/** One dimension of Web Analytics over the last `days` days (Hobby keeps one month). */
-export async function analytics(by: "day" | "requestPath" | "referrerHostname" | "country" | "deviceType", days: number, limit = 10) {
-  const until = new Date();
+/** One dimension of Web Analytics over the last `days` days ending at `end` (day buckets: max 62 days per query). */
+export async function analytics(by: "day" | "requestPath" | "referrerHostname" | "country" | "deviceType", days: number, limit = 10, end = Date.now()) {
+  const until = new Date(end);
   const since = new Date(until.getTime() - (days - 1) * 86_400_000);
   const res = await get<{ data: AggRow[] }>("/v1/query/web-analytics/visits/aggregate", {
     by,

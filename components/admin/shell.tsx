@@ -119,11 +119,19 @@ export function AdminShell({ email, badges, children }: { email: string; badges:
       <button type="button" className="adm-scrim" aria-label="Chiudi menu" tabIndex={-1} onClick={() => setDrawer(false)} />
 
       <div className="adm-body">
-        <header className="adm-bar">
+        <header className="adm-topbar">
           <button type="button" className="adm-icon-btn adm-burger" onClick={() => setDrawer(true)} aria-label="Apri menu" aria-expanded={drawer}>
             {I("M4 7h16M4 12h16M4 17h16")}
           </button>
-          <span className="adm-bar-title">{current?.label ?? "Admin"}</span>
+          <nav className="adm-crumbs" aria-label="Percorso">
+            <Link href="/admin">Admin</Link>
+            {current && current.href !== "/admin" ? (
+              <>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{current.label}</span>
+              </>
+            ) : null}
+          </nav>
           <button type="button" className="adm-search" onClick={() => setPalette(true)}>
             {I("M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4")}
             <span>Cerca o vai a…</span>
