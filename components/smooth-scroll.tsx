@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -14,6 +15,36 @@ declare global {
 }
 
 export function SmoothScroll() {
+  const pathname = usePathname();
+  const first = useRef(true);
+  const popped = useRef(false);
+
+  // Back/forward keeps the browser's restored position; new navigations start at the top.
+  useEffect(() => {
+    const onPop = () => {
+      popped.current = true;
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // Runs only when the pathname changes, so hash links and query-only filter changes keep their scroll.
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (popped.current) {
+      popped.current = false;
+      return;
+    }
+    if (window.location.hash) return;
+    window.__lenis?.scrollTo(0, { immediate: true, force: true });
+    window.scrollTo(0, 0);
+    const frame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
   useEffect(() => {
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",

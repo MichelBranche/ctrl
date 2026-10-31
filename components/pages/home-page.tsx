@@ -43,7 +43,7 @@ export function HomePage({ lang }: { lang: Locale }) {
               <p className="h-hero-lead" data-load="lead">
                 {h.lead}
               </p>
-              <Link href={localize("/about", lang)} className="h-round-link" data-load="cta">
+              <Link href="#services" className="h-round-link" data-load="cta">
                 <span className="h-circle">
                   <Arrow />
                 </span>

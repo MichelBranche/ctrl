@@ -32,7 +32,6 @@ export function CommandMenu() {
       { id: "home", group: "Nav", label: t.cmd.home, run: () => go(localize("/", lang)) },
       { id: "work", group: "Nav", label: nav.work, run: () => go(localize("/projects", lang)) },
       { id: "services", group: "Nav", label: nav.services, run: () => go(localize("/services", lang)) },
-      { id: "about", group: "Nav", label: nav.about, run: () => go(localize("/about", lang)) },
       { id: "team", group: "Nav", label: nav.team, run: () => go(localize("/team", lang)) },
       { id: "journal", group: "Nav", label: nav.journal, run: () => go(localize("/journal", lang)) },
       ...projectCategories.map((c) => ({

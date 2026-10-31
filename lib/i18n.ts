@@ -24,7 +24,7 @@ export function localeFromPath(pathname: string | null): Locale {
 
 export const dict = {
   it: {
-    nav: { work: "Progetti", about: "Studio", team: "Team", services: "Servizi", journal: "Journal", contact: "Contatti" },
+    nav: { work: "Progetti", team: "Team", services: "Servizi", journal: "Journal", contact: "Contatti" },
     cta: "Parliamo del tuo progetto",
     ctaShort: "Parliamo",
     menu: "Menu",
@@ -87,15 +87,6 @@ export const dict = {
       back: "Tutti i progetti",
     },
     services: { back: "Tutti i servizi", next: "Prossimo", fallback: "Servizi" },
-    about: {
-      description:
-        "CTRL® è uno studio indipendente di creative technology: identità, prodotti digitali e comunicazione visiva.",
-      title: ["Uno studio indipendente", "per brand che vogliono", "una presenza più netta."],
-      body: [
-        "CTRL® è uno studio indipendente che unisce design, sviluppo software e comunicazione visiva. Accompagniamo i brand dall'identità ai prodotti digitali, e oltre.",
-        "Un unico partner per progettare, costruire e far evolvere la presenza digitale di un'azienda. Uniamo creatività, tecnologia e strategia per creare esperienze che lasciano il segno.",
-      ],
-    },
     team: {
       description: "Le persone di CTRL®: design, sviluppo frontend, AI e sviluppo full stack.",
       tag: "Team",
@@ -134,7 +125,7 @@ export const dict = {
     },
   },
   en: {
-    nav: { work: "Work", about: "Studio", team: "Team", services: "Services", journal: "Journal", contact: "Contact" },
+    nav: { work: "Work", team: "Team", services: "Services", journal: "Journal", contact: "Contact" },
     cta: "Let's talk about your project",
     ctaShort: "Let's talk",
     menu: "Menu",
@@ -197,15 +188,6 @@ export const dict = {
       back: "All projects",
     },
     services: { back: "All services", next: "Next", fallback: "Services" },
-    about: {
-      description:
-        "CTRL® is an independent creative technology studio for identity, digital products and visual communication.",
-      title: ["An independent studio", "for brands that want", "a sharper presence."],
-      body: [
-        "CTRL® is an independent studio that combines design, software development and visual communication. We help brands go from identity to digital products and beyond.",
-        "One partner to design, build and evolve a company's digital presence. We bring creativity, technology and strategy together to create experiences that leave a mark.",
-      ],
-    },
     team: {
       description: "The people behind CTRL®: design, frontend development, AI and full-stack development.",
       tag: "Team",

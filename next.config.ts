@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
       { source: "/work/:slug", destination: "/projects/websites", permanent: true },
       { source: "/en/work", destination: "/en/projects", permanent: true },
       { source: "/en/work/:slug", destination: "/en/projects/websites", permanent: true },
+      // The Studio page was removed; the home has no about section, so send it home.
+      { source: "/about", destination: "/", permanent: true },
+      { source: "/en/about", destination: "/en", permanent: true },
     ];
   },
   cacheComponents: true,

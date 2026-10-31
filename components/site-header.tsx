@@ -24,7 +24,6 @@ export function SiteHeader() {
   const links = [
     { href: localize("/projects", lang), label: t.nav.work },
     { href: localize("/services", lang), label: t.nav.services },
-    { href: localize("/about", lang), label: t.nav.about },
     { href: localize("/team", lang), label: t.nav.team },
     { href: localize("/journal", lang), label: t.nav.journal },
     { href: localize("/contact", lang), label: t.nav.contact },
