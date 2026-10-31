@@ -203,7 +203,7 @@
 
 .h-pillars {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-top: 6rem;
   border-top: 1px solid var(--h-rule);
 }
@@ -448,7 +448,7 @@
   .h-pillars {
     grid-template-columns: repeat(2, 1fr);
   }
-  .h-pillar:nth-child(3) {
+  .h-pillar:nth-child(2n + 1) {
     border-left: 0;
     padding-left: 0;
   }

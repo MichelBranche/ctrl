@@ -85,11 +85,25 @@ export function ArrowUpIcon() {
   );
 }
 
+export function SparkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.8 2.8M15.2 15.2 18 18M18 6l-2.8 2.8M8.8 15.2 6 18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </svg>
+  );
+}
+
 const serviceIcons = {
   document: DocumentIcon,
   code: CodeIcon,
   monitor: MonitorIcon,
   arrow: ArrowUpIcon,
+  spark: SparkIcon,
 };
 
 export function ServiceIcon({

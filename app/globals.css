@@ -368,6 +368,7 @@ html.nav-open .site-header.is-hidden {
   transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.nav-desktop a.is-active::after,
 .nav-desktop a:hover::after {
   transform: scaleX(1);
 }

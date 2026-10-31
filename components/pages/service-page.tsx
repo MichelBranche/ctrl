@@ -25,7 +25,7 @@ export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
     <>
       <SiteHeader />
       <main className="subpage service-page">
-        <Link href={localize("/#services", lang)} className="text-link case-back">
+        <Link href={localize("/services", lang)} className="text-link case-back">
           <ArrowIcon />
           {t.services.back}
         </Link>

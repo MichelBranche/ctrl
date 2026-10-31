@@ -98,7 +98,7 @@ export type Service = {
   text: L;
   summary: L;
   points: L<string[]>;
-  icon: "document" | "code" | "monitor" | "arrow";
+  icon: "document" | "code" | "monitor" | "arrow" | "spark";
 };
 
 export const services: Service[] = [
@@ -173,6 +173,24 @@ export const services: Service[] = [
       en: ["Optimisation", "Maintenance", "Ongoing support", "Evolution"],
     },
     icon: "arrow",
+  },
+  {
+    slug: "software-ai",
+    index: "05",
+    title: { it: "Software e AI", en: "Software & AI" },
+    text: {
+      it: "Software su misura o in abbonamento, con intelligenza artificiale integrata.",
+      en: "Custom or subscription software, with AI built in.",
+    },
+    summary: {
+      it: "Costruiamo software su richiesta per i processi della tua attività, oppure te lo diamo pronto in abbonamento, già ospitato e aggiornato. Dentro ci mettiamo l'AI dove serve davvero: assistenti, automazioni e ricerca nei tuoi dati.",
+      en: "We build custom software for your business processes, or deliver it ready-made on subscription, hosted and kept up to date. We add AI where it truly helps: assistants, automations and search across your data.",
+    },
+    points: {
+      it: ["Software su richiesta", "Software in abbonamento (SaaS)", "Integrazioni AI e automazioni", "Hosting e aggiornamenti inclusi"],
+      en: ["Custom software", "Subscription software (SaaS)", "AI integrations and automations", "Hosting and updates included"],
+    },
+    icon: "spark",
   },
 ];
 
