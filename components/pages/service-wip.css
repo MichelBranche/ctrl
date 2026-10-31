@@ -1,0 +1,37 @@
+/* Service pages, work-in-progress state. Builds on projects.css (p-*) so it reads as the same family. */
+.sw-hero { min-height: auto; padding-bottom: clamp(2.5rem, 5vw, 4rem); }
+.sw-hero::after { display: none; }
+.sw-index { color: var(--p-accent); }
+.sw-empty { margin-bottom: 0; }
+.sw-progress {
+  position: relative;
+  display: block;
+  width: min(14rem, 60%);
+  height: 1px;
+  margin-top: 1.4rem;
+  overflow: hidden;
+  background: var(--p-rule);
+}
+.sw-progress i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: var(--p-accent);
+  animation: sw-scan 2.4s var(--p-ease) infinite;
+}
+@keyframes sw-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(290%); }
+}
+.sw-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
+.sw-others { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: clamp(4rem, 8vw, 7rem); }
+.sw-other { display: grid; gap: 2.2rem; padding-top: 1rem; }
+.sw-other-index { padding: 0 1rem; color: var(--p-faint); transition: color 0.35s ease; }
+.sw-other-label { font-family: var(--p-display-face); font-size: 1.05rem; letter-spacing: -0.01em; }
+.sw-other:hover .sw-other-index { color: var(--p-accent); }
+.sw-other:hover .p-card-arrow { transform: translateX(6px); color: var(--p-accent); }
+@media (max-width: 900px) { .sw-others { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .sw-others { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) {
+  .sw-progress i { animation: none; transform: none; width: 35%; }
+}
