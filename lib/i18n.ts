@@ -53,12 +53,6 @@ export const dict = {
       servicesLead:
         "Progettiamo esperienze digitali, prodotti e contenuti che rafforzano l'identità del brand, unendo tecnologia, design e strategia. Dall'idea al prodotto, con un approccio su misura, concreto e orientato ai risultati.",
       portraitAlt: "Ritratto di profilo in bianco e nero",
-      pillars: [
-        { title: "Brand & Identità", text: "Strategia, naming e linguaggio visivo per dare forma alla tua identità." },
-        { title: "Sviluppo Prodotto", text: "Web e mobile app, performance, scalabilità e soluzioni su misura." },
-        { title: "Comunicazione Visiva", text: "Storie, contenuti e direzione creativa per raccontare il tuo brand." },
-        { title: "Crescita & Supporto", text: "Ottimizzazione, manutenzione e affiancamento continuo." },
-      ],
       workKicker: "Progetti recenti",
       allProjects: "Tutti i progetti",
       discover: "Scopri il progetto",
@@ -119,12 +113,6 @@ export const dict = {
       servicesLead:
         "We design digital experiences, products and content that strengthen a brand's identity, bringing technology, design and strategy together. From idea to product, with a tailored, practical and results-driven approach.",
       portraitAlt: "Black and white profile portrait",
-      pillars: [
-        { title: "Brand & Identity", text: "Strategy, naming and visual language to shape your identity." },
-        { title: "Product Development", text: "Web and mobile apps, performance, scalability and custom solutions." },
-        { title: "Visual Communication", text: "Stories, content and creative direction to tell your brand's story." },
-        { title: "Growth & Support", text: "Optimisation, maintenance and ongoing support." },
-      ],
       workKicker: "Recent work",
       allProjects: "All projects",
       discover: "Discover the project",

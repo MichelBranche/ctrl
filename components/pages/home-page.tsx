@@ -108,16 +108,16 @@ export function HomePage({ lang }: { lang: Locale }) {
               </p>
             </div>
             <div className="h-pillars" data-pillars>
-              {services.map((service, i) => (
+              {services.map((service) => (
                 <Link
                   key={service.slug}
                   href={localize(`/services/${service.slug}`, lang)}
                   className="h-pillar"
                   data-pillar
                 >
-                  <span className="h-small h-num">{service.index}</span>
-                  <h3>{h.pillars[i]?.title ?? service.title[lang]}</h3>
-                  <p>{h.pillars[i]?.text ?? service.text[lang]}</p>
+                  <span className="h-pillar-num">{service.index}</span>
+                  <h3>{service.title[lang]}</h3>
+                  <p>{service.text[lang]}</p>
                   <Arrow className="h-pillar-arrow" />
                 </Link>
               ))}
