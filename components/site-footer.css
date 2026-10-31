@@ -123,9 +123,6 @@
   gap: 0.6rem 1.2rem;
 }
 
-.h-mark [data-letter] {
-  will-change: transform;
-}
 
 .h-close-kicker {
   display: flex;

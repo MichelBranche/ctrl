@@ -1,5 +1,6 @@
 "use client";
 
+import { scheduleRefresh } from "@/lib/refresh";
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -207,7 +208,7 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
           };
         });
 
-        requestAnimationFrame(() => ScrollTrigger.refresh());
+        scheduleRefresh();
       });
 
       if (reduce || document.documentElement.classList.contains("is-ready")) {

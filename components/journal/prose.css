@@ -1,0 +1,70 @@
+/* Article prose: shared by the public article page and the admin Markdown preview, so both render the same. */
+.j-prose {
+  --pr-fg: #f2f0ea;
+  --pr-dim: rgba(242, 240, 234, 0.72);
+  --pr-rule: rgba(242, 240, 234, 0.14);
+  --pr-code: rgba(242, 240, 234, 0.06);
+  --pr-accent: var(--accent, #ff4a1c);
+  --pr-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  max-width: 68ch;
+  color: var(--pr-dim);
+  font-family: var(--font), system-ui, sans-serif;
+  font-size: 1.08rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.j-prose > :first-child { margin-top: 0; }
+.j-prose > :last-child { margin-bottom: 0; }
+.j-prose p,
+.j-prose ul,
+.j-prose ol,
+.j-prose blockquote,
+.j-prose pre,
+.j-prose table,
+.j-prose img { margin: 1.25em 0 0; }
+.j-prose h2,
+.j-prose h3,
+.j-prose h4 {
+  margin: 2.2em 0 0;
+  color: var(--pr-fg);
+  font-family: var(--font-display), var(--font), sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.j-prose h2 { font-size: 1.9rem; }
+.j-prose h3 { font-size: 1.45rem; }
+.j-prose h4 { font-size: 1.15rem; }
+.j-prose h2 + *,
+.j-prose h3 + *,
+.j-prose h4 + * { margin-top: 0.75em; }
+.j-prose strong { color: var(--pr-fg); font-weight: 600; }
+.j-prose em { font-style: italic; }
+.j-prose a { color: var(--pr-fg); text-decoration: underline; text-decoration-color: var(--pr-accent); text-underline-offset: 0.2em; }
+.j-prose a:hover { text-decoration-thickness: 2px; }
+.j-prose ul,
+.j-prose ol { padding-left: 1.4em; }
+.j-prose ul { list-style: disc; }
+.j-prose ol { list-style: decimal; }
+.j-prose li { padding-left: 0.2em; }
+.j-prose li + li { margin-top: 0.45em; }
+.j-prose li > ul,
+.j-prose li > ol { margin-top: 0.45em; }
+.j-prose li::marker { color: var(--pr-accent); }
+.j-prose blockquote {
+  padding-left: 1.4rem;
+  border-left: 2px solid var(--pr-accent);
+  color: var(--pr-fg);
+  font-family: var(--font-display), var(--font), sans-serif;
+  font-size: 1.35rem;
+  line-height: 1.4;
+}
+.j-prose code { padding: 0.12em 0.35em; border-radius: 0.2em; background: var(--pr-code); font-family: var(--pr-mono); font-size: 0.88em; }
+.j-prose pre { padding: 1.2rem; overflow-x: auto; border-radius: 0.3rem; background: var(--pr-code); line-height: 1.55; }
+.j-prose pre code { padding: 0; background: none; font-size: 0.86rem; }
+.j-prose img { display: block; max-width: 100%; height: auto; }
+.j-prose hr { margin: 2.6em 0; border: 0; border-top: 1px solid var(--pr-rule); }
+.j-prose table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.j-prose th,
+.j-prose td { padding: 0.6rem; border-bottom: 1px solid var(--pr-rule); text-align: left; }

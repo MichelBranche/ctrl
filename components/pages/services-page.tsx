@@ -1,3 +1,4 @@
+import { CtaLink } from "@/components/cta-link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -87,13 +88,9 @@ export function ServicesView({ lang }: { lang: Locale }) {
               ))}
             </h1>
             <p className="s-lead" data-s-fade>{c.lead}</p>
-            <a href="#servizi" className="s-discover" data-s-fade>
-              <span className="s-circle" data-magnetic aria-hidden="true">
-                <Arrow />
-              </span>
-              <span className="s-mono">{c.discover}</span>
-              <Arrow className="s-arrow s-arrow-small" />
-            </a>
+            <CtaLink href="#servizi" className="s-discover" data-s-fade>
+              {c.discover}
+            </CtaLink>
           </div>
         </section>
 

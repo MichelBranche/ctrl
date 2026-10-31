@@ -68,33 +68,6 @@
   color: var(--t-dim);
 }
 
-.t-circle {
-  display: grid;
-  place-items: center;
-  width: 3.4rem;
-  height: 3.4rem;
-  margin-top: 2.4rem;
-  border: 1px solid var(--t-accent);
-  border-radius: 50%;
-  color: var(--t-accent);
-  transition: background-color 0.4s ease, color 0.4s ease;
-}
-
-.t-circle:hover {
-  background: var(--t-accent);
-  color: #0b0b0b;
-}
-
-.t-arrow {
-  width: 1.1rem;
-  height: 1.1rem;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.t-circle:hover .t-arrow {
-  transform: translateX(3px);
-}
-
 .t-grid {
   --t-gap: 0.75rem;
   display: flex;

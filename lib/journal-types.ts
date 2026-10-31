@@ -1,11 +1,11 @@
 import type { Locale } from "@/lib/i18n";
 
-export const CATEGORIES = ["design", "tecnologia", "strategia", "innovazione", "brand", "case-study"] as const;
+export const CATEGORIES = ["design", "tecnologia", "strategia", "innovazione", "brand", "sicurezza", "case-study"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABEL: Record<Locale, Record<Category, string>> = {
-  it: { design: "Design", tecnologia: "Tecnologia", strategia: "Strategia", innovazione: "Innovazione", brand: "Brand", "case-study": "Case study" },
-  en: { design: "Design", tecnologia: "Technology", strategia: "Strategy", innovazione: "Innovation", brand: "Brand", "case-study": "Case study" },
+  it: { design: "Design", tecnologia: "Tecnologia", strategia: "Strategia", innovazione: "Innovazione", brand: "Brand", sicurezza: "Sicurezza", "case-study": "Case study" },
+  en: { design: "Design", tecnologia: "Technology", strategia: "Strategy", innovazione: "Innovation", brand: "Brand", sicurezza: "Security", "case-study": "Case study" },
 };
 
 export type PostStatus = "draft" | "published";

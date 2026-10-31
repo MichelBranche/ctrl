@@ -101,21 +101,6 @@
   color: var(--s-fg);
   text-decoration: none;
 }
-.s-circle {
-  display: grid;
-  place-items: center;
-  width: 3.4rem;
-  height: 3.4rem;
-  border: 1px solid var(--s-accent);
-  border-radius: 50%;
-  color: var(--s-accent);
-  transition: background-color 0.4s ease, color 0.4s ease;
-}
-.s-arrow-small { width: 0.9rem; height: 0.9rem; }
-.s-discover:hover .s-circle { background: var(--s-accent); color: var(--s-accent-ink); }
-.s-discover:hover .s-circle .s-arrow { transform: rotate(90deg); }
-.s-discover:hover .s-arrow-small { transform: translateX(5px); }
-.s-discover:active .s-circle { scale: 0.94; }
 
 /* 2. GRID */
 .s-grid-wrap {

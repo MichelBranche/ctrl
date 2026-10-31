@@ -94,7 +94,8 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one listener; it reads refs and stable springs
+  }, []);
 
   return (
     <div className="hp-root">

@@ -37,7 +37,6 @@
   white-space: nowrap;
 }
 .p-arrow { width: 1rem; height: 1rem; flex: none; transition: transform 0.45s var(--p-ease); }
-.p-arrow-small { width: 0.9rem; height: 0.9rem; }
 /* Room for descenders inside the SplitText word masks. */
 [data-p-split] > div { padding-bottom: 0.14em; margin-bottom: -0.14em; }
 
@@ -107,20 +106,6 @@
   color: var(--p-fg);
   text-decoration: none;
 }
-.p-circle {
-  display: grid;
-  place-items: center;
-  width: 3.4rem;
-  height: 3.4rem;
-  border: 1px solid var(--p-accent);
-  border-radius: 50%;
-  color: var(--p-accent);
-  transition: background-color 0.4s ease, color 0.4s ease;
-}
-.p-discover:hover .p-circle { background: var(--p-accent); color: var(--p-accent-ink); }
-.p-discover:hover .p-circle .p-arrow { transform: rotate(90deg); }
-.p-discover:hover .p-arrow-small { transform: translateX(5px); }
-.p-discover:active .p-circle { scale: 0.94; }
 .p-discover:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 6px; }
 
 /* Category hero: shorter, product shot on the right. */

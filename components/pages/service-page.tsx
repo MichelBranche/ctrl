@@ -1,3 +1,4 @@
+import { CtaLink } from "@/components/cta-link";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -35,10 +36,9 @@ export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
           <div>
             <p className="service-page-lead">{service.text[lang]}</p>
             <p>{service.summary[lang]}</p>
-            <a className="cta-button" href={`mailto:${CONTACT_EMAIL}`}>
-              <span>{t.cta}</span>
-              <ArrowIcon />
-            </a>
+            <CtaLink href={`mailto:${CONTACT_EMAIL}`} className="service-page-cta">
+              {t.cta}
+            </CtaLink>
           </div>
           <div>
             <div className="service-page-mark" aria-hidden="true">

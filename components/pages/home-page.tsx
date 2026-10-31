@@ -1,3 +1,4 @@
+import { CtaLink } from "@/components/cta-link";
 import Image from "next/image";
 import Link from "next/link";
 import { HomeMotion } from "@/components/home-motion";
@@ -43,12 +44,9 @@ export function HomePage({ lang }: { lang: Locale }) {
               <p className="h-hero-lead" data-load="lead">
                 {h.lead}
               </p>
-              <Link href="#services" className="h-round-link" data-load="cta">
-                <span className="h-circle">
-                  <Arrow />
-                </span>
-                <span className="h-small">{h.approach}</span>
-              </Link>
+              <CtaLink href="#services" className="h-hero-cta" data-load="cta">
+                {h.approach}
+              </CtaLink>
               <p className="h-counter h-small" data-load="cta">
                 01 <span>/ 05</span>
               </p>

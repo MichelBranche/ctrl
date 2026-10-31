@@ -1,3 +1,4 @@
+import { CtaLink } from "@/components/cta-link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
@@ -8,14 +9,6 @@ import "./team.css";
 
 export function teamMetadata(lang: Locale): Metadata {
   return { title: dict[lang].nav.team, description: dict[lang].team.description };
-}
-
-function Arrow() {
-  return (
-    <svg className="t-arrow" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
 }
 
 export function TeamView({ lang }: { lang: Locale }) {
@@ -41,9 +34,9 @@ export function TeamView({ lang }: { lang: Locale }) {
               ))}
             </h1>
             <p className="t-lead">{t.lead}</p>
-            <a href="#team-grid" className="t-circle" aria-label={t.scroll}>
-              <Arrow />
-            </a>
+            <CtaLink href="#team-grid" className="t-cta">
+              {t.scroll}
+            </CtaLink>
           </div>
         </section>
 

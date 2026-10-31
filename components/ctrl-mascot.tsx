@@ -67,8 +67,13 @@ export function CtrlMascot({ thinking = false, mini = false, className = "" }: M
       const skew = gsap.quickTo(q(".cm-tilt")[0], "skewX", { duration: 0.9, ease: "power3.out" });
       gsap.set(q(".cm-tilt"), { transformOrigin: "50% 90%" });
 
+      // Fixed element: measure once (and on resize) instead of forcing layout on every pointer move.
+      let r = el.getBoundingClientRect();
+      const measure = () => {
+        r = el.getBoundingClientRect();
+      };
+      window.addEventListener("resize", measure, { passive: true });
       const lookAt = (px: number, py: number) => {
-        const r = el.getBoundingClientRect();
         const dx = gsap.utils.clamp(-1, 1, (px - (r.left + r.width / 2)) / (window.innerWidth * 0.45));
         const dy = gsap.utils.clamp(-1, 1, (py - (r.top + r.height * 0.45)) / (window.innerHeight * 0.45));
         faceX(dx * 14);
@@ -84,7 +89,7 @@ export function CtrlMascot({ thinking = false, mini = false, className = "" }: M
       };
       let curiousCall = gsap.delayedCall(5, curious);
 
-      const cleanups: Array<() => void> = [];
+      const cleanups: Array<() => void> = [() => window.removeEventListener("resize", measure)];
       if (touch) {
         const wander = () => {
           if (!thinkingRef.current) lookAt(gsap.utils.random(0, window.innerWidth), gsap.utils.random(0, window.innerHeight));

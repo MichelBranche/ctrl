@@ -1,5 +1,6 @@
 "use client";
 
+import { scheduleRefresh } from "@/lib/refresh";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
@@ -41,8 +42,7 @@ export function SmoothScroll() {
     if (window.location.hash) return;
     window.__lenis?.scrollTo(0, { immediate: true, force: true });
     window.scrollTo(0, 0);
-    const frame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
-    return () => window.cancelAnimationFrame(frame);
+    scheduleRefresh();
   }, [pathname]);
 
   useEffect(() => {
@@ -82,12 +82,13 @@ export function SmoothScroll() {
     };
 
     document.addEventListener("click", onClick);
-    const refresh = () => ScrollTrigger.refresh();
-    const frame = window.requestAnimationFrame(refresh);
+    const refresh = () => scheduleRefresh();
+    refresh();
     window.addEventListener("load", refresh);
+    // Late font swaps change line heights; re-measure triggers once fonts settle.
+    void document.fonts?.ready.then(refresh);
 
     return () => {
-      window.cancelAnimationFrame(frame);
       window.removeEventListener("load", refresh);
       document.removeEventListener("click", onClick);
       gsap.ticker.remove(onTick);

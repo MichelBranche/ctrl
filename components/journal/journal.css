@@ -25,7 +25,6 @@
 
 .j-root { background: var(--j-bg); color: var(--j-fg); }
 .j-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.j-mono,
 .j-meta,
 .j-tag,
 .j-filter,
@@ -328,28 +327,6 @@
 .j-a-cover { position: relative; max-width: 72rem; aspect-ratio: 16 / 9; margin: 0 auto; overflow: hidden; }
 .j-a-cover-img { object-fit: cover; filter: grayscale(0.4); }
 .j-a-body { max-width: 44rem; margin: 0 auto; padding: 3.4rem var(--gutter) 2rem; }
-.j-prose { color: var(--j-dim); font-size: 1.08rem; line-height: 1.7; overflow-wrap: anywhere; }
-.j-prose > :first-child { margin-top: 0; }
-.j-prose p, .j-prose ul, .j-prose ol, .j-prose blockquote, .j-prose pre, .j-prose table, .j-prose img { margin: 1.3em 0 0; }
-.j-prose h2, .j-prose h3, .j-prose h4 { margin: 2.2em 0 0; color: var(--j-fg); font-family: var(--j-display-face); font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; }
-.j-prose h2 { font-size: 1.9rem; text-wrap: balance; }
-.j-prose h3 { text-wrap: balance; }
-.j-prose h3 { font-size: 1.45rem; }
-.j-prose h4 { font-size: 1.15rem; }
-.j-prose strong { color: var(--j-fg); font-weight: 600; }
-.j-prose a { color: var(--j-fg); text-decoration: underline; text-decoration-color: var(--j-accent); text-underline-offset: 0.2em; }
-.j-prose a:hover { text-decoration-thickness: 2px; }
-.j-prose ul, .j-prose ol { padding-left: 1.3em; }
-.j-prose li + li { margin-top: 0.4em; }
-.j-prose li::marker { color: var(--j-accent); }
-.j-prose blockquote { padding-left: 1.4rem; border-left: 2px solid var(--j-accent); color: var(--j-fg); font-family: var(--j-display-face); font-size: 1.35rem; line-height: 1.4; }
-.j-prose code { padding: 0.12em 0.35em; background: var(--j-code); font-family: var(--j-mono-face); font-size: 0.88em; }
-.j-prose pre { padding: 1.2rem; overflow-x: auto; background: var(--j-code); }
-.j-prose pre code { padding: 0; background: none; }
-.j-prose img { display: block; max-width: 100%; height: auto; }
-.j-prose hr { margin: 2.6em 0; border: 0; border-top: 1px solid var(--j-rule); }
-.j-prose table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-.j-prose th, .j-prose td { padding: 0.6rem; border-bottom: 1px solid var(--j-rule); text-align: left; }
 .j-related { max-width: var(--j-max); margin: 2rem auto 0; padding: 3rem var(--gutter) 3rem; border-top: 1px solid var(--j-rule); }
 .j-related-h { margin: 0 0 1.8rem; color: var(--j-dim); font-weight: 400; }
 

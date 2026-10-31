@@ -1,5 +1,6 @@
 import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import "./prose.css";
 
 /** Only http(s), mailto, relative and in-page links/images survive. */
 function safeUrl(url: string) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { scheduleRefresh } from "@/lib/refresh";
 import { usePathname } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -50,32 +51,6 @@ export function ScrollReveal() {
             });
           });
 
-          // Media and project cards: clip-path wipe from the bottom, inner ease-out zoom.
-          free<HTMLElement>("main .work-media, main .case-media").forEach((media) => {
-            const inner = media.querySelector<HTMLElement>("img, .type-tile");
-            const tl = gsap.timeline({
-              scrollTrigger: { trigger: media, start: "top 90%", once: true },
-            });
-            tl.fromTo(
-              media,
-              { clipPath: "inset(100% 0% 0% 0%)" },
-              {
-                clipPath: "inset(0% 0% 0% 0%)",
-                duration: 1.3,
-                ease: "power4.inOut",
-                clearProps: "clipPath",
-              },
-            );
-            if (inner) {
-              tl.fromTo(
-                inner,
-                { scale: 1.12 },
-                { scale: 1, duration: 1.6, ease: "power3.out", clearProps: "scale" },
-                0,
-              );
-            }
-          });
-
           // Lists: subtle stagger per list.
           free<HTMLElement>("main ul, main ol").forEach((list) => {
             const items = Array.from(list.children) as HTMLElement[];
@@ -92,7 +67,7 @@ export function ScrollReveal() {
           });
         });
 
-        requestAnimationFrame(() => ScrollTrigger.refresh());
+        scheduleRefresh();
       });
 
       if (document.documentElement.classList.contains("is-ready")) {

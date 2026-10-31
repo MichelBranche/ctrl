@@ -1,5 +1,6 @@
 "use client";
 
+import { scheduleRefresh } from "@/lib/refresh";
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useGSAP } from "@gsap/react";
@@ -138,7 +139,7 @@ export function PageTransition() {
         window.__lenis?.start();
         document.documentElement.classList.remove("pt-running");
         busy.current = false;
-        ScrollTrigger.refresh();
+        scheduleRefresh();
       };
 
       const run = contextSafe(async (href: string) => {
@@ -183,7 +184,7 @@ export function PageTransition() {
         router.push(href, { scroll: false });
         await arrival;
         toTop();
-        ScrollTrigger.refresh();
+        scheduleRefresh();
 
         const reveal = gsap.timeline({ defaults: { ease: "power3.inOut" } });
         reveal

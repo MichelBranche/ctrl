@@ -1,3 +1,4 @@
+import { CtaLink } from "@/components/cta-link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
@@ -42,15 +43,9 @@ export function ContactView({ lang }: { lang: Locale }) {
                 <span key={line}>{line} </span>
               ))}
             </p>
-            <a href="#scrivi" className="c-write">
-              <span className="c-circle" aria-hidden="true">
-                <Arrow />
-              </span>
-              <span className="c-mono">{c.write}</span>
-              <svg className="c-line-arrow" viewBox="0 0 48 12" aria-hidden="true">
-                <path d="M0 6h46M41 1l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
-              </svg>
-            </a>
+            <CtaLink href="#scrivi" className="c-write">
+              {c.write}
+            </CtaLink>
           </div>
         </section>
 

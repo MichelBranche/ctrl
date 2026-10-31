@@ -49,10 +49,6 @@
 .adm-editor { display: grid; gap: 2rem; }
 .adm-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .adm-span { grid-column: 1 / -1; }
-.adm-cover { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
-.adm-cover img, .adm-cover-ph { width: 14rem; aspect-ratio: 1.22; object-fit: cover; border: 1px solid var(--adm-rule); }
-.adm-cover-ph { display: grid; place-items: center; color: var(--adm-dim); font-size: 0.8rem; }
-.adm-cover-ctl { display: grid; gap: 0.6rem; flex: 1 1 16rem; min-width: 0; }
 .adm-md { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .adm-preview { max-height: 40rem; overflow: auto; padding: 1.2rem 1.4rem; border: 1px solid var(--adm-rule); border-radius: 0.4rem; }
 .adm-bar { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--adm-rule); background: var(--adm-bg); }
@@ -63,3 +59,25 @@
   .adm-md { grid-template-columns: 1fr; }
   .adm-table { display: block; overflow-x: auto; }
 }
+
+/* Cover dropzone: first thing in the editor, so the cover is easy to find. */
+.adm-cover-box { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.4rem; margin-bottom: 1.8rem; align-items: start; }
+.adm-drop { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border: 1.5px dashed var(--adm-rule); border-radius: 0.5rem; background: var(--adm-panel); transition: border-color 0.2s ease, background-color 0.2s ease; }
+.adm-drop.has-img { border-style: solid; }
+.adm-drop.is-drag { border-color: var(--adm-accent); background: rgba(255, 74, 28, 0.08); }
+.adm-drop-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.adm-drop.is-busy .adm-drop-img { opacity: 0.5; }
+.adm-drop-empty { display: grid; place-content: center; justify-items: center; gap: 0.6rem; width: 100%; height: 100%; padding: 1.5rem; border: 0; background: none; color: var(--adm-dim); font: inherit; text-align: center; cursor: pointer; }
+.adm-drop-empty svg { width: 2.2rem; height: 2.2rem; color: var(--adm-accent); }
+.adm-drop-empty strong { color: var(--adm-fg); font-size: 1.1rem; font-weight: 600; }
+.adm-drop-empty span { max-width: 30ch; font-size: 0.85rem; }
+.adm-drop-empty:hover strong, .adm-drop-empty:focus-visible strong { color: var(--adm-accent); }
+.adm-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; overflow: hidden; background: var(--adm-rule); }
+.adm-progress span { position: absolute; inset: 0; width: 40%; background: var(--adm-accent); animation: adm-progress 1.1s ease-in-out infinite; }
+@keyframes adm-progress { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.adm-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.adm-cover-side { display: grid; gap: 0.8rem; }
+.adm-cover-label { color: var(--adm-dim); font-size: 0.8rem; }
+.adm-cover-actions { display: flex; gap: 0.6rem; }
+@media (max-width: 760px) { .adm-cover-box { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .adm-progress span { animation-duration: 3s; } }

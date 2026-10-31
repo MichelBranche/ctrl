@@ -58,6 +58,7 @@ export function Micro() {
       return move;
     });
 
+    let magnetBox: { el: HTMLElement; rect: DOMRect } | null = null;
     const onMove = contextSafe((event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
       lx(event.clientX);
@@ -70,7 +71,9 @@ export function Micro() {
       }
       const magnet = target?.closest<HTMLElement>(MAGNET);
       if (magnet) {
-        const bounds = magnet.getBoundingClientRect();
+        // Measure once on entry: re-reading every move forces layout and feeds the magnet's own offset back in.
+        if (magnetBox?.el !== magnet) magnetBox = { el: magnet, rect: magnet.getBoundingClientRect() };
+        const bounds = magnetBox.rect;
         const move = magnetFor(magnet);
         move.x(
           gsap.utils.clamp(
@@ -96,18 +99,24 @@ export function Micro() {
       if (!magnet) return;
       const next = event.relatedTarget;
       if (next instanceof Node && magnet.contains(next)) return;
+      magnetBox = null;
       const move = magnets.get(magnet);
       move?.x(0);
       move?.y(0);
     });
 
     window.addEventListener("pointermove", onMove);
+    const onScrollReset = () => {
+      magnetBox = null;
+    };
+    window.addEventListener("scroll", onScrollReset, { passive: true });
     document.addEventListener("pointerout", onLeave);
 
     return () => {
       removeKey();
       label.remove();
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("scroll", onScrollReset);
       document.removeEventListener("pointerout", onLeave);
     };
   });

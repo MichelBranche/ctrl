@@ -110,9 +110,7 @@
   margin: 0;
 }
 
-.h-counter span,
-.h-counter-inline span,
-.h-card-num span {
+.h-counter span {
   color: var(--h-dim);
 }
 
@@ -265,13 +263,6 @@
     linear-gradient(160deg, #1d1d1d 0%, #101010 55%, #070707 100%);
 }
 
-.h-feature {
-  display: grid;
-  grid-template-columns: 55fr 45fr;
-  gap: 4rem;
-  align-items: end;
-}
-
 .h-feature-media {
   position: relative;
   aspect-ratio: 16 / 10;
@@ -279,78 +270,9 @@
   background: #141414;
 }
 
-.h-feature-copy {
-  padding-bottom: 0.5rem;
-}
-
-.h-counter-inline {
-  margin: 0;
-}
-
-.h-feature-title {
-  max-width: 9ch;
-  margin: 2rem 0 0;
-  font-size: clamp(2.4rem, 4.4vw, 4.2rem);
-  font-weight: 600;
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-}
-
-.h-feature-cat {
-  margin: 1.2rem 0 0;
-  color: var(--h-dim);
-}
-
-.h-feature-text {
-  max-width: 24rem;
-  margin: 1rem 0 2rem;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: var(--h-dim);
-}
-
-.h-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
 .h-card {
   position: relative;
   display: block;
-}
-
-.h-card-media.work-media {
-  aspect-ratio: 4 / 3;
-}
-
-.h-card-num {
-  position: absolute;
-  z-index: 3;
-  top: 1.1rem;
-  right: 1.2rem;
-}
-
-.h-card-caption.work-caption {
-  position: absolute;
-  z-index: 3;
-  left: 1.2rem;
-  bottom: 1.1rem;
-  margin: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-}
-
-.h-card-caption strong {
-  font-size: 1.15rem;
-  font-weight: 560;
-  letter-spacing: -0.02em;
-}
-
-.h-card-caption .h-small {
-  color: var(--h-dim);
 }
 
 /* PERCHE */
@@ -507,8 +429,6 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-  .h-feature,
-  .h-cards,
   .h-why {
     grid-template-columns: 1fr;
     gap: 2rem;

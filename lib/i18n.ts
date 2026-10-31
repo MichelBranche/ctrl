@@ -26,7 +26,6 @@ export const dict = {
   it: {
     nav: { work: "Progetti", team: "Team", services: "Servizi", journal: "Journal", contact: "Contatti" },
     cta: "Parliamo del tuo progetto",
-    ctaShort: "Parliamo",
     menu: "Menu",
     close: "Chiudi",
     langLabel: "Lingua",
@@ -76,16 +75,6 @@ export const dict = {
       closeCta: "Scrivici una email",
       location: "Aosta, Valle d'Aosta",
     },
-    work: {
-      title: "Progetti",
-      description: "Progetti di CTRL® | identità, prodotti digitali e comunicazione visiva.",
-      kicker: "Progetti selezionati",
-      concept: "Concept",
-      conceptNote:
-        "Progetto concept: un'esplorazione autoprodotta, non commissionata dal brand citato.",
-      visit: "Visita il sito live",
-      back: "Tutti i progetti",
-    },
     services: { back: "Tutti i servizi", next: "Prossimo", fallback: "Servizi" },
     team: {
       description: "Le persone di CTRL®: design, sviluppo frontend, AI e sviluppo full stack.",
@@ -93,30 +82,6 @@ export const dict = {
       title: ["Persone", "che costruiscono", "idee."],
       lead: "Un team multidisciplinare, unito dalla passione per il digitale e dalla voglia di spingersi oltre.",
       scroll: "Scopri il team",
-    },
-    journal: {
-      description: "Note di CTRL® su design, prodotti digitali e comunicazione visiva.",
-      title: ["Appunti su design,", "prodotto e immagine."],
-      notes: [
-        { title: "Prima l'identità, poi l'interfaccia", text: "Un prodotto digitale regge solo se il linguaggio visivo è già chiaro. Prima il segno, poi lo schermo." },
-        { title: "Costruire per cambiare", text: "La presenza di un brand non è un lancio. È un sistema che deve poter evolvere senza perdere la voce." },
-        { title: "Immagini quiete, tipografia esatta", text: "La fotografia tiene il luogo. La tipografia tiene il significato. Insieme fanno il tono." },
-      ],
-      explore: "Guarda i progetti",
-    },
-    footer: {
-      ticker: ["Design", "Sviluppo", "Comunicazione visiva", "Brand", "Prodotto", "Strategia"],
-      kicker: "Nuovi progetti",
-      title: "Parliamo.",
-      lead: "Raccontaci il brand, il prodotto o il problema da risolvere.",
-      studio: "Studio",
-      independent: "Indipendente",
-      available: "Disponibili per nuovi progetti",
-      localTime: "Ora locale, Aosta, Valle d'Aosta",
-      index: "Indice",
-      contact: "Contatti",
-      top: "Torna su",
-      tagline: "Design | Sviluppo | Comunicazione visiva",
     },
     meta: {
       title: "CTRL® | Dall'identità al prodotto. Un unico partner.",
@@ -127,7 +92,6 @@ export const dict = {
   en: {
     nav: { work: "Work", team: "Team", services: "Services", journal: "Journal", contact: "Contact" },
     cta: "Let's talk about your project",
-    ctaShort: "Let's talk",
     menu: "Menu",
     close: "Close",
     langLabel: "Language",
@@ -177,16 +141,6 @@ export const dict = {
       closeCta: "Send us an email",
       location: "Aosta, Valle d'Aosta",
     },
-    work: {
-      title: "Work",
-      description: "Work by CTRL® | identity, digital products and visual communication.",
-      kicker: "Selected work",
-      concept: "Concept",
-      conceptNote:
-        "Concept project: a self-initiated exploration, not commissioned by the brand shown.",
-      visit: "Visit the live site",
-      back: "All projects",
-    },
     services: { back: "All services", next: "Next", fallback: "Services" },
     team: {
       description: "The people behind CTRL®: design, frontend development, AI and full-stack development.",
@@ -194,30 +148,6 @@ export const dict = {
       title: ["People", "who build", "ideas."],
       lead: "A multidisciplinary team, united by a passion for digital and the drive to push further.",
       scroll: "Meet the team",
-    },
-    journal: {
-      description: "Notes from CTRL® on design, digital products and visual communication.",
-      title: ["Field notes on design,", "product and image."],
-      notes: [
-        { title: "Identity before interface", text: "A digital product only holds up when the visual language is already clear. First the mark, then the screen." },
-        { title: "Build it so it can change", text: "A brand's presence is not a launch. It is a system that must evolve without losing its voice." },
-        { title: "Quiet pictures, exact type", text: "Photography holds the place. Typography holds the meaning. Together they set the tone." },
-      ],
-      explore: "See the work",
-    },
-    footer: {
-      ticker: ["Design", "Development", "Visual Communication", "Brand", "Product", "Strategy"],
-      kicker: "New business",
-      title: "Let's talk.",
-      lead: "Tell us about the brand, the product, or the problem to solve.",
-      studio: "Studio",
-      independent: "Independent",
-      available: "Available for new projects",
-      localTime: "Local time, Aosta, Valle d'Aosta",
-      index: "Index",
-      contact: "Contact",
-      top: "Back to top",
-      tagline: "Design | Development | Visual Communication",
     },
     meta: {
       title: "CTRL® | From identity to product. One partner.",

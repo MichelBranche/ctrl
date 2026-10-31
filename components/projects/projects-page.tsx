@@ -1,8 +1,8 @@
+import { CtaLink } from "@/components/cta-link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { PArrow } from "@/components/projects/arrow";
 import { ProjectsCta } from "@/components/projects/cta";
 import { ProjectsBrowser, type CategoryCard } from "@/components/projects/projects-browser";
 import { projectsCopy } from "@/components/projects/projects-copy";
@@ -47,13 +47,9 @@ export function ProjectsView({ lang }: { lang: Locale }) {
                 <span key={line}>{line} </span>
               ))}
             </p>
-            <a href="#progetti" className="p-discover" data-p-fade>
-              <span className="p-circle" data-magnetic aria-hidden="true">
-                <PArrow />
-              </span>
-              <span className="p-mono">{c.all}</span>
-              <PArrow className="p-arrow p-arrow-small" />
-            </a>
+            <CtaLink href="#progetti" className="p-discover" data-p-fade>
+              {c.all}
+            </CtaLink>
           </div>
         </section>
 

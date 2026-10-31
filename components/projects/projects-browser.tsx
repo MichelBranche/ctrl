@@ -1,5 +1,6 @@
 "use client";
 
+import { scheduleRefresh } from "@/lib/refresh";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -68,7 +69,7 @@ export function ProjectsBrowser({ items, copy }: { items: CategoryCard[]; copy: 
       stagger: 0.03,
       onEnter: (els) => gsap.fromTo(els, { autoAlpha: 0, scale: 0.96 }, { autoAlpha: 1, scale: 1, duration: 0.5, delay: 0.2 }),
       onLeave: (els) => gsap.to(els, { autoAlpha: 0, scale: 0.96, duration: 0.35 }),
-      onComplete: () => ScrollTrigger.refresh(),
+      onComplete: scheduleRefresh,
     });
   }, [filter, view, moveBox]);
 
@@ -111,7 +112,7 @@ export function ProjectsBrowser({ items, copy }: { items: CategoryCard[]; copy: 
       </div>
 
       <ul className="p-grid" ref={grid} data-view={view}>
-        {items.map((item, i) => (
+        {items.map((item) => (
           <li key={item.slug} className="p-item" data-p-item data-flip-id={item.slug} hidden={filter !== "all" && filter !== item.slug}>
             <Link href={item.href} className="p-card" data-p-card>
               <span className="p-media" aria-hidden="true">
@@ -122,7 +123,6 @@ export function ProjectsBrowser({ items, copy }: { items: CategoryCard[]; copy: 
                     alt=""
                     fill
                     sizes="(max-width: 760px) 100vw, (max-width: 1440px) 50vw, 720px"
-                    priority={i < 2}
                   />
                 </span>
               </span>

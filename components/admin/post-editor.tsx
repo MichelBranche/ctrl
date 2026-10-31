@@ -43,13 +43,20 @@ export function PostEditor({ post }: { post: Post | null }) {
   const [uploading, startUpload] = useTransition();
   const [date, setDate] = useState(() => toLocalInput(post?.published_at ?? new Date().toISOString()));
   const isoDate = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
-    setUploadMsg("Caricamento…");
+    if (!file.type.startsWith("image/")) {
+      setUploadMsg("Il file non è un'immagine.");
+      return;
+    }
+    setUploadMsg("Ottimizzazione immagine…");
     startUpload(async () => {
       const fd = new FormData();
       fd.set("file", await compress(file));
+      setUploadMsg("Caricamento…");
       const res = await uploadCover(fd);
       if (res.url) {
         setCover(res.url);
@@ -83,6 +90,67 @@ export function PostEditor({ post }: { post: Post | null }) {
         <input type="hidden" name="published_at" ref={isoDate} defaultValue={post?.published_at ?? ""} />
         <input type="hidden" name="cover_url" value={cover} />
         <input type="hidden" name="status" value={published ? "published" : "draft"} />
+
+        <section className="adm-cover-box" aria-label="Copertina">
+          <div
+            className={`adm-drop${dragging ? " is-drag" : ""}${uploading ? " is-busy" : ""}${cover ? " has-img" : ""}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              onFile(e.dataTransfer.files?.[0]);
+            }}
+          >
+            {cover ? (
+              // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded file
+              <img className="adm-drop-img" src={cover} alt="" />
+            ) : (
+              <button type="button" className="adm-drop-empty" onClick={() => fileInput.current?.click()} disabled={uploading}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V4M6 10l6-6 6 6M4 20h16" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+                <strong>Carica copertina</strong>
+                <span>Trascina qui un&apos;immagine o clicca per sceglierla. JPG, PNG, WebP o AVIF, max 5 MB.</span>
+              </button>
+            )}
+            {uploading ? (
+              <div className="adm-progress" role="progressbar" aria-label="Caricamento copertina">
+                <span />
+              </div>
+            ) : null}
+          </div>
+          <input
+            ref={fileInput}
+            className="adm-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            onChange={(e) => {
+              onFile(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+            disabled={uploading}
+            aria-label="Carica copertina"
+          />
+          <div className="adm-field adm-cover-side">
+            <span className="adm-cover-label">Copertina</span>
+            {cover ? (
+              <div className="adm-cover-actions">
+                <button type="button" className="adm-btn" onClick={() => fileInput.current?.click()} disabled={uploading}>
+                  Cambia
+                </button>
+                <button type="button" className="adm-btn adm-btn-danger" onClick={() => setCover("")} disabled={uploading}>
+                  Rimuovi
+                </button>
+              </div>
+            ) : null}
+            <input name="cover_alt" placeholder="Testo alternativo (descrizione immagine)" defaultValue={post?.cover_alt ?? ""} maxLength={200} aria-label="Testo alternativo copertina" />
+            {uploadMsg ? <p className="adm-muted" role="status">{uploadMsg}</p> : null}
+          </div>
+        </section>
 
         <div className="adm-grid">
           <label className="adm-field adm-span">
@@ -135,27 +203,6 @@ export function PostEditor({ post }: { post: Post | null }) {
             <span>Estratto</span>
             <textarea name="excerpt" rows={2} maxLength={400} defaultValue={post?.excerpt ?? ""} />
           </label>
-          <div className="adm-field adm-span">
-            <span>Copertina</span>
-            <div className="adm-cover">
-              {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded file
-                <img src={cover} alt="" />
-              ) : (
-                <div className="adm-cover-ph">Nessuna immagine</div>
-              )}
-              <div className="adm-cover-ctl">
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => onFile(e.target.files?.[0])} disabled={uploading} aria-label="Carica copertina" />
-                {cover ? (
-                  <button type="button" className="adm-btn" onClick={() => setCover("")}>
-                    Rimuovi
-                  </button>
-                ) : null}
-                <input name="cover_alt" placeholder="Testo alternativo (descrizione immagine)" defaultValue={post?.cover_alt ?? ""} maxLength={200} aria-label="Testo alternativo copertina" />
-                {uploadMsg ? <p className="adm-muted" role="status">{uploadMsg}</p> : null}
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="adm-md">
