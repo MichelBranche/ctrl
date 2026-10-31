@@ -28,7 +28,9 @@ function signalReady() {
 /** Mascot pops in with a squish once the first-load cover has lifted. */
 function popMascot() {
   document.documentElement.classList.remove("pt-booting");
-  const el = document.querySelector<HTMLElement>(".ca-root");
+  // Animate the mascot, not .ca-root: a transform left on the fixed root becomes the containing block
+  // of the mobile panel (position: fixed) and squeezes it to the launcher's width.
+  const el = document.querySelector<HTMLElement>(".ca-launcher .ctrl-mascot");
   if (!el) return;
   gsap.fromTo(
     el,
@@ -39,7 +41,7 @@ function popMascot() {
         { scale: 0.96, scaleY: 1.06, duration: 0.16, ease: "sine.inOut" },
         { scale: 1, scaleY: 1, duration: 0.3, ease: "elastic.out(1, 0.5)" },
       ],
-      clearProps: "transform",
+      onComplete: () => void gsap.set(el, { clearProps: "transform" }),
     },
   );
 }

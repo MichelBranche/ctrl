@@ -72,6 +72,33 @@ export function CtrlAssistant() {
     }
   }, [open]);
 
+  // Mobile sheet: lock page scroll and follow the visual viewport (iOS keyboard)
+  useEffect(() => {
+    if (!open) return;
+    const mq = window.matchMedia("(max-width: 640px), (max-height: 500px) and (pointer: coarse)");
+    if (!mq.matches) return;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+    const sync = () => {
+      if (!vv) return;
+      root.style.setProperty("--ca-vvh", `${vv.height}px`);
+      root.style.setProperty("--ca-kb", `${Math.max(0, window.innerHeight - vv.height - vv.offsetTop)}px`);
+    };
+    root.classList.add("ca-locked");
+    window.__lenis?.stop();
+    sync();
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    return () => {
+      root.classList.remove("ca-locked");
+      window.__lenis?.start();
+      root.style.removeProperty("--ca-vvh");
+      root.style.removeProperty("--ca-kb");
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+    };
+  }, [open]);
+
   // Esc closes, Tab stays inside the panel
   useEffect(() => {
     if (!open) return;

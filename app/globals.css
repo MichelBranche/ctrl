@@ -1011,17 +1011,25 @@ h3,
 .ca-send svg { width: 15px; height: 15px; }
 .ca-send:disabled { opacity: 0.4; cursor: default; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   .ca-root { --ca-gap: 14px; }
   .ca-launcher { width: 60px; }
+  /* Bottom sheet: pinned to the viewport, sized from the visual viewport so the iOS keyboard never hides the input. */
   .ca-panel {
     position: fixed;
-    left: calc(8px + env(safe-area-inset-left));
-    right: calc(8px + env(safe-area-inset-right));
-    bottom: calc(var(--ca-gap) + 66px + env(safe-area-inset-bottom));
+    left: calc(12px + env(safe-area-inset-left));
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom) + var(--ca-kb, 0px));
     width: auto;
-    height: min(72dvh, 600px);
+    height: min(620px, 80dvh, calc(var(--ca-vvh, 100dvh) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+    transform-origin: 50% 100%;
   }
+  .ca-close { width: 40px; height: 40px; }
+  .ca-input { font-size: 16px; } /* no iOS zoom on focus */
+  .ca-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ca-chip { flex: none; }
+  .ca-root:has(.ca-launcher.is-open) .ca-launcher { visibility: hidden; }
+  html.ca-locked, html.ca-locked body { overflow: hidden; overscroll-behavior: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ca-typing i { animation: none; opacity: 0.6; }
