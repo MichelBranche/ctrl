@@ -1,4 +1,4 @@
-import { JournalView, journalMetadata } from "@/components/pages/journal-page";
+import { JournalView, journalMetadata } from "@/components/journal/journal-page";
 
 export const metadata = journalMetadata("en");
 
