@@ -15,6 +15,8 @@ export function localize(path: string, lang: Locale) {
 /** Return the same page in the other locale. */
 export function switchPath(pathname: string, to: Locale) {
   const bare = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  // The cookie policy is the one page whose slug differs per language.
+  if (bare === "/cookie" || bare === "/cookies") return to === "en" ? "/en/cookies" : "/cookie";
   return localize(bare, to);
 }
 

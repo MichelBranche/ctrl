@@ -147,11 +147,30 @@
   list-style: none;
 }
 
-.h-socials span {
+.h-socials a {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--h-dim);
+  transition: color 0.2s ease;
+}
+
+.h-socials a:hover,
+.h-socials a:focus-visible,
+.h-legal a:hover,
+.h-legal a:focus-visible {
+  color: var(--accent, #ff4a1c);
+}
+
+.h-legal {
+  display: flex;
+  gap: 1.2rem;
+  margin: 0;
+}
+
+.h-legal a {
+  color: var(--h-dim);
+  transition: color 0.2s ease;
 }
 
 .h-socials svg {

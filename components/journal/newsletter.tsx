@@ -3,23 +3,37 @@
 import { useState, type FormEvent } from "react";
 import { JArrow } from "@/components/journal/arrow";
 import type { JournalCopy } from "@/components/journal/journal-copy";
+import { subscribe } from "@/app/actions/public";
 import { CONTACT_EMAIL } from "@/lib/content";
+import type { Locale } from "@/lib/i18n";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/**
- * TODO(newsletter): no provider is connected yet. This only validates the
- * address in the browser and stores nothing. Wire a provider (e.g. Resend
- * audiences or Buttondown) behind a server action before promising signups.
- */
-export function Newsletter({ copy }: { copy: JournalCopy }) {
-  const [state, setState] = useState<"idle" | "invalid" | "done">("idle");
+type State = "idle" | "invalid" | "busy" | "done" | "rate" | "error";
 
-  const submit = (e: FormEvent<HTMLFormElement>) => {
+/** Journal newsletter signup, stored in Turso by the subscribe server action (email, language, date). */
+export function Newsletter({ copy, lang }: { copy: JournalCopy; lang: Locale }) {
+  const [state, setState] = useState<State>("idle");
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const value = String(new FormData(e.currentTarget).get("email") ?? "").trim();
-    setState(EMAIL.test(value) ? "done" : "invalid");
+    const data = new FormData(e.currentTarget);
+    const value = String(data.get("email") ?? "").trim();
+    if (!EMAIL.test(value)) return setState("invalid");
+    data.set("lang", lang);
+    setState("busy");
+    const res = await subscribe(data).catch(() => ({ ok: false as const, error: "unavailable" as const }));
+    setState(res.ok ? "done" : res.error === "rate" ? "rate" : res.error === "invalid" ? "invalid" : "error");
   };
+
+  const msg = {
+    idle: "",
+    busy: "",
+    invalid: copy.newsInvalid,
+    done: copy.newsDone,
+    rate: copy.newsRate,
+    error: copy.newsError.replace("{email}", CONTACT_EMAIL),
+  }[state];
 
   return (
     <section className="j-news" data-j-fade-scroll>
@@ -42,12 +56,16 @@ export function Newsletter({ copy }: { copy: JournalCopy }) {
           aria-describedby="j-news-msg"
           onChange={() => state !== "idle" && setState("idle")}
         />
-        <button type="submit" className="j-pill" data-magnetic>
+        <input className="j-hp" name="company_site" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+        <button type="submit" className="j-pill" data-magnetic disabled={state === "busy"} aria-busy={state === "busy"}>
           <span>{copy.newsCta}</span>
           <JArrow />
         </button>
         <p id="j-news-msg" className="j-news-msg" role="status" data-state={state}>
-          {state === "invalid" ? copy.newsInvalid : state === "done" ? copy.newsSoon.replace("{email}", CONTACT_EMAIL) : ""}
+          {msg}
+        </p>
+        <p className="j-news-consent">
+          {copy.newsConsent} <a href={lang === "en" ? "/en/privacy" : "/privacy"}>{copy.newsPrivacy}</a>.
         </p>
       </form>
     </section>

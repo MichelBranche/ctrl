@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { submitContact } from "@/app/actions/public";
 import { contactCopy } from "@/components/pages/contact-copy";
 import { CONTACT_EMAIL } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
@@ -13,11 +14,13 @@ export function ContactForm({ lang }: { lang: Locale }) {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [sent, setSent] = useState(false);
 
-  // No email service is configured, so submit opens a prefilled mailto: link.
-  // TODO(Michel): post to an API route (e.g. Resend) and keep this as fallback.
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<"" | "rate" | "unavailable">("");
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const formEl = event.currentTarget;
+    const data = new FormData(formEl);
     const v = (k: Field) => String(data.get(k) ?? "").trim();
     const next: Partial<Record<Field, string>> = {};
     (["name", "email", "subject", "message"] as Field[]).forEach((k) => {
@@ -25,15 +28,18 @@ export function ContactForm({ lang }: { lang: Locale }) {
     });
     if (v("email") && !EMAIL_RE.test(v("email"))) next.email = c.badEmail;
     setErrors(next);
+    setFailure("");
     const first = Object.keys(next)[0];
     if (first) {
-      event.currentTarget.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      formEl.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
       return;
     }
-    const subject = `${v("subject")}: ${v("name")}`;
-    const body = `${v("message")}\n\n${c.mailFrom}: ${v("name")} <${v("email")}>`;
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+    data.set("lang", lang);
+    setPending(true);
+    const res = await submitContact(data).catch(() => ({ ok: false as const, error: "unavailable" as const }));
+    setPending(false);
+    if (res.ok) setSent(true);
+    else setFailure(res.error === "rate" ? "rate" : "unavailable");
   };
 
   if (sent) {
@@ -97,9 +103,19 @@ export function ContactForm({ lang }: { lang: Locale }) {
         <textarea name="message" rows={5} placeholder={c.messagePh} required {...aria("message")} />
         {err("message")}
       </label>
+      {/* Honeypot: hidden from people and assistive tech, bots fill it in. */}
+      <input className="c-hp" name="company_site" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+      <p className="c-full c-consent">
+        {c.consent} <a href={lang === "en" ? "/en/privacy" : "/privacy"}>{c.privacyLink}</a>.
+      </p>
+      {failure ? (
+        <p className="c-full c-error" role="alert">
+          {failure === "rate" ? c.rateError : c.sendError} <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        </p>
+      ) : null}
       <div className="c-full">
-        <button type="submit" className="c-send c-mono">
-          {c.send}
+        <button type="submit" className="c-send c-mono" disabled={pending} aria-busy={pending}>
+          {pending ? c.sending : c.send}
           <svg className="c-arrow" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.6" />
           </svg>

@@ -1,0 +1,6 @@
+/* Legal pages reuse the journal article layout and .j-prose; only the extras live here. */
+.l-root .j-prose table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.l-root .j-prose th, .l-root .j-prose td { padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--pr-rule); text-align: left; vertical-align: top; }
+.l-root .j-prose th { color: var(--pr-fg); font-weight: 500; }
+.l-root .j-a-body { overflow-x: auto; }
+.l-updated { margin-top: 3rem; color: var(--j-dim); font-size: 0.85rem; }

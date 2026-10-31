@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { signOut } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { rowToPost } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate, type Post } from "@/lib/journal-types";
 
-export default function AdminHome() {
+export default function JournalAdmin() {
   return (
     <Suspense fallback={<main className="adm-main" aria-busy="true" />}>
       <PostList />
@@ -15,7 +14,7 @@ export default function AdminHome() {
 }
 
 async function PostList() {
-  const { email } = await requireAdmin();
+  await requireAdmin();
   let posts: Post[] = [];
   let error = "";
   try {
@@ -31,14 +30,10 @@ async function PostList() {
     <main className="adm-main">
       <header className="adm-top">
         <div>
-          <p className="adm-kicker">CTRL® Journal</p>
-          <h1 className="adm-h1">Articoli</h1>
+          <h1 className="adm-h1">Journal</h1>
+          <p className="adm-muted">{posts.length} articoli</p>
         </div>
         <div className="adm-top-actions">
-          <span className="adm-muted">{email}</span>
-          <form action={signOut}>
-            <button className="adm-btn">Esci</button>
-          </form>
           <Link href="/admin/posts/new" className="adm-btn adm-btn-primary">
             Nuovo articolo
           </Link>
@@ -48,6 +43,7 @@ async function PostList() {
       {posts.length === 0 ? (
         <p className="adm-note">Nessun articolo. Crea il primo con “Nuovo articolo”.</p>
       ) : (
+        <div className="adm-table-wrap">
         <table className="adm-table">
           <thead>
             <tr>
@@ -85,6 +81,7 @@ async function PostList() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </main>
   );

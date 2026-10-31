@@ -69,7 +69,7 @@ export function PostEditor({ post }: { post: Post | null }) {
     <main className="adm-main">
       <header className="adm-top">
         <div>
-          <Link href="/admin" className="adm-link adm-back">← Articoli</Link>
+          <Link href="/admin/journal" className="adm-link adm-back">← Journal</Link>
           <h1 className="adm-h1">{post ? "Modifica articolo" : "Nuovo articolo"}</h1>
         </div>
         {post ? (

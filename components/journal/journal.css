@@ -354,3 +354,7 @@
 .j-posts-fallback { min-height: 60vh; }
 /* Room for descenders inside the SplitText word masks. */
 [data-j-split] > div { padding-bottom: 0.12em; margin-bottom: -0.12em; }
+.j-news-msg[data-state="rate"], .j-news-msg[data-state="error"] { color: var(--j-accent); }
+.j-news-consent { flex-basis: 100%; margin: 0; color: var(--j-dim); font-size: 0.78rem; line-height: 1.4; }
+.j-news-consent a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+.j-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }

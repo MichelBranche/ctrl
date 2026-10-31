@@ -1,5 +1,5 @@
 import "server-only";
-import { scrypt, timingSafeEqual } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,7 +9,9 @@ import { db, dbConfigured } from "@/lib/db";
  * Single-admin auth, no third party.
  * ADMIN_EMAIL + ADMIN_PASSWORD_HASH (scrypt, made by scripts/hash-password.mjs) + SESSION_SECRET.
  * Everything fails closed: if any of them is missing nobody can sign in.
+ * A password changed from the dashboard is stored as a hash in settings.admin_password_hash and overrides the env hash.
  */
+const PASSWORD_SETTING = "admin_password_hash";
 export const SESSION_COOKIE = "ctrl_admin";
 const SESSION_HOURS = 12;
 const MAX_FAILURES = 5;
@@ -43,6 +45,45 @@ async function verifyPassword(password: string, stored: string) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
+export async function hashPassword(password: string) {
+  const N = 32768, r = 8, p = 1;
+  const salt = randomBytes(16);
+  const hash = await scryptAsync(password.normalize("NFKC"), salt, 64, { N, r, p });
+  return `scrypt$${N}$${r}$${p}$${salt.toString("base64url")}$${hash.toString("base64url")}`;
+}
+
+/** The hash that is checked at login: the dashboard override when set, else ADMIN_PASSWORD_HASH. */
+async function currentHash() {
+  const res = await db().execute({ sql: "SELECT value FROM settings WHERE key = ?", args: [PASSWORD_SETTING] }).catch(() => null);
+  const stored = res?.rows[0]?.value;
+  return { hash: stored ? String(stored) : process.env.ADMIN_PASSWORD_HASH!, source: stored ? ("dashboard" as const) : ("env" as const) };
+}
+
+export async function passwordSource() {
+  return (await currentHash()).source;
+}
+
+export type ChangeResult = "ok" | "wrong" | "weak" | "mismatch" | "locked";
+
+/** Verifies the current password (same lockout as login), then stores a new scrypt hash in Turso. */
+export async function changePassword(current: string, next: string, confirm: string): Promise<ChangeResult> {
+  const key = await clientKey();
+  if (await isLocked(key)) return "locked";
+  const ok = await verifyPassword(current, (await currentHash()).hash).catch(() => false);
+  if (!ok) {
+    await recordFailure(key);
+    return "wrong";
+  }
+  if (next.length < 12 || next.length > 500) return "weak";
+  if (next !== confirm) return "mismatch";
+  await db().execute({
+    sql: `INSERT INTO settings (key, value) VALUES (?1, ?2)
+          ON CONFLICT(key) DO UPDATE SET value = ?2, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+    args: [PASSWORD_SETTING, await hashPassword(next)],
+  });
+  return "ok";
+}
+
 async function clientKey() {
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
@@ -74,7 +115,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   if (await isLocked(key)) return "locked";
   const emailOk = email.trim().toLowerCase() === adminEmail();
   // Always run scrypt so a wrong email costs the same time as a wrong password.
-  const passOk = await verifyPassword(password, process.env.ADMIN_PASSWORD_HASH!).catch(() => false);
+  const passOk = await verifyPassword(password, (await currentHash()).hash).catch(() => false);
   if (!emailOk || !passOk) {
     await recordFailure(key);
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
@@ -103,13 +144,13 @@ export async function logout() {
 
 /** Verifies the signed session cookie on every call. Returns null when not signed in or auth is unconfigured. */
 export async function getAdmin() {
-  if (!authConfigured()) return null;
+  // Read the cookie first so the check is always request-time, never baked into a prerender.
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  if (!authConfigured() || !token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience: "ctrl-admin" });
     if (payload.sub !== adminEmail()) return null;
-    return { email: adminEmail() };
+    return { email: adminEmail(), issuedAt: Number(payload.iat ?? 0) * 1000, expiresAt: Number(payload.exp ?? 0) * 1000 };
   } catch {
     return null;
   }

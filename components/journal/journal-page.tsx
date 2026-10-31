@@ -49,7 +49,7 @@ export async function JournalView({ lang }: { lang: Locale }) {
         <Suspense fallback={<div className="j-posts-fallback" aria-hidden />}>
           <JournalPosts lang={lang} copy={c} />
         </Suspense>
-        <Newsletter copy={c} />
+        <Newsletter copy={c} lang={lang} />
       </main>
       <SiteFooter />
     </>

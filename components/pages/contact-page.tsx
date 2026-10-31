@@ -7,11 +7,9 @@ import { ContactForm } from "@/components/pages/contact-form";
 import { contactCopy } from "@/components/pages/contact-copy";
 import { CONTACT_EMAIL } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
+import { getSocialLinks } from "@/lib/settings";
 import "./contact.css";
 
-// Same labels as the shared footer; it has no real URLs yet, so neither do we.
-// TODO(Michel): add the social URLs here and in site-footer.tsx.
-const SOCIALS = ["LinkedIn", "Instagram", "Behance"];
 const MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Aosta%2C+Valle+d%27Aosta";
 
 export function contactMetadata(lang: Locale): Metadata {
@@ -27,8 +25,9 @@ function Arrow({ className = "c-arrow" }: { className?: string }) {
   );
 }
 
-export function ContactView({ lang }: { lang: Locale }) {
+export async function ContactView({ lang }: { lang: Locale }) {
   const c = contactCopy[lang];
+  const socials = await getSocialLinks();
   return (
     <>
       <SiteHeader />
@@ -67,14 +66,18 @@ export function ContactView({ lang }: { lang: Locale }) {
             <span className="c-info-value">{c.place}</span>
             <span className="c-info-note">{c.placeNote}</span>
           </li>
-          <li className="c-info-col">
-            <span className="c-mono c-label">{c.socialLabel}</span>
-            <span className="c-socials">
-              {SOCIALS.map((s) => (
-                <span key={s}>{s}</span>
-              ))}
-            </span>
-          </li>
+          {socials.length ? (
+            <li className="c-info-col">
+              <span className="c-mono c-label">{c.socialLabel}</span>
+              <span className="c-socials">
+                {socials.map((s) => (
+                  <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer me">
+                    {s.label}
+                  </a>
+                ))}
+              </span>
+            </li>
+          ) : null}
         </ul>
 
         <section className="c-form-wrap" id="scrivi">

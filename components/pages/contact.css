@@ -103,7 +103,7 @@
 /* 2. INFO STRIP */
 .c-info {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   max-width: var(--c-max);
   margin: 0 auto;
   padding: 0;
@@ -321,3 +321,9 @@
   .c-root *,
   .c-root *::after { transition-duration: 0.01ms !important; }
 }
+.c-hp, .j-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.c-consent { margin: 0; color: var(--c-dim, rgba(255, 255, 255, 0.6)); font-size: 0.8rem; line-height: 1.5; }
+.c-consent a, .c-error a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+.c-send:disabled { opacity: 0.6; cursor: wait; }
+.c-socials a { text-decoration: none; transition: color 0.2s ease; }
+.c-socials a:hover, .c-socials a:focus-visible { color: var(--c-accent); }
