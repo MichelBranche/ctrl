@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CONTACT_EMAIL, projectCategories, services } from "@/lib/content";
-import { dict, localeFromPath, localize, switchPath } from "@/lib/i18n";
+import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
 
@@ -59,7 +59,7 @@ export function CommandMenu() {
         id: "lang",
         group: "CTRL®",
         label: t.cmd.lang,
-        run: () => go(switchPath(pathname, lang === "it" ? "en" : "it")),
+        run: () => { const to = lang === "it" ? "en" : "it"; rememberLocale(to); go(switchPath(pathname, to)); },
       },
     ];
   }, [t, lang, go, pathname]);

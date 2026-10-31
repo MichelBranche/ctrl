@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { locales, localeFromPath, switchPath, dict } from "@/lib/i18n";
+import { locales, localeFromPath, rememberLocale, switchPath, dict } from "@/lib/i18n";
 
 export function LangSwitch({ className = "" }: { className?: string }) {
   const pathname = usePathname() ?? "/";
@@ -20,6 +20,7 @@ export function LangSwitch({ className = "" }: { className?: string }) {
           key={lang}
           href={switchPath(pathname, lang)}
           hrefLang={lang}
+          onClick={() => rememberLocale(lang)}
           aria-current={lang === current ? "true" : undefined}
           className={lang === current ? "is-active" : undefined}
         >

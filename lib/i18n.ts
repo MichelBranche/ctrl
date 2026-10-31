@@ -20,6 +20,21 @@ export function switchPath(pathname: string, to: Locale) {
   return localize(bare, to);
 }
 
+/** Cookie holding a language picked by hand with the switch; it wins over device detection. */
+export const LANG_COOKIE = "ctrl-lang";
+
+/** Device language to site language: Italian for any "it*" tag, English for every other language. */
+export function localeFromAcceptLanguage(header: string | null): Locale | null {
+  const first = header?.split(",")[0]?.trim().toLowerCase();
+  if (!first || first === "*") return null;
+  return first.startsWith("it") ? "it" : "en";
+}
+
+/** Persist a manual language choice for a year (client only). */
+export function rememberLocale(lang: Locale) {
+  document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
+}
+
 export function localeFromPath(pathname: string | null): Locale {
   return pathname && /^\/en(\/|$)/.test(pathname) ? "en" : "it";
 }
