@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useSpring } from "motion/react";
 
-export type HoverProject = { key: string; label: string; index: string; href: string; image: string | null };
+export type HoverProject = { key: string; label: string; category?: string; index: string; href: string; image: string | null };
 
 const SPRING = { mass: 0.1, damping: 16, stiffness: 71 };
 const EASE = [0.19, 1, 0.22, 1] as const;
@@ -38,18 +38,31 @@ function Word({ text, variants, className }: { text: string; variants: typeof en
   );
 }
 
-function Thumb({ item, i, onHover }: { item: HoverProject; i: number; onHover: (i: number | null) => void }) {
-  const [on, setOn] = useState(false);
+function Thumb({ item, i, onHover, onPick, current }: { item: HoverProject; i: number; onHover: (i: number | null) => void; onPick: (i: number) => void; current: boolean }) {
+  const [hover, setOn] = useState(false);
+  const touch = useRef(false);
+  const on = hover || current;
   return (
     <motion.div
       className="hp-thumb"
+      data-on={on ? "" : undefined}
       style={{ width: on ? 120 : 60, height: on ? 120 : 60 }}
       animate={{ width: on ? 120 : 60, height: on ? 120 : 60 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       onHoverStart={() => { setOn(true); onHover(i); }}
       onHoverEnd={() => { setOn(false); onHover(null); }}
     >
-      <Link href={item.href} className="hp-thumb-in" aria-label={`${item.index} ${item.label}`}
+      <Link href={item.href} className="hp-thumb-in" aria-label={`${item.index} ${item.label}${item.category ? `, ${item.category}` : ""}`}
+        onPointerDown={(e) => {
+          touch.current = e.pointerType !== "mouse";
+          // Tells the page transition (window capture listener) to leave a preview tap alone.
+          if (touch.current && !current) e.currentTarget.dataset.preview = "";
+          else delete e.currentTarget.dataset.preview;
+        }}
+        onClick={(e) => {
+          // Touch: first tap previews the project in the giant word, second tap opens it.
+          if (touch.current && !current) { e.preventDefault(); onPick(i); }
+        }}
         onFocus={() => { setOn(true); onHover(i); }} onBlur={() => { setOn(false); onHover(null); }}>
         {item.image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -63,14 +76,19 @@ function Thumb({ item, i, onHover }: { item: HoverProject; i: number; onHover: (
   );
 }
 
-export function HoverProjects({ items, defaultName }: { items: HoverProject[]; defaultName: string }) {
+export function HoverProjects({ items, defaultName, openLabel, hint }: { items: HoverProject[]; defaultName: string; openLabel?: string; hint?: string }) {
   const [active, setActive] = useState<number | null>(null);
+  // Touch has no hover: a tapped tile stays selected until another is tapped.
+  const [picked, setPicked] = useState<number | null>(null);
+  const shown = active ?? picked;
+
   const row = useRef<HTMLDivElement>(null);
   const x = useSpring(0, SPRING);
   const y = useSpring(0, SPRING);
   const scale = useSpring(0, { mass: 0.1, damping: 10, stiffness: 150 });
   const labels = Array.from(new Set(items.map((item) => item.label)));
-  const activeLabel = active === null ? null : items[active].label;
+  const activeLabel = shown === null ? null : items[shown].label;
+  const cur = shown === null ? null : items[shown];
   // Last pointer position in viewport coords, so the follower can be re-anchored
   // when the row moves under a still pointer (wheel / Lenis smooth scroll).
   const pointer = useRef<{ x: number; y: number; inside: boolean }>({ x: 0, y: 0, inside: false });
@@ -115,7 +133,7 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
         }}
         onPointerLeave={() => { pointer.current.inside = false; scale.set(0); }}
       >
-        {items.map((item, i) => <Thumb key={item.key} item={item} i={i} onHover={setActive} />)}
+        {items.map((item, i) => <Thumb key={item.key} item={item} i={i} onHover={setActive} onPick={setPicked} current={picked === i} />)}
         <motion.div className="hp-cursor" aria-hidden="true" style={{ x, y, scale, transformOrigin: "left top" }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M6.52182 2.75026L12.8858 9.11422L15.253 0.38299L6.52182 2.75026Z" fill="currentColor" />
@@ -139,11 +157,34 @@ export function HoverProjects({ items, defaultName }: { items: HoverProject[]; d
                 {activeLabel === label && (
                   <motion.div className="hp-layer" initial="hidden" animate="visible" exit="hidden"
                     transition={{ duration: 0.8, ease: EASE }}>
-                    <Word text={label} variants={enter} className="hp-word-hover" />
+                    {(() => {
+                      const img = items.find((it) => it.label === label)?.image;
+                      return img ? (
+                        // The photo sits under a black knockout: white letters (multiply) let it show through the word.
+                        <motion.span className="hp-photo" aria-hidden="true" style={{ backgroundImage: `url(${img})` }}
+                          initial={{ scale: 1.15, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
+                          transition={{ duration: 0.9, ease: EASE }} />
+                      ) : null;
+                    })()}
+                    <div className="hp-knock">
+                      <Word text={label} variants={enter} className="hp-word-hover" />
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             ))}
+      </div>
+      <div className="hp-caption" aria-live="polite">
+        {cur ? (
+          <Link href={cur.href} className="hp-open">
+            <span className="hp-cap-num">{cur.index}</span>
+            <span className="hp-cap-name">{cur.label}</span>
+            {cur.category && <span className="hp-cap-cat">{cur.category}</span>}
+            <span className="hp-cap-go">{openLabel} <span aria-hidden="true">&rarr;</span></span>
+          </Link>
+        ) : (
+          <span className="hp-cap-hint">{hint}</span>
+        )}
       </div>
     </div>
   );

@@ -432,16 +432,21 @@ export type HomeFeatured = {
   href: string;
 };
 
-// TODO(Michel): placeholder data. Replace with the real projects for the home
-// "Progetti recenti" block (first item is the featured one).
-export const homeFeatured: HomeFeatured[] = [1, 2, 3, 4].map((n) => ({
-  index: String(n).padStart(2, "0"),
-  title: { it: "Progetto in arrivo", en: "Project coming soon" },
-  category: { it: "Categoria", en: "Category" },
-  description: { it: "Descrizione del progetto in arrivo.", en: "Project description coming soon." },
-  image: null,
-  href: "/projects",
-}));
+// "Progetti recenti" on the home: real website projects, linked to their detail pages.
+const HOME_SLUGS = ["sbrano", "maison-altura", "orma", "omama"];
+export const homeFeatured: HomeFeatured[] = HOME_SLUGS.map((slug, i) => {
+  const p = projects.find((x) => x.slug === slug);
+  if (!p) throw new Error(`homeFeatured: unknown project ${slug}`);
+  const group = websiteGroups.find((g) => g.slug === p.group);
+  return {
+    index: String(i + 1).padStart(2, "0"),
+    title: p.title,
+    category: group?.label ?? { it: "Siti web", en: "Websites" },
+    description: p.description ?? { it: "", en: "" },
+    image: p.image ?? null,
+    href: `/projects/websites/${slug}`,
+  };
+});
 
 export type Service = {
   slug: string;

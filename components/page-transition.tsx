@@ -78,6 +78,7 @@ function targetOf(event: MouseEvent): string | null {
   if (event.defaultPrevented || event.button !== 0) return null;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null;
   const link = (event.target as HTMLElement | null)?.closest("a");
+  if (link?.hasAttribute("data-preview")) return null;
   if (!link || link.closest("[data-no-transition]")) return null;
   if (link.target && link.target !== "_self") return null;
   if (link.hasAttribute("download")) return null;

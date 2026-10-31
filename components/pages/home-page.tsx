@@ -137,10 +137,13 @@ export function HomePage({ lang }: { lang: Locale }) {
             </div>
             <HoverProjects
               defaultName="CTRL®"
+              openLabel={lang === "it" ? "Apri il progetto" : "Open project"}
+              hint={lang === "it" ? "Passa sopra un progetto" : "Hover a project"}
               items={homeFeatured.map((item) => ({
                 key: item.index,
                 index: item.index,
                 label: item.title[lang],
+                category: item.category[lang],
                 href: localize(item.href, lang),
                 image: item.image,
               }))}
