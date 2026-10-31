@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { CtrlAssistant } from "@/components/ctrl-assistant";
 import { CommandMenu } from "@/components/command-menu";
 import { IntroLoader } from "@/components/intro-loader";
+import { PageTransition } from "@/components/page-transition";
 import { BackToTop } from "@/components/back-to-top";
 import { Micro } from "@/components/micro";
 import { ScrollProgress } from "@/components/scroll-progress";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <CommandMenu />
         {children}
         <ScrollReveal />
+        <PageTransition />
         <CtrlAssistant />
         <Analytics />
       </body>
