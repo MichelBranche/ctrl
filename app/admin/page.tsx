@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/admin";
+import { db } from "@/lib/db";
+import { rowToPost } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate, type Post } from "@/lib/journal-types";
 
 export default function AdminHome() {
@@ -13,12 +15,17 @@ export default function AdminHome() {
 }
 
 async function PostList() {
-  const { supabase, email } = await requireAdmin();
-  const { data, error } = await supabase
-    .from("posts")
-    .select("id, slug, lang, title, category, status, published_at")
-    .order("published_at", { ascending: false });
-  const posts = (data ?? []) as Pick<Post, "id" | "slug" | "lang" | "title" | "category" | "status" | "published_at">[];
+  const { email } = await requireAdmin();
+  let posts: Post[] = [];
+  let error = "";
+  try {
+    const res = await db().execute(
+      "SELECT id, slug, lang, title, category, '' AS excerpt, '' AS body_md, NULL AS cover_url, '' AS cover_alt, published, published_at, updated_at FROM posts ORDER BY published_at DESC",
+    );
+    posts = res.rows.map(rowToPost);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "database";
+  }
 
   return (
     <main className="adm-main">
@@ -37,7 +44,7 @@ async function PostList() {
           </Link>
         </div>
       </header>
-      {error ? <p className="adm-error">Errore: {error.message}</p> : null}
+      {error ? <p className="adm-error">Errore nel caricamento degli articoli.</p> : null}
       {posts.length === 0 ? (
         <p className="adm-note">Nessun articolo. Crea il primo con “Nuovo articolo”.</p>
       ) : (

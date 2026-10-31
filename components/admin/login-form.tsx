@@ -1,15 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { signIn, type FormState } from "@/app/admin/actions";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(signIn, {});
+  const [email, setEmail] = useState("");
   return (
     <form action={action} className="adm-form">
       <label className="adm-field">
         <span>Email</span>
-        <input name="email" type="email" autoComplete="username" required />
+        <input name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </label>
       <label className="adm-field">
         <span>Password</span>

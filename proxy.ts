@@ -1,24 +1,8 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-/** Admin only: keep the Supabase session cookie fresh and keep the area out of search engines. */
-export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && key) {
-    const supabase = createServerClient(url, key, {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (list) => {
-          list.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
-          list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        },
-      },
-    });
-    await supabase.auth.getUser();
-  }
+/** Admin only: keep the area out of search engines and out of shared caches. Auth is checked server-side in every page and action. */
+export function proxy() {
+  const response = NextResponse.next();
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
   response.headers.set("Cache-Control", "private, no-store");
   return response;

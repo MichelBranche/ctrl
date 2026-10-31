@@ -12,6 +12,25 @@ function toLocalInput(iso: string) {
   return new Date(d.getTime() - off).toISOString().slice(0, 16);
 }
 
+/** Downscale to 2400px and re-encode as WebP in the browser, so uploads stay well under Vercel's 4.5 MB request cap. */
+async function compress(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
+    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
 export function PostEditor({ post }: { post: Post | null }) {
   const [state, action, pending] = useActionState<FormState, FormData>(savePost, {});
   const [title, setTitle] = useState(post?.title ?? "");
@@ -27,10 +46,10 @@ export function PostEditor({ post }: { post: Post | null }) {
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
-    const fd = new FormData();
-    fd.set("file", file);
     setUploadMsg("Caricamento…");
     startUpload(async () => {
+      const fd = new FormData();
+      fd.set("file", await compress(file));
       const res = await uploadCover(fd);
       if (res.url) {
         setCover(res.url);

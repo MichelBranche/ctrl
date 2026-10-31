@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PostEditor } from "@/components/admin/post-editor";
 import { requireAdmin } from "@/lib/admin";
-import type { Post } from "@/lib/journal-types";
+import { db } from "@/lib/db";
+import { POST_COLUMNS, rowToPost } from "@/lib/journal";
 
 export default function EditPost({ searchParams }: PageProps<"/admin/edit">) {
   return (
@@ -13,10 +14,11 @@ export default function EditPost({ searchParams }: PageProps<"/admin/edit">) {
 }
 
 async function Editor({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { supabase } = await requireAdmin();
+  await requireAdmin();
   const id = (await searchParams).id;
   if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const { data } = await supabase.from("posts").select("*").eq("id", id).maybeSingle();
-  if (!data) notFound();
-  return <PostEditor key={data.updated_at} post={data as Post} />;
+  const res = await db().execute({ sql: `SELECT ${POST_COLUMNS} FROM posts WHERE id = ?`, args: [id] });
+  if (!res.rows[0]) notFound();
+  const post = rowToPost(res.rows[0]);
+  return <PostEditor key={post.updated_at} post={post} />;
 }

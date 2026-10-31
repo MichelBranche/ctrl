@@ -1,33 +1,28 @@
 "use server";
 
+import { put } from "@vercel/blob";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { adminEmails, getAdmin } from "@/lib/admin";
+import { getAdmin, login, logout } from "@/lib/admin";
+import { db } from "@/lib/db";
 import { POSTS_TAG } from "@/lib/journal";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
-import { COVERS_BUCKET, supabaseConfigured } from "@/lib/supabase/config";
-import { sessionClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; ok?: string };
 
 export async function signIn(_: FormState, form: FormData): Promise<FormState> {
-  if (!supabaseConfigured) return { error: "Supabase non configurato (variabili d'ambiente mancanti)." };
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const password = String(form.get("password") ?? "");
+  const email = String(form.get("email") ?? "").slice(0, 200);
+  const password = String(form.get("password") ?? "").slice(0, 500);
   if (!email || !password) return { error: "Inserisci email e password." };
-  const supabase = await sessionClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "Credenziali non valide." };
-  if (!adminEmails().includes(email)) {
-    await supabase.auth.signOut();
-    return { error: "Questo account non è abilitato all'area admin." };
-  }
+  const result = await login(email, password);
+  if (result === "unconfigured") return { error: "Accesso non configurato sul server." };
+  if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
+  if (result === "invalid") return { error: "Credenziali non valide." };
   redirect("/admin");
 }
 
 export async function signOut() {
-  const supabase = await sessionClient();
-  await supabase.auth.signOut();
+  await logout();
   redirect("/admin/login");
 }
 
@@ -54,16 +49,16 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
   if (Number.isNaN(date.getTime())) return { error: "Data non valida." };
 
   const coverUrl = str(form, "cover_url", 500);
-  if (coverUrl && !/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(coverUrl) && !coverUrl.startsWith("/images/")) {
+  if (coverUrl && !/^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/covers\//i.test(coverUrl) && !coverUrl.startsWith("/images/")) {
     return { error: "URL della copertina non valido." };
   }
 
-  const row = {
+  const args = {
     title,
     slug,
     lang,
     category,
-    status,
+    published: status === "published" ? 1 : 0,
     excerpt: str(form, "excerpt", 400),
     body_md: String(form.get("body_md") ?? "").slice(0, 200_000),
     cover_url: coverUrl || null,
@@ -71,23 +66,40 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
     published_at: date.toISOString(),
   };
 
-  const q = id ? admin.supabase.from("posts").update(row).eq("id", id).select("id").single() : admin.supabase.from("posts").insert(row).select("id").single();
-  const { data, error } = await q;
-  if (error) {
-    if (error.code === "23505") return { error: "Esiste già un articolo con questo slug in questa lingua." };
-    return { error: `Salvataggio non riuscito: ${error.message}` };
+  const newId = id || crypto.randomUUID();
+  try {
+    if (id) {
+      const res = await db().execute({
+        sql: `UPDATE posts SET title = :title, slug = :slug, lang = :lang, category = :category, published = :published,
+              excerpt = :excerpt, body_md = :body_md, cover_url = :cover_url, cover_alt = :cover_alt, published_at = :published_at,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id`,
+        args: { ...args, id },
+      });
+      if (!res.rowsAffected) return { error: "Articolo non trovato." };
+    } else {
+      await db().execute({
+        sql: `INSERT INTO posts (id, title, slug, lang, category, published, excerpt, body_md, cover_url, cover_alt, published_at)
+              VALUES (:id, :title, :slug, :lang, :category, :published, :excerpt, :body_md, :cover_url, :cover_alt, :published_at)`,
+        args: { ...args, id: newId },
+      });
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (/UNIQUE/i.test(msg)) return { error: "Esiste già un articolo con questo slug in questa lingua." };
+    console.error("[admin] save failed:", msg);
+    return { error: "Salvataggio non riuscito." };
   }
   updateTag(POSTS_TAG);
-  if (!id) redirect(`/admin/edit?id=${data.id}`);
+  if (!id) redirect(`/admin/edit?id=${newId}`);
   return { ok: status === "published" ? "Salvato e pubblicato." : "Bozza salvata." };
 }
 
 export async function deletePost(form: FormData) {
   const admin = await getAdmin();
   if (!admin) redirect("/admin/login");
-  const id = String(form.get("id") ?? "");
+  const id = String(form.get("id") ?? "").slice(0, 64);
   if (id) {
-    await admin.supabase.from("posts").delete().eq("id", id);
+    await db().execute({ sql: "DELETE FROM posts WHERE id = ?", args: [id] });
     updateTag(POSTS_TAG);
   }
   redirect("/admin");
@@ -103,8 +115,13 @@ export async function uploadCover(form: FormData): Promise<{ url?: string; error
   const ext = MIME[file.type];
   if (!ext) return { error: "Formato non supportato (JPG, PNG, WebP, AVIF)." };
   if (file.size > 5 * 1024 * 1024) return { error: "Immagine oltre 5 MB." };
-  const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await admin.supabase.storage.from(COVERS_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
-  if (error) return { error: `Upload non riuscito: ${error.message}` };
-  return { url: admin.supabase.storage.from(COVERS_BUCKET).getPublicUrl(path).data.publicUrl };
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return { error: "Storage immagini non configurato." };
+  const path = `covers/${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
+  try {
+    const blob = await put(path, file, { access: "public", contentType: file.type, addRandomSuffix: false });
+    return { url: blob.url };
+  } catch (error) {
+    console.error("[admin] upload failed:", error instanceof Error ? error.message : error);
+    return { error: "Upload non riuscito." };
+  }
 }
