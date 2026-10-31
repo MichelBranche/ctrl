@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { CtrlMascot } from "@/components/ctrl-mascot";
 import { useLocale } from "@/components/use-locale";
+import { whatsappLink } from "@/lib/content";
 import type { ChatLink, ChatMessage } from "@/lib/assistant";
 
 type Msg = ChatMessage & { links?: ChatLink[] };
@@ -20,6 +21,9 @@ const copy = {
     send: "Invia",
     thinking: "Sto pensando",
     error: "Qualcosa è andato storto. Riprova tra poco.",
+    human: "Parla con un umano",
+    humanHint: "Scrivici su WhatsApp",
+    humanText: "Ciao, vi scrivo dal sito CTRL®",
   },
   en: {
     open: "Open the CTRL® assistant",
@@ -31,6 +35,9 @@ const copy = {
     send: "Send",
     thinking: "Thinking",
     error: "Something went wrong. Please try again shortly.",
+    human: "Talk to a human",
+    humanHint: "Message us on WhatsApp",
+    humanText: "Hi, I'm writing from the CTRL® website",
   },
 };
 
@@ -217,6 +224,14 @@ export function CtrlAssistant() {
               {chip}
             </button>
           ))}
+        </div>
+
+        <div className="ca-human">
+          <a className="ca-human-main" href={whatsappLink(c.humanText)} target="_blank" rel="noopener noreferrer" data-no-transition>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 0 0-5.6 9.8L1.5 14.5l3.3-.9A6.5 6.5 0 1 0 8 1.5Z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+            <span>{c.human}</span>
+            <small>{c.humanHint}</small>
+          </a>
         </div>
 
         <form className="ca-form" onSubmit={onSubmit}>

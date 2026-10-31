@@ -2,6 +2,11 @@ import type { L, Locale } from "@/lib/i18n";
 
 /** Single source of truth for the studio contact address. */
 export const CONTACT_EMAIL = "ctrlragency@gmail.com";
+/** Michel's phone, international format. Single source for the WhatsApp link. */
+export const CONTACT_PHONE = "+393881660117";
+/** WhatsApp chat link for CONTACT_PHONE, with an optional prefilled message. */
+export const whatsappLink = (text?: string) =>
+  `https://wa.me/${CONTACT_PHONE.replace(/\D/g, "")}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 
 export const studio = {
   email: CONTACT_EMAIL,
