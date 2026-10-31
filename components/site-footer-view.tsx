@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { CtrlMark } from "@/components/letter-hover";
+import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
 import { CONTACT_EMAIL } from "@/lib/content";
 import type { SocialKey, SocialLink } from "@/lib/settings-types";
@@ -147,6 +148,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
             ))}
           </ul>
         ) : null}
+        <FooterNewsletter lang={lang} />
         <p className="h-small h-legal">
           <a href={lang === "en" ? "/en/privacy" : "/privacy"}>Privacy</a>
           <a href={lang === "en" ? "/en/cookies" : "/cookie"}>Cookie</a>

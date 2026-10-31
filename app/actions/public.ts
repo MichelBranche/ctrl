@@ -38,7 +38,8 @@ export type SubscribeResult = { ok: true } | { ok: false; error: "invalid" | "ra
 export async function subscribe(form: FormData): Promise<SubscribeResult> {
   if (clip(form, "company_site", 200)) return { ok: true };
   const email = clip(form, "email", 200).toLowerCase();
-  if (!EMAIL.test(email)) return { ok: false, error: "invalid" };
+  // GDPR: explicit consent checkbox is required; the form blocks it client-side too.
+  if (!EMAIL.test(email) || form.get("consent") !== "on") return { ok: false, error: "invalid" };
   if (!dbConfigured) return { ok: false, error: "unavailable" };
   try {
     if (!(await allow("newsletter", 5, 3_600_000))) return { ok: false, error: "rate" };

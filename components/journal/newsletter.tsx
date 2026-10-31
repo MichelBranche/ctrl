@@ -19,7 +19,7 @@ export function Newsletter({ copy, lang }: { copy: JournalCopy; lang: Locale }) 
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const value = String(data.get("email") ?? "").trim();
-    if (!EMAIL.test(value)) return setState("invalid");
+    if (!EMAIL.test(value) || data.get("consent") !== "on") return setState("invalid");
     data.set("lang", lang);
     setState("busy");
     const res = await subscribe(data).catch(() => ({ ok: false as const, error: "unavailable" as const }));
@@ -64,9 +64,12 @@ export function Newsletter({ copy, lang }: { copy: JournalCopy; lang: Locale }) 
         <p id="j-news-msg" className="j-news-msg" role="status" data-state={state}>
           {msg}
         </p>
-        <p className="j-news-consent">
-          {copy.newsConsent} <a href={lang === "en" ? "/en/privacy" : "/privacy"}>{copy.newsPrivacy}</a>.
-        </p>
+        <label className="j-news-consent">
+          <input type="checkbox" name="consent" required onChange={() => state !== "idle" && setState("idle")} />{" "}
+          <span>
+            {copy.newsConsent} <a href={lang === "en" ? "/en/privacy" : "/privacy"}>{copy.newsPrivacy}</a>.
+          </span>
+        </label>
       </form>
     </section>
   );

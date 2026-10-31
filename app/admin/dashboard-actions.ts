@@ -37,6 +37,20 @@ export async function deleteRequest(form: FormData) {
   revalidatePath("/admin/requests");
 }
 
+/** Activate (clear unsubscribed_at) or deactivate (stamp it) a subscriber. Admin session required. */
+export async function setSubscriberActive(id: string, active: boolean): Promise<{ ok: boolean }> {
+  await guard();
+  if (!ID.test(id)) return { ok: false };
+  const res = await db().execute({
+    sql: active
+      ? "UPDATE subscribers SET unsubscribed_at = NULL WHERE id = ?"
+      : "UPDATE subscribers SET unsubscribed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND unsubscribed_at IS NULL",
+    args: [id],
+  });
+  revalidatePath("/admin/newsletter");
+  return { ok: res.rowsAffected > 0 || active };
+}
+
 export async function removeSubscriber(form: FormData) {
   await guard();
   const id = idOf(form);
