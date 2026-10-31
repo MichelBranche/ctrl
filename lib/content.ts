@@ -111,6 +111,8 @@ export type Project = {
   /** Short localized context line (city, sector). */
   place?: L;
   tech?: string[];
+  /** Real screenshots of the live site (public/ paths), shown on the detail page. */
+  gallery?: { src: string; kind: "cover" | "desktop" | "mobile" }[];
   /** Who built it: drives the per-card credit ("Realizzato da {name}"). */
   author?: ProjectAuthor;
 };
@@ -121,6 +123,17 @@ export const AUTHORS = {
   michel: { name: "Michel Branche", url: "https://www.michelbranche.it" },
   kallebe: { name: "Kallebe Gallo", url: "https://portafoglio-alpha.vercel.app/" },
 } satisfies Record<string, ProjectAuthor>;
+
+/**
+ * Gallery: mockups and stills from michelbranche.it (portfolio, saved in public/), Playwright captures of the
+ * live site only for the phone view the portfolio lacks (mobile.webp), then the portfolio cover.
+ */
+const shots = (slug: string, views: string[]): Project["gallery"] => [
+  ...views.map((v) => ({ src: `/images/projects/shots/${slug}/${v}.webp`, kind: "desktop" as const })),
+  { src: `/images/projects/works/${slug}.webp`, kind: "cover" },
+  { src: `/images/projects/shots/${slug}/mobile.webp`, kind: "mobile" },
+];
+const MOCKUPS = ["mockup-hero", "mockup-sections"];
 
 export type WebsiteGroup = { slug: string; label: L };
 
@@ -142,6 +155,7 @@ export const projects: Project[] = [
   {
     slug: "omama",
     category: "websites",
+    gallery: shots("omama", MOCKUPS),
     group: "hospitality",
     title: { it: "OMAMA Social Hotel", en: "OMAMA Social Hotel" },
     client: "Aosta",
@@ -158,6 +172,7 @@ export const projects: Project[] = [
   {
     slug: "villa-matilde",
     category: "websites",
+    gallery: shots("villa-matilde", MOCKUPS),
     group: "hospitality",
     title: { it: "Sina Villa Matilde", en: "Sina Villa Matilde" },
     client: "Canavese",
@@ -174,6 +189,7 @@ export const projects: Project[] = [
   {
     slug: "sbrano",
     category: "websites",
+    gallery: shots("sbrano", ["mockup-hero", "builder", "drop", "map", "menu"]),
     group: "food",
     title: { it: "Sbrano", en: "Sbrano" },
     client: "Torino",
@@ -190,6 +206,7 @@ export const projects: Project[] = [
   {
     slug: "orma",
     category: "websites",
+    gallery: shots("orma", MOCKUPS),
     group: "food",
     title: { it: "Orma", en: "Orma" },
     client: "Valle d'Aosta",
@@ -206,6 +223,7 @@ export const projects: Project[] = [
   {
     slug: "maison-altura",
     category: "websites",
+    gallery: shots("maison-altura", MOCKUPS),
     group: "food",
     title: { it: "Maison Altura", en: "Maison Altura" },
     client: "Cantina alpina",
@@ -222,6 +240,7 @@ export const projects: Project[] = [
   {
     slug: "caffe-nazionale",
     category: "websites",
+    gallery: shots("caffe-nazionale", MOCKUPS),
     group: "food",
     title: { it: "Caffè Nazionale", en: "Caffè Nazionale" },
     client: "Paolo Griffa",
@@ -238,6 +257,7 @@ export const projects: Project[] = [
   {
     slug: "il-gusto",
     category: "websites",
+    gallery: shots("il-gusto", MOCKUPS),
     group: "food",
     title: { it: "Il Gusto", en: "Il Gusto" },
     client: "Pizzeria al taglio",
@@ -254,6 +274,7 @@ export const projects: Project[] = [
   {
     slug: "chaumont",
     category: "websites",
+    gallery: shots("chaumont", ["mockup-hero"]),
     group: "culture",
     title: { it: "Château de Chaumont", en: "Château de Chaumont" },
     client: "Fan concept",
@@ -270,6 +291,7 @@ export const projects: Project[] = [
   {
     slug: "museo-egizio",
     category: "websites",
+    gallery: shots("museo-egizio", MOCKUPS),
     group: "culture",
     title: { it: "Museo Egizio", en: "Museo Egizio" },
     client: "Torino",
@@ -286,6 +308,7 @@ export const projects: Project[] = [
   {
     slug: "webtec-1",
     category: "websites",
+    gallery: shots("webtec-1", MOCKUPS),
     group: "culture",
     title: { it: "Webtec Agency, concept 1", en: "Webtec Agency, concept 1" },
     client: "Stoccolma",
@@ -302,6 +325,7 @@ export const projects: Project[] = [
   {
     slug: "webtec-2",
     category: "websites",
+    gallery: shots("webtec-2", MOCKUPS),
     group: "culture",
     title: { it: "Webtec Agency, concept 2", en: "Webtec Agency, concept 2" },
     client: "Stoccolma",
@@ -318,6 +342,7 @@ export const projects: Project[] = [
   {
     slug: "streetwear",
     category: "websites",
+    gallery: shots("streetwear", MOCKUPS),
     group: "brand",
     title: { it: "Streetwear", en: "Streetwear" },
     client: "E-commerce",
@@ -334,6 +359,7 @@ export const projects: Project[] = [
   {
     slug: "rubina",
     category: "websites",
+    gallery: shots("rubina", MOCKUPS),
     group: "brand",
     title: { it: "Rubina Stradella", en: "Rubina Stradella" },
     client: "Fotografia",
@@ -350,6 +376,7 @@ export const projects: Project[] = [
   {
     slug: "self-order-kiosk",
     category: "websites",
+    gallery: shots("self-order-kiosk", MOCKUPS),
     group: "interfaces",
     title: { it: "Kiosk self-order", en: "Kiosk self-order" },
     client: "Food tech",
@@ -366,6 +393,7 @@ export const projects: Project[] = [
   {
     slug: "spotify-clone",
     category: "websites",
+    gallery: shots("spotify-clone", MOCKUPS),
     group: "interfaces",
     title: { it: "Spotify UI clone", en: "Spotify UI clone" },
     client: "Interfaccia",
@@ -383,6 +411,11 @@ export const projects: Project[] = [
 
 export function getProjectCategory(slug: string) {
   return projectCategories.find((category) => category.slug === slug);
+}
+
+/** Websites in display order (filter groups first, then list order): drives the list numbering and prev/next. */
+export function websitesInOrder() {
+  return websiteGroups.flatMap((g) => projects.filter((p) => p.category === "websites" && p.group === g.slug && p.url && p.image));
 }
 
 export function projectsIn(category: string) {

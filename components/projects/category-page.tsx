@@ -8,8 +8,8 @@ import { PArrow } from "@/components/projects/arrow";
 import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
-import { WebsitesBrowser, type SiteCard } from "@/components/projects/websites-browser";
-import { getProjectCategory, projectCategories, projectsIn, websiteGroups, type Project } from "@/lib/content";
+import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
+import { getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import "./projects.css";
 import "./websites.css";
@@ -69,43 +69,34 @@ function WorkCard({ work, lang }: { work: Project; lang: Locale }) {
   );
 }
 
-/** /projects/websites: real sites, filterable by sector, each credited to its author. */
-function WebsitesSection({ works, lang }: { works: Project[]; lang: Locale }) {
+/** /projects/websites: typographic list filterable by sector; each row opens the internal project page. */
+function WebsitesSection({ lang }: { lang: Locale }) {
   const c = projectsCopy[lang];
   const label = (slug?: string) => websiteGroups.find((g) => g.slug === slug)?.label[lang] ?? "";
-  const items: SiteCard[] = websiteGroups.flatMap((g) =>
-    works
-      .filter((w) => w.group === g.slug && w.url && w.image)
-      .map((w) => ({
-        slug: w.slug,
-        group: g.slug,
-        groupLabel: label(w.group),
-        title: w.title[lang],
-        place: w.place?.[lang] ?? w.client,
-        description: w.description?.[lang] ?? "",
-        tech: w.tech ?? [],
-        year: w.year,
-        url: w.url as string,
-        image: w.image as string,
-        author: w.author,
-      })),
-  );
+  const items: SiteRow[] = websitesInOrder().map((w) => ({
+    slug: w.slug,
+    href: localize(`/projects/websites/${w.slug}`, lang),
+    group: w.group ?? "",
+    groupLabel: label(w.group),
+    title: w.title[lang],
+    place: w.place?.[lang] ?? w.client,
+    year: w.year,
+    image: w.image as string,
+    author: w.author,
+  }));
   const groups = websiteGroups.filter((g) => items.some((i) => i.group === g.slug)).map((g) => ({ slug: g.slug, label: g.label[lang] }));
   return (
-    <>
-      <WebsitesBrowser
-        items={items}
-        groups={groups}
-        copy={{
-          filterLabel: c.sites.filterLabel,
-          filterAll: c.filterAll,
-          visit: c.sites.visit,
-          newTab: c.newTab,
-          madeBy: c.sites.madeBy,
-          portfolioTab: c.sites.portfolioTab,
-        }}
-      />
-    </>
+    <WebsitesBrowser
+      items={items}
+      groups={groups}
+      copy={{
+        filterLabel: c.sites.filterLabel,
+        filterAll: c.filterAll,
+        madeBy: c.sites.madeBy,
+        portfolioTab: c.sites.portfolioTab,
+        open: c.sites.open,
+      }}
+    />
   );
 }
 
@@ -143,7 +134,7 @@ export function CategoryView({ slug, lang }: { slug: string; lang: Locale }) {
 
         <section className="p-works" aria-label={c.worksLabel}>
           {cat.slug === "websites" && works.length ? (
-            <WebsitesSection works={works} lang={lang} />
+            <WebsitesSection lang={lang} />
           ) : works.length ? (
             <ul className="p-work-grid">
               {works.map((work) => (

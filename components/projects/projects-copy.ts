@@ -33,8 +33,16 @@ export type ProjectsCopy = {
     metaDescription: string;
     filterLabel: string;
     madeBy: string;
-    visit: string;
     portfolioTab: string;
+    open: string;
+    back: string;
+    facts: { category: string; place: string; year: string; author: string; tech: string };
+    live: string;
+    prev: string;
+    next: string;
+    galleryLabel: string;
+    shotDesktop: string;
+    shotMobile: string;
   };
 };
 
@@ -72,8 +80,16 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
       metaDescription: "Siti web per hospitality, food & wine, cultura e brand, progettati e sviluppati dal team CTRL®: Next.js, React e GSAP.",
       filterLabel: "Filtra i siti per settore",
       madeBy: "Realizzato da",
-      visit: "Visita il sito",
       portfolioTab: "(portfolio dell'autore, si apre in una nuova scheda)",
+      open: "Apri la scheda del progetto",
+      back: "Siti web",
+      facts: { category: "Categoria", place: "Contesto", year: "Anno", author: "Realizzato da", tech: "Stack" },
+      live: "Visita il sito live",
+      prev: "Precedente",
+      next: "Successivo",
+      galleryLabel: "Screenshot del sito live",
+      shotDesktop: "Desktop",
+      shotMobile: "Mobile",
     },
   },
   en: {
@@ -109,8 +125,16 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
       metaDescription: "Websites for hospitality, food & wine, culture and brands, designed and built by the CTRL® team: Next.js, React and GSAP.",
       filterLabel: "Filter sites by sector",
       madeBy: "Made by",
-      visit: "Visit the site",
       portfolioTab: "(author's portfolio, opens in a new tab)",
+      open: "Open the project page",
+      back: "Websites",
+      facts: { category: "Category", place: "Context", year: "Year", author: "Made by", tech: "Stack" },
+      live: "Visit live site",
+      prev: "Previous",
+      next: "Next",
+      galleryLabel: "Screenshots of the live site",
+      shotDesktop: "Desktop",
+      shotMobile: "Mobile",
     },
   },
 };
