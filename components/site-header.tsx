@@ -22,7 +22,7 @@ export function SiteHeader() {
   const pathname = usePathname() ?? "/";
   const isActive = (href: string) => !href.includes("#") && href !== "/" && (pathname === href || pathname.startsWith(`${href}/`));
   const links = [
-    { href: localize("/#work", lang), label: t.nav.work },
+    { href: localize("/projects", lang), label: t.nav.work },
     { href: localize("/services", lang), label: t.nav.services },
     { href: localize("/about", lang), label: t.nav.about },
     { href: localize("/team", lang), label: t.nav.team },

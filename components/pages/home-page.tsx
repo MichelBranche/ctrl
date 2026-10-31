@@ -133,7 +133,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 <span>{h.workKicker}</span>
                 <i className="h-bar" aria-hidden="true" />
               </p>
-              <Link href={localize("/work", lang)} className="h-small h-link">
+              <Link href={localize("/projects", lang)} className="h-small h-link">
                 {h.allProjects} <Arrow />
               </Link>
             </div>

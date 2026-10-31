@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CONTACT_EMAIL, projects, services } from "@/lib/content";
+import { CONTACT_EMAIL, projectCategories, services } from "@/lib/content";
 import { dict, localeFromPath, localize, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
@@ -30,16 +30,16 @@ export function CommandMenu() {
     const nav = t.nav;
     return [
       { id: "home", group: "Nav", label: t.cmd.home, run: () => go(localize("/", lang)) },
-      { id: "work", group: "Nav", label: nav.work, run: () => go(localize("/work", lang)) },
+      { id: "work", group: "Nav", label: nav.work, run: () => go(localize("/projects", lang)) },
       { id: "services", group: "Nav", label: nav.services, run: () => go(localize("/services", lang)) },
       { id: "about", group: "Nav", label: nav.about, run: () => go(localize("/about", lang)) },
       { id: "team", group: "Nav", label: nav.team, run: () => go(localize("/team", lang)) },
       { id: "journal", group: "Nav", label: nav.journal, run: () => go(localize("/journal", lang)) },
-      ...projects.map((p) => ({
-        id: `p-${p.slug}`,
+      ...projectCategories.map((c) => ({
+        id: `p-${c.slug}`,
         group: nav.work,
-        label: p.name,
-        run: () => go(localize(`/work/${p.slug}`, lang)),
+        label: c.label[lang],
+        run: () => go(localize(`/projects/${c.slug}`, lang)),
       })),
       ...services.map((s) => ({
         id: `s-${s.slug}`,

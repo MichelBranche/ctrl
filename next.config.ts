@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3440, 3840],
     qualities: [75, 90],
   },
+  // The old /work pages were replaced by /projects (website concepts map to the websites category).
+  async redirects() {
+    return [
+      { source: "/work", destination: "/projects", permanent: true },
+      { source: "/work/:slug", destination: "/projects/websites", permanent: true },
+      { source: "/en/work", destination: "/en/projects", permanent: true },
+      { source: "/en/work/:slug", destination: "/en/projects/websites", permanent: true },
+    ];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

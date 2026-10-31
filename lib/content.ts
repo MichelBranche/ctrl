@@ -7,68 +7,119 @@ export const studio = {
   email: CONTACT_EMAIL,
 };
 
-export type Project = {
+/* ------------------------------------------------------------------ */
+/* Projects: categories (the /projects index) and the works inside them. */
+/* ------------------------------------------------------------------ */
+
+export type ProjectCategory = {
+  /** URL segment: /projects/[slug] (same in IT and EN). */
   slug: string;
-  name: string;
-  meta: L;
-  image: string | null;
-  /** Live demo URL. */
-  url: string;
-  /** Short place / sector line shown on typographic tiles. */
-  place: L;
-  summary: L;
+  /** Short label for tags and filters. */
+  label: L;
+  /** Card title, one entry per line. */
+  title: L<string[]>;
+  /** Card line under the title. */
+  text: L;
+  /** Longer intro shown on the category page. */
+  intro: L;
+  image: string;
 };
 
-export const projects: Project[] = [
+export const projectCategories: ProjectCategory[] = [
   {
-    slug: "altura",
-    name: "Maison Altura",
-    meta: { it: "Concept | Identità e sito per cantina", en: "Concept | Winery identity and website" },
-    image: "/images/altura.jpg",
-    url: "https://demo-vini.vercel.app",
-    place: { it: "Cantina", en: "Winery" },
-    summary: {
-      it: "Identità visiva e sito per una cantina. Una presenza calma, costruita su paesaggio, luce e una tipografia silenziosa.",
-      en: "Visual identity and website for a winery. A calm presence built on landscape, light and quiet typography.",
+    slug: "websites",
+    label: { it: "Siti web", en: "Websites" },
+    title: { it: ["Siti web", "per aziende"], en: ["Websites", "for businesses"] },
+    text: { it: "Esperienze digitali su misura per il tuo business.", en: "Custom digital experiences for your business." },
+    intro: {
+      it: "Siti istituzionali, vetrine e piattaforme editoriali progettati e sviluppati su misura, veloci e facili da gestire.",
+      en: "Corporate sites, showcases and editorial platforms, designed and built to measure, fast and easy to manage.",
     },
+    image: "/images/projects/websites.webp",
   },
   {
-    slug: "villa-matilde",
-    name: "Villa Matilde",
-    meta: { it: "Concept | Sito per hotel in villa storica", en: "Concept | Historic villa hotel website" },
-    image: null,
-    url: "https://demo-sina-villa-matilde.vercel.app",
-    place: { it: "Hospitality", en: "Hospitality" },
-    summary: {
-      it: "Concept di sito per un hotel in villa storica. Ritmo lento, immagini ampie e un percorso di prenotazione chiaro.",
-      en: "Website concept for a historic villa hotel. A slow rhythm, generous imagery and a clear booking path.",
+    slug: "webapps",
+    label: { it: "Webapp", en: "Web apps" },
+    title: { it: ["Webapp", "scalabili"], en: ["Scalable", "web apps"] },
+    text: { it: "Prodotti digitali performanti, pronti a crescere.", en: "High-performing digital products, ready to grow." },
+    intro: {
+      it: "Applicazioni web con aree riservate, dashboard e flussi complessi, costruite per crescere insieme al prodotto.",
+      en: "Web applications with private areas, dashboards and complex flows, built to grow with the product.",
     },
+    image: "/images/projects/webapps.webp",
   },
   {
-    slug: "omama",
-    name: "OMAMA",
-    meta: { it: "Concept | Sito per social hotel, Aosta", en: "Concept | Social hotel website, Aosta" },
-    image: null,
-    url: "https://demo-omama.vercel.app",
-    place: { it: "Aosta", en: "Aosta" },
-    summary: {
-      it: "Concept di sito per un social hotel nel centro di Aosta. Camere, spazi condivisi e montagna raccontati con un tono diretto e contemporaneo.",
-      en: "Website concept for a social hotel in the centre of Aosta. Rooms, shared spaces and the mountains told with a direct, contemporary tone.",
+    slug: "software",
+    label: { it: "Software", en: "Software" },
+    title: { it: ["Software", "su misura"], en: ["Custom", "software"] },
+    text: { it: "Soluzioni software pensate per i tuoi processi.", en: "Software solutions designed around your processes." },
+    intro: {
+      it: "Strumenti interni, automazioni e integrazioni pensati attorno al modo in cui lavora il tuo team.",
+      en: "Internal tools, automations and integrations designed around the way your team works.",
     },
+    image: "/images/projects/software.webp",
   },
   {
-    slug: "hotel-bijou",
-    name: "Hotel Bijou",
-    meta: { it: "Concept | Sito per boutique hotel, Saint-Vincent", en: "Concept | Boutique hotel website, Saint-Vincent" },
-    image: null,
-    url: "https://demo-hotelbijou.vercel.app",
-    place: { it: "Saint-Vincent", en: "Saint-Vincent" },
-    summary: {
-      it: "Concept di sito per un boutique hotel in piazza a Saint-Vincent. Un'esperienza raccolta ed elegante, dalla prima schermata alla richiesta di soggiorno.",
-      en: "Website concept for a boutique hotel on the square in Saint-Vincent. An intimate, elegant experience from the first screen to the booking request.",
+    slug: "brand-identity",
+    label: { it: "Brand & identità", en: "Brand & identity" },
+    title: { it: ["Brand", "che durano"], en: ["Brands", "that last"] },
+    text: { it: "Identità visiva e strategia per distinguerti.", en: "Visual identity and strategy to stand out." },
+    intro: {
+      it: "Logo, sistema visivo e linee guida per un'identità coerente su ogni punto di contatto.",
+      en: "Logo, visual system and guidelines for an identity that holds together at every touchpoint.",
     },
+    image: "/images/projects/brand-identity.webp",
+  },
+  {
+    slug: "commercial-mockups",
+    label: { it: "Mockup commerciali", en: "Commercial mockups" },
+    title: { it: ["Mockup", "realistici"], en: ["Realistic", "mockups"] },
+    text: { it: "Presenta i tuoi prodotti con stile e impatto.", en: "Present your products with style and impact." },
+    intro: {
+      it: "Visualizzazioni di packaging e prodotto per presentazioni, e-commerce e campagne, prima ancora della produzione.",
+      en: "Packaging and product visuals for pitches, e-commerce and campaigns, even before production.",
+    },
+    image: "/images/projects/commercial-mockups.webp",
+  },
+  {
+    slug: "promo-videos",
+    label: { it: "Video promozionali", en: "Promo videos" },
+    title: { it: ["Video", "che coinvolgono"], en: ["Videos", "that engage"] },
+    text: { it: "Motion design e video per raccontare il tuo brand.", en: "Motion design and video to tell your brand's story." },
+    intro: {
+      it: "Motion design, spot e contenuti brevi per social e lanci, pensati per raccontare il brand in pochi secondi.",
+      en: "Motion design, spots and short-form content for social and launches, made to tell the brand in seconds.",
+    },
+    image: "/images/projects/promo-videos.webp",
   },
 ];
+
+export type Project = {
+  slug: string;
+  /** ProjectCategory.slug this work belongs to. */
+  category: string;
+  title: L;
+  client: string;
+  /** Image path in /public (e.g. /images/projects/works/name.webp), or null for a typographic tile. */
+  image: string | null;
+  /** Live site or case URL, opened in a new tab. Optional. */
+  url?: string;
+  year?: string;
+};
+
+// TODO(Michel): add real works here; they appear on /projects/[category]
+// automatically. Example:
+// { slug: "acme", category: "websites", title: { it: "Sito istituzionale", en: "Corporate website" },
+//   client: "Acme Srl", image: "/images/projects/works/acme.webp", url: "https://acme.it", year: "2026" },
+export const projects: Project[] = [];
+
+export function getProjectCategory(slug: string) {
+  return projectCategories.find((category) => category.slug === slug);
+}
+
+export function projectsIn(category: string) {
+  return projects.filter((project) => project.category === category);
+}
 
 export type HomeFeatured = {
   index: string;
@@ -88,7 +139,7 @@ export const homeFeatured: HomeFeatured[] = [1, 2, 3, 4].map((n) => ({
   category: { it: "Categoria", en: "Category" },
   description: { it: "Descrizione del progetto in arrivo.", en: "Project description coming soon." },
   image: null,
-  href: "/work",
+  href: "/projects",
 }));
 
 export type Service = {
@@ -257,10 +308,6 @@ export const team: TeamMember[] = [
 
 export function getService(slug: string) {
   return services.find((service) => service.slug === slug);
-}
-
-export function getProject(slug: string) {
-  return projects.find((project) => project.slug === slug);
 }
 
 export type { Locale };

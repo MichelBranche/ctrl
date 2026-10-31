@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, projects, services, team } from "@/lib/content";
+import { CONTACT_EMAIL, projectCategories, services, team } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export type ChatRole = "user" | "assistant";
@@ -82,9 +82,9 @@ export function faqAnswer(text: string, lang: Locale): ChatReply {
       );
     case "work":
       return out(
-        (it ? "Alcuni progetti:\n" : "Some projects:\n") +
-          projects.map((p) => `${p.name}: ${p.meta[lang]}`).join("\n"),
-        [{ label: it ? "Tutti i lavori" : "All work", href: localize("/work", lang) }],
+        (it ? "I nostri progetti sono divisi per categoria:\n" : "Our projects are grouped by category:\n") +
+          projectCategories.map((c) => `${c.label[lang]}: ${c.text[lang]}`).join("\n"),
+        [{ label: it ? "Tutti i progetti" : "All projects", href: localize("/projects", lang) }],
       );
     case "greeting":
       return out(
