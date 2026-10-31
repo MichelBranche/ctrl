@@ -146,6 +146,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 category: item.category[lang],
                 href: localize(item.href, lang),
                 image: item.image,
+                tint: item.tint,
               }))}
             />
           </section>

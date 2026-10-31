@@ -5,15 +5,15 @@
 // original; adapted to CTRL fonts (Satoshi/Geist), accent and project data.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useSpring } from "motion/react";
+import { motion, useSpring } from "motion/react";
 
-export type HoverProject = { key: string; label: string; category?: string; index: string; href: string; image: string | null };
+export type HoverProject = { key: string; label: string; category?: string; index: string; href: string; image: string | null; tint?: string };
 
 const SPRING = { mass: 0.1, damping: 16, stiffness: 71 };
 const EASE = [0.19, 1, 0.22, 1] as const;
 const enter = { hidden: { y: "100%" }, visible: { y: "0%" }, exit: { y: "-100%" } };
 const base = { hidden: { y: "-100%" }, visible: { y: "0%" }, exit: { y: "0%" } };
-const delay = (i: number, len: number) => 0.055 * Math.abs(i - Math.floor(len / 2));
+const delay = (i: number, len: number) => 0.018 * Math.abs(i - Math.floor(len / 2));
 
 // skiper6 uses 28vw Thunder (ultra condensed). Our display face is wider, so
 // (skiper6 mounts client-only; we SSR the idle word with initial={false}.)
@@ -29,7 +29,7 @@ function Word({ text, variants, className }: { text: string; variants: typeof en
           key={i}
           className="hp-char"
           variants={variants}
-          transition={{ duration: 0.8, ease: EASE, delay: delay(i, chars.length) }}
+          transition={{ duration: 0.45, ease: EASE, delay: delay(i, chars.length) }}
         >
           {c === " " ? "\u00a0" : c}
         </motion.span>
@@ -81,6 +81,18 @@ export function HoverProjects({ items, defaultName, openLabel, hint }: { items: 
   // Touch has no hover: a tapped tile stays selected until another is tapped.
   const [picked, setPicked] = useState<number | null>(null);
   const shown = active ?? picked;
+  const leave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hover = (i: number | null) => {
+    if (leave.current) clearTimeout(leave.current);
+    leave.current = null;
+    if (i !== null) setActive(i);
+    else leave.current = setTimeout(() => setActive(null), 140);
+  };
+  useEffect(() => () => { if (leave.current) clearTimeout(leave.current); }, []);
+  // Warm the thumbnails so the first hover never waits on the network/decoder.
+  useEffect(() => {
+    for (const it of items) if (it.image) { const im = new Image(); im.src = it.image; void im.decode().catch(() => {}); }
+  }, [items]);
 
   const row = useRef<HTMLDivElement>(null);
   const x = useSpring(0, SPRING);
@@ -133,7 +145,7 @@ export function HoverProjects({ items, defaultName, openLabel, hint }: { items: 
         }}
         onPointerLeave={() => { pointer.current.inside = false; scale.set(0); }}
       >
-        {items.map((item, i) => <Thumb key={item.key} item={item} i={i} onHover={setActive} onPick={setPicked} current={picked === i} />)}
+        {items.map((item, i) => <Thumb key={item.key} item={item} i={i} onHover={hover} onPick={setPicked} current={picked === i} />)}
         <motion.div className="hp-cursor" aria-hidden="true" style={{ x, y, scale, transformOrigin: "left top" }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M6.52182 2.75026L12.8858 9.11422L15.253 0.38299L6.52182 2.75026Z" fill="currentColor" />
@@ -142,37 +154,30 @@ export function HoverProjects({ items, defaultName, openLabel, hint }: { items: 
         </motion.div>
       </div>
       <div className="hp-mask" aria-live="polite">
-            <AnimatePresence initial={false}>
-              {activeLabel === null && (
-                <motion.div key="default" className="hp-layer" initial="hidden" animate="visible" exit="hidden"
-                  transition={{ duration: 0.8, ease: EASE }}>
-                  <Word text={defaultName} variants={base} className="hp-word-base" />
+            {/* Every layer stays mounted and just switches between "hidden" and "visible", so a quick
+                back-and-forth retargets the running animation instead of queueing exits/enters. */}
+            <motion.div className="hp-layer" initial={false} animate={activeLabel === null ? "visible" : "hidden"} aria-hidden={activeLabel !== null}>
+              <Word text={defaultName} variants={base} className="hp-word-base" />
+            </motion.div>
+            {/* One layer per distinct label: tiles that share a name keep the word on screen. */}
+            {labels.map((label) => {
+              const on = activeLabel === label;
+              const tint = items.find((it) => it.label === label)?.tint;
+              return (
+                <motion.div key={label} className="hp-layer" initial={false} animate={on ? "visible" : "hidden"}
+                  variants={{ hidden: { opacity: 0, transition: { duration: 0.2 } }, visible: { opacity: 1, transition: { duration: 0.12 } } }}
+                  style={{ pointerEvents: "none", zIndex: on ? 2 : 1 }} aria-hidden={!on}>
+                  {tint ? (
+                    // The brand gradient sits under a black knockout: white letters (multiply) let it show through the word.
+                    // Vector gradient, so it stays sharp at any width/DPR.
+                    <span className="hp-photo" aria-hidden="true" style={{ background: tint }} />
+                  ) : null}
+                  <div className="hp-knock">
+                    <Word text={label} variants={enter} className="hp-word-hover" />
+                  </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
-            {/* One layer per distinct label: tiles that share a name (all the
-                placeholders do) keep the word on screen instead of replaying it. */}
-            {labels.map((label) => (
-              <AnimatePresence key={label}>
-                {activeLabel === label && (
-                  <motion.div className="hp-layer" initial="hidden" animate="visible" exit="hidden"
-                    transition={{ duration: 0.8, ease: EASE }}>
-                    {(() => {
-                      const img = items.find((it) => it.label === label)?.image;
-                      return img ? (
-                        // The photo sits under a black knockout: white letters (multiply) let it show through the word.
-                        <motion.span className="hp-photo" aria-hidden="true" style={{ backgroundImage: `url(${img})` }}
-                          initial={{ scale: 1.15, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
-                          transition={{ duration: 0.9, ease: EASE }} />
-                      ) : null;
-                    })()}
-                    <div className="hp-knock">
-                      <Word text={label} variants={enter} className="hp-word-hover" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            ))}
+              );
+            })}
       </div>
       <div className="hp-caption" aria-live="polite">
         {cur ? (

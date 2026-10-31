@@ -434,11 +434,19 @@ export type HomeFeatured = {
   description: L;
   /** Image path, or null for the dark gradient placeholder. */
   image: string | null;
+  tint: string;
   href: string;
 };
 
 // "Progetti recenti" on the home: real website projects, linked to their detail pages.
 const HOME_SLUGS = ["sbrano", "maison-altura", "orma", "omama"];
+/** Brand gradients (sampled from each project's site) shown through the giant word on hover. */
+const HOME_TINTS: Record<string, string> = {
+  sbrano: "linear-gradient(115deg, #ddec87 0%, #89a60b 45%, #3f5004 100%)",
+  "maison-altura": "linear-gradient(115deg, #ded6c2 0%, #8c2a35 50%, #37291e 100%)",
+  orma: "linear-gradient(115deg, #f3efea 0%, #a87a4f 45%, #6a4423 100%)",
+  omama: "linear-gradient(90deg, #ec3538 0%, #f5c430 35%, #2fae5a 65%, #2f6fe4 100%)",
+};
 export const homeFeatured: HomeFeatured[] = HOME_SLUGS.map((slug, i) => {
   const p = projects.find((x) => x.slug === slug);
   if (!p) throw new Error(`homeFeatured: unknown project ${slug}`);
@@ -449,6 +457,7 @@ export const homeFeatured: HomeFeatured[] = HOME_SLUGS.map((slug, i) => {
     category: group?.label ?? { it: "Siti web", en: "Websites" },
     description: p.description ?? { it: "", en: "" },
     image: p.image ?? null,
+    tint: HOME_TINTS[slug],
     href: `/projects/websites/${slug}`,
   };
 });
