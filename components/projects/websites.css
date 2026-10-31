@@ -86,32 +86,10 @@
 .w-credit:hover .w-credit-arrow { transform: translateX(4px); }
 .w-credit:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 3px; transition: none; }
 
-.w-creditband {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-top: clamp(2.5rem, 5vw, 4rem);
-  padding: clamp(1.6rem, 3vw, 2.4rem);
-  border: 1px solid var(--p-rule);
-}
-.w-creditband-copy { display: grid; gap: 0.6rem; max-width: 40rem; }
-.w-creditband-title {
-  margin: 0;
-  font-family: var(--p-display-face);
-  font-size: clamp(1.4rem, 2.4vw, 2rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-}
-.w-creditband-text { margin: 0; color: var(--p-dim); line-height: 1.55; }
-.w-creditband-cta { flex: none; }
 
 @media (max-width: 1100px) { .w-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
   .w-grid { grid-template-columns: minmax(0, 1fr); }
-  .w-creditband { flex-direction: column; align-items: flex-start; }
 }
 @media (hover: none) {
   .w-link:hover .w-img { transform: none; }

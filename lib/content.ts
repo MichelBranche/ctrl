@@ -111,11 +111,16 @@ export type Project = {
   /** Short localized context line (city, sector). */
   place?: L;
   tech?: string[];
-  /** Built by Michel Branche: shows the credit linking to his portfolio. */
-  byMichel?: boolean;
+  /** Who built it: drives the per-card credit ("Realizzato da {name}"). */
+  author?: ProjectAuthor;
 };
 
-export const MICHEL_PORTFOLIO = "https://www.michelbranche.it";
+export type ProjectAuthor = { name: string; url: string };
+
+export const AUTHORS = {
+  michel: { name: "Michel Branche", url: "https://www.michelbranche.it" },
+  kallebe: { name: "Kallebe Gallo", url: "https://portafoglio-alpha.vercel.app/" },
+} satisfies Record<string, ProjectAuthor>;
 
 export type WebsiteGroup = { slug: string; label: L };
 
@@ -148,7 +153,7 @@ export const projects: Project[] = [
       it: "Demo hospitality multilingua: SEO statico su 4 lingue, sezione Instagram curata, mappa interattiva e motion GSAP.",
       en: "Multilingual hospitality demo: static SEO across 4 languages, a curated Instagram section, an interactive map and GSAP motion.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "villa-matilde",
@@ -164,7 +169,7 @@ export const projects: Project[] = [
       it: "Demo immersiva per una villa del XVIII secolo diventata hotel: tipografia editoriale, scroll fluido e pagine delle sale.",
       en: "Immersive demo for an 18th-century villa turned hotel: editorial typography, smooth scroll and room pages.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "sbrano",
@@ -180,7 +185,7 @@ export const projects: Project[] = [
       it: "Brand e sito per uno smash burger di strada a Vanchiglia: burger builder interattivo, drop in edizione speciale e mappa illustrata.",
       en: "Brand and site for a street smash burger in Vanchiglia: an interactive burger builder, limited-edition drops and an illustrated map.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "orma",
@@ -196,7 +201,7 @@ export const projects: Project[] = [
       it: "Landing per una microtorrefazione di specialità: origini, tostatura, selezione e capsule, con layout editoriale.",
       en: "Landing page for a specialty micro-roastery: origins, roasting, selection and capsules, in an editorial layout.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "maison-altura",
@@ -212,7 +217,7 @@ export const projects: Project[] = [
       it: "Demo di cantina di montagna: catalogo vini, storytelling di famiglia, abbinamenti e visite in cantina, in 4 lingue.",
       en: "Alpine winery demo: wine catalogue, family storytelling, food pairings and cellar visits, in 4 languages.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "caffe-nazionale",
@@ -228,7 +233,7 @@ export const projects: Project[] = [
       it: "Sito editoriale multi-pagina per il Caffè Nazionale di Paolo Griffa, con routing SPA e smooth scroll.",
       en: "Multi-page editorial showcase for Paolo Griffa's Caffè Nazionale, with SPA routing and smooth scroll.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "il-gusto",
@@ -244,7 +249,7 @@ export const projects: Project[] = [
       it: "Sito statico per una pizzeria al taglio: layout diner-style, mobile-first, CTA verso Deliveroo e WhatsApp.",
       en: "Static site for a pizza-by-the-slice shop: diner-style layout, mobile-first, Deliveroo and WhatsApp calls to action.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "chaumont",
@@ -260,7 +265,7 @@ export const projects: Project[] = [
       it: "Concept non ufficiale per il canale Escape to Rural France: intro cinematografica, 5 lingue, la casa piano per piano e shop su Shopify.",
       en: "Unofficial fan concept for Escape to Rural France: a cinematic intro, 5 languages, a floor-by-floor tour and a Shopify shop.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "museo-egizio",
@@ -276,7 +281,7 @@ export const projects: Project[] = [
       it: "Demo front-end immersiva con pagine istituzionali, biglietteria, shop in anteprima e animazioni avanzate.",
       en: "Immersive front-end demo with institutional pages, ticketing, a shop preview and advanced motion.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "webtec-1",
@@ -292,7 +297,7 @@ export const projects: Project[] = [
       it: "Homepage per un'agenzia web di Stoccolma: hero con gradiente, servizi CRO, SEO e ads, casi studio e prenotazione call.",
       en: "Homepage for a Stockholm web agency: gradient hero, CRO, SEO and ads services, case studies and call booking.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "webtec-2",
@@ -308,7 +313,7 @@ export const projects: Project[] = [
       it: "Seconda direzione per la stessa homepage: layout editoriale scuro, griglia tipografica e accenti lime.",
       en: "A second direction for the same homepage: dark editorial layout, typographic grid and lime accents.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "streetwear",
@@ -324,7 +329,7 @@ export const projects: Project[] = [
       it: "E-commerce sperimentale in stile brutalist con transizioni custom, carrello e checkout dimostrativo.",
       en: "Experimental brutalist e-commerce with custom transitions, a cart and a demo checkout.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "rubina",
@@ -340,7 +345,7 @@ export const projects: Project[] = [
       it: "Portfolio fotografico editoriale con layout dinamici e approccio performance-first, senza framework.",
       en: "Editorial photography portfolio with dynamic layouts and a performance-first, framework-free approach.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "self-order-kiosk",
@@ -356,7 +361,7 @@ export const projects: Project[] = [
       it: "Mockup touch-first di kiosk: attract loop, menu bento, composizione del menu, carrello e checkout simulato, in 5 lingue.",
       en: "Touch-first kiosk mockup: attract loop, bento menu, meal builder, cart and simulated checkout, in 5 languages.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
   {
     slug: "spotify-clone",
@@ -372,7 +377,7 @@ export const projects: Project[] = [
       it: "Clone dell'interfaccia di Spotify con stack web classico, focalizzato su struttura front-end e resa visiva.",
       en: "Spotify-style interface built with a classic web stack, focused on front-end structure and visual polish.",
     },
-    byMichel: true,
+    author: AUTHORS.michel,
   },
 ];
 

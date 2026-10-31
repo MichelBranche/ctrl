@@ -8,9 +8,8 @@ import { PArrow } from "@/components/projects/arrow";
 import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
-import { CtaLink } from "@/components/cta-link";
 import { WebsitesBrowser, type SiteCard } from "@/components/projects/websites-browser";
-import { MICHEL_PORTFOLIO, getProjectCategory, projectCategories, projectsIn, websiteGroups, type Project } from "@/lib/content";
+import { getProjectCategory, projectCategories, projectsIn, websiteGroups, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import "./projects.css";
 import "./websites.css";
@@ -70,7 +69,7 @@ function WorkCard({ work, lang }: { work: Project; lang: Locale }) {
   );
 }
 
-/** /projects/websites: real sites, filterable by sector, each credited to Michel Branche. */
+/** /projects/websites: real sites, filterable by sector, each credited to its author. */
 function WebsitesSection({ works, lang }: { works: Project[]; lang: Locale }) {
   const c = projectsCopy[lang];
   const label = (slug?: string) => websiteGroups.find((g) => g.slug === slug)?.label[lang] ?? "";
@@ -88,6 +87,7 @@ function WebsitesSection({ works, lang }: { works: Project[]; lang: Locale }) {
         year: w.year,
         url: w.url as string,
         image: w.image as string,
+        author: w.author,
       })),
   );
   const groups = websiteGroups.filter((g) => items.some((i) => i.group === g.slug)).map((g) => ({ slug: g.slug, label: g.label[lang] }));
@@ -103,18 +103,8 @@ function WebsitesSection({ works, lang }: { works: Project[]; lang: Locale }) {
           newTab: c.newTab,
           madeBy: c.sites.madeBy,
           portfolioTab: c.sites.portfolioTab,
-          portfolio: MICHEL_PORTFOLIO,
         }}
       />
-      <aside className="w-creditband" data-p-fade-scroll>
-        <div className="w-creditband-copy">
-          <p className="w-creditband-title">{c.sites.creditTitle}</p>
-          <p className="w-creditband-text">{c.sites.creditText}</p>
-        </div>
-        <CtaLink href={MICHEL_PORTFOLIO} external className="w-creditband-cta">
-          {c.sites.creditCta}
-        </CtaLink>
-      </aside>
     </>
   );
 }

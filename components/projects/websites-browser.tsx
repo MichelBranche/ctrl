@@ -1,5 +1,7 @@
 "use client";
 
+import type { ProjectAuthor } from "@/lib/content";
+
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { gsap } from "gsap";
@@ -20,6 +22,7 @@ export type SiteCard = {
   year?: string;
   url: string;
   image: string;
+  author?: ProjectAuthor;
 };
 
 export type SitesCopy = {
@@ -29,7 +32,6 @@ export type SitesCopy = {
   newTab: string;
   madeBy: string;
   portfolioTab: string;
-  portfolio: string;
 };
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -153,11 +155,13 @@ export function WebsitesBrowser({ items, groups, copy }: { items: SiteCard[]; gr
                   </span>
                 </span>
               </a>
-              <a href={copy.portfolio} target="_blank" rel="noopener noreferrer" className="w-credit p-mono">
-                <span className="w-credit-label">{copy.madeBy}</span>
-                <PArrow className="p-arrow w-credit-arrow" />
-                <span className="p-sr">{copy.portfolioTab}</span>
-              </a>
+              {item.author && (
+                <a href={item.author.url} target="_blank" rel="noopener noreferrer" className="w-credit p-mono">
+                  <span className="w-credit-label">{copy.madeBy} {item.author.name}</span>
+                  <PArrow className="p-arrow w-credit-arrow" />
+                  <span className="p-sr">{copy.portfolioTab}</span>
+                </a>
+              )}
             </article>
           </li>
         ))}
