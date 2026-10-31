@@ -186,3 +186,12 @@
   .t-hero-copy { animation: none; }
   .t-photo, .t-name, .t-role { transition: none; }
 }
+
+/* Contact icons under each card */
+.t-socials { list-style: none; display: flex; justify-content: center; gap: 6px; margin: 12px 0 0; padding: 0; }
+.t-socials a {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px;
+  color: rgba(245, 244, 241, 0.7); border: 1px solid rgba(245, 244, 241, 0.14);
+  transition: color 0.2s, border-color 0.2s;
+}
+.t-socials a:hover, .t-socials a:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }

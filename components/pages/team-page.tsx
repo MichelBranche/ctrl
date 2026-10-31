@@ -4,6 +4,7 @@ import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { team } from "@/lib/content";
+import { TeamSocials } from "@/components/team-socials";
 import { dict, type Locale } from "@/lib/i18n";
 import "./team.css";
 
@@ -42,7 +43,7 @@ export function TeamView({ lang }: { lang: Locale }) {
 
         <ul className="t-grid" id="team-grid">
           {team.map((member) => {
-            const site = member.links[0];
+            const site = member.socials.website;
             const body = (
               <>
                 {member.photo ? (
@@ -65,12 +66,13 @@ export function TeamView({ lang }: { lang: Locale }) {
             return (
               <li key={member.slug} className="t-card">
                 {site ? (
-                  <a href={site.href} target="_blank" rel="noreferrer" className="t-card-link">
+                  <a href={site} target="_blank" rel="noreferrer" className="t-card-link">
                     {body}
                   </a>
                 ) : (
                   <div className="t-card-link">{body}</div>
                 )}
+                <TeamSocials socials={member.socials} name={member.name} lang={lang} />
               </li>
             );
           })}

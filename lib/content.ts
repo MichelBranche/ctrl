@@ -565,7 +565,8 @@ export const services: Service[] = [
   },
 ];
 
-export type TeamLink = { label: string; href: string };
+/** Optional contact links for a team card; only the ones present are rendered. */
+export type TeamSocials = { linkedin?: string; email?: string; website?: string; github?: string };
 
 export type TeamMember = {
   slug: string;
@@ -578,7 +579,7 @@ export type TeamMember = {
    * photo: "/images/team/<slug>.jpg". When null, an initials block is shown.
    */
   photo?: string | null;
-  links: TeamLink[];
+  socials: TeamSocials;
 };
 
 /**
@@ -602,11 +603,12 @@ export const team: TeamMember[] = [
     },
     skills: ["React", "Next.js", "TypeScript", "Tailwind", "GSAP", "UI/UX"],
     photo: TEAM_PHOTOS["michel-branche"],
-    links: [
-      { label: "Portfolio", href: "https://www.michelbranche.it" },
-      { label: "GitHub", href: "https://github.com/MichelBranche" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/michelbranche" },
-    ],
+    socials: {
+      linkedin: "https://www.linkedin.com/in/michelbranche",
+      email: "michel.lavoro@gmail.com",
+      website: "https://www.michelbranche.it",
+      github: "https://github.com/MichelBranche",
+    },
   },
   {
     slug: "kallebe-gallo",
@@ -618,11 +620,12 @@ export const team: TeamMember[] = [
     },
     skills: ["LLM", "RAG", "Node.js", "PostgreSQL", "MongoDB", "Docker"],
     photo: TEAM_PHOTOS["kallebe-gallo"],
-    links: [
-      { label: "Portfolio", href: "https://portafoglio-alpha.vercel.app/" },
-      { label: "GitHub", href: "https://github.com/kallebesiqueira-dev" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/kallebe-gallo-a55b01211" },
-    ],
+    socials: {
+      linkedin: "https://www.linkedin.com/in/kallebe-gallo-a55b01211/",
+      email: "kallebesiqueira@gmail.com",
+      website: "https://portafoglio-alpha.vercel.app/",
+      github: "https://github.com/kallebesiqueira-dev",
+    },
   },
 ];
 
