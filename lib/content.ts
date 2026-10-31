@@ -569,7 +569,7 @@ export type TeamMember = {
 
 /**
  * Person -> portrait mapping (confirmed by Michel).
- * photo-a: Kallebe, suit and tie. photo-b: Michel, black t-shirt.
+ * photo-a: Kallebe, black t-shirt. photo-b: Michel, black t-shirt.
  */
 export const TEAM_PHOTOS: Record<string, string> = {
   "michel-branche": "/team/photo-b.webp",
