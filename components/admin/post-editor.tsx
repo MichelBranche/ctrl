@@ -31,7 +31,9 @@ async function compress(file: File): Promise<File> {
   }
 }
 
-export function PostEditor({ post }: { post: Post | null }) {
+type Twin = { id: string; auto: boolean } | null;
+
+export function PostEditor({ post, twin = null, initialWarning }: { post: Post | null; twin?: Twin; initialWarning?: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(savePost, {});
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
@@ -225,6 +227,26 @@ export function PostEditor({ post }: { post: Post | null }) {
           </label>
           {state.error ? <p className="adm-error" role="alert">{state.error}</p> : null}
           {state.ok ? <p className="adm-ok" role="status">{state.ok}</p> : null}
+          {(state.warning ?? (state.ok || state.error ? undefined : initialWarning)) ? (
+            <p className="adm-warn" role="status">{state.warning ?? initialWarning}</p>
+          ) : null}
+          {post?.lang !== "en" ? (
+            <p className="adm-muted adm-twin">
+              {twin ? (
+                <>
+                  Versione inglese: <Link className="adm-link" href={`/admin/edit?id=${twin.id}`}>apri</Link>{" "}
+                  {twin.auto ? "(tradotta in automatico, si aggiorna a ogni salvataggio)" : "(modificata a mano, non viene sovrascritta)"}
+                </>
+              ) : (
+                "Al salvataggio viene creata la versione inglese in automatico."
+              )}
+            </p>
+          ) : null}
+          {post?.lang === "it" ? (
+            <button type="submit" name="retranslate" value="1" className="adm-btn" disabled={pending || uploading}>
+              Ritraduci in inglese
+            </button>
+          ) : null}
           <button className="adm-btn adm-btn-primary" disabled={pending || uploading}>
             {pending ? "Salvataggio…" : "Salva"}
           </button>

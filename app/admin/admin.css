@@ -301,3 +301,6 @@ a.adm-stat:hover::after { opacity: 1; }
 }
 .adm-switch[data-on] .adm-switch-knob { transform: translateX(18px); }
 @media (prefers-reduced-motion: reduce) { .adm-switch, .adm-switch-knob { transition: none; } }
+
+.adm-warn { margin: 0; padding: 8px 12px; border-radius: 8px; background: rgba(255, 176, 32, 0.14); color: #b26a00; font-size: 13px; }
+.adm-twin { flex-basis: 100%; margin: 0; font-size: 13px; }

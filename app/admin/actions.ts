@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 import { getAdmin, login, logout } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { POSTS_TAG } from "@/lib/journal";
+import { ensureTranslationSchema } from "@/lib/migrate";
+import { translatePost, translationConfigured } from "@/lib/translate";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
 
-export type FormState = { error?: string; ok?: string };
+export type FormState = { error?: string; ok?: string; warning?: string };
 
 export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").slice(0, 200);
@@ -68,11 +70,12 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
 
   const newId = id || crypto.randomUUID();
   try {
+    await ensureTranslationSchema();
     if (id) {
       const res = await db().execute({
         sql: `UPDATE posts SET title = :title, slug = :slug, lang = :lang, category = :category, published = :published,
               excerpt = :excerpt, body_md = :body_md, cover_url = :cover_url, cover_alt = :cover_alt, published_at = :published_at,
-              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id`,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')${lang === "en" ? ", auto_translated = 0" : ""} WHERE id = :id`,
         args: { ...args, id },
       });
       if (!res.rowsAffected) return { error: "Articolo non trovato." };
@@ -89,9 +92,51 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
     console.error("[admin] save failed:", msg);
     return { error: "Salvataggio non riuscito." };
   }
+  const warning = lang === "it" ? await syncEnglish(newId, args, form.get("retranslate") === "1") : undefined;
   updateTag(POSTS_TAG);
-  if (!id) redirect(`/admin/edit?id=${newId}`);
-  return { ok: status === "published" ? "Salvato e pubblicato." : "Bozza salvata." };
+  if (!id) redirect(`/admin/edit?id=${newId}${warning ? `&tw=${encodeURIComponent(warning)}` : ""}`);
+  return { ok: status === "published" ? "Salvato e pubblicato." : "Bozza salvata.", warning };
+}
+
+type SavedPost = { title: string; slug: string; category: string; published: number; excerpt: string; body_md: string; cover_url: string | null; cover_alt: string; published_at: string };
+
+/**
+ * Creates or refreshes the English twin of an Italian post (same slug, same status, linked by translation_of).
+ * A twin edited by hand (auto_translated = 0) is left alone unless `force`. Returns a warning; never blocks the IT save.
+ */
+async function syncEnglish(itId: string, it: SavedPost, force: boolean): Promise<string | undefined> {
+  try {
+    const found = await db().execute({ sql: "SELECT id, auto_translated FROM posts WHERE lang = 'en' AND translation_of = ?", args: [itId] });
+    const twin = found.rows[0];
+    if (twin && Number(twin.auto_translated) !== 1 && !force) {
+      // Hand-edited English: keep its text, only mirror the publish status.
+      await db().execute({ sql: "UPDATE posts SET published = ? WHERE id = ?", args: [it.published, String(twin.id)] });
+      return undefined;
+    }
+    if (!translationConfigured()) return "Traduzione inglese non creata: DEEPL_API_KEY non configurata.";
+    const en = await translatePost(it);
+    const row = { ...it, ...en, title: en.title.slice(0, 200), excerpt: en.excerpt.slice(0, 400), cover_alt: en.cover_alt.slice(0, 200) };
+    if (twin) {
+      await db().execute({
+        sql: `UPDATE posts SET title = :title, slug = :slug, category = :category, published = :published, excerpt = :excerpt,
+              body_md = :body_md, cover_url = :cover_url, cover_alt = :cover_alt, published_at = :published_at, auto_translated = 1,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id`,
+        args: { ...row, id: String(twin.id) },
+      });
+    } else {
+      await db().execute({
+        sql: `INSERT INTO posts (id, title, slug, lang, category, published, excerpt, body_md, cover_url, cover_alt, published_at, translation_of, auto_translated)
+              VALUES (:id, :title, :slug, 'en', :category, :published, :excerpt, :body_md, :cover_url, :cover_alt, :published_at, :of, 1)`,
+        args: { ...row, id: crypto.randomUUID(), of: itId },
+      });
+    }
+    return undefined;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[admin] translation failed:", msg.replace(/DeepL-Auth-Key\s+\S+/g, "[key]"));
+    if (/UNIQUE/i.test(msg)) return "Traduzione inglese non salvata: esiste già un articolo inglese con questo slug, non collegato.";
+    return "Articolo salvato, ma la traduzione inglese non è riuscita. Riprova con \"Ritraduci in inglese\".";
+  }
 }
 
 export async function deletePost(form: FormData) {
@@ -100,6 +145,13 @@ export async function deletePost(form: FormData) {
   const id = String(form.get("id") ?? "").slice(0, 64);
   if (id) {
     await db().execute({ sql: "DELETE FROM posts WHERE id = ?", args: [id] });
+    // Auto-made English twins go with their source; hand-edited ones stay as standalone posts.
+    await ensureTranslationSchema().then(() =>
+      db().batch([
+        { sql: "DELETE FROM posts WHERE translation_of = ? AND auto_translated = 1", args: [id] },
+        { sql: "UPDATE posts SET translation_of = NULL WHERE translation_of = ?", args: [id] },
+      ]),
+    ).catch(() => {});
     updateTag(POSTS_TAG);
   }
   redirect("/admin/journal");
