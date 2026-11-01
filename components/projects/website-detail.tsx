@@ -103,6 +103,23 @@ export function WebsiteDetail({ slug, lang }: { slug: string; lang: Locale }) {
           })}
         </ul>
 
+        {p.slug === "sbrano" ? (
+          <section className="wd-video" aria-labelledby="wd-video-title">
+            <h2 className="wd-video-title p-mono" id="wd-video-title">
+              {lang === "it" ? "Video showcase" : "Showcase video"}
+            </h2>
+            <div className="wd-video-frame">
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/0pf4jBsvAac?rel=0"
+                title={lang === "it" ? "Video showcase del progetto Sbrano" : "Sbrano project showcase video"}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        ) : null}
         <nav className="wd-nav" aria-label={s.back}>
           <Link href={href(prev.slug)}>
             <span className="wd-nav-k p-mono"><PArrow className="p-arrow p-arrow-back" />{s.prev}</span>
