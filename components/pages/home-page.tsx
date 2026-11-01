@@ -59,7 +59,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                   fill
                   priority
                   sizes="100vw"
-                  quality={75}
+                  quality={90}
                   className="h-img h-img-hero"
                 />
               </div>
