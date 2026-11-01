@@ -2,6 +2,8 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { readSettings } from "@/lib/settings";
 
+export const SHOP_PRODUCT_TAG = "shop-product";
+
 export type ShopProduct = {
   published: boolean;
   titleIt: string;
@@ -30,7 +32,10 @@ const KEYS = [
 ];
 
 export async function getShopProduct(): Promise<ShopProduct> {
-  const values = await readSettings(KEYS).catch(() => ({}));
+  "use cache";
+  cacheTag(SHOP_PRODUCT_TAG);
+  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 * 7 });
+  const values = await readSettings(KEYS).catch((): Record<string, string> => ({}));
   const price = values["shop.product.price"] ?? DEFAULT_SHOP_PRODUCT.price;
   return {
     published: values["shop.product.published"] === undefined ? DEFAULT_SHOP_PRODUCT.published : values["shop.product.published"] === "true",

@@ -128,8 +128,11 @@ export async function saveShopProduct(_: ActionState, form: FormData): Promise<A
     "shop.product.price": price.toFixed(2),
   });
   updateTag(SETTINGS_TAG);
+  updateTag(SHOP_PRODUCT_TAG);
   revalidatePath("/shop");
   revalidatePath("/en/shop");
+  revalidatePath("/shop/google-review-card");
+  revalidatePath("/en/shop/google-review-card");
   revalidatePath("/admin/shop");
   return { ok: "Prodotto aggiornato." };
 }
