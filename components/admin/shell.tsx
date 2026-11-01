@@ -18,6 +18,7 @@ const NAV: Nav[] = [
   { href: "/admin", label: "Panoramica", icon: I("M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 17v3h6v-3z") },
   { href: "/admin/journal", label: "Journal", icon: I("M5 4h11l3 3v13H5zM9 9h6M9 13h6M9 17h4") },
   { href: "/admin/media", label: "Media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
+  { href: "/admin/shop", label: "Shop", icon: I("M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2") },
   { href: "/admin/requests", label: "Richieste", icon: I("M4 6h16v12H4zM4 7l8 6 8-6"), badge: "requests" },
   { href: "/admin/newsletter", label: "Newsletter", icon: I("M4 19V5l16 7zM4 12h8") },
   { href: "/admin/stats", label: "Statistiche", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },

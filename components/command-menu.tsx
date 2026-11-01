@@ -34,6 +34,7 @@ export function CommandMenu() {
       { id: "services", group: "Nav", label: nav.services, run: () => go(localize("/services", lang)) },
       { id: "team", group: "Nav", label: nav.team, run: () => go(localize("/team", lang)) },
       { id: "journal", group: "Nav", label: nav.journal, run: () => go(localize("/journal", lang)) },
+      { id: "shop", group: "Nav", label: nav.shop, run: () => go(localize("/shop", lang)) },
       ...projectCategories.map((c) => ({
         id: `p-${c.slug}`,
         group: nav.work,

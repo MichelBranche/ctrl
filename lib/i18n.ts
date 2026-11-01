@@ -41,7 +41,7 @@ export function localeFromPath(pathname: string | null): Locale {
 
 export const dict = {
   it: {
-    nav: { work: "Progetti", team: "Team", services: "Servizi", journal: "Journal", contact: "Contatti" },
+    nav: { work: "Progetti", team: "Team", services: "Servizi", journal: "Journal", shop: "Shop", contact: "Contatti" },
     cta: "Parliamo del tuo progetto",
     menu: "Menu",
     close: "Chiudi",
@@ -110,7 +110,7 @@ export const dict = {
     },
   },
   en: {
-    nav: { work: "Work", team: "Team", services: "Services", journal: "Journal", contact: "Contact" },
+    nav: { work: "Work", team: "Team", services: "Services", journal: "Journal", shop: "Shop", contact: "Contact" },
     cta: "Let's talk about your project",
     menu: "Menu",
     close: "Close",

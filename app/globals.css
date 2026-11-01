@@ -255,6 +255,52 @@ html.nav-open .site-header.is-hidden {
   gap: 1.25rem;
 }
 
+.header-cart {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.header-cart svg { width: 1.15rem; height: 1.15rem; }
+.header-cart-count { position: absolute; top: -.12rem; right: -.22rem; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .16rem; border-radius: 99px; background: var(--accent, #ff4a1c); color: #0c0c0c; font-size: .55rem; font-weight: 700; line-height: 1; }
+.cart-layer { position: fixed; inset: 0; z-index: 180; color: #f2f0ea; }
+.cart-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(0,0,0,.62); opacity: 0; animation: cart-backdrop-in .28s ease forwards; cursor: pointer; }
+.cart-drawer { position: absolute; inset: 0 0 0 auto; display: flex; flex-direction: column; width: min(30rem, 100vw); padding: clamp(1.25rem, 4vw, 2rem); border-left: 1px solid rgba(242,240,234,.15); background: #0b0b0b; box-shadow: -1.5rem 0 4rem rgba(0,0,0,.28); animation: cart-drawer-in .42s cubic-bezier(.22,1,.36,1) both; }
+.cart-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(242,240,234,.18); }
+.cart-drawer-head h2 { display: flex; align-items: baseline; gap: .65rem; margin: 0; font-family: var(--font-display); font-size: 1.55rem; font-weight: 500; letter-spacing: -.04em; }
+.cart-drawer-head h2 span { color: rgba(242,240,234,.52); font-family: var(--font); font-size: .68rem; letter-spacing: .12em; }
+.cart-close { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; padding: 0; border: 1px solid rgba(242,240,234,.24); border-radius: 50%; background: transparent; color: inherit; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.cart-empty { display: grid; flex: 1; align-content: center; justify-items: center; gap: 1.1rem; color: rgba(242,240,234,.62); text-align: center; }
+.cart-empty p { margin: 0; }
+.cart-empty a,.cart-continue { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; padding: .9rem 1rem; border: 1px solid rgba(242,240,234,.2); border-radius: 99px; color: #f2f0ea; font-size: .78rem; text-decoration: none; transition: border-color .2s,color .2s; }
+.cart-empty a { width: auto; min-width: 12rem; border-color: var(--accent, #ff4a1c); }
+.cart-empty a span,.cart-continue span { color: var(--accent, #ff4a1c); }
+.cart-empty a:hover,.cart-continue:hover { border-color: var(--accent, #ff4a1c); }
+.cart-items { flex: 1; overflow: auto; }
+.cart-item { display: grid; grid-template-columns: 5rem minmax(0,1fr); gap: 1rem; padding: 1.1rem 0; border-bottom: 1px solid rgba(242,240,234,.14); }
+.cart-item-image { position: relative; overflow: hidden; aspect-ratio: 1; border-radius: .35rem; background: #171717; }
+.cart-item-image img { object-fit: cover; }
+.cart-item-info { min-width: 0; }
+.cart-item-title { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.cart-item-title a { color: inherit; font-size: .88rem; text-decoration: none; }
+.cart-item-title button { flex: none; padding: 0 .2rem; border: 0; background: transparent; color: rgba(242,240,234,.55); font-size: 1.2rem; cursor: pointer; }
+.cart-item-info > p { margin: .4rem 0 .75rem; color: rgba(242,240,234,.62); font-size: .78rem; }
+.cart-item-quantity { display: inline-flex; align-items: center; gap: .8rem; padding: .25rem .4rem; border: 1px solid rgba(242,240,234,.2); border-radius: 99px; font-size: .76rem; }
+.cart-item-quantity button { width: 1.35rem; height: 1.35rem; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.cart-drawer-foot { margin-top: auto; padding-top: 1rem; }
+.cart-subtotal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: .84rem; }
+.cart-subtotal strong { font-size: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.cart-continue { border-color: var(--accent, #ff4a1c); background: var(--accent, #ff4a1c); color: #0b0b0b; }
+.cart-continue span { color: inherit; }
+@keyframes cart-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes cart-backdrop-in { to { opacity: 1; } }
+
 .menu-toggle {
   display: none;
   font-size: 0.7rem;
