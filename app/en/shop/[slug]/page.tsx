@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ShopProductPage } from "@/components/pages/shop-product-page";
 import { getShopProduct, getShopProducts } from "@/lib/shop";
@@ -18,7 +19,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${product.titleEn} · CTRL® Shop`, description: product.descriptionEn, alternates: { canonical: `/en/shop/${product.slug}`, languages: { it: `/shop/${product.slug}`, en: `/en/shop/${product.slug}` } }, openGraph: { images: [product.images[0] || "/images/shop/hero.webp"] } };
 }
 
-export default async function Page({ params }: Props) {
+export default function Page({ params }: Props) {
+  return <Suspense fallback={<main className="shop-page shop-product-page" />}><Body params={params} /></Suspense>;
+}
+
+async function Body({ params }: Props) {
   const { slug } = await params;
   const product = await getShopProduct(slug);
   if (!product?.published) notFound();
