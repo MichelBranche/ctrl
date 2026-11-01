@@ -77,7 +77,7 @@
   .w-row[data-on] .w-title { transform: translateX(0.8rem); }
   .w-row[data-on] .w-place { color: var(--p-dim); transform: translateX(0.8rem); }
   .w-row[data-on] .w-go-arrow { transform: rotate(0deg); color: var(--p-accent); }
-  .w-row-link { cursor: none; }
+  .w-row-link { cursor: url("/cursors/pointer.svg") 11 1, pointer; }
 }
 
 /* Cursor-follow preview, fixed so it never affects layout */
