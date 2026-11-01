@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/content";
+import { CartDrawer } from "@/components/shop/cart-drawer";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -26,6 +27,7 @@ export function SiteHeader() {
     { href: localize("/services", lang), label: t.nav.services },
     { href: localize("/team", lang), label: t.nav.team },
     { href: localize("/journal", lang), label: t.nav.journal },
+    { href: localize("/shop", lang), label: t.nav.shop },
     { href: localize("/contact", lang), label: t.nav.contact },
   ];
 
@@ -81,6 +83,7 @@ export function SiteHeader() {
           <kbd>K</kbd>
         </button>
         <LangSwitch />
+        <CartDrawer lang={lang} />
         <button
           type="button"
           className="menu-toggle"

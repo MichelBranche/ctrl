@@ -68,6 +68,7 @@ function labelFor(path: string) {
     services: nav.services,
     team: nav.team,
     journal: nav.journal,
+    shop: nav.shop,
     contact: nav.contact,
   };
   return map[seg] ?? "CTRL®";
@@ -247,10 +248,9 @@ export function PageTransition() {
 
       const onClick = (event: MouseEvent) => {
         const href = targetOf(event);
-        if (!href) return;
+        if (!href || busy.current) return;
         // Next's Link skips its own navigation when the default is prevented; its onClick (menu close) still runs.
         event.preventDefault();
-        if (busy.current) return;
         void run(href);
       };
 

@@ -18,12 +18,17 @@
 .pt-root[data-boot] {
   visibility: visible;
   opacity: 1;
-  pointer-events: auto;
+  /* Keep the server-rendered boot cover from trapping clicks before hydration. */
+  pointer-events: none;
 }
 
 .pt-root[data-active] {
   pointer-events: auto;
   cursor: progress;
+}
+
+.pt-root[data-boot][data-active] {
+  pointer-events: none;
 }
 
 .pt-strip {

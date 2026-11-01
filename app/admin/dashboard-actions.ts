@@ -5,6 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { changePassword, getAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { SETTINGS_TAG, SOCIAL_HOSTS, SOCIAL_KEYS, writeSettings } from "@/lib/settings";
+import { SHOP_PRODUCT_TAG } from "@/lib/shop";
 
 export type ActionState = { ok?: string; error?: string };
 
@@ -106,6 +107,32 @@ export async function saveSocial(_: ActionState, form: FormData): Promise<Action
   return { ok: "Profili salvati. Il footer del sito è aggiornato." };
 }
 
+export async function saveShopProduct(_: ActionState, form: FormData): Promise<ActionState> {
+  await guard();
+  const titleIt = String(form.get("titleIt") ?? "").trim();
+  const titleEn = String(form.get("titleEn") ?? "").trim();
+  const descriptionIt = String(form.get("descriptionIt") ?? "").trim();
+  const descriptionEn = String(form.get("descriptionEn") ?? "").trim();
+  const priceRaw = String(form.get("price") ?? "").trim().replace(",", ".");
+  const price = Number(priceRaw);
+  if (!titleIt || !titleEn || !descriptionIt || !descriptionEn) return { error: "Completa titolo e descrizione in italiano e inglese." };
+  if (titleIt.length > 100 || titleEn.length > 100 || descriptionIt.length > 500 || descriptionEn.length > 500) return { error: "Titoli o descrizioni troppo lunghi." };
+  if (!Number.isFinite(price) || price < 0.01 || price > 99999) return { error: "Inserisci un prezzo valido." };
+
+  await writeSettings({
+    "shop.product.published": form.get("published") === "on" ? "true" : "false",
+    "shop.product.title.it": titleIt,
+    "shop.product.title.en": titleEn,
+    "shop.product.description.it": descriptionIt,
+    "shop.product.description.en": descriptionEn,
+    "shop.product.price": price.toFixed(2),
+  });
+  updateTag(SETTINGS_TAG);
+  revalidatePath("/shop");
+  revalidatePath("/en/shop");
+  revalidatePath("/admin/shop");
+  return { ok: "Prodotto aggiornato." };
+}
 const PW_MSG = {
   ok: "Password aggiornata. Vale dal prossimo accesso.",
   wrong: "La password attuale non è corretta.",
