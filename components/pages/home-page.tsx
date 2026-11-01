@@ -124,6 +124,33 @@ export function HomePage({ lang }: { lang: Locale }) {
             </div>
           </section>
 
+          {/* 3. VIDEO DI PRESENTAZIONE */}
+          <section className="h-film" aria-label={lang === "it" ? "Video di presentazione CTRL" : "CTRL introduction video"}>
+            <div className="h-film-head">
+              <p className="h-label">
+                <span>CTRL® / Studio film</span>
+                <i className="h-bar" aria-hidden="true" />
+              </p>
+              <a
+                href="https://www.youtube.com/watch?v=upTqsodkdo4"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-small h-film-link"
+              >
+                {lang === "it" ? "Guarda su YouTube" : "Watch on YouTube"} <Arrow />
+              </a>
+            </div>
+            <div className="h-film-frame">
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/upTqsodkdo4?rel=0"
+                title={lang === "it" ? "Presentazione di CTRL®" : "Introducing CTRL®"}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </section>
           {/* 3. PROGETTI RECENTI */}
           <section className="h-work" id="work">
             <div className="h-row-head">

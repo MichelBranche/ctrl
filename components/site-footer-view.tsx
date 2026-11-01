@@ -22,9 +22,20 @@ function Arrow() {
   );
 }
 
+const DEFAULT_FOOTER_SOCIALS: SocialLink[] = [
+  { key: "linkedin", label: "LinkedIn", url: "https://www.linkedin.com/company/ctrl%C2%AE/" },
+  { key: "youtube", label: "YouTube", url: "https://www.youtube.com/channel/UCgirvfq-N2XXvpRQ0OL5tsw" },
+];
+
 const ICONS: Partial<Record<SocialKey, ReactNode>> = {
   linkedin: (
       <path d="M4 9h3v11H4zM5.5 4a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5zM10 9h2.9v1.5h.1c.4-.8 1.4-1.7 3-1.7 3.1 0 3.7 2 3.7 4.7V20h-3v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9V20h-3z" fill="currentColor" />
+  ),
+  youtube: (
+      <>
+        <rect x="3" y="6" width="18" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M10 9.5v5l4.5-2.5z" fill="currentColor" />
+      </>
   ),
   instagram: (
       <g fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -43,6 +54,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
   const root = useRef<HTMLElement>(null);
   const { t, lang } = useLocale();
   const h = t.home;
+  const footerSocials = [...socials.filter((social) => !DEFAULT_FOOTER_SOCIALS.some((fallback) => fallback.key === social.key)), ...DEFAULT_FOOTER_SOCIALS];
 
   useGSAP(
     () => {
@@ -132,9 +144,9 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
           <span>{h.location}</span>
           <span>© 2026 CTRL®</span>
         </p>
-        {socials.length ? (
+        {footerSocials.length ? (
           <ul className="h-socials">
-            {socials.map((s) => (
+            {footerSocials.map((s) => (
               <li key={s.key}>
                 <a className="h-small" href={s.url} target="_blank" rel="noopener noreferrer me">
                   {ICONS[s.key] ? (
