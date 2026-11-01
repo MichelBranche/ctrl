@@ -6,12 +6,11 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 
-type CartItem = { id: string; title: string; quantity: number; price?: number };
+type CartItem = { id: string; title: string; quantity: number; price?: number; slug?: string; image?: string };
 const STORAGE_KEY = "ctrl-shop-cart";
-const PRODUCT_HREF = "/shop/google-review-card";
 const labels = {
-  it: { open: "Apri il carrello", title: "Il tuo carrello", close: "Chiudi carrello", empty: "Il carrello è vuoto.", shop: "Scopri il prodotto", remove: "Rimuovi", subtotal: "Subtotale", continue: "Continua lo shopping", decrease: "Diminuisci quantità", increase: "Aumenta quantità", unavailable: "—" },
-  en: { open: "Open cart", title: "Your cart", close: "Close cart", empty: "Your cart is empty.", shop: "Discover the product", remove: "Remove", subtotal: "Subtotal", continue: "Continue shopping", decrease: "Decrease quantity", increase: "Increase quantity", unavailable: "—" },
+  it: { open: "Apri il carrello", title: "Il tuo carrello", close: "Chiudi carrello", empty: "Il carrello è vuoto.", shop: "Scopri lo shop", remove: "Rimuovi", subtotal: "Subtotale", return: "Torna allo shop", checkout: "Vai al checkout", decrease: "Diminuisci quantità", increase: "Aumenta quantità", unavailable: "—" },
+  en: { open: "Open cart", title: "Your cart", close: "Close cart", empty: "Your cart is empty.", shop: "Discover the shop", remove: "Remove", subtotal: "Subtotal", return: "Back to shop", checkout: "Go to checkout", decrease: "Decrease quantity", increase: "Increase quantity", unavailable: "—" },
 } as const;
 
 function readCart(): CartItem[] {
@@ -19,7 +18,13 @@ function readCart(): CartItem[] {
     const data: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]");
     if (!Array.isArray(data)) return [];
     return data.filter((item): item is CartItem => !!item && typeof item.id === "string" && typeof item.title === "string" && Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0)
-      .map((item) => ({ ...item, quantity: Math.floor(Number(item.quantity)), price: Number.isFinite(Number(item.price)) ? Number(item.price) : undefined }));
+      .map((item) => ({
+        ...item,
+        quantity: Math.floor(Number(item.quantity)),
+        slug: item.slug || (item.id === "google-review-card" ? "google-review-card" : undefined),
+        image: item.image || (item.id === "google-review-card" ? "/images/shop/review-card.webp" : undefined),
+        price: Number.isFinite(Number(item.price)) ? Number(item.price) : item.id === "google-review-card" ? 19.9 : undefined,
+      }));
   } catch { return []; }
 }
 
@@ -41,6 +46,9 @@ export function CartDrawer({ lang }: { lang: Locale }) {
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0), [items]);
   const money = useMemo(() => new Intl.NumberFormat(lang === "it" ? "it-IT" : "en-IE", { style: "currency", currency: "EUR" }), [lang]);
+  const shopHref = lang === "en" ? "/en/shop" : "/shop";
+  const checkoutHref = lang === "en" ? "/en/checkout" : "/checkout";
+  const productHref = (item: CartItem) => item.slug ? `${lang === "en" ? "/en" : ""}/shop/${item.slug}` : shopHref;
 
   const sync = useCallback(() => setItems(readCart()), []);
   useEffect(() => {
@@ -66,8 +74,7 @@ export function CartDrawer({ lang }: { lang: Locale }) {
   }, [open]);
 
   function updateQuantity(id: string, delta: number) {
-    const next = items.map((item) => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0);
-    writeCart(next);
+    writeCart(items.map((item) => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0));
   }
   function removeItem(id: string) { writeCart(items.filter((item) => item.id !== id)); }
 
@@ -79,12 +86,12 @@ export function CartDrawer({ lang }: { lang: Locale }) {
       <button className="cart-backdrop" type="button" aria-label={t.close} onClick={() => setOpen(false)} />
       <aside id="shop-cart-drawer" className="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title">
         <div className="cart-drawer-head"><h2 id="cart-title">{t.title}<span>{count.toString().padStart(2, "0")}</span></h2><button ref={closeRef} type="button" className="cart-close" aria-label={t.close} onClick={() => setOpen(false)}>×</button></div>
-        {items.length === 0 ? <div className="cart-empty"><p>{t.empty}</p><Link href={lang === "en" ? `/en${PRODUCT_HREF}` : PRODUCT_HREF} onClick={() => setOpen(false)}>{t.shop}<span aria-hidden="true">→</span></Link></div> : <>
+        {items.length === 0 ? <div className="cart-empty"><p>{t.empty}</p><Link href={shopHref} onClick={() => setOpen(false)}>{t.shop}<span aria-hidden="true">→</span></Link></div> : <>
           <div className="cart-items">{items.map((item) => <article className="cart-item" key={item.id}>
-            <Link className="cart-item-image" href={lang === "en" ? `/en${PRODUCT_HREF}` : PRODUCT_HREF} onClick={() => setOpen(false)}><Image src="/images/shop/review-card.webp" alt="" fill sizes="96px" /></Link>
-            <div className="cart-item-info"><div className="cart-item-title"><Link href={lang === "en" ? `/en${PRODUCT_HREF}` : PRODUCT_HREF} onClick={() => setOpen(false)}>{item.title}</Link><button type="button" onClick={() => removeItem(item.id)} aria-label={`${t.remove}: ${item.title}`}>×</button></div><p>{item.price === undefined ? t.unavailable : money.format(item.price)}</p><div className="cart-item-quantity"><button type="button" aria-label={t.decrease} onClick={() => updateQuantity(item.id, -1)}>−</button><span>{item.quantity}</span><button type="button" aria-label={t.increase} onClick={() => updateQuantity(item.id, 1)}>＋</button></div></div>
+            <Link className="cart-item-image" href={productHref(item)} onClick={() => setOpen(false)}><Image src={item.image || "/images/shop/review-card.webp"} alt="" fill sizes="96px" /></Link>
+            <div className="cart-item-info"><div className="cart-item-title"><Link href={productHref(item)} onClick={() => setOpen(false)}>{item.title}</Link><button type="button" onClick={() => removeItem(item.id)} aria-label={`${t.remove}: ${item.title}`}>×</button></div><p>{item.price === undefined ? t.unavailable : money.format(item.price)}</p><div className="cart-item-quantity"><button type="button" aria-label={t.decrease} onClick={() => updateQuantity(item.id, -1)}>−</button><span>{item.quantity}</span><button type="button" aria-label={t.increase} onClick={() => updateQuantity(item.id, 1)}>＋</button></div></div>
           </article>)}</div>
-          <footer className="cart-drawer-foot"><div className="cart-subtotal"><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><Link className="cart-continue" href={lang === "en" ? "/en/shop" : "/shop"} onClick={() => setOpen(false)}>{t.continue}<span aria-hidden="true">→</span></Link></footer>
+          <div className="cart-drawer-foot"><div className="cart-subtotal"><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><Link className="cart-checkout" href={checkoutHref} onClick={() => setOpen(false)}>{t.checkout}<span aria-hidden="true">→</span></Link><Link className="cart-continue" href={shopHref} onClick={() => setOpen(false)}>{t.return}<span aria-hidden="true">↗</span></Link></div>
         </>}
       </aside>
     </div>, document.body)}

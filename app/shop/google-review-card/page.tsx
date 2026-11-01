@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const product = await getShopProduct();
-  if (!product.published) notFound();
+  const product = await getShopProduct("google-review-card");
+  if (!product?.published) notFound();
   return <ShopProductPage lang="it" product={product} />;
 }

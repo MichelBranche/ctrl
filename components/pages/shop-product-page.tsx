@@ -63,14 +63,14 @@ export function ShopProductPage({ lang, product }: { lang: Locale; product: Shop
     <main className="shop-page shop-product-page">
       <section className="sp-hero">
         <div className="sp-hero-inner">
-          <ProductGallery lang={lang} />
+          <ProductGallery lang={lang} title={title} images={product.images} />
           <div className="sp-details">
-            <Link className="sp-back-link" href={localize("/shop", lang)}><span aria-hidden="true">←</span>{t.backToShop}</Link>
+            <Link className="sp-back-link" data-shop-transition="back" href={localize("/shop", lang)}><span aria-hidden="true">←</span>{t.backToShop}</Link>
             <p className="sp-category">{t.category}<i /></p>
             <h1>{title}</h1>
             <p className="sp-description">{description}</p>
             <p className="sp-price">{price}</p>
-            <ProductActions title={title} lang={lang} price={Number(product.price)} />
+            <ProductActions title={title} lang={lang} price={Number(product.price)} slug={product.slug} image={product.images[0] || "/images/shop/review-card-hero.webp"} />
             <div className="sp-trust">{t.support.map((label, index) => <div key={label}><BenefitIcon index={index === 0 ? 2 : index === 1 ? 0 : 3} /><span>{label}</span></div>)}</div>
             <p className="sp-made-order"><span />{t.madeToOrder}</p>
           </div>

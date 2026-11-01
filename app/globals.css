@@ -296,8 +296,9 @@ html.nav-open .site-header.is-hidden {
 .cart-drawer-foot { margin-top: auto; padding-top: 1rem; }
 .cart-subtotal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: .84rem; }
 .cart-subtotal strong { font-size: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; }
-.cart-continue { border-color: var(--accent, #ff4a1c); background: var(--accent, #ff4a1c); color: #0b0b0b; }
-.cart-continue span { color: inherit; }
+.cart-checkout { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; margin-bottom: .55rem; padding: .9rem 1rem; border: 1px solid var(--accent, #ff4a1c); border-radius: 99px; background: var(--accent, #ff4a1c); color: #0b0b0b; font-size: .78rem; text-decoration: none; }
+.cart-checkout span { color: inherit; }
+.cart-continue { margin-top: .5rem; }
 @keyframes cart-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes cart-backdrop-in { to { opacity: 1; } }
 

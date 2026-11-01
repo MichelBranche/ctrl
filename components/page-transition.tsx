@@ -202,6 +202,22 @@ export function PageTransition() {
         finish();
       });
 
+      const runShop = contextSafe(async (href: string, direction: "forward" | "back") => {
+        const outgoing = document.querySelector<HTMLElement>(".shop-page");
+        if (!outgoing) { void run(href); return; }
+        busy.current = true;
+        window.__lenis?.stop();
+        const arrival = waitForRoute();
+        await new Promise<void>((resolve) => gsap.to(outgoing, { xPercent: direction === "forward" ? -5 : 5, autoAlpha: .58, duration: .16, ease: "power2.in", onComplete: resolve }));
+        router.push(href, { scroll: false });
+        await arrival;
+        toTop();
+        scheduleRefresh();
+        const incoming = document.querySelector<HTMLElement>(".shop-page");
+        if (incoming) await new Promise<void>((resolve) => gsap.fromTo(incoming, { xPercent: direction === "forward" ? 5 : -5, autoAlpha: .58 }, { xPercent: 0, autoAlpha: 1, duration: .22, ease: "power2.out", clearProps: "transform,opacity", onComplete: resolve }));
+        finish();
+      });
+
       // First load: the cover is SSR'd already covering (data-boot); letters rise, then it lifts.
       const boot = contextSafe(async () => {
         busy.current = true;
@@ -249,9 +265,12 @@ export function PageTransition() {
       const onClick = (event: MouseEvent) => {
         const href = targetOf(event);
         if (!href || busy.current) return;
+        const link = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>("a");
+        const shopDirection = link?.dataset.shopTransition;
         // Next's Link skips its own navigation when the default is prevented; its onClick (menu close) still runs.
         event.preventDefault();
-        void run(href);
+        if (shopDirection === "forward" || shopDirection === "back") void runShop(href, shopDirection);
+        else void run(href);
       };
 
       window.addEventListener("click", onClick, true);
