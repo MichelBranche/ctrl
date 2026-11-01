@@ -12,7 +12,7 @@ import "./services.css";
 
 export function servicesMetadata(lang: Locale): Metadata {
   const c = servicesCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription };
+  return { title: c.metaTitle, description: c.metaDescription, alternates: { canonical: localize("/services", lang), languages: { it: "/services", en: "/en/services" } } };
 }
 
 function Arrow({ className = "s-arrow" }: { className?: string }) {

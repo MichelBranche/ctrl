@@ -14,7 +14,7 @@ const MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Aosta%2C+Valle
 
 export function contactMetadata(lang: Locale): Metadata {
   const c = contactCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription };
+  return { title: c.metaTitle, description: c.metaDescription, alternates: { canonical: lang === "it" ? "/contact" : "/en/contact", languages: { it: "/contact", en: "/en/contact" } } };
 }
 
 function Arrow({ className = "c-arrow" }: { className?: string }) {

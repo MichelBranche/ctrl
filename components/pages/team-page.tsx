@@ -9,7 +9,7 @@ import { dict, type Locale } from "@/lib/i18n";
 import "./team.css";
 
 export function teamMetadata(lang: Locale): Metadata {
-  return { title: dict[lang].nav.team, description: dict[lang].team.description };
+  return { title: dict[lang].nav.team, description: dict[lang].team.description, alternates: { canonical: lang === "it" ? "/team" : "/en/team", languages: { it: "/team", en: "/en/team" } } };
 }
 
 export function TeamView({ lang }: { lang: Locale }) {
