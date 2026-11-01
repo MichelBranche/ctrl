@@ -588,7 +588,7 @@
 .hp-cap-go { color: var(--accent); border-bottom: 1px solid currentColor; }
 .hp-cap-go span { display: inline-block; transition: transform 0.3s ease; }
 .hp-open:hover .hp-cap-go span { transform: translateX(4px); }
-.hp-cap-hint { opacity: 0.4; }
+.hp-cap-hint { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) {
   .hp-thumb-in img, .hp-cap-go span { transition: none; }
 }

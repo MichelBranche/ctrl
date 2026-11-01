@@ -3,6 +3,7 @@
 // Based on Skiper UI skiper6 ("Hover members", https://skiper-ui.com/v1/skiper6).
 // Same structure, springs, sizes, easing and centre-out letter stagger as the
 // original; adapted to CTRL fonts (Satoshi/Geist), accent and project data.
+import NextImage from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useSpring } from "motion/react";
@@ -65,8 +66,7 @@ function Thumb({ item, i, onHover, onPick, current }: { item: HoverProject; i: n
         }}
         onFocus={() => { setOn(true); onHover(i); }} onBlur={() => { setOn(false); onHover(null); }}>
         {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image} alt="" />
+          <NextImage src={item.image} alt="" fill sizes="120px" quality={90} />
         ) : (
           <span className="h-placeholder" aria-hidden="true" />
         )}
