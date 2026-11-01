@@ -3,6 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import Link from "next/link";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductActions } from "@/components/shop/product-actions";
+import { ProductManual } from "@/components/shop/product-manual";
 import type { ShopProduct } from "@/lib/shop";
 import { localize, type Locale } from "@/lib/i18n";
 import "./shop.css";
@@ -82,6 +83,7 @@ export function ShopProductPage({ lang, product }: { lang: Locale; product: Shop
           <div className="sp-benefit-grid">{t.benefits.map(([heading, text], index) => <article key={heading}><BenefitIcon index={index} /><h3>{heading}</h3><p>{text}</p></article>)}</div>
         </div>
       </section>
+      {product.slug === "google-review-card" ? <ProductManual lang={lang} /> : null}
       <section className="sp-reviews">
         <div className="sp-reviews-copy"><p className="sp-category">{t.reviewKicker}<i /></p><h2>{t.reviewTitle[0]}<br />{t.reviewTitle[1]}</h2><p>{t.reviewEmpty}</p></div>
         <div className="sp-review-placeholder"><span className="sp-review-mark" aria-hidden="true">CTRL®</span><p>{t.reviewEmpty}</p></div>
@@ -90,3 +92,5 @@ export function ShopProductPage({ lang, product }: { lang: Locale; product: Shop
     <SiteFooter />
   </>;
 }
+
+
