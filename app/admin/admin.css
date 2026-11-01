@@ -24,6 +24,16 @@
 .adm-h1 { margin: 0.3rem 0 0; font-family: var(--font-display); font-size: 2rem; font-weight: 600; letter-spacing: -0.02em; }
 .adm-muted { color: var(--adm-dim); font-size: 0.85rem; }
 .adm-note { padding: 1.4rem; border: 1px dashed var(--adm-rule); color: var(--adm-dim); }
+.shop-admin-product-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: .7rem; }
+.shop-admin-product-head .adm-h2 { margin: 0; }
+.shop-admin-product-head .adm-muted { margin: .35rem 0 0; }
+.shop-admin-images { display: flex; flex-wrap: wrap; gap: .7rem; }
+.shop-admin-image,.shop-admin-upload { position: relative; display: grid; place-items: center; width: 8rem; height: 6rem; overflow: hidden; border: 1px solid var(--adm-rule); border-radius: .4rem; background: var(--adm-bg); }
+.shop-admin-image img { width: 100%; height: 100%; object-fit: cover; }
+.shop-admin-image .adm-btn { position: absolute; top: .3rem; right: .3rem; display: grid; place-items: center; width: 1.65rem; min-width: 0; height: 1.65rem; padding: 0; background: var(--adm-bg); }
+.shop-admin-upload { align-content: center; gap: .25rem; color: var(--adm-dim); font: inherit; font-size: .75rem; cursor: pointer; }
+.shop-admin-upload span:first-child { color: var(--adm-accent); font-size: 1.4rem; }
+.shop-admin-upload:disabled { opacity: .55; cursor: wait; }
 .adm-error { margin: 0; color: var(--adm-accent); }
 .adm-ok { margin: 0; color: var(--adm-ok); }
 .adm-link { color: var(--adm-fg); text-decoration: underline; text-underline-offset: 0.2em; text-decoration-color: var(--adm-rule); }

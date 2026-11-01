@@ -3,17 +3,17 @@
 import { useState } from "react";
 import type { Locale } from "@/lib/i18n";
 
-export function ProductActions({ title, lang, price }: { title: string; lang: Locale; price: number }) {
+export function ProductActions({ title, lang, price, slug, image }: { title: string; lang: Locale; price: number; slug: string; image: string }) {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const labels = lang === "it" ? { add: "Aggiungi al carrello", added: "Aggiunto al carrello", quantity: "Quantità" } : { add: "Add to cart", added: "Added to cart", quantity: "Quantity" };
   function addToCart() {
     try {
       const stored = window.localStorage.getItem("ctrl-shop-cart");
-      const cart: Array<{ id: string; title: string; quantity: number; price?: number }> = stored ? JSON.parse(stored) : [];
-      const existing = cart.find((item) => item.id === "google-review-card");
-      if (existing) { existing.quantity += quantity; existing.price = price; }
-      else cart.push({ id: "google-review-card", title, quantity, price });
+      const cart: Array<{ id: string; title: string; quantity: number; price?: number; slug?: string; image?: string }> = stored ? JSON.parse(stored) : [];
+      const existing = cart.find((item) => item.id === slug);
+      if (existing) { existing.quantity += quantity; existing.price = price; existing.slug = slug; existing.image = image; existing.title = title; }
+      else cart.push({ id: slug, title, quantity, price, slug, image });
       window.localStorage.setItem("ctrl-shop-cart", JSON.stringify(cart));
       window.dispatchEvent(new CustomEvent("ctrl:shop-cart-updated", { detail: { open: true } }));
       setAdded(true);

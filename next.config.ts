@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
   // Admin cover uploads go through a Server Action (covers are capped at 5 MB).
   experimental: { serverActions: { bodySizeLimit: "6mb" } },
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/covers/**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/covers/**" },
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/shop/**" },
+    ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3440, 3840],
     qualities: [75, 90],
   },

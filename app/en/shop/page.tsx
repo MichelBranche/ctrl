@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShopPage } from "@/components/pages/shop-page";
-import { getShopProduct } from "@/lib/shop";
+import { getShopProducts } from "@/lib/shop";
 
 export const metadata: Metadata = {
   title: "Shop · CTRL®",
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  return <ShopPage lang="en" product={await getShopProduct()} />;
+  return <ShopPage lang="en" products={await getShopProducts()} />;
 }
