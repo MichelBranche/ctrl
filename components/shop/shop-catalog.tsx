@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
+import { ShopIcon } from "@/components/shop/shop-icons";
 import { ShopCardCartButton } from "@/components/shop/shop-card-cart-button";
 import { localize, type Locale } from "@/lib/i18n";
 import { SHOP_CATEGORIES, SHOP_CATEGORY_LABEL, type ShopCategory, type ShopProduct } from "@/lib/shop-data";
@@ -44,13 +45,13 @@ export function ShopCatalog({ lang, products }: { lang: Locale; products: ShopPr
     </ul></aside>
     <div className="shop-main">
       <div className="shop-toolbar"><span aria-live="polite">{t.showing(visible.length, products.length)}</span><label><span>{t.sort}</span>
-        <span className="shop-sort"><select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>{(Object.keys(t.sorts) as Sort[]).map((s) => <option key={s} value={s}>{t.sorts[s]}</option>)}</select><i aria-hidden="true">⌄</i></span>
+        <span className="shop-sort"><select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>{(Object.keys(t.sorts) as Sort[]).map((s) => <option key={s} value={s}>{t.sorts[s]}</option>)}</select><ShopIcon name="chevronDown" /></span>
       </label></div>
-      {visible.length ? <div className="shop-grid">{visible.map((product, index) => {
+      {visible.length ? <div className="shop-grid" key={`${category}-${sort}`}>{visible.map((product, index) => {
         const title = titleOf(product);
         const image = product.images[0] || "/images/shop/review-card-hero.webp";
         const href = localize(`/shop/${product.slug}`, lang);
-        return <article className="shop-product-card" key={product.id}>
+        return <article className="shop-product-card" key={product.id} style={{ "--i": Math.min(index, 8) } as CSSProperties}>
           <div className="shop-card-visual">
             <Link className="shop-card-image" data-shop-transition="forward" href={href} aria-label={`${t.viewProduct}: ${title}`}>
               <Image src={image} alt={title} fill quality={90} sizes="(max-width: 760px) 100vw, (max-width: 1100px) 38vw, 30vw" />
@@ -62,7 +63,7 @@ export function ShopCatalog({ lang, products }: { lang: Locale; products: ShopPr
             <div className="shop-card-meta"><div><h2>{title}</h2><p>{product.images.length > 1 ? `${product.images.length} ${t.images}` : SHOP_CATEGORY_LABEL[lang][product.category]}</p></div><span className="shop-card-price">{money.format(Number(product.price))}</span></div>
           </Link>
         </article>;
-      })}</div> : <div className="shop-empty"><p>{t.none}</p></div>}
+      })}</div> : <div className="shop-empty"><ShopIcon name="bag" /><p>{t.none}</p></div>}
     </div>
   </>;
 }

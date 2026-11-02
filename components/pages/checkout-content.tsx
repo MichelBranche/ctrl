@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/lib/i18n";
+import { ShopIcon } from "@/components/shop/shop-icons";
 import { refreshCartPrices } from "@/lib/shop-cart-sync";
+import "./shop.css";
 
 /**
  * PRICE TRUST: this page and the cart drawer read prices from localStorage, which the visitor can edit.
@@ -42,7 +44,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
   return <main className="shop-page checkout-page">
     <section className="checkout-shell">
       <div className="checkout-intro"><p className="sp-category">{t.kicker}<i /></p><h1>{t.title}</h1><p>{t.lead}</p></div>
-      {items.length === 0 ? <div className="checkout-empty"><p>{t.empty}</p><Link className="cart-checkout" href={shopHref}>{t.back}<span aria-hidden="true">→</span></Link></div> : <div className="checkout-layout">
+      {items.length === 0 ? <div className="checkout-empty"><ShopIcon name="bag" className="checkout-empty-icon" /><p>{t.empty}</p><Link className="cart-checkout" href={shopHref}>{t.back}<ShopIcon name="arrowRight" /></Link></div> : <div className="checkout-layout">
         <section className="checkout-lines"><h2>{t.summary}<span>{items.reduce((n, item) => n + item.quantity, 0).toString().padStart(2, "0")}</span></h2>
           {items.map((item) => <article className="checkout-line" key={item.id}>
             <Link className="checkout-image" href={productHref(item)}><Image src={item.image || "/images/shop/review-card.webp"} alt="" fill sizes="88px" /></Link>
@@ -51,7 +53,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
           </article>)}
           <p className="checkout-note">{t.note}</p>
         </section>
-        <aside className="checkout-totals"><h2>{lang === "it" ? "Riepilogo" : "Summary"}</h2><div><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><div><span>{t.shipping}</span><strong>{t.later}</strong></div><div className="checkout-total"><span>{t.total}</span><strong>{money.format(subtotal)}</strong></div><button type="button" disabled>{lang === "it" ? "Pagamento non ancora attivo" : "Payment is not active yet"}</button><Link href={shopHref}>{t.back}<span aria-hidden="true">↗</span></Link></aside>
+        <aside className="checkout-totals"><h2>{lang === "it" ? "Riepilogo" : "Summary"}</h2><div><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><div><span>{t.shipping}</span><strong>{t.later}</strong></div><div className="checkout-total"><span>{t.total}</span><strong>{money.format(subtotal)}</strong></div><button type="button" disabled>{lang === "it" ? "Pagamento non ancora attivo" : "Payment is not active yet"}</button><Link href={shopHref}>{t.back}<ShopIcon name="arrowUpRight" /></Link></aside>
       </div>}
     </section>
   </main>;

@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import Link from "next/link";
+import { ShopIcon } from "@/components/shop/shop-icons";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductActions } from "@/components/shop/product-actions";
 import { SHOP_CATEGORY_LABEL, type ShopProduct } from "@/lib/shop-data";
@@ -37,7 +38,7 @@ export function ShopProductPage({ lang, product }: { lang: Locale; product: Shop
         <div className="sp-hero-inner">
           <ProductGallery lang={lang} title={title} images={product.images} />
           <div className="sp-details">
-            <Link className="sp-back-link" data-shop-transition="back" href={localize("/shop", lang)}><span aria-hidden="true">←</span>{t.backToShop}</Link>
+            <Link className="sp-back-link" data-shop-transition="back" href={localize("/shop", lang)}><ShopIcon name="arrowLeft" />{t.backToShop}</Link>
             <p className="sp-category">{label}<i /></p>
             <h1>{title}</h1>
             <p className="sp-description">{description}</p>
