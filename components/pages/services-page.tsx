@@ -1,5 +1,5 @@
 import { CtaLink } from "@/components/cta-link";
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
@@ -98,7 +98,7 @@ export function ServicesView({ lang }: { lang: Locale }) {
           <ul className="s-grid">
             {services.map((s) => (
               <li className="s-cell" key={s.slug} data-s-cell>
-                <Link href={localize(`/services/${s.slug}`, lang)} className="s-cell-link">
+                <div className="s-cell-body">
                   <span className="s-mono s-index">{s.index}</span>
                   <h2 className="s-cell-title">{s.title[lang]}</h2>
                   <p className="s-cell-text">{s.text[lang]}</p>
@@ -111,8 +111,7 @@ export function ServicesView({ lang }: { lang: Locale }) {
                       </li>
                     ))}
                   </ul>
-                  <span className="s-sr">{c.details}</span>
-                </Link>
+                </div>
               </li>
             ))}
             <li className="s-cell s-cell-mark" data-s-cell>
@@ -122,6 +121,33 @@ export function ServicesView({ lang }: { lang: Locale }) {
           <span className="s-rule s-rule-v s-rule-v1" aria-hidden="true" data-s-rule="y" />
           <span className="s-rule s-rule-v s-rule-v2" aria-hidden="true" data-s-rule="y" />
           <span className="s-rule s-rule-h s-rule-h1" aria-hidden="true" data-s-rule="x" />
+        </section>
+
+        <section className="s-soft" aria-labelledby="s-soft-title">
+          <div className="s-soft-intro" data-s-fade-scroll>
+            <p className="s-mono s-kicker">{c.software.kicker}</p>
+            <h2 className="s-h2" id="s-soft-title">{c.software.title}</h2>
+            <p className="s-modes-text">{c.software.text}</p>
+          </div>
+          <ul className="s-soft-grid">
+            {c.software.products.map((p) => (
+              <li key={p.name} className="s-product" data-s-card>
+                <span className="s-product-media">
+                  <Image src={p.image} alt={p.alt} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" className="s-product-img" />
+                </span>
+                <div className="s-product-body">
+                  <p className="s-product-badge s-mono"><i aria-hidden="true" />{c.software.available}</p>
+                  <h3 className="s-card-title">{p.name}</h3>
+                  <p className="s-product-text">{p.text}</p>
+                  <p className="s-product-price"><strong>{p.price}</strong> {c.software.perMonth}</p>
+                  <Link href={localize(p.href, lang) as Route} className="s-btn s-btn-fill" data-magnetic>
+                    <span className="s-btn-label s-mono">{p.cta}</span>
+                    <Arrow />
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="s-modes">

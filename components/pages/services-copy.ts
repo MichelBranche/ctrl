@@ -10,8 +10,15 @@ type ServicesCopy = {
   lead: string;
   discover: string;
   gridLabel: string;
-  details: string;
   graphicAlt: string;
+  software: {
+    kicker: string;
+    title: string;
+    text: string;
+    available: string;
+    perMonth: string;
+    products: { name: string; text: string; price: string; image: string; alt: string; href: string; cta: string }[];
+  };
   modesKicker: string;
   modesTitle: string[];
   modesText: string;
@@ -29,8 +36,25 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
     lead: "Idee, tecnologia e design per far crescere il tuo brand.",
     discover: "Scopri i servizi",
     gridLabel: "I nostri servizi",
-    details: "Dettagli",
     graphicAlt: "Segno grafico CTRL: una A disegnata come una montagna",
+    software: {
+      kicker: "Software in abbonamento",
+      title: "Pronti da attivare.",
+      text: "Prodotti CTRL® già sviluppati e mantenuti da noi: li attivi subito, con un canone mensile.",
+      available: "Disponibile ora",
+      perMonth: "/mese",
+      products: [
+        {
+          name: "Agenda Easy",
+          text: "La webapp per gestire appuntamenti, clienti e servizi, per studi e attività professionali.",
+          price: "da 9,90 €",
+          image: "/images/projects/agenda-easy/hero.webp",
+          alt: "Agenda Easy aperta su un portatile",
+          href: "/projects/webapps/agenda-easy",
+          cta: "Scopri Agenda Easy",
+        },
+      ],
+    },
     modesKicker: "Due modi per lavorare insieme",
     modesTitle: ["Su misura.", "O in abbonamento."],
     modesText: "Scegli il modello più adatto alle tue esigenze.",
@@ -56,8 +80,25 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
     lead: "Ideas, technology and design to grow your brand.",
     discover: "Explore the services",
     gridLabel: "Our services",
-    details: "Details",
     graphicAlt: "CTRL graphic mark: an A drawn as a mountain",
+    software: {
+      kicker: "Subscription software",
+      title: "Ready to switch on.",
+      text: "CTRL® products we build and maintain: switch them on today for a monthly fee.",
+      available: "Available now",
+      perMonth: "/month",
+      products: [
+        {
+          name: "Agenda Easy",
+          text: "The web app to manage appointments, clients and services, for studios and professional practices.",
+          price: "from €9.90",
+          image: "/images/projects/agenda-easy/hero.webp",
+          alt: "Agenda Easy open on a laptop",
+          href: "/projects/webapps/agenda-easy",
+          cta: "Discover Agenda Easy",
+        },
+      ],
+    },
     modesKicker: "Two ways to work together",
     modesTitle: ["Tailored.", "Or on subscription."],
     modesText: "Choose the model that best fits your needs.",
