@@ -5,8 +5,8 @@ import { getShopProducts } from "@/lib/shop";
 
 const siteUrl = "https://www.ctrlagency.dev";
 const publicPaths = [
-  "/", "/projects", "/services", "/team", "/journal", "/shop", "/shop/google-review-card", "/contact", "/privacy", "/cookie",
-  "/en", "/en/projects", "/en/services", "/en/team", "/en/journal", "/en/shop", "/en/shop/google-review-card", "/en/contact", "/en/privacy", "/en/cookies",
+  "/", "/projects", "/services", "/team", "/journal", "/shop", "/contact", "/privacy", "/cookie",
+  "/en", "/en/projects", "/en/services", "/en/team", "/en/journal", "/en/shop", "/en/contact", "/en/privacy", "/en/cookies",
   ...projectCategories.flatMap((category) => [`/projects/${category.slug}`, `/en/projects/${category.slug}`]),
   ...services.flatMap((service) => [`/services/${service.slug}`, `/en/services/${service.slug}`]),
   ...websitesInOrder().flatMap((project) => [`/projects/websites/${project.slug}`, `/en/projects/websites/${project.slug}`]),

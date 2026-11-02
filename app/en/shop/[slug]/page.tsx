@@ -8,7 +8,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
   const products = await getShopProducts();
-  const params = products.filter((product) => product.slug !== "google-review-card").map((product) => ({ slug: product.slug }));
+  const params = products.filter((product) => product.published).map((product) => ({ slug: product.slug }));
   return params.length ? params : [{ slug: "_" }];
 }
 
