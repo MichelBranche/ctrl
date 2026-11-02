@@ -1,0 +1,73 @@
+/* /projects/webapps/agenda-easy: product page for Agenda Easy, a CTRL® product. */
+.ae-wrap { width: 100%; max-width: var(--p-max); margin: 0 auto; padding: 0 var(--gutter); }
+.ae-hero { position: relative; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: center; min-height: min(90svh, 46rem); padding: calc(var(--header) + 2rem) var(--gutter) 3rem; max-width: var(--p-max); margin: 0 auto; }
+.ae-hero-media { position: absolute; inset: var(--header) 0 0 38%; overflow: hidden; mask-image: linear-gradient(90deg, transparent 0%, black 22%); }
+.ae-hero-img { object-fit: cover; object-position: 70% 50%; }
+.ae-hero-copy { position: relative; z-index: 1; }
+.ae-crumbs { gap: 0.7rem; }
+.ae-crumbs a { color: inherit; text-decoration: none; }
+.ae-crumbs a:hover, .ae-crumbs [aria-current] { color: var(--p-fg); }
+.ae-title { display: flex; align-items: center; gap: 0.9rem; margin: 1rem 0 0; font-family: var(--p-display-face); font-size: clamp(2.6rem, 5vw, 4.4rem); font-weight: 500; letter-spacing: -0.04em; line-height: 1; }
+.ae-mark { width: 1.15em; height: 1.15em; flex: none; color: var(--p-fg); }
+.ae-status { display: inline-flex; align-items: center; gap: 0.6rem; margin: 1.3rem 0 0; color: var(--p-fg); }
+.ae-live { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #3ecf8e; box-shadow: 0 0 0 4px rgb(62 207 142 / 0.18); }
+.ae-lead { max-width: 28rem; }
+.ae-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; margin-top: 2rem; }
+.ae-watch { display: inline-flex; align-items: center; gap: 0.6rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--p-fg); color: var(--p-fg); text-decoration: none; }
+.ae-watch svg { width: 0.8rem; height: 0.8rem; }
+
+.ae-h2 { margin: 1.1rem 0 0; font-family: var(--p-display-face); font-size: clamp(2.1rem, 4vw, 3.4rem); font-weight: 600; line-height: 1.04; letter-spacing: -0.035em; }
+.ae-h2 > span { display: block; }
+.ae-h2-sm { font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.ae-overview { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem clamp(2rem, 8vw, 8rem); padding-top: clamp(3rem, 6vw, 5rem); }
+.ae-overview-text { margin: 2.2rem 0 0; color: var(--p-dim); line-height: 1.6; text-wrap: pretty; }
+
+.ae-features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; margin: clamp(2.5rem, 5vw, 4rem) auto; list-style: none; }
+.ae-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border: 1px solid var(--p-rule-hi); border-radius: 0.6rem; }
+.ae-icon svg { width: 1.3rem; height: 1.3rem; }
+.ae-feature-title { margin: 1.2rem 0 0.5rem; font-size: 1.05rem; font-weight: 600; }
+.ae-feature-text { margin: 0; color: var(--p-dim); font-size: 0.9rem; line-height: 1.55; }
+
+.ae-screens { display: grid; grid-template-columns: minmax(0, 2.6fr) minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+.ae-screen { margin: 0; overflow: hidden; border: 1px solid var(--p-rule); border-radius: 0.6rem; background: var(--p-card); }
+.ae-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+.ae-video { padding-top: clamp(3.5rem, 7vw, 6rem); scroll-margin-top: var(--header); }
+.ae-video-head { margin-bottom: 2rem; }
+.ae-video-frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--p-rule); border-radius: 0.6rem; background: #000; }
+.ae-video-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.ae-video-poster { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
+.ae-video-img { object-fit: cover; transition: scale 0.8s var(--p-ease); }
+.ae-video-poster:hover .ae-video-img { scale: 1.02; }
+.ae-play { position: absolute; left: 1.2rem; bottom: 1.2rem; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; border-radius: 50%; background: var(--p-accent); box-shadow: 0 10px 40px rgb(0 0 0 / 0.35); transition: scale 0.4s var(--p-ease); }
+.ae-play svg { width: 1.8rem; height: 1.8rem; margin-left: 0.2rem; }
+.ae-video-poster:hover .ae-play { scale: 1.08; }
+.ae-video-poster:focus-visible { outline: 2px solid var(--p-accent); outline-offset: -4px; }
+.ae-play-label { position: absolute; bottom: 1.6rem; left: 6.6rem; padding: 0.4rem 0.7rem; border-radius: 0.3rem; background: rgb(0 0 0 / 0.65); }
+
+.ae-facts { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr); gap: 2.5rem; align-items: center; padding-top: clamp(3.5rem, 7vw, 6rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
+.ae-facts-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; }
+.ae-fact { padding: 0.4rem 1.2rem; border-left: 1px solid var(--p-rule-hi); }
+.ae-fact dt { font-family: var(--p-display-face); font-size: clamp(1.3rem, 2vw, 1.8rem); font-weight: 500; letter-spacing: -0.03em; }
+.ae-fact dd { margin: 0.5rem 0 0; color: var(--p-dim); font-size: 0.82rem; line-height: 1.45; }
+
+.ae-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2rem; margin-bottom: clamp(4rem, 8vw, 7rem); padding: clamp(1.8rem, 4vw, 3rem); border: 1px solid var(--p-rule); border-radius: 0.6rem; background: var(--p-card); }
+.ae-cta-title { margin: 0.6rem 0 0.4rem; font-family: var(--p-display-face); font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 600; letter-spacing: -0.035em; }
+.ae-cta-text { margin: 0; color: var(--p-dim); }
+
+@media (max-width: 60rem) {
+  .ae-hero { grid-template-columns: minmax(0, 1fr); align-items: start; padding-bottom: 0; }
+  .ae-hero-media { position: relative; inset: auto; order: 2; aspect-ratio: 2 / 1; margin: 2rem calc(var(--gutter) * -1) 0; mask-image: none; }
+  .ae-overview, .ae-facts { grid-template-columns: minmax(0, 1fr); }
+  .ae-overview-text { margin-top: 0; }
+  .ae-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ae-facts-list { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 1.6rem; }
+}
+@media (max-width: 40rem) {
+  .ae-features { grid-template-columns: minmax(0, 1fr); }
+  .ae-screens { grid-template-columns: minmax(0, 1fr); }
+  .ae-screen-phone { display: none; }
+  .ae-play { width: 3.2rem; height: 3.2rem; left: 0.8rem; bottom: 0.8rem; }
+  .ae-play svg { width: 1.3rem; height: 1.3rem; }
+  .ae-play-label { display: none; }
+}

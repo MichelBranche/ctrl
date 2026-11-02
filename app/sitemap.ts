@@ -9,6 +9,10 @@ const publicPaths = [
   "/en", "/en/projects", "/en/services", "/en/team", "/en/journal", "/en/shop", "/en/contact", "/en/privacy", "/en/cookies",
   ...projectCategories.flatMap((category) => [`/projects/${category.slug}`, `/en/projects/${category.slug}`]),
   ...services.flatMap((service) => [`/services/${service.slug}`, `/en/services/${service.slug}`]),
+  "/services/webapp",
+  "/en/services/webapp",
+  "/projects/webapps/agenda-easy",
+  "/en/projects/webapps/agenda-easy",
   ...websitesInOrder().flatMap((project) => [`/projects/websites/${project.slug}`, `/en/projects/websites/${project.slug}`]),
 ];
 
