@@ -125,6 +125,15 @@ export async function uploadShopImage(form: FormData): Promise<{ url?: string; e
   }
 }
 
+// Must match next.config.ts images.remotePatterns, otherwise next/image throws and the product page crashes.
+function isShopImageUrl(url: string) {
+  if (/^\/images\/shop\/[\w.-]+$/.test(url)) return true;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com") && u.pathname.startsWith("/shop/");
+  } catch { return false; }
+}
+
 const shopSlug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || crypto.randomUUID().slice(0, 8);
 
 export async function saveShopProduct(_: ActionState, form: FormData): Promise<ActionState> {
@@ -142,7 +151,7 @@ export async function saveShopProduct(_: ActionState, form: FormData): Promise<A
   if (!Number.isFinite(price) || price < 0.01 || price > 99999) return { error: "Inserisci un prezzo valido." };
   let images: unknown;
   try { images = JSON.parse(String(form.get("images") ?? "[]")); } catch { return { error: "Elenco immagini non valido." }; }
-  if (!Array.isArray(images) || images.length < 1 || images.length > 6 || images.some((url) => typeof url !== "string" || !(url.startsWith("https://") || url.startsWith("/images/")))) return { error: "Carica almeno un’immagine valida (massimo 6)." };
+  if (!Array.isArray(images) || images.length < 1 || images.length > 6 || images.some((url) => typeof url !== "string" || !isShopImageUrl(url))) return { error: "Carica almeno un’immagine valida (massimo 6)." };
   const args = [slug, titleIt, titleEn, descriptionIt, descriptionEn, price.toFixed(2), JSON.stringify(images), form.get("published") === "on" ? 1 : 0];
   try {
     if (id) {
