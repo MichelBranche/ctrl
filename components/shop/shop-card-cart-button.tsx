@@ -9,9 +9,9 @@ export function ShopCardCartButton({ product, lang }: { product: ShopProduct; la
       const key = "ctrl-shop-cart";
       const current = JSON.parse(window.localStorage.getItem(key) ?? "[]") as Array<{ id: string; title: string; quantity: number; price?: number; slug?: string; image?: string }>;
       const title = lang === "it" ? product.titleIt : product.titleEn;
-      const item = current.find((entry) => entry.id === product.id);
+      const item = current.find((entry) => entry.id === product.slug);
       if (item) { item.quantity += 1; item.price = Number(product.price); item.slug = product.slug; item.image = product.images[0]; }
-      else current.push({ id: product.id, slug: product.slug, title, quantity: 1, price: Number(product.price), image: product.images[0] });
+      else current.push({ id: product.slug, slug: product.slug, title, quantity: 1, price: Number(product.price), image: product.images[0] });
       window.localStorage.setItem(key, JSON.stringify(current));
       window.dispatchEvent(new CustomEvent("ctrl:shop-cart-updated", { detail: { open: true } }));
     } catch { /* Keep the product link available if browser storage is disabled. */ }
