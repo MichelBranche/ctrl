@@ -144,7 +144,7 @@ export async function BreakdownPanels({ range, limit = 6 }: { range: Range; limi
 }
 
 const rel = new Intl.RelativeTimeFormat("it", { numeric: "auto" });
-function ago(isoTs: string) {
+export function ago(isoTs: string) {
   const s = (Date.parse(isoTs) - Date.now()) / 1000;
   const steps: [number, Intl.RelativeTimeFormatUnit][] = [[60, "second"], [60, "minute"], [24, "hour"], [7, "day"], [4.35, "week"], [12, "month"]];
   let v = s;
@@ -155,7 +155,7 @@ function ago(isoTs: string) {
   return rel.format(Math.round(v), "year");
 }
 
-const KIND = { post: "Journal", request: "Richiesta", subscriber: "Newsletter" } as const;
+const KIND = { post: "Journal", request: "Richiesta", subscriber: "Newsletter", order: "Shop" } as const;
 
 export async function ActivityFeed() {
   const items = await recentActivity(8);

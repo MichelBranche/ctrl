@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ActivityFeed, BreakdownPanels, CardsSkeleton, DeployPill, PanelSkeleton, RangeTabs, StatCards, TrafficPanel } from "@/components/admin/dashboard";
+import { ShopOverview } from "@/components/admin/shop-overview";
 import { requireAdmin } from "@/lib/admin";
 import { parseRange, type Range } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
@@ -67,6 +68,9 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searc
       </header>
       <Suspense key={`c${range}`} fallback={<CardsSkeleton n={5} />}>
         <StatCards range={range} content={counts} />
+      </Suspense>
+      <Suspense key={`s${range}`} fallback={<CardsSkeleton n={4} />}>
+        <ShopOverview range={range} />
       </Suspense>
       <div className="adm-dash">
         <Suspense key={`t${range}`} fallback={<PanelSkeleton />}>
