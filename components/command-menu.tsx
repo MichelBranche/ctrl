@@ -48,6 +48,12 @@ export function CommandMenu() {
         run: () => go(localize(`/services/${s.slug}`, lang)),
       })),
       {
+        id: "s-webapp",
+        group: nav.services,
+        label: lang === "en" ? "Scalable web apps" : "Webapp scalabili",
+        run: () => go(localize("/services/webapp", lang)),
+      },
+      {
         id: "mail",
         group: "CTRL®",
         label: `${t.cmd.email} | ${CONTACT_EMAIL}`,
