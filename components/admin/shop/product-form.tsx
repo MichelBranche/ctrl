@@ -127,12 +127,13 @@ export function ShopProductForm({ product, translationReady }: { product?: ShopP
       <label className="adm-field"><span>Highlights</span><textarea className="adm-input" name="highlights_en" defaultValue={(d?.en.highlights ?? []).join("\n")} rows={4} /></label>
     </div>
 
-    <details className="shop-admin-supplier" open={Boolean(product?.supplierName || product?.supplierProductUrl || product?.supplierSku)}>
+    <details className="shop-admin-supplier" open={Boolean(product?.supplierName || product?.supplierCost || product?.supplierProductUrl || product?.supplierSku)}>
       <summary className="adm-h2">Fornitore (dropshipping, solo admin)</summary>
       <p className="adm-muted">Questi dati non vengono mai mostrati sul sito.</p>
       <div className="adm-grid2">
         <label className="adm-field"><span>Nome fornitore</span><input className="adm-input" name="supplierName" defaultValue={product?.supplierName ?? ""} maxLength={120} /></label>
         <label className="adm-field"><span>SKU fornitore</span><input className="adm-input" name="supplierSku" defaultValue={product?.supplierSku ?? ""} maxLength={120} /></label>
+        <label className="adm-field"><span>Costo fornitore per pezzo (€)</span><input className="adm-input" name="supplierCost" inputMode="decimal" defaultValue={product?.supplierCost ?? ""} placeholder="es. 2,10" /></label>
         <label className="adm-field"><span>Link prodotto fornitore</span><input className="adm-input" name="supplierProductUrl" type="url" defaultValue={product?.supplierProductUrl ?? ""} maxLength={500} placeholder="https://" /></label>
       </div>
     </details>

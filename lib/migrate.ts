@@ -42,8 +42,30 @@ export function ensureShopSchema(): Promise<void> {
       ["supplier_name", "TEXT"],
       ["supplier_product_url", "TEXT"],
       ["supplier_sku", "TEXT"],
+      ["supplier_cost", "TEXT"],
     ];
     for (const [name, type] of add) if (!have.has(name)) await db().execute(`ALTER TABLE shop_products ADD COLUMN ${name} ${type}`);
+    // Orders: no payment yet, so every public order starts as an "order request" (status 'richiesta').
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS shop_orders (
+        id TEXT PRIMARY KEY, number INTEGER NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'richiesta',
+        customer_name TEXT NOT NULL, customer_email TEXT NOT NULL, customer_phone TEXT, address TEXT NOT NULL,
+        business_name TEXT, review_url TEXT, customer_note TEXT, lang TEXT NOT NULL DEFAULT 'it',
+        subtotal REAL NOT NULL DEFAULT 0, shipping REAL NOT NULL DEFAULT 0, total REAL NOT NULL DEFAULT 0,
+        supplier_cost_total REAL NOT NULL DEFAULT 0, tracking_number TEXT, tracking_url TEXT, notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        confirmed_at TEXT, ordered_at TEXT, shipped_at TEXT, delivered_at TEXT, cancelled_at TEXT
+      )` },
+      { sql: `CREATE TABLE IF NOT EXISTS shop_order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, order_id TEXT NOT NULL REFERENCES shop_orders(id) ON DELETE CASCADE,
+        slug TEXT NOT NULL, title TEXT NOT NULL, unit_price REAL NOT NULL, quantity INTEGER NOT NULL,
+        line_total REAL NOT NULL, supplier_cost REAL
+      )` },
+      { sql: "CREATE INDEX IF NOT EXISTS shop_orders_created ON shop_orders (created_at)" },
+      { sql: "CREATE INDEX IF NOT EXISTS shop_orders_status ON shop_orders (status)" },
+      { sql: "CREATE INDEX IF NOT EXISTS shop_order_items_order ON shop_order_items (order_id)" },
+    ], "write");
     const seeded = await db().execute("INSERT OR IGNORE INTO shop_meta (key, value) VALUES ('legacy-product-seeded', '1')");
     if (seeded.rowsAffected > 0) {
       const { seedDefaultShopProduct } = await import("@/lib/shop-seed");

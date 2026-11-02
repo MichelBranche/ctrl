@@ -36,6 +36,15 @@ export type ShopProductAdmin = ShopProduct & {
   supplierName: string;
   supplierProductUrl: string;
   supplierSku: string;
+  /** Unit cost paid to the supplier, "" when unknown. Admin only. */
+  supplierCost: string;
+};
+
+export const ORDER_STATUSES = ["richiesta", "confermata", "ordinata", "spedita", "consegnata", "annullata"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export const isOrderStatus = (value: unknown): value is OrderStatus => ORDER_STATUSES.includes(value as OrderStatus);
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  richiesta: "Richiesta", confermata: "Confermata", ordinata: "Ordinata al fornitore", spedita: "Spedita", consegnata: "Consegnata", annullata: "Annullata",
 };
 
 export const GOOGLE_CARD_DETAILS: ShopDetailsByLang = {

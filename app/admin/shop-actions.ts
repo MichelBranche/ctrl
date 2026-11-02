@@ -6,7 +6,7 @@ import { getAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ensureShopSchema } from "@/lib/migrate";
 import { SHOP_PRODUCT_TAG } from "@/lib/shop";
-import { isShopCategory, parseDetails, textToBenefits, textToLines, type ShopDetails } from "@/lib/shop-data";
+import { isOrderStatus, isShopCategory, parseDetails, textToBenefits, textToLines, type ShopDetails } from "@/lib/shop-data";
 import { translateTexts, translationConfigured } from "@/lib/translate";
 
 export type ShopActionState = { ok?: string; error?: string; warning?: string; slug?: string };
@@ -111,6 +111,9 @@ export async function saveShopProduct(_: ShopActionState, form: FormData): Promi
   const supplierName = text(form, "supplierName").slice(0, 120);
   const supplierSku = text(form, "supplierSku").slice(0, 120);
   const supplierProductUrl = text(form, "supplierProductUrl").slice(0, 500);
+  const supplierCostRaw = text(form, "supplierCost").replace(",", ".");
+  const supplierCost = supplierCostRaw ? Number(supplierCostRaw) : null;
+  if (supplierCost !== null && (!Number.isFinite(supplierCost) || supplierCost < 0 || supplierCost > 99999)) return { error: "Costo fornitore non valido." };
   if (supplierProductUrl && !/^https?:\/\/\S+$/i.test(supplierProductUrl)) return { error: "Il link del fornitore deve iniziare con https://." };
 
   const clash = await db().execute({ sql: "SELECT 1 FROM shop_products WHERE slug = ? AND id <> ?", args: [slug, id] });
@@ -143,15 +146,15 @@ export async function saveShopProduct(_: ShopActionState, form: FormData): Promi
 
   const args = [slug, category, titleIt, en.title.slice(0, 100), descriptionIt, en.description.slice(0, 1000), price.toFixed(2), JSON.stringify(images),
     form.get("published") === "on" ? 1 : 0, JSON.stringify({ it: detailsIt, en: en.details }), enAuto ? 1 : 0,
-    supplierName || null, supplierProductUrl || null, supplierSku || null];
+    supplierName || null, supplierProductUrl || null, supplierSku || null, supplierCost === null ? null : supplierCost.toFixed(2)];
   try {
     if (existing) {
       await db().execute({ sql: `UPDATE shop_products SET slug = ?, category = ?, title_it = ?, title_en = ?, description_it = ?, description_en = ?, price = ?, images_json = ?,
-        published = ?, details_json = ?, en_auto = ?, supplier_name = ?, supplier_product_url = ?, supplier_sku = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`, args: [...args, id] });
+        published = ?, details_json = ?, en_auto = ?, supplier_name = ?, supplier_product_url = ?, supplier_sku = ?, supplier_cost = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`, args: [...args, id] });
     } else {
       const next = await db().execute("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM shop_products");
       await db().execute({ sql: `INSERT INTO shop_products (slug, category, title_it, title_en, description_it, description_en, price, images_json, published, details_json, en_auto,
-        supplier_name, supplier_product_url, supplier_sku, id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [...args, crypto.randomUUID(), Number(next.rows[0]?.next_order ?? 0)] });
+        supplier_name, supplier_product_url, supplier_sku, supplier_cost, id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [...args, crypto.randomUUID(), Number(next.rows[0]?.next_order ?? 0)] });
     }
   } catch (error) {
     if (/UNIQUE/i.test(error instanceof Error ? error.message : "")) return { error: "Esiste già un prodotto con questo URL." };
@@ -186,4 +189,50 @@ function refresh(slugs: string[]) {
   updateTag(SHOP_PRODUCT_TAG);
   for (const p of ["/shop", "/en/shop", "/admin/shop", "/sitemap.xml"]) revalidatePath(p);
   for (const s of new Set(slugs)) { revalidatePath(`/shop/${s}`); revalidatePath(`/en/shop/${s}`); }
+}
+
+/* Orders and quick product toggles. Every action re-checks the admin session; all SQL is parameterized. */
+
+const STATUS_COLUMN: Record<string, string> = { confermata: "confirmed_at", ordinata: "ordered_at", spedita: "shipped_at", consegnata: "delivered_at", annullata: "cancelled_at" };
+
+export async function setOrderStatus(id: string, status: string): Promise<{ ok: boolean; at?: string }> {
+  await guard();
+  if (typeof id !== "string" || id.length > 64 || !isOrderStatus(status)) return { ok: false };
+  await ensureShopSchema();
+  const at = new Date().toISOString();
+  const col = STATUS_COLUMN[status];
+  // The column name comes from the fixed map above, never from input. The first time a status is reached is kept.
+  const res = await db().execute({
+    sql: `UPDATE shop_orders SET status = ?, updated_at = ?${col ? `, ${col} = COALESCE(${col}, ?)` : ""} WHERE id = ?`,
+    args: col ? [status, at, at, id] : [status, at, id],
+  });
+  revalidatePath("/admin/shop");
+  return { ok: res.rowsAffected > 0, at };
+}
+
+export async function updateOrderFulfilment(id: string, input: { trackingNumber: string; trackingUrl: string; notes: string }): Promise<{ ok: boolean; error?: string }> {
+  await guard();
+  if (typeof id !== "string" || id.length > 64 || !input || typeof input !== "object") return { ok: false, error: "Ordine non valido." };
+  const trackingNumber = String(input.trackingNumber ?? "").trim().slice(0, 120);
+  const trackingUrl = String(input.trackingUrl ?? "").trim().slice(0, 500);
+  const notes = String(input.notes ?? "").trim().slice(0, 4000);
+  if (trackingUrl && !/^https?:\/\/\S+$/i.test(trackingUrl)) return { ok: false, error: "Il link di tracking deve iniziare con https://." };
+  await ensureShopSchema();
+  const res = await db().execute({
+    sql: "UPDATE shop_orders SET tracking_number = ?, tracking_url = ?, notes = ?, updated_at = ? WHERE id = ?",
+    args: [trackingNumber || null, trackingUrl || null, notes || null, new Date().toISOString(), id],
+  });
+  revalidatePath("/admin/shop");
+  return res.rowsAffected > 0 ? { ok: true } : { ok: false, error: "Ordine non trovato." };
+}
+
+export async function setProductPublished(id: string, published: boolean): Promise<{ ok: boolean }> {
+  await guard();
+  if (typeof id !== "string" || id.length > 64) return { ok: false };
+  await ensureShopSchema();
+  const row = (await db().execute({ sql: "SELECT slug FROM shop_products WHERE id = ?", args: [id] })).rows[0];
+  if (!row) return { ok: false };
+  await db().execute({ sql: "UPDATE shop_products SET published = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [published ? 1 : 0, id] });
+  refresh([String(row.slug)]);
+  return { ok: true };
 }

@@ -1,0 +1,140 @@
+/* Admin shop dashboard. Builds on admin.css tokens (--adm-*), same motion language (--adm-ease, adm-rise). */
+.shop-adm-tabs { position: relative; display: flex; gap: 0.25rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--adm-rule); }
+.shop-adm-tab { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 0.9rem; color: var(--adm-dim); text-decoration: none; font-size: 0.92rem; transition: color 0.2s ease; }
+.shop-adm-tab::after { content: ""; position: absolute; left: 0.6rem; right: 0.6rem; bottom: -1px; height: 2px; border-radius: 2px; background: var(--adm-accent); transform: scaleX(0); transition: transform 0.35s var(--adm-ease); }
+.shop-adm-tab:hover { color: var(--adm-fg); }
+.shop-adm-tab[aria-current="page"] { color: var(--adm-fg); }
+.shop-adm-tab[aria-current="page"]::after { transform: scaleX(1); }
+.shop-adm-tab .adm-badge { border-color: var(--adm-accent); color: var(--adm-accent); font-size: 0.7rem; }
+.shop-adm-tab:focus-visible, .shop-adm-card a:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; border-radius: 0.3rem; }
+
+.shop-adm-periodbar { margin-bottom: 1rem; }
+.shop-adm-stats { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); }
+.shop-adm-stats .adm-stat { transition: border-color 0.2s ease, transform 0.3s var(--adm-ease); }
+.shop-adm-stats .adm-stat:hover { border-color: var(--adm-dim); transform: translateY(-2px); }
+.shop-adm-note { font-size: 0.75rem; line-height: 1.4; }
+.shop-adm-pending[data-hot] { border-color: color-mix(in srgb, var(--adm-accent) 55%, var(--adm-rule)); }
+.shop-adm-pending[data-hot] .adm-stat-num { color: var(--adm-accent); }
+.shop-adm-ping { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--adm-accent); box-shadow: 0 0 0 0 var(--adm-accent); animation: adm-ping 2s ease-out infinite; }
+.shop-adm-grid { gap: 0 1rem; }
+.shop-adm-key { display: inline-block; width: 0.8rem; height: 0.6rem; margin-right: 0.4rem; vertical-align: middle; }
+.shop-adm-key.is-line { height: 2px; background: var(--adm-accent); }
+.shop-adm-key.is-bar { border-radius: 2px; background: color-mix(in srgb, var(--adm-fg) 22%, transparent); }
+.shop-adm-bar { fill: color-mix(in srgb, var(--adm-fg) 16%, transparent); transition: fill 0.15s ease; }
+.shop-adm-bar[data-active] { fill: color-mix(in srgb, var(--adm-fg) 35%, transparent); }
+.shop-adm-barkey { font-family: inherit; font-size: 0.85rem; }
+.shop-adm-barkey em { color: var(--adm-dim); font-style: normal; font-size: 0.75rem; }
+
+.shop-adm-empty { display: grid; place-items: center; gap: 0.35rem; min-height: 12rem; padding: 2rem 1rem; border: 1px dashed var(--adm-rule); border-radius: 0.5rem; text-align: center; }
+.shop-adm-empty p { margin: 0; }
+.shop-adm-empty span { font-size: 0.8rem; max-width: 28rem; }
+.shop-adm-empty svg { width: 2rem; height: 2rem; fill: none; stroke: var(--adm-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; animation: shop-adm-float 3.2s ease-in-out infinite; }
+.shop-adm-empty-lg { min-height: 18rem; }
+@keyframes shop-adm-float { 50% { transform: translateY(-4px); } }
+
+/* Orders */
+.shop-adm-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+.shop-adm-toolbar .adm-tabs { margin: 0; }
+.shop-adm-toolbar .adm-tab { gap: 0.4rem; background: transparent; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.shop-adm-count { color: var(--adm-dim); font-variant-numeric: tabular-nums; font-size: 0.75rem; }
+.shop-adm-dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
+.shop-adm-search { position: relative; flex: 0 1 18rem; }
+.shop-adm-search svg { position: absolute; left: 0.7rem; top: 50%; width: 1rem; height: 1rem; transform: translateY(-50%); fill: none; stroke: var(--adm-dim); stroke-width: 1.6; stroke-linecap: round; pointer-events: none; }
+.shop-adm-search input.adm-input { width: 100%; padding-left: 2.2rem; }
+.shop-adm-orders tbody tr { cursor: pointer; }
+.shop-adm-orders td { vertical-align: middle; }
+.shop-adm-orders td:nth-child(4) { max-width: 18rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-adm-name { display: block; font-weight: 500; }
+.shop-adm-sub { display: block; font-size: 0.78rem; }
+.shop-adm-status { position: relative; display: inline-flex; align-items: center; height: 2rem; border: 1px solid color-mix(in srgb, var(--c) 55%, var(--adm-rule)); border-radius: 1rem; background: color-mix(in srgb, var(--c) 10%, transparent); transition: border-color 0.25s ease, background-color 0.25s ease; }
+.shop-adm-status i { position: absolute; left: 0.7rem; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--c); pointer-events: none; transition: background-color 0.25s ease; }
+.shop-adm-status select { appearance: none; height: 100%; padding: 0 1.8rem 0 1.5rem; border: 0; border-radius: inherit; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.6rem center / 0.8rem; color: var(--adm-fg); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.shop-adm-status select:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; }
+.shop-adm-status option { background: var(--adm-panel); color: var(--adm-fg); }
+
+.shop-adm-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(2px); }
+.shop-adm-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 81; display: flex; flex-direction: column; width: min(36rem, 100vw); border-left: 1px solid var(--adm-rule); background: var(--adm-bg); box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45); outline: none; }
+.shop-adm-drawer-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.25rem 1.4rem 1rem; border-bottom: 1px solid var(--adm-rule); }
+.shop-adm-drawer-head .adm-h2 { margin: 0.2rem 0; }
+.shop-adm-drawer-head p { margin: 0; }
+.shop-adm-drawer-head .adm-icon-btn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.shop-adm-drawer-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 1.4rem 2rem; }
+.shop-adm-drawer-body section, .shop-adm-drawer-body form { padding: 1.25rem 0; border-bottom: 1px solid var(--adm-rule); }
+.shop-adm-drawer-body form { border: 0; }
+.shop-adm-drawer h3 { margin: 0 0 0.75rem; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--adm-dim); }
+.shop-adm-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.shop-adm-row h3 { margin: 0; }
+.shop-adm-timeline { position: relative; display: grid; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
+.shop-adm-timeline li { position: relative; display: grid; grid-template-columns: 1.2rem 1fr auto; align-items: center; gap: 0.6rem; min-height: 2.1rem; color: var(--adm-dim); font-size: 0.86rem; }
+.shop-adm-timeline li:not(:last-child)::before { content: ""; position: absolute; left: calc(0.6rem - 1px); top: 1.4rem; bottom: -0.75rem; width: 2px; background: var(--adm-rule); }
+.shop-adm-timeline li[data-done]:not(:last-child)::before { background: color-mix(in srgb, var(--c) 60%, var(--adm-rule)); }
+.shop-adm-timeline i { justify-self: center; width: 0.7rem; height: 0.7rem; border: 2px solid var(--adm-rule); border-radius: 50%; background: var(--adm-bg); }
+.shop-adm-timeline li[data-done] { color: var(--adm-fg); }
+.shop-adm-timeline li[data-done] i { border-color: var(--c); background: var(--c); }
+.shop-adm-timeline li[data-current] i { box-shadow: 0 0 0 0 var(--c); animation: adm-ping 2s ease-out infinite; }
+.shop-adm-timeline time { font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.shop-adm-items { display: grid; gap: 0.6rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.shop-adm-items li { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 1rem; padding: 0.75rem; border: 1px solid var(--adm-rule); border-radius: 0.5rem; background: var(--adm-panel); font-size: 0.88rem; }
+.shop-adm-cost { grid-column: 1 / -1; font-size: 0.75rem; }
+.shop-adm-sum { display: grid; gap: 0.35rem; margin: 0; }
+.shop-adm-sum div { display: flex; justify-content: space-between; color: var(--adm-dim); font-size: 0.86rem; }
+.shop-adm-sum dd { margin: 0; color: var(--adm-fg); font-variant-numeric: tabular-nums; }
+.shop-adm-sum .is-strong { padding-top: 0.45rem; border-top: 1px solid var(--adm-rule); color: var(--adm-fg); }
+.shop-adm-sum .is-strong dd { color: var(--adm-accent); font-weight: 600; }
+.shop-adm-dl { font-size: 0.88rem; }
+.shop-adm-pre { white-space: pre-line; }
+.shop-adm-copy { transition: border-color 0.2s ease, color 0.2s ease; }
+.shop-adm-copy[data-done] { border-color: var(--adm-ok); color: var(--adm-ok); }
+.shop-adm-toast { position: fixed; left: 50%; bottom: 1.5rem; z-index: 90; padding: 0.7rem 1rem; border: 1px solid var(--adm-rule); border-radius: 0.5rem; background: var(--adm-raise); color: var(--adm-fg); font-size: 0.85rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); opacity: 0; pointer-events: none; transform: translate(-50%, 12px); transition: opacity 0.25s ease, transform 0.35s var(--adm-ease); }
+.shop-adm-toast[data-show] { opacity: 1; transform: translate(-50%, 0); }
+
+/* Products */
+.shop-adm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 0.9rem; margin-bottom: 1.25rem; }
+.shop-adm-card { display: grid; grid-template-columns: 6rem 1fr; gap: 1rem; padding: 1rem; border: 1px solid var(--adm-rule); border-radius: 0.6rem; background: var(--adm-panel); transition: border-color 0.2s ease, transform 0.35s var(--adm-ease), opacity 0.3s ease; }
+.shop-adm-card:hover { border-color: var(--adm-dim); transform: translateY(-2px); }
+.shop-adm-card[data-off] { opacity: 0.65; }
+.shop-adm-card-img { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 0.45rem; background: var(--adm-raise); }
+.shop-adm-card-img img { object-fit: cover; transition: transform 0.6s var(--adm-ease); }
+.shop-adm-card:hover .shop-adm-card-img img { transform: scale(1.05); }
+.shop-adm-card-body { min-width: 0; }
+.shop-adm-card .shop-adm-row { margin-bottom: 0.1rem; flex-wrap: nowrap; }
+.shop-adm-card h3 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.98rem; font-weight: 500; }
+.shop-adm-card-state { margin: 0 0 0.6rem; font-size: 0.75rem; }
+.shop-adm-card-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem 0.8rem; margin: 0 0 0.7rem; }
+.shop-adm-card-nums dt { color: var(--adm-dim); font-size: 0.7rem; }
+.shop-adm-card-nums dd { margin: 0; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.shop-adm-card-nums .is-accent { color: var(--adm-accent); }
+.shop-adm-meter { display: block; height: 4px; margin-bottom: 0.7rem; overflow: hidden; border-radius: 4px; background: var(--adm-raise); }
+.shop-adm-meter i { display: block; width: var(--w); height: 100%; border-radius: inherit; background: var(--adm-accent); transform-origin: left; animation: shop-adm-grow 0.9s var(--adm-ease) both 0.25s; }
+@keyframes shop-adm-grow { from { transform: scaleX(0); } }
+.shop-adm-hint { margin: 0 0 0.7rem; font-size: 0.72rem; }
+.shop-adm-card-actions { display: flex; gap: 1rem; font-size: 0.82rem; }
+.shop-adm-new summary { cursor: pointer; font-weight: 500; }
+.shop-adm-new[open] summary { margin-bottom: 1rem; }
+.shop-adm-new > .adm-panel { margin: 0; padding: 0; border: 0; }
+.shop-adm-anchor { scroll-margin-top: 5rem; }
+.shop-adm-anchor:target > .adm-panel { border-color: var(--adm-accent); transition: border-color 0.4s ease; }
+
+@media (max-width: 720px) {
+  .shop-adm-tabs { overflow-x: auto; }
+  .shop-adm-tab { min-height: 2.75rem; }
+  .shop-adm-search { flex: 1 1 100%; }
+  .shop-adm-card { grid-template-columns: 4.5rem 1fr; }
+  .shop-adm-status { height: 2.75rem; }
+  .shop-adm-drawer-body { padding: 0 1rem 2rem; }
+  .shop-adm-orders thead { display: none; }
+  .shop-adm-orders, .shop-adm-orders tbody { display: block; }
+  .shop-adm-orders tr { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "num who total" "date date status"; align-items: center; gap: 0.35rem 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid var(--adm-rule); }
+  .shop-adm-orders td { padding: 0; border: 0; }
+  .shop-adm-orders td:nth-child(1) { grid-area: num; color: var(--adm-dim); font-size: 0.8rem; }
+  .shop-adm-orders td:nth-child(2) { grid-area: date; font-size: 0.78rem; color: var(--adm-dim); }
+  .shop-adm-orders td:nth-child(3) { grid-area: who; min-width: 0; }
+  .shop-adm-orders td:nth-child(4), .shop-adm-orders td:nth-child(7) { display: none; }
+  .shop-adm-orders td:nth-child(5) { grid-area: total; }
+  .shop-adm-orders td:nth-child(6) { grid-area: status; justify-self: end; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-adm-empty svg, .shop-adm-ping, .shop-adm-timeline li[data-current] i, .shop-adm-meter i { animation: none; }
+  .shop-adm-tab::after, .shop-adm-card, .shop-adm-card-img img, .shop-adm-toast, .shop-adm-stats .adm-stat { transition: none; }
+  .shop-adm-card:hover, .shop-adm-stats .adm-stat:hover { transform: none; }
+}

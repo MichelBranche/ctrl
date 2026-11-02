@@ -53,7 +53,7 @@ export async function getShopProduct(slug: string): Promise<ShopProduct | null> 
 
 /** Admin only (uncached): includes the translation flag and dropshipping supplier fields. */
 export async function getShopProductsAdmin(): Promise<ShopProductAdmin[]> {
-  if (!dbConfigured) return [{ ...DEFAULT_SHOP_PRODUCT, updatedAt: "", enAuto: true, supplierName: "", supplierProductUrl: "", supplierSku: "" }];
+  if (!dbConfigured) return [{ ...DEFAULT_SHOP_PRODUCT, updatedAt: "", enAuto: true, supplierName: "", supplierProductUrl: "", supplierSku: "", supplierCost: "" }];
   await ensureShopSchema();
   const result = await db().execute("SELECT * FROM shop_products ORDER BY sort_order, created_at");
   return result.rows.map((row) => ({
@@ -63,6 +63,7 @@ export async function getShopProductsAdmin(): Promise<ShopProductAdmin[]> {
     supplierName: String(row.supplier_name ?? ""),
     supplierProductUrl: String(row.supplier_product_url ?? ""),
     supplierSku: String(row.supplier_sku ?? ""),
+    supplierCost: row.supplier_cost == null ? "" : String(row.supplier_cost),
   }));
 }
 
