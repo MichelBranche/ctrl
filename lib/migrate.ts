@@ -3,15 +3,44 @@ import { db } from "@/lib/db";
 
 let ready: Promise<void> | null = null;
 
+/**
+ * Runs an idempotent migration, retrying when another process holds the write lock
+ * (SQLITE_BUSY / "database is locked"): `next build` collects page data in parallel workers.
+ */
+async function retryBusy(run: () => Promise<void>, tries = 6): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      const busy = /SQLITE_BUSY|database is locked/i.test(String((error as Error)?.message ?? error));
+      if (!busy || attempt >= tries) throw error;
+      await new Promise((r) => setTimeout(r, 150 * 2 ** attempt + Math.random() * 150));
+    }
+  }
+}
+
+/**
+ * ALTER TABLE … ADD COLUMN that tolerates a concurrent migrator (parallel build workers or
+ * serverless instances) having added the column between our PRAGMA check and the ALTER.
+ */
+async function addColumn(table: string, name: string, type: string): Promise<void> {
+  try {
+    await db().execute(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+  } catch (error) {
+    if (/duplicate column name/i.test(String((error as Error)?.message ?? error))) return;
+    throw error;
+  }
+}
+
 /** Adds the translation columns to posts if missing (db/003_translations.sql). Idempotent, runs once per server instance. */
 export function ensureTranslationSchema(): Promise<void> {
-  ready ??= (async () => {
+  ready ??= retryBusy(async () => {
     const cols = await db().execute("PRAGMA table_info(posts)");
     const have = new Set(cols.rows.map((r) => String(r.name)));
-    if (!have.has("translation_of")) await db().execute("ALTER TABLE posts ADD COLUMN translation_of TEXT");
-    if (!have.has("auto_translated")) await db().execute("ALTER TABLE posts ADD COLUMN auto_translated INTEGER NOT NULL DEFAULT 0");
+    if (!have.has("translation_of")) await addColumn("posts", "translation_of", "TEXT");
+    if (!have.has("auto_translated")) await addColumn("posts", "auto_translated", "INTEGER NOT NULL DEFAULT 0");
     await db().execute("CREATE INDEX IF NOT EXISTS posts_translation_of ON posts (translation_of)");
-  })().catch((error) => {
+  }).catch((error) => {
     ready = null;
     throw error;
   });
@@ -22,7 +51,7 @@ let shopReady: Promise<void> | null = null;
 
 /** Shop tables (db/004_shop.sql) plus columns added later. Idempotent, runs once per server instance; seeds the Google review card once. */
 export function ensureShopSchema(): Promise<void> {
-  shopReady ??= (async () => {
+  shopReady ??= retryBusy(async () => {
     await db().batch([
       { sql: `CREATE TABLE IF NOT EXISTS shop_products (
         id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, title_it TEXT NOT NULL, title_en TEXT NOT NULL,
@@ -44,7 +73,7 @@ export function ensureShopSchema(): Promise<void> {
       ["supplier_sku", "TEXT"],
       ["supplier_cost", "TEXT"],
     ];
-    for (const [name, type] of add) if (!have.has(name)) await db().execute(`ALTER TABLE shop_products ADD COLUMN ${name} ${type}`);
+    for (const [name, type] of add) if (!have.has(name)) await addColumn("shop_products", name, type);
     // Orders: no payment yet, so every public order starts as an "order request" (status 'richiesta').
     await db().batch([
       { sql: `CREATE TABLE IF NOT EXISTS shop_orders (
@@ -71,7 +100,7 @@ export function ensureShopSchema(): Promise<void> {
       const { seedDefaultShopProduct } = await import("@/lib/shop-seed");
       await seedDefaultShopProduct();
     }
-  })().catch((error) => {
+  }).catch((error) => {
     shopReady = null;
     throw error;
   });
