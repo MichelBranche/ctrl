@@ -23,7 +23,7 @@ function readCart(): CartItem[] {
         quantity: Math.floor(Number(item.quantity)),
         slug: item.slug || (item.id === "google-review-card" ? "google-review-card" : undefined),
         image: item.image || (item.id === "google-review-card" ? "/images/shop/review-card.webp" : undefined),
-        price: Number.isFinite(Number(item.price)) ? Number(item.price) : item.id === "google-review-card" ? 19.9 : undefined,
+        price: Number.isFinite(Number(item.price)) ? Number(item.price) : undefined,
       }));
   } catch { return []; }
 }
