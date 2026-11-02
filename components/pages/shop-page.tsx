@@ -8,7 +8,7 @@ import type { ShopProduct } from "@/lib/shop";
 import "./shop.css";
 
 const copy = {
-  it: { kicker: "SHOP", title: "Shop.", lead: ["Get your CTRL essentials.", "Tools, merch and more."], categories: "Categorie", all: "Tutti i prodotti", tech: "Tech & Tools", merch: "Merch", accessories: "Accessori", gift: "Gift Card", sort: "Ordina per:", default: "Predefinito", madeToOrder: "Realizzata su ordinazione", viewProduct: "Apri il prodotto", none: "Stiamo preparando il prossimo drop." },
+  it: { kicker: "SHOP", title: "Shop.", lead: ["Gli essenziali CTRL®.", "Strumenti, merch e altro."], categories: "Categorie", all: "Tutti i prodotti", tech: "Tech & Tools", merch: "Merch", accessories: "Accessori", gift: "Gift Card", sort: "Ordina per:", default: "Predefinito", madeToOrder: "Realizzata su ordinazione", viewProduct: "Apri il prodotto", none: "Stiamo preparando il prossimo drop." },
   en: { kicker: "SHOP", title: "Shop.", lead: ["Get your CTRL essentials.", "Tools, merch and more."], categories: "Categories", all: "All Products", tech: "Tech & Tools", merch: "Merch", accessories: "Accessories", gift: "Gift Card", sort: "Sort by:", default: "Default", madeToOrder: "Made to order", viewProduct: "View product", none: "We’re preparing the next drop." },
 } as const;
 
