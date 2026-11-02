@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n";
-import type { ShopProduct } from "@/lib/shop";
+import type { ShopProduct } from "@/lib/shop-data";
 
 export function ShopCardCartButton({ product, lang }: { product: ShopProduct; lang: Locale }) {
   function add() {
