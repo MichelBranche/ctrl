@@ -314,3 +314,6 @@ a.adm-stat:hover::after { opacity: 1; }
 
 .adm-warn { margin: 0; padding: 8px 12px; border-radius: 8px; background: rgba(255, 176, 32, 0.14); color: #b26a00; font-size: 13px; }
 .adm-twin { flex-basis: 100%; margin: 0; font-size: 13px; }
+.shop-admin-sub { margin: 1.2rem 0 .2rem; font-size: 1rem; }
+.shop-admin-supplier { margin-top: 1.2rem; padding-top: .8rem; border-top: 1px solid var(--adm-rule); }
+.shop-admin-supplier summary { cursor: pointer; font-size: 1rem; }
