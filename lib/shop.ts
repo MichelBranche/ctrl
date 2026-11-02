@@ -33,7 +33,8 @@ function toProduct(row: Row): ShopProduct {
 async function queryShopProducts(): Promise<ShopProduct[]> {
   "use cache";
   cacheTag(SHOP_PRODUCT_TAG);
-  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 * 7 });
+  // Short client stale time: admin edits invalidate the tag/paths at once, so a long browser router cache is the only thing that could still show an old price.
+  cacheLife({ stale: 30, revalidate: 3600, expire: 86400 * 7 });
   const result = await db().execute(`SELECT ${PUBLIC_COLUMNS} FROM shop_products ORDER BY sort_order, created_at`);
   return result.rows.map(toProduct);
 }

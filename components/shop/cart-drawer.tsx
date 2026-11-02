@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
+import { refreshCartPrices } from "@/lib/shop-cart-sync";
 
 type CartItem = { id: string; title: string; quantity: number; price?: number; slug?: string; image?: string };
 const STORAGE_KEY = "ctrl-shop-cart";
@@ -50,7 +51,11 @@ export function CartDrawer({ lang }: { lang: Locale }) {
   const checkoutHref = lang === "en" ? "/en/checkout" : "/checkout";
   const productHref = (item: CartItem) => item.slug ? `${lang === "en" ? "/en" : ""}/shop/${item.slug}` : shopHref;
 
-  const sync = useCallback(() => setItems(readCart()), []);
+  const sync = useCallback(() => {
+    const cart = readCart();
+    setItems(cart);
+    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh) setItems(fresh); });
+  }, [lang]);
   useEffect(() => {
     sync();
     const onStorage = (event: StorageEvent) => { if (event.key === STORAGE_KEY) sync(); };

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/lib/i18n";
+import { refreshCartPrices } from "@/lib/shop-cart-sync";
 
 /**
  * PRICE TRUST: this page and the cart drawer read prices from localStorage, which the visitor can edit.
@@ -21,16 +22,19 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
   const [items, setItems] = useState<CartLine[]>([]);
   const money = useMemo(() => new Intl.NumberFormat(lang === "it" ? "it-IT" : "en-IE", { style: "currency", currency: "EUR" }), [lang]);
   useEffect(() => {
+    let cart: CartLine[] = [];
     try {
       const stored: unknown = JSON.parse(window.localStorage.getItem("ctrl-shop-cart") ?? "[]");
-      if (Array.isArray(stored)) setItems(stored.filter((item): item is CartLine => !!item && typeof item.id === "string" && typeof item.title === "string" && Number(item.quantity) > 0).map((item) => ({
+      if (Array.isArray(stored)) cart = stored.filter((item): item is CartLine => !!item && typeof item.id === "string" && typeof item.title === "string" && Number(item.quantity) > 0).map((item) => ({
         ...item,
         slug: item.slug || (item.id === "google-review-card" ? "google-review-card" : undefined),
         image: item.image || (item.id === "google-review-card" ? "/images/shop/review-card.webp" : undefined),
         price: Number.isFinite(Number(item.price)) ? Number(item.price) : undefined,
-      })));
-    } catch { setItems([]); }
-  }, []);
+      }));
+    } catch { cart = []; }
+    setItems(cart);
+    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh) setItems(fresh); });
+  }, [lang]);
   const subtotal = items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
   const shopHref = lang === "en" ? "/en/shop" : "/shop";
   const productHref = (item: CartLine) => item.slug ? `${lang === "en" ? "/en" : ""}/shop/${item.slug}` : shopHref;
