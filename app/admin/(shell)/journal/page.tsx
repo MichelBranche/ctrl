@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { rowToPost } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate, type Post } from "@/lib/journal-types";
@@ -14,7 +14,7 @@ export default function JournalAdmin() {
 }
 
 async function PostList() {
-  await requireAdmin();
+  await requireSection("journal");
   let posts: Post[] = [];
   let error = "";
   try {

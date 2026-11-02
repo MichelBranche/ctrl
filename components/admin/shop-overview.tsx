@@ -2,11 +2,12 @@ import Link from "next/link";
 import { Sparkline } from "@/components/admin/charts";
 import { ago } from "@/components/admin/dashboard";
 import { Count } from "@/components/admin/shop/shop-charts";
-const eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 import type { Range } from "@/lib/dashboard-data";
 import { db, dbConfigured } from "@/lib/db";
 import { ORDER_STATUS_LABEL } from "@/lib/shop-data";
 import { buildReport, getAdminOrders, type AdminOrder } from "@/lib/shop-orders";
+
+const eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 
 /* Shop block for Panoramica: real orders only (same aggregation as the Shop tab), its own Suspense boundary on the page. */
 

@@ -4,7 +4,7 @@ import { OrdersPanel } from "@/components/admin/shop/orders-panel";
 import { ProductCards } from "@/components/admin/shop/product-cards";
 import { ShopProductForm } from "@/components/admin/shop/product-form";
 import { Count, ProductBars, SalesChart, StatusDonut } from "@/components/admin/shop/shop-charts";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { dbConfigured } from "@/lib/db";
 import { getShopProductsAdmin } from "@/lib/shop";
 import { buildReport, getAdminOrders, PERIODS, SOLD, type Period } from "@/lib/shop-orders";
@@ -21,7 +21,7 @@ export default function ShopAdminPage({ searchParams }: PageProps<"/admin/shop">
 }
 
 async function Body({ searchParams }: { searchParams: PageProps<"/admin/shop">["searchParams"] }) {
-  await requireAdmin();
+  await requireSection("shop");
   const sp = await searchParams;
   const tab: Tab = typeof sp.tab === "string" && sp.tab in TABS ? (sp.tab as Tab) : "panoramica";
   const period: Period = PERIODS.includes(sp.period as Period) ? (sp.period as Period) : "30";

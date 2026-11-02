@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { deleteRequest, setRequestStatus } from "@/app/admin/dashboard-actions";
 import { ConfirmButton } from "@/components/admin/confirm-button";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 
 const STATUS = { nuovo: "Nuovo", risposto: "Risposto", chiuso: "Chiuso" } as const;
@@ -19,7 +19,7 @@ export default function RequestsPage({ searchParams }: PageProps<"/admin/request
 type Row = { id: string; name: string; email: string; subject: string; message: string; lang: string; status: Status; created_at: string };
 
 async function Body({ searchParams }: { searchParams: PageProps<"/admin/requests">["searchParams"] }) {
-  await requireAdmin();
+  await requireSection("requests");
   const sp = await searchParams;
   const filter = typeof sp.status === "string" && sp.status in STATUS ? (sp.status as Status) : null;
   const open = typeof sp.open === "string" ? sp.open : "";

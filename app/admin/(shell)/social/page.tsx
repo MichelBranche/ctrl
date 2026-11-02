@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { SocialForm } from "@/components/admin/social-form";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { readSettings, SOCIAL_KEYS, SOCIAL_LABEL } from "@/lib/settings";
 
 const API_NOTES: Record<string, string> = {
@@ -22,7 +22,7 @@ export default function SocialPage() {
 }
 
 async function Body() {
-  await requireAdmin();
+  await requireSection("social");
   let values: Record<string, string> = {};
   let error = false;
   try {

@@ -24,12 +24,15 @@ const NAV: Nav[] = [
   { href: "/admin/stats", label: "Statistiche", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },
   { href: "/admin/social", label: "Social", icon: I("M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0M12 2v2M12 20v2M2 12h2M20 12h2") },
   { href: "/admin/status", label: "Stato sito", icon: I("M3 12h4l3-7 4 14 3-7h4") },
+  { href: "/admin/introiti", label: "Introiti", icon: I("M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3") },
+  { href: "/admin/team", label: "Team", icon: I("M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8") },
   { href: "/admin/settings", label: "Impostazioni", icon: I("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .2-1.3-1.3L17 5l-3-1-1 2h-2L10 4 7 5l.2 2L6 8.3 4 8l-1 3 2 1v1l-2 1 1 3 2-.2L7.3 17 7 19l3 1 1-2h2l1 2 3-1-.2-2 1.3-1.3 2 .3 1-3-2-1z") },
 ];
 
-const ACTIONS: SearchHit[] = [
-  { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new" },
-  { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export" },
+const ACTIONS: (SearchHit & { needs?: string })[] = [
+  { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new", needs: "/admin/journal" },
+  { label: "Registra un lavoro", hint: "Azione", href: "/admin/introiti#nuovo" },
+  { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export", needs: "/admin/newsletter" },
   { label: "Apri il sito", hint: "Azione", href: "/" },
 ];
 
@@ -46,8 +49,10 @@ const subscribeCollapsed = (cb: () => void) => {
 const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
-export function AdminShell({ email, badges, children }: { email: string; badges: { requests: number }; children: ReactNode }) {
+export function AdminShell({ email, name, allowed, badges, children }: { email: string; name: string; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
   const path = usePathname();
+  const nav = NAV.filter((n) => allowed.includes(n.href));
+  const actions = ACTIONS.filter((a) => !a.needs || allowed.includes(a.needs));
   const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
@@ -78,7 +83,7 @@ export function AdminShell({ email, badges, children }: { email: string; badges:
     window.dispatchEvent(new Event("adm-collapsed"));
   };
 
-  const current = NAV.find((n) => isActive(path, n.href));
+  const current = nav.find((n) => isActive(path, n.href));
 
   return (
     <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined}>
@@ -97,7 +102,7 @@ export function AdminShell({ email, badges, children }: { email: string; badges:
         </div>
         <nav>
           <ul className="adm-nav">
-            {NAV.map((n) => {
+            {nav.map((n) => {
               const active = isActive(path, n.href);
               const count = n.badge ? badges[n.badge] : 0;
               return (
@@ -140,11 +145,15 @@ export function AdminShell({ email, badges, children }: { email: string; badges:
           </button>
           <div className="adm-account">
             <button type="button" className="adm-avatar" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu" aria-label="Account">
-              {email.slice(0, 1).toUpperCase()}
+              {(name || email).slice(0, 1).toUpperCase()}
             </button>
             {menu ? (
               <div className="adm-menu" role="menu">
-                <p className="adm-menu-email">{email}</p>
+                <p className="adm-menu-email">
+                  <strong>{name}</strong>
+                  <br />
+                  {email}
+                </p>
                 <Link href="/admin/settings" role="menuitem" className="adm-menu-item">
                   Impostazioni
                 </Link>
@@ -162,12 +171,12 @@ export function AdminShell({ email, badges, children }: { email: string; badges:
         </header>
         <div className="adm-content">{children}</div>
       </div>
-      {palette ? <Palette onClose={() => setPalette(false)} /> : null}
+      {palette ? <Palette nav={nav} actions={actions} onClose={() => setPalette(false)} /> : null}
     </div>
   );
 }
 
-function Palette({ onClose }: { onClose: () => void }) {
+function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; onClose: () => void }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
@@ -183,7 +192,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   }, [q]);
 
   const needle = q.trim().toLowerCase();
-  const local = [...NAV.map((n) => ({ label: n.label, hint: "Sezione", href: n.href })), ...ACTIONS].filter((x) => !needle || x.label.toLowerCase().includes(needle));
+  const local = [...nav.map((n) => ({ label: n.label, hint: "Sezione", href: n.href })), ...actions.map(({ label, hint, href }) => ({ label, hint, href }))].filter((x) => !needle || x.label.toLowerCase().includes(needle));
   const items = [...local, ...(q.trim().length < 2 ? [] : hits)];
 
   const go = useCallback(

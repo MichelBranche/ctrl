@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db, dbConfigured } from "@/lib/db";
 import { deployments, vercelConfigured, type Deployment } from "@/lib/vercel";
 
@@ -32,7 +32,7 @@ const page = (path: string) => async () => {
 };
 
 async function Body() {
-  await requireAdmin();
+  await requireSection("status");
   const checks = await Promise.all([
     timed(`Home (${ORIGIN.replace("https://", "")})`, page("/")),
     timed("Journal", page("/journal")),

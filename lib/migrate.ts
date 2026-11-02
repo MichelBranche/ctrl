@@ -106,3 +106,40 @@ export function ensureShopSchema(): Promise<void> {
   });
   return shopReady;
 }
+
+let teamReady: Promise<void> | null = null;
+
+/**
+ * Team accounts and paid jobs (db/005_team.sql). Idempotent (CREATE … IF NOT EXISTS, addColumn), retried on
+ * SQLITE_BUSY so parallel build workers / serverless instances can race safely. Runs once per server instance.
+ * The founder row itself is seeded from the legacy env login by lib/admin.ts (it needs the env values).
+ */
+export function ensureTeamSchema(): Promise<void> {
+  teamReady ??= retryBusy(async () => {
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS admin_users (
+        id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member', area TEXT, password_hash TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1, session_version INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+      { sql: `CREATE TABLE IF NOT EXISTS team_jobs (
+        id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+        client TEXT NOT NULL, description TEXT NOT NULL, amount_cents INTEGER NOT NULL, date TEXT NOT NULL,
+        area TEXT NOT NULL, created_by TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+      { sql: "CREATE INDEX IF NOT EXISTS team_jobs_user_date ON team_jobs (user_id, date)" },
+      { sql: "CREATE INDEX IF NOT EXISTS team_jobs_date ON team_jobs (date)" },
+    ], "write");
+    // Columns added after the first release of these tables go here via addColumn (tolerates concurrent migrators).
+    const cols = await db().execute("PRAGMA table_info(admin_users)");
+    const have = new Set(cols.rows.map((r) => String(r.name)));
+    if (!have.has("last_login_at")) await addColumn("admin_users", "last_login_at", "TEXT");
+  }).catch((error) => {
+    teamReady = null;
+    throw error;
+  });
+  return teamReady;
+}

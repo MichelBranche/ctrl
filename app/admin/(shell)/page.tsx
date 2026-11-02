@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ActivityFeed, BreakdownPanels, CardsSkeleton, DeployPill, PanelSkeleton, RangeTabs, StatCards, TrafficPanel } from "@/components/admin/dashboard";
 import { ShopOverview } from "@/components/admin/shop-overview";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { parseRange, type Range } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
 
@@ -46,7 +47,9 @@ async function content() {
 }
 
 async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
-  const [{ email }, sp] = await Promise.all([requireAdmin(), searchParams]);
+  const [me, sp] = await Promise.all([requireSection("overview"), searchParams]);
+  const { email } = me;
+  const kinds = (["post", "request", "subscriber", "order"] as const).filter((k) => canAccess(me, ({ post: "journal", request: "requests", subscriber: "newsletter", order: "shop" } as const)[k]));
   const range: Range = parseRange(sp.range);
   const counts = await content();
   return (
@@ -55,29 +58,38 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searc
         <div>
           <h1 className="adm-h1">Panoramica</h1>
           <p className="adm-muted">Accesso come {email}</p>
+          {sp.negato ? <p className="adm-error" role="status">Questa sezione non rientra nella tua area.</p> : null}
         </div>
         <div className="adm-top-actions">
           <Suspense fallback={null}>
             <DeployPill />
           </Suspense>
           <RangeTabs base="/admin" range={range} />
-          <Link href="/admin/posts/new" className="adm-btn adm-btn-primary">
-            Nuovo articolo
-          </Link>
+          {canAccess(me, "journal") ? (
+            <Link href="/admin/posts/new" className="adm-btn adm-btn-primary">
+              Nuovo articolo
+            </Link>
+          ) : (
+            <Link href="/admin/introiti#nuovo" className="adm-btn adm-btn-primary">
+              Registra un lavoro
+            </Link>
+          )}
         </div>
       </header>
       <Suspense key={`c${range}`} fallback={<CardsSkeleton n={5} />}>
         <StatCards range={range} content={counts} />
       </Suspense>
-      <Suspense key={`s${range}`} fallback={<CardsSkeleton n={4} />}>
-        <ShopOverview range={range} />
-      </Suspense>
+      {canAccess(me, "shop") ? (
+        <Suspense key={`s${range}`} fallback={<CardsSkeleton n={4} />}>
+          <ShopOverview range={range} />
+        </Suspense>
+      ) : null}
       <div className="adm-dash">
         <Suspense key={`t${range}`} fallback={<PanelSkeleton />}>
           <TrafficPanel range={range} />
         </Suspense>
         <Suspense fallback={<PanelSkeleton />}>
-          <ActivityFeed />
+          <ActivityFeed kinds={me.role === "founder" ? undefined : [...kinds]} />
         </Suspense>
       </div>
       <Suspense key={`b${range}`} fallback={<PanelSkeleton h="14rem" />}>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PostEditor } from "@/components/admin/post-editor";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { POST_COLUMNS, rowToPost } from "@/lib/journal";
 import { ensureTranslationSchema } from "@/lib/migrate";
@@ -15,7 +15,7 @@ export default function EditPost({ searchParams }: PageProps<"/admin/edit">) {
 }
 
 async function Editor({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await requireAdmin();
+  await requireSection("journal");
   const sp = await searchParams;
   const id = sp.id;
   const tw = typeof sp.tw === "string" ? sp.tw.slice(0, 300) : undefined;

@@ -2,7 +2,7 @@
 
 import { del, put } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
-import { getAdmin } from "@/lib/admin";
+import { guardSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ensureShopSchema } from "@/lib/migrate";
 import { SHOP_PRODUCT_TAG } from "@/lib/shop";
@@ -12,7 +12,7 @@ import { translateTexts, translationConfigured } from "@/lib/translate";
 export type ShopActionState = { ok?: string; error?: string; warning?: string; slug?: string };
 
 async function guard() {
-  if (!(await getAdmin())) throw new Error("unauthorized");
+  await guardSection("shop");
 }
 
 // Must match next.config.ts images.remotePatterns, otherwise next/image throws and the product page crashes.

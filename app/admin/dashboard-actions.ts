@@ -2,7 +2,8 @@
 
 import { del } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
-import { changePassword, getAdmin } from "@/lib/admin";
+import { changePassword, getAdmin, guardSection } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { db } from "@/lib/db";
 import { SETTINGS_TAG, SOCIAL_HOSTS, SOCIAL_KEYS, writeSettings } from "@/lib/settings";
 
@@ -14,14 +15,12 @@ const idOf = (form: FormData) => {
   return ID.test(id) ? id : null;
 };
 
-async function guard() {
-  if (!(await getAdmin())) throw new Error("unauthorized");
-}
+const guard = guardSection;
 
 const STATUSES = ["nuovo", "risposto", "chiuso"] as const;
 
 export async function setRequestStatus(form: FormData) {
-  await guard();
+  await guard("requests");
   const id = idOf(form);
   const status = String(form.get("status"));
   if (!id || !STATUSES.includes(status as (typeof STATUSES)[number])) return;
@@ -30,7 +29,7 @@ export async function setRequestStatus(form: FormData) {
 }
 
 export async function deleteRequest(form: FormData) {
-  await guard();
+  await guard("requests");
   const id = idOf(form);
   if (!id) return;
   await db().execute({ sql: "DELETE FROM contact_requests WHERE id = ?", args: [id] });
@@ -39,7 +38,7 @@ export async function deleteRequest(form: FormData) {
 
 /** Activate (clear unsubscribed_at) or deactivate (stamp it) a subscriber. Admin session required. */
 export async function setSubscriberActive(id: string, active: boolean): Promise<{ ok: boolean }> {
-  await guard();
+  await guard("newsletter");
   if (!ID.test(id)) return { ok: false };
   const res = await db().execute({
     sql: active
@@ -52,7 +51,7 @@ export async function setSubscriberActive(id: string, active: boolean): Promise<
 }
 
 export async function removeSubscriber(form: FormData) {
-  await guard();
+  await guard("newsletter");
   const id = idOf(form);
   if (!id) return;
   await db().execute({ sql: "DELETE FROM subscribers WHERE id = ?", args: [id] });
@@ -61,7 +60,7 @@ export async function removeSubscriber(form: FormData) {
 
 /** Deletes a cover from Vercel Blob. Only URLs under our covers/ prefix on the Blob host are accepted. */
 export async function deleteMedia(form: FormData): Promise<ActionState> {
-  await guard();
+  await guard("media");
   const url = String(form.get("url") ?? "");
   let u: URL;
   try {
@@ -81,7 +80,7 @@ export async function deleteMedia(form: FormData): Promise<ActionState> {
 }
 
 export async function saveSocial(_: ActionState, form: FormData): Promise<ActionState> {
-  await guard();
+  await guard("social");
   const values: Record<string, string> = {};
   for (const key of SOCIAL_KEYS) {
     const raw = String(form.get(key) ?? "").trim();
@@ -107,7 +106,7 @@ export async function saveSocial(_: ActionState, form: FormData): Promise<Action
 }
 
 const PW_MSG = {
-  ok: "Password aggiornata. Vale dal prossimo accesso.",
+  ok: "Password aggiornata. Le altre sessioni aperte sono state chiuse.",
   wrong: "La password attuale non è corretta.",
   weak: "La nuova password deve avere almeno 12 caratteri.",
   mismatch: "Le due password nuove non coincidono.",
@@ -115,7 +114,7 @@ const PW_MSG = {
 } as const;
 
 export async function updatePassword(_: ActionState, form: FormData): Promise<ActionState> {
-  await guard();
+  await guard("settings");
   const r = await changePassword(String(form.get("current") ?? ""), String(form.get("next") ?? ""), String(form.get("confirm") ?? ""));
   return r === "ok" ? { ok: PW_MSG.ok } : { error: PW_MSG[r] };
 }
@@ -124,7 +123,8 @@ export type SearchHit = { label: string; hint: string; href: string };
 
 /** Cmd-K server search across posts, requests and subscribers. */
 export async function adminSearch(q: string): Promise<SearchHit[]> {
-  await guard();
+  const me = await getAdmin();
+  if (!me) throw new Error("unauthorized");
   const term = q.trim().slice(0, 80);
   if (term.length < 2) return [];
   const like = `%${term.replace(/[%_\\]/g, (m) => `\\${m}`)}%`;
@@ -137,8 +137,8 @@ export async function adminSearch(q: string): Promise<SearchHit[]> {
     "read",
   );
   return [
-    ...posts.rows.map((r) => ({ label: String(r.title), hint: `Articolo ${String(r.lang).toUpperCase()}`, href: `/admin/edit?id=${r.id}` })),
-    ...reqs.rows.map((r) => ({ label: String(r.name), hint: `Richiesta · ${r.email}`, href: `/admin/requests?open=${r.id}` })),
-    ...subs.rows.map((r) => ({ label: String(r.email), hint: "Iscritto newsletter", href: `/admin/newsletter?q=${encodeURIComponent(String(r.email))}` })),
+    ...(canAccess(me, "journal") ? posts.rows : []).map((r) => ({ label: String(r.title), hint: `Articolo ${String(r.lang).toUpperCase()}`, href: `/admin/edit?id=${r.id}` })),
+    ...(canAccess(me, "requests") ? reqs.rows : []).map((r) => ({ label: String(r.name), hint: `Richiesta · ${r.email}`, href: `/admin/requests?open=${r.id}` })),
+    ...(canAccess(me, "newsletter") ? subs.rows : []).map((r) => ({ label: String(r.email), hint: "Iscritto newsletter", href: `/admin/newsletter?q=${encodeURIComponent(String(r.email))}` })),
   ];
 }

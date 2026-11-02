@@ -4,6 +4,7 @@ import { put } from "@vercel/blob";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdmin, login, logout } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { db } from "@/lib/db";
 import { POSTS_TAG } from "@/lib/journal";
 import { ensureTranslationSchema } from "@/lib/migrate";
@@ -34,7 +35,7 @@ function str(form: FormData, key: string, max: number) {
 
 export async function savePost(_: FormState, form: FormData): Promise<FormState> {
   const admin = await getAdmin();
-  if (!admin) return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." };
+  if (!admin || !canAccess(admin, "journal")) return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." };
 
   const id = str(form, "id", 64);
   const title = str(form, "title", 200);
@@ -141,7 +142,7 @@ async function syncEnglish(itId: string, it: SavedPost, force: boolean): Promise
 
 export async function deletePost(form: FormData) {
   const admin = await getAdmin();
-  if (!admin) redirect("/admin/login");
+  if (!admin || !canAccess(admin, "journal")) redirect("/admin/login");
   const id = String(form.get("id") ?? "").slice(0, 64);
   if (id) {
     await db().execute({ sql: "DELETE FROM posts WHERE id = ?", args: [id] });
@@ -161,7 +162,7 @@ const MIME: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", 
 
 export async function uploadCover(form: FormData): Promise<{ url?: string; error?: string }> {
   const admin = await getAdmin();
-  if (!admin) return { error: "Non autorizzato." };
+  if (!admin || !canAccess(admin, "journal")) return { error: "Non autorizzato." };
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return { error: "Nessun file." };
   const ext = MIME[file.type];

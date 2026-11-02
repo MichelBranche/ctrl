@@ -1,9 +1,11 @@
 import { getAdmin } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { db } from "@/lib/db";
 
 /** CSV of active subscribers. Admin-only; never cached. */
 export async function GET() {
-  if (!(await getAdmin())) return new Response("Unauthorized", { status: 401 });
+  const admin = await getAdmin();
+  if (!admin || !canAccess(admin, "newsletter")) return new Response("Unauthorized", { status: 401 });
   const res = await db().execute("SELECT email, lang, created_at FROM subscribers WHERE unsubscribed_at IS NULL ORDER BY created_at");
   // Prefix values that a spreadsheet would read as formulas.
   const cell = (v: unknown) => {

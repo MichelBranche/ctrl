@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { BreakdownPanels, CardsSkeleton, PanelSkeleton, RangeTabs, StatCards, TrafficPanel } from "@/components/admin/dashboard";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { parseRange } from "@/lib/dashboard-data";
 import { vercelConfigured } from "@/lib/vercel";
 
@@ -15,7 +15,7 @@ export default function StatsPage({ searchParams }: PageProps<"/admin/stats">) {
 }
 
 async function Body({ searchParams }: { searchParams: PageProps<"/admin/stats">["searchParams"] }) {
-  const [, sp] = await Promise.all([requireAdmin(), searchParams]);
+  const [, sp] = await Promise.all([requireSection("stats"), searchParams]);
   const range = parseRange(sp.range);
   return (
     <>

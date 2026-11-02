@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AreaChart, BarList, CountUp, Donut, Sparkline } from "@/components/admin/charts";
-import { breakdowns, dailyCounts, delta, latestDeploy, recentActivity, sum, traffic, RANGES, type Range } from "@/lib/dashboard-data";
+import { breakdowns, type Activity, dailyCounts, delta, latestDeploy, recentActivity, sum, traffic, RANGES, type Range } from "@/lib/dashboard-data";
 import { vercelConfigured } from "@/lib/vercel";
 
 /* Server sections shared by Panoramica and Statistiche. Each section fetches its own data inside its own Suspense
@@ -157,8 +157,10 @@ export function ago(isoTs: string) {
 
 const KIND = { post: "Journal", request: "Richiesta", subscriber: "Newsletter", order: "Shop" } as const;
 
-export async function ActivityFeed() {
-  const items = await recentActivity(8);
+/** `kinds` limits the feed to what the viewer may open (a member without Shop never sees order customer names). */
+export async function ActivityFeed({ kinds }: { kinds?: Activity["kind"][] } = {}) {
+  const all = await recentActivity(kinds ? 24 : 8);
+  const items = all && kinds ? all.filter((a) => kinds.includes(a.kind)).slice(0, 8) : all;
   return (
     <section className="adm-panel adm-rise" aria-labelledby="act-h">
       <h2 id="act-h" className="adm-h2">Attività recente</h2>

@@ -328,3 +328,31 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-ov-hot[data-hot] .adm-stat-num { color: var(--adm-accent); }
 .adm-ov-ping { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--adm-accent); box-shadow: 0 0 0 0 var(--adm-accent); animation: adm-ping 2s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .adm-ov-ping { animation: none; } }
+
+/* Team + Introiti */
+.adm-earn-chart svg { display: block; width: 100%; height: auto; }
+.adm-earn-bar { fill: color-mix(in srgb, var(--adm-accent) 70%, transparent); transition: fill 0.15s ease; }
+.adm-earn-bar[data-on] { fill: var(--adm-accent); }
+.adm-earn-readout { display: flex; gap: 0.6rem; align-items: baseline; min-height: 1.4rem; margin: 0.4rem 0 0; font-size: 0.85rem; }
+.adm-earn-people { flex-wrap: wrap; margin-bottom: 1rem; }
+.adm-leader-key b { display: inline-block; min-width: 1.4rem; font-weight: 500; color: var(--adm-dim); }
+.adm-leader-key em, .adm-barlist-num em { font-style: normal; color: var(--adm-dim); }
+.adm-leader li[data-me] .adm-barlist-fill { background: color-mix(in srgb, var(--adm-accent) 30%, transparent); }
+.adm-job-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.9rem 1rem; align-items: end; }
+.adm-job-form .adm-span { grid-column: 1 / -1; }
+.adm-setting { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+.adm-setting p { margin: 0.3rem 0 0; font-size: 0.85rem; }
+.adm-users { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.adm-user { border: 1px solid var(--adm-rule); border-radius: 0.5rem; transition: border-color 0.15s ease; }
+.adm-user:hover { border-color: color-mix(in srgb, var(--adm-accent) 40%, var(--adm-rule)); }
+.adm-user[data-off] { opacity: 0.55; }
+.adm-user summary { display: grid; grid-template-columns: auto minmax(10rem, 1.6fr) auto 1fr auto; gap: 0.4rem 1rem; align-items: center; padding: 0.8rem 1rem; cursor: pointer; list-style: none; }
+.adm-user summary::-webkit-details-marker { display: none; }
+.adm-user-id { display: grid; min-width: 0; }
+.adm-user-id > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-user-seen { grid-column: 2 / -1; font-size: 0.78rem; }
+.adm-user-edit { display: grid; gap: 1rem; padding: 0 1rem 1rem; border-top: 1px solid var(--adm-rule); padding-top: 1rem; }
+@media (max-width: 760px) {
+  .adm-user summary { grid-template-columns: auto 1fr auto; }
+  .adm-user summary > :nth-child(4), .adm-user summary > :nth-child(5) { grid-column: 2 / -1; }
+}

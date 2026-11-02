@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PasswordForm } from "@/components/admin/password-form";
-import { getAdmin, passwordSource, requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
+import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
 
 export default function SettingsPage() {
   return (
@@ -13,14 +14,7 @@ export default function SettingsPage() {
 const fmt = (ms: number) => new Date(ms).toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "medium", timeStyle: "short" });
 
 async function Body() {
-  await requireAdmin();
-  const admin = await getAdmin();
-  let source: "dashboard" | "env" | null = null;
-  try {
-    source = await passwordSource();
-  } catch {
-    source = null;
-  }
+  const admin = await requireSection("settings");
   return (
     <main className="adm-main">
       <header className="adm-top">
@@ -34,7 +28,9 @@ async function Body() {
           {admin ? (
             <dl className="adm-dl">
               <dt>Account</dt>
-              <dd>{admin.email}</dd>
+              <dd>{admin.name} · {admin.email}</dd>
+              <dt>Ruolo</dt>
+              <dd>{ROLE_LABEL[admin.role]}{admin.area ? ` · ${AREA_LABEL[admin.area]}` : ""}</dd>
               <dt>Accesso</dt>
               <dd className="adm-num">{fmt(admin.issuedAt)}</dd>
               <dt>Scade</dt>
@@ -46,13 +42,7 @@ async function Body() {
         </section>
         <section className="adm-panel">
           <h2 className="adm-h2">Cambia password</h2>
-          <p className="adm-muted">
-            {source === "dashboard"
-              ? "La password attuale è stata impostata da qui ed è salvata (come hash scrypt) nel database."
-              : source === "env"
-                ? "La password attuale viene da ADMIN_PASSWORD_HASH. Cambiandola qui, l'hash salvato nel database avrà la precedenza."
-                : "Impossibile leggere l'origine della password."}
-          </p>
+          <p className="adm-muted">La password è salvata solo come hash scrypt nel database. Cambiandola chiudi le altre sessioni aperte con questo account.</p>
           <PasswordForm />
         </section>
       </div>

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { removeSubscriber } from "@/app/admin/dashboard-actions";
 import { ConfirmButton } from "@/components/admin/confirm-button";
 import { SubscriberSwitch } from "@/components/admin/subscriber-switch";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 
 export default function NewsletterPage({ searchParams }: PageProps<"/admin/newsletter">) {
@@ -14,7 +14,7 @@ export default function NewsletterPage({ searchParams }: PageProps<"/admin/newsl
 }
 
 async function Body({ searchParams }: { searchParams: PageProps<"/admin/newsletter">["searchParams"] }) {
-  await requireAdmin();
+  await requireSection("newsletter");
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 80) : "";
   let rows: { id: string; email: string; lang: string; created_at: string; unsubscribed_at: string | null }[] = [];

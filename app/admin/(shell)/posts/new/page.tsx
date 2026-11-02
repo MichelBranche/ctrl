@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PostEditor } from "@/components/admin/post-editor";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 
 export default function NewPost() {
   return (
@@ -11,6 +11,6 @@ export default function NewPost() {
 }
 
 async function Guarded() {
-  await requireAdmin();
+  await requireSection("journal");
   return <PostEditor post={null} />;
 }

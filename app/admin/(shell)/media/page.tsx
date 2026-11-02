@@ -1,7 +1,7 @@
 import { list, type ListBlobResultBlob } from "@vercel/blob";
 import { Suspense } from "react";
 import { MediaRow } from "@/components/admin/media-row";
-import { requireAdmin } from "@/lib/admin";
+import { requireSection } from "@/lib/admin";
 import { db } from "@/lib/db";
 
 export default function MediaPage() {
@@ -15,7 +15,7 @@ export default function MediaPage() {
 const kb = (b: number) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 async function Body() {
-  await requireAdmin();
+  await requireSection("media");
   const header = (
     <header className="adm-top">
       <div>
