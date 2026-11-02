@@ -35,6 +35,8 @@ async function queryShopProducts(): Promise<ShopProduct[]> {
   cacheTag(SHOP_PRODUCT_TAG);
   // Short client stale time: admin edits invalidate the tag/paths at once, so a long browser router cache is the only thing that could still show an old price.
   cacheLife({ stale: 30, revalidate: 3600, expire: 86400 * 7 });
+  // The schema check is DB I/O too: keep it inside the cache scope so prerendering /shop does no uncached data access.
+  await ensureShopSchema();
   const result = await db().execute(`SELECT ${PUBLIC_COLUMNS} FROM shop_products ORDER BY sort_order, created_at`);
   return result.rows.map(toProduct);
 }
@@ -42,7 +44,6 @@ async function queryShopProducts(): Promise<ShopProduct[]> {
 /** Public catalogue (published and hidden; pages filter on `published`). Never contains supplier data. */
 export async function getShopProducts(): Promise<ShopProduct[]> {
   if (!dbConfigured) return [DEFAULT_SHOP_PRODUCT];
-  await ensureShopSchema();
   return queryShopProducts();
 }
 
