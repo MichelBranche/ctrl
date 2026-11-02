@@ -153,6 +153,9 @@ export function NewUserForm() {
         <span>Area</span>
         <AreaSelect value={null} optional />
       </label>
+      <label className="adm-check">
+        <input type="checkbox" name="email_access" /> Accesso alla casella email dell&apos;agenzia
+      </label>
       <label className="adm-field adm-span">
         <span>Password iniziale (almeno 12 caratteri)</span>
         <input className="adm-input" name="password" type="password" autoComplete="new-password" minLength={12} required />
@@ -165,7 +168,7 @@ export function NewUserForm() {
   );
 }
 
-export function EditUserForm({ user, self }: { user: { id: string; name: string; role: Role; area: Area | null; active: boolean }; self: boolean }) {
+export function EditUserForm({ user, self }: { user: { id: string; name: string; role: Role; area: Area | null; active: boolean; emailAccess: boolean }; self: boolean }) {
   const [state, action, pending] = useActionState<TeamState, FormData>(updateUser, {});
   const [pwState, pwAction, pwPending] = useActionState<TeamState, FormData>(resetUserPassword, {});
   const pwForm = useResetOnOk(pwState);
@@ -193,6 +196,10 @@ export function EditUserForm({ user, self }: { user: { id: string; name: string;
         <label className="adm-check">
           <input type="checkbox" name="active" defaultChecked={user.active} disabled={self} /> Attivo
           {self ? <input type="hidden" name="active" value="on" /> : null}
+        </label>
+        <label className="adm-check" title="Casella condivisa dell'agenzia, indipendente dall'area. Il founder la vede sempre.">
+          <input type="checkbox" name="email_access" defaultChecked={user.emailAccess} disabled={user.role === "founder"} /> Email agenzia
+          {user.role === "founder" ? <input type="hidden" name="email_access" value="on" /> : null}
         </label>
         <div className="adm-row-actions adm-span">
           <button className="adm-btn adm-btn-sm" disabled={pending}>{pending ? "Salvataggio…" : "Salva"}</button>

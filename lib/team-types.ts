@@ -18,7 +18,7 @@ export const isArea = (v: unknown): v is Area => AREAS.includes(v as Area);
 export const isRole = (v: unknown): v is Role => ROLES.includes(v as Role);
 
 /** Admin sections. Each maps to the URL prefix(es) it owns. */
-export type Section = "overview" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team";
+export type Section = "overview" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "email";
 
 export const SECTION_HREF: Record<Section, string> = {
   overview: "/admin",
@@ -33,6 +33,7 @@ export const SECTION_HREF: Record<Section, string> = {
   settings: "/admin/settings",
   introiti: "/admin/introiti",
   team: "/admin/team",
+  email: "/admin/email",
 };
 
 /** Every signed-in user: overview, their own earnings and their own account/password. */
@@ -48,11 +49,13 @@ export const AREA_SECTIONS: Record<Area, Section[]> = {
   marketing: ["newsletter", "social", "stats", "requests"],
 };
 
-export type Perms = { role: Role; area: Area | null };
+/** `emailAccess`: the shared agency inbox, granted per person by the founder, independent of the area. */
+export type Perms = { role: Role; area: Area | null; emailAccess?: boolean };
 
 export function canAccess(user: Perms, section: Section): boolean {
   if (user.role === "founder") return true;
   if (section === "team") return false;
+  if (section === "email") return user.emailAccess === true;
   if (EVERYONE.includes(section)) return true;
   return user.area ? AREA_SECTIONS[user.area].includes(section) : false;
 }

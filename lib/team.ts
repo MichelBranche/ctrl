@@ -13,13 +13,13 @@ export async function leaderboardVisible(): Promise<boolean> {
   return (await readSettings([LEADERBOARD_KEY]).catch(() => ({}) as Record<string, string>))[LEADERBOARD_KEY] === "1";
 }
 
-export type TeamUser = { id: string; email: string; name: string; role: Role; area: Area | null; active: boolean; createdAt: string; lastLoginAt: string | null; totalCents: number; jobs: number };
+export type TeamUser = { id: string; email: string; name: string; role: Role; area: Area | null; active: boolean; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; totalCents: number; jobs: number };
 
 /** Founder-only: every account (never the password hash) with its lifetime totals. */
 export async function listUsers(): Promise<TeamUser[]> {
   await ensureTeam();
   const res = await db().execute(`
-    SELECT u.id, u.email, u.name, u.role, u.area, u.active, u.created_at, u.last_login_at,
+    SELECT u.id, u.email, u.name, u.role, u.area, u.active, u.email_access, u.created_at, u.last_login_at,
            COALESCE(SUM(j.amount_cents), 0) AS total, COUNT(j.id) AS jobs
     FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id
     GROUP BY u.id ORDER BY (u.role = 'founder') DESC, u.created_at`);
@@ -30,6 +30,7 @@ export async function listUsers(): Promise<TeamUser[]> {
     role: isRole(r.role) ? r.role : "member",
     area: isArea(r.area) ? r.area : null,
     active: Number(r.active) === 1,
+    emailAccess: r.role === "founder" || Number(r.email_access) === 1,
     createdAt: String(r.created_at),
     lastLoginAt: r.last_login_at ? String(r.last_login_at) : null,
     totalCents: Number(r.total),

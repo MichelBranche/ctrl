@@ -83,14 +83,15 @@ export async function createUser(_: TeamState, form: FormData): Promise<TeamStat
   const role = str(form, "role", 16);
   const area = str(form, "area", 32);
   const password = String(form.get("password") ?? "");
+  const emailAccess = form.get("email_access") === "on";
   if (!name) return { error: "Indica il nome." };
   if (!EMAIL.test(email)) return { error: "Email non valida." };
   if (!isRole(role)) return { error: "Ruolo non valido." };
   if (role === "member" && !isArea(area)) return { error: "Un membro deve avere un'area." };
   if (!passwordOk(password)) return { error: "La password deve avere almeno 12 caratteri." };
   const res = await db().execute({
-    sql: "INSERT OR IGNORE INTO admin_users (id, email, name, role, area, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
-    args: [crypto.randomUUID(), email, name, role, isArea(area) ? area : null, await hashPassword(password)],
+    sql: "INSERT OR IGNORE INTO admin_users (id, email, name, role, area, password_hash, email_access) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    args: [crypto.randomUUID(), email, name, role, isArea(area) ? area : null, await hashPassword(password), emailAccess ? 1 : 0],
   });
   if (!res.rowsAffected) return { error: "Esiste già un utente con questa email." };
   refresh();
@@ -105,13 +106,14 @@ export async function updateUser(_: TeamState, form: FormData): Promise<TeamStat
   const role = str(form, "role", 16);
   const area = str(form, "area", 32);
   const active = form.get("active") === "on";
+  const emailAccess = form.get("email_access") === "on";
   if (!ID.test(id) || !name || !isRole(role)) return { error: "Dati non validi." };
   if (role === "member" && !isArea(area)) return { error: "Un membro deve avere un'area." };
   if (id === me.id && (role !== "founder" || !active)) return { error: "Non puoi togliere a te stesso il ruolo founder o disattivarti." };
   const res = await db().execute({
-    sql: `UPDATE admin_users SET name = ?, role = ?, area = ?, active = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    sql: `UPDATE admin_users SET name = ?, role = ?, area = ?, active = ?, email_access = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
           WHERE id = ? AND (? = 'founder' AND ? = 1 OR (SELECT COUNT(*) FROM admin_users WHERE role = 'founder' AND active = 1 AND id <> ?) > 0)`,
-    args: [name, role, isArea(area) ? area : null, active ? 1 : 0, id, role, active ? 1 : 0, id],
+    args: [name, role, isArea(area) ? area : null, active ? 1 : 0, emailAccess ? 1 : 0, id, role, active ? 1 : 0, id],
   });
   if (!res.rowsAffected) return { error: "Serve sempre almeno un founder attivo." };
   refresh();

@@ -53,7 +53,7 @@ async function Body() {
               </div>
             ))}
           </dl>
-          <p className="adm-muted">Tutti vedono Panoramica, Introiti (solo i propri lavori) e Impostazioni (la propria password). Il founder ha accesso completo.</p>
+          <p className="adm-muted">Tutti vedono Panoramica, Introiti (solo i propri lavori) e Impostazioni (la propria password). La casella Email si concede a persona, indipendentemente dall&apos;area. Il founder ha accesso completo.</p>
         </section>
       </div>
 
@@ -73,7 +73,7 @@ async function Body() {
                     <span className="adm-muted">{u.email}</span>
                   </span>
                   <span className={`adm-badge ${u.role === "founder" ? "is-published" : ""}`}>{ROLE_LABEL[u.role]}</span>
-                  <span className="adm-muted">{u.area ? AREA_LABEL[u.area] : "Tutte le aree"}</span>
+                  <span className="adm-muted">{u.area ? AREA_LABEL[u.area] : "Tutte le aree"}{u.emailAccess ? " · Email" : ""}</span>
                   <span className="adm-num">{eur.format(u.totalCents / 100)} <span className="adm-muted">· {u.jobs} lavori</span></span>
                   <span className="adm-muted adm-user-seen">{u.active ? `Ultimo accesso: ${when(u.lastLoginAt)}` : "Disattivato"}</span>
                 </summary>

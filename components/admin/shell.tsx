@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTran
 import { signOut } from "@/app/admin/actions";
 import { adminSearch, type SearchHit } from "@/app/admin/dashboard-actions";
 
-type Nav = { href: string; label: string; icon: ReactNode; badge?: "requests" };
+type Nav = { href: string; label: string; icon: ReactNode; badge?: "requests" | "email" };
 
 const I = (d: string) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -20,6 +20,7 @@ const NAV: Nav[] = [
   { href: "/admin/media", label: "Media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
   { href: "/admin/shop", label: "Shop", icon: I("M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2") },
   { href: "/admin/requests", label: "Richieste", icon: I("M4 6h16v12H4zM4 7l8 6 8-6"), badge: "requests" },
+  { href: "/admin/email", label: "Email", icon: I("M3 6h18v12H3zM3 7l9 6 9-6M8 3h8"), badge: "email" },
   { href: "/admin/newsletter", label: "Newsletter", icon: I("M4 19V5l16 7zM4 12h8") },
   { href: "/admin/stats", label: "Statistiche", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },
   { href: "/admin/social", label: "Social", icon: I("M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0M12 2v2M12 20v2M2 12h2M20 12h2") },
@@ -31,6 +32,7 @@ const NAV: Nav[] = [
 
 const ACTIONS: (SearchHit & { needs?: string })[] = [
   { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new", needs: "/admin/journal" },
+  { label: "Nuova email", hint: "Azione", href: "/admin/email?compose=new", needs: "/admin/email" },
   { label: "Registra un lavoro", hint: "Azione", href: "/admin/introiti#nuovo" },
   { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export", needs: "/admin/newsletter" },
   { label: "Apri il sito", hint: "Azione", href: "/" },
@@ -46,12 +48,46 @@ const subscribeCollapsed = (cb: () => void) => {
   };
 };
 
+const hiddenNow = () => document.visibilityState !== "visible";
+
+/** Unread count for the shared inbox, polled from the client so layout renders never touch IMAP. */
+function useEmailUnread(enabled: boolean) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    let stop = false;
+    const load = async () => {
+      if (hiddenNow()) return;
+      try {
+        const r = await fetch("/admin/email/unread", { cache: "no-store" });
+        if (r.ok && !stop) setN(((await r.json()) as { n?: number }).n ?? 0);
+      } catch {
+        /* offline: keep last value */
+      }
+    };
+    void load();
+    const t = setInterval(load, 30_000);
+    const onVis = () => !hiddenNow() && void load();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("ctrl-mail-changed", load);
+    return () => {
+      stop = true;
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("ctrl-mail-changed", load);
+    };
+  }, [enabled]);
+  return n;
+}
+
 const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
 export function AdminShell({ email, name, allowed, badges, children }: { email: string; name: string; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
   const path = usePathname();
   const nav = NAV.filter((n) => allowed.includes(n.href));
+  const emailUnread = useEmailUnread(allowed.includes("/admin/email"));
+  const counts = { requests: badges.requests, email: emailUnread };
   const actions = ACTIONS.filter((a) => !a.needs || allowed.includes(a.needs));
   const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
   const [drawer, setDrawer] = useState(false);
@@ -104,7 +140,7 @@ export function AdminShell({ email, name, allowed, badges, children }: { email: 
           <ul className="adm-nav">
             {nav.map((n) => {
               const active = isActive(path, n.href);
-              const count = n.badge ? badges[n.badge] : 0;
+              const count = n.badge ? counts[n.badge] : 0;
               return (
                 <li key={n.href}>
                   <Link href={n.href} className="adm-nav-link" aria-current={active ? "page" : undefined} title={collapsed ? n.label : undefined}>

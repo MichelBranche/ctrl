@@ -137,9 +137,42 @@ export function ensureTeamSchema(): Promise<void> {
     const cols = await db().execute("PRAGMA table_info(admin_users)");
     const have = new Set(cols.rows.map((r) => String(r.name)));
     if (!have.has("last_login_at")) await addColumn("admin_users", "last_login_at", "TEXT");
+    if (!have.has("email_access")) await addColumn("admin_users", "email_access", "INTEGER NOT NULL DEFAULT 0");
   }).catch((error) => {
     teamReady = null;
     throw error;
   });
   return teamReady;
+}
+
+let emailReady: Promise<void> | null = null;
+
+/**
+ * Shared-inbox collaboration state (db/006_email.sql). Only metadata keyed by the RFC Message-ID hash:
+ * who read / claimed a message and a send log. Email bodies are never stored. Idempotent, parallel-safe.
+ */
+export function ensureEmailSchema(): Promise<void> {
+  emailReady ??= retryBusy(async () => {
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS email_reads (
+        message_key TEXT NOT NULL, user_id TEXT NOT NULL,
+        read_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        PRIMARY KEY (message_key, user_id)
+      )` },
+      { sql: `CREATE TABLE IF NOT EXISTS email_claims (
+        message_key TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+        claimed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+      { sql: `CREATE TABLE IF NOT EXISTS email_send_log (
+        id TEXT PRIMARY KEY, user_id TEXT NOT NULL, recipients TEXT NOT NULL, subject TEXT NOT NULL,
+        in_reply_to TEXT, message_id TEXT, ok INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+      { sql: "CREATE INDEX IF NOT EXISTS email_send_log_user_time ON email_send_log (user_id, created_at)" },
+    ], "write");
+  }).catch((error) => {
+    emailReady = null;
+    throw error;
+  });
+  return emailReady;
 }

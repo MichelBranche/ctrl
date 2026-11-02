@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
       { source: "/en/about", destination: "/en", permanent: true },
     ];
   },
+  // Mail libraries use Node sockets/streams; keep them out of the bundle.
+  serverExternalPackages: ["imapflow", "nodemailer", "mailparser"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
