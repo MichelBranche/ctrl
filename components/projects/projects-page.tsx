@@ -7,7 +7,7 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { ProjectsBrowser, type CategoryCard } from "@/components/projects/projects-browser";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
-import { projectCategories } from "@/lib/content";
+import { categoryPath, projectCategories } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import "./projects.css";
 
@@ -28,7 +28,7 @@ export function ProjectsView({ lang }: { lang: Locale }) {
     title: cat.title[lang],
     text: cat.text[lang],
     image: cat.image,
-    href: localize(`/projects/${cat.slug}`, lang),
+    href: localize(categoryPath(cat), lang),
   }));
 
   return (

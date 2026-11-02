@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +9,7 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
-import { getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
+import { categoryPath, getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import "./projects.css";
 import "./websites.css";
@@ -162,7 +162,7 @@ export function CategoryView({ slug, lang }: { slug: string; lang: Locale }) {
           <ul className="p-others-grid">
             {others.map((item) => (
               <li key={item.slug}>
-                <Link href={localize(`/projects/${item.slug}`, lang)} className="p-other" data-p-card>
+                <Link href={localize(categoryPath(item), lang) as Route} className="p-other" data-p-card>
                   <span className="p-other-media" aria-hidden="true">
                     <Image className="p-img" src={item.image} alt="" fill sizes="(max-width: 760px) 50vw, 20vw" />
                   </span>

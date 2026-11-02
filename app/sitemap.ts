@@ -7,7 +7,7 @@ const siteUrl = "https://www.ctrlagency.dev";
 const publicPaths = [
   "/", "/projects", "/services", "/team", "/journal", "/shop", "/contact", "/privacy", "/cookie",
   "/en", "/en/projects", "/en/services", "/en/team", "/en/journal", "/en/shop", "/en/contact", "/en/privacy", "/en/cookies",
-  ...projectCategories.flatMap((category) => [`/projects/${category.slug}`, `/en/projects/${category.slug}`]),
+  ...projectCategories.filter((category) => !category.href).flatMap((category) => [`/projects/${category.slug}`, `/en/projects/${category.slug}`]),
   ...services.flatMap((service) => [`/services/${service.slug}`, `/en/services/${service.slug}`]),
   "/services/webapp",
   "/en/services/webapp",

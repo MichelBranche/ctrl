@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CONTACT_EMAIL, projectCategories, services } from "@/lib/content";
+import { CONTACT_EMAIL, categoryPath, projectCategories, services } from "@/lib/content";
 import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
@@ -39,7 +39,7 @@ export function CommandMenu() {
         id: `p-${c.slug}`,
         group: nav.work,
         label: c.label[lang],
-        run: () => go(localize(`/projects/${c.slug}`, lang)),
+        run: () => go(localize(categoryPath(c), lang)),
       })),
       ...services.map((s) => ({
         id: `s-${s.slug}`,

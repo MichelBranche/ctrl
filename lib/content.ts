@@ -28,6 +28,8 @@ export type ProjectCategory = {
   /** Longer intro shown on the category page. */
   intro: L;
   image: string;
+  /** Where the category links (unlocalized) when it is not /projects/[slug]; the old path redirects there. */
+  href?: string;
 };
 
 export const projectCategories: ProjectCategory[] = [
@@ -52,6 +54,7 @@ export const projectCategories: ProjectCategory[] = [
       en: "Web applications with private areas, dashboards and complex flows, built to grow with the product.",
     },
     image: "/images/projects/webapps.webp",
+    href: "/services/webapp",
   },
   {
     slug: "software",
@@ -413,6 +416,11 @@ export const projects: Project[] = [
     author: AUTHORS.michel,
   },
 ];
+
+/** Unlocalized link for a category: its own page, or `href` when it lives elsewhere (Webapp, /services/webapp). */
+export function categoryPath(category: ProjectCategory) {
+  return category.href ?? `/projects/${category.slug}`;
+}
 
 export function getProjectCategory(slug: string) {
   return projectCategories.find((category) => category.slug === slug);

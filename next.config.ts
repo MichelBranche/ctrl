@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       { source: "/work", destination: "/projects", permanent: true },
       { source: "/work/:slug", destination: "/projects/websites", permanent: true },
       { source: "/en/work", destination: "/en/projects", permanent: true },
+      // Webapp category lives on its service page; /projects/webapps/agenda-easy stays.
+      { source: "/projects/webapps", destination: "/services/webapp", permanent: true },
+      { source: "/en/projects/webapps", destination: "/en/services/webapp", permanent: true },
       { source: "/en/work/:slug", destination: "/en/projects/websites", permanent: true },
       // The Studio page was removed; the home has no about section, so send it home.
       { source: "/about", destination: "/", permanent: true },
