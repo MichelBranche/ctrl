@@ -1,5 +1,6 @@
 "use client";
 
+import { UserAvatar } from "@/components/admin/user-avatar";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
@@ -66,7 +67,7 @@ export function MonthlyBars({ data, height = 240 }: { data: { month: string; cen
 }
 
 /** Totals per person. Only ever receives totals, never job rows. */
-export function Leaderboard({ rows, me }: { rows: { userId: string; name: string; area: string | null; totalCents: number; jobs: number }[]; me: string }) {
+export function Leaderboard({ rows, me }: { rows: { userId: string; name: string; avatarUrl: string | null; area: string | null; totalCents: number; jobs: number }[]; me: string }) {
   const reduce = useReducedMotion();
   const max = Math.max(...rows.map((r) => r.totalCents), 1);
   if (!rows.some((r) => r.totalCents > 0)) return <p className="adm-muted adm-empty">Nessun introito nel periodo.</p>;
@@ -76,7 +77,7 @@ export function Leaderboard({ rows, me }: { rows: { userId: string; name: string
         <li key={r.userId} data-me={r.userId === me || undefined}>
           <motion.span className="adm-barlist-fill" style={{ originX: 0 }} initial={reduce ? false : { scaleX: 0 }} animate={{ scaleX: r.totalCents / max }} transition={{ duration: 0.8, delay: i * 0.06, ease: EASE }} />
           <span className="adm-barlist-key adm-leader-key">
-            <b>{i + 1}</b> {r.name}
+            <b>{i + 1}</b> <UserAvatar name={r.name} src={r.avatarUrl} small /> {r.name}
             {r.area ? <em> · {r.area}</em> : null}
             {r.userId === me ? <em> · tu</em> : null}
           </span>

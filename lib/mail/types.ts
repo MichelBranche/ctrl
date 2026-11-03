@@ -37,7 +37,7 @@ export type MailMessage = MailSummary & {
   attachments: MailAttachment[];
 };
 
-export type Collab = { readBy: { id: string; name: string; avatarUrl?: string | null }[]; claimedBy: { id: string; name: string; at: string } | null };
+export type Collab = { readBy: { id: string; name: string; avatarUrl?: string | null }[]; claimedBy: { id: string; name: string; avatarUrl?: string | null; at: string } | null };
 
 export const folderLabel = (id: FolderId) => id.startsWith("label:") ? id.slice(6) : FOLDER_LABEL[id as keyof typeof FOLDER_LABEL];
 export const CATEGORIES = { primary: "Principale", promotions: "Promozioni", social: "Social", updates: "Aggiornamenti", forums: "Forum" } as const;

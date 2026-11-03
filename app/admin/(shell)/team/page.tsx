@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/admin/user-avatar";
 import { Suspense } from "react";
 import { PanelSkeleton } from "@/components/admin/dashboard";
 import { EditUserForm, LeaderboardSwitch, NewUserForm } from "@/components/admin/team/team-forms";
@@ -67,7 +68,7 @@ async function Body() {
             <li key={u.id} className="adm-user adm-rise" data-off={!u.active || undefined} style={{ "--i": i } as React.CSSProperties}>
               <details>
                 <summary>
-                  <span className="adm-avatar" aria-hidden="true">{u.name.slice(0, 1).toUpperCase()}</span>
+                  <UserAvatar name={u.name} src={u.avatarUrl} />
                   <span className="adm-user-id">
                     <strong>{u.name}{u.id === me.id ? <em className="adm-muted"> · tu</em> : null}</strong>
                     <span className="adm-muted">{u.email}</span>

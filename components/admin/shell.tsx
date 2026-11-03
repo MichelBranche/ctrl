@@ -1,5 +1,6 @@
 "use client";
 
+import { UserAvatar } from "@/components/admin/user-avatar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
@@ -83,7 +84,7 @@ function useEmailUnread(enabled: boolean) {
 const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
-export function AdminShell({ email, name, allowed, badges, children }: { email: string; name: string; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
+export function AdminShell({ email, name, avatarUrl, allowed, badges, children }: { email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
   const path = usePathname();
   const nav = NAV.filter((n) => allowed.includes(n.href));
   const emailUnread = useEmailUnread(allowed.includes("/admin/email"));
@@ -181,7 +182,7 @@ export function AdminShell({ email, name, allowed, badges, children }: { email: 
           </button>
           <div className="adm-account">
             <button type="button" className="adm-avatar" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu" aria-label="Account">
-              {(name || email).slice(0, 1).toUpperCase()}
+              <UserAvatar name={name || email} src={avatarUrl} />
             </button>
             {menu ? (
               <div className="adm-menu" role="menu">

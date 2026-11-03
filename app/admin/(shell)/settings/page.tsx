@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/admin/user-avatar";
 import { Suspense } from "react";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { db } from "@/lib/db";
@@ -39,7 +40,7 @@ async function Body() {
           {admin ? (
             <dl className="adm-dl">
               <dt>Account</dt>
-              <dd>{admin.name} · {admin.email}</dd>
+              <dd className="adm-person"><UserAvatar name={admin.name} src={admin.avatarUrl} small />{admin.name} · {admin.email}</dd>
               <dt>Ruolo</dt>
               <dd>{ROLE_LABEL[admin.role]}{admin.area ? ` · ${AREA_LABEL[admin.area]}` : ""}</dd>
               <dt>Accesso</dt>

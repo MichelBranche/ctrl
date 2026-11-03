@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/admin/user-avatar";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CardsSkeleton, PanelSkeleton } from "@/components/admin/dashboard";
@@ -80,7 +81,7 @@ async function Report({ me, range, filter }: { me: AdminUser; range: EarnRange; 
           <Link href={href(range, null)} className="adm-tab" aria-current={!filter ? "page" : undefined} scroll={false}>Tutto il team</Link>
           {data.people.map((p) => (
             <Link key={p.id} href={href(range, p.id)} className="adm-tab" aria-current={filter === p.id ? "page" : undefined} scroll={false}>
-              {p.name}
+              <UserAvatar name={p.name} src={p.avatarUrl} small /> {p.name}
             </Link>
           ))}
         </nav>
@@ -163,7 +164,7 @@ async function Report({ me, range, filter }: { me: AdminUser; range: EarnRange; 
                 {data.list.map((j) => (
                   <tr key={j.id}>
                     <td className="adm-num">{fmtDate(j.date)}</td>
-                    {founder ? <td>{j.userName}</td> : null}
+                    {founder ? <td><span className="adm-person"><UserAvatar name={j.userName} src={j.avatarUrl} small />{j.userName}</span></td> : null}
                     <td>{j.client}</td>
                     <td>{j.description}</td>
                     <td>{j.area ? AREA_LABEL[j.area] : "–"}</td>

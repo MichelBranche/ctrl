@@ -1,5 +1,6 @@
 "use client";
 
+import { UserAvatar } from "@/components/admin/user-avatar";
 import Image from "next/image";
 import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { ClaimButton } from "@/components/admin/email/mail-client";
@@ -54,7 +55,7 @@ export function MailPeople({ mkey, initial, meId, showClaim = true }: { mkey: st
   const people = usePeople(mkey, initial);
   if (!people.readBy.length && (!showClaim || !people.claimedBy)) return null;
   return <span className="adm-mail-chips mail-people">
-    {showClaim && people.claimedBy ? <span className="adm-badge adm-mail-claim" data-mine={people.claimedBy.id === meId || undefined}>In carico: {people.claimedBy.id === meId ? "tu" : people.claimedBy.name}</span> : null}
+    {showClaim && people.claimedBy ? <span className="adm-badge adm-mail-claim" data-mine={people.claimedBy.id === meId || undefined}><UserAvatar name={people.claimedBy.name} src={people.claimedBy.avatarUrl} small /> In carico: {people.claimedBy.id === meId ? "tu" : people.claimedBy.name}</span> : null}
     {people.readBy.length ? <span className="mail-readers-stack" aria-label={`Aperta da ${people.readBy.map((reader) => reader.name).join(", ")}`}>
       {people.readBy.map((reader) => <ReaderAvatar key={`${reader.id}:${reader.avatarUrl ?? ""}`} reader={reader} me={reader.id === meId} />)}
     </span> : null}
@@ -66,7 +67,7 @@ export function MailTeamStatus({ mkey, initial, meId }: { mkey: string; initial?
   const claimed = people.claimedBy;
   return <div className="adm-mail-team">
     <div className="mail-team-people">
-      <span className="adm-muted">{claimed ? <>In carico a <strong>{claimed.id === meId ? "te" : claimed.name}</strong></> : "Nessuno l’ha presa in carico"}</span>
+      <span className="adm-muted">{claimed ? <span className="adm-person"><UserAvatar name={claimed.name} src={claimed.avatarUrl} small />In carico a <strong>{claimed.id === meId ? "te" : claimed.name}</strong></span> : "Nessuno l’ha presa in carico"}</span>
       <div className="mail-opened-by"><span className="adm-muted">Aperta da</span><MailPeople mkey={mkey} initial={initial} meId={meId} showClaim={false} /></div>
     </div>
     <ClaimButton mkey={mkey} mine={claimed?.id === meId} other={claimed && claimed.id !== meId ? claimed.name : null} />

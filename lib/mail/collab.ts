@@ -19,7 +19,7 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
       args: valid,
     }),
     db().execute({
-      sql: `SELECT c.message_key, u.id, u.name, c.claimed_at FROM email_claims c JOIN admin_users u ON u.id = c.user_id WHERE c.message_key IN (${marks})`,
+      sql: `SELECT c.message_key, u.id, u.name, u.email, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at, c.claimed_at FROM email_claims c JOIN admin_users u ON u.id = c.user_id WHERE c.message_key IN (${marks})`,
       args: valid,
     }),
   ]);
@@ -27,7 +27,7 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
   for (const r of reads.rows) out.get(String(r.message_key))?.readBy.push({ id: String(r.id), name: String(r.name), avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)) });
   for (const c of claims.rows) {
     const entry = out.get(String(c.message_key));
-    if (entry) entry.claimedBy = { id: String(c.id), name: String(c.name), at: String(c.claimed_at) };
+    if (entry) entry.claimedBy = { id: String(c.id), name: String(c.name), avatarUrl: avatarFor(String(c.id), Number(c.has_avatar) === 1, c.updated_at, String(c.email)), at: String(c.claimed_at) };
   }
   return out;
 }

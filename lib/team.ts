@@ -1,4 +1,5 @@
 import "server-only";
+import { avatarFor } from "@/lib/avatars";
 import { ensureTeam, type AdminUser } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { readSettings } from "@/lib/settings";
@@ -13,13 +14,13 @@ export async function leaderboardVisible(): Promise<boolean> {
   return (await readSettings([LEADERBOARD_KEY]).catch(() => ({}) as Record<string, string>))[LEADERBOARD_KEY] === "1";
 }
 
-export type TeamUser = { id: string; email: string; name: string; role: Role; area: Area | null; active: boolean; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; totalCents: number; jobs: number };
+export type TeamUser = { id: string; email: string; name: string; avatarUrl: string | null; role: Role; area: Area | null; active: boolean; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; totalCents: number; jobs: number };
 
 /** Founder-only: every account (never the password hash) with its lifetime totals. */
 export async function listUsers(): Promise<TeamUser[]> {
   await ensureTeam();
   const res = await db().execute(`
-    SELECT u.id, u.email, u.name, u.role, u.area, u.active, u.email_access, u.created_at, u.last_login_at,
+    SELECT u.id, u.email, u.name, u.role, u.area, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
            COALESCE(SUM(j.amount_cents), 0) AS total, COUNT(j.id) AS jobs
     FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id
     GROUP BY u.id ORDER BY (u.role = 'founder') DESC, u.created_at`);
@@ -27,6 +28,7 @@ export async function listUsers(): Promise<TeamUser[]> {
     id: String(r.id),
     email: String(r.email),
     name: String(r.name),
+    avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)),
     role: isRole(r.role) ? r.role : "member",
     area: isArea(r.area) ? r.area : null,
     active: Number(r.active) === 1,
@@ -43,8 +45,8 @@ export type EarnRange = (typeof EARN_RANGES)[number];
 export const EARN_RANGE_LABEL: Record<EarnRange, string> = { "30": "30g", "90": "90g", "365": "12 mesi", all: "Sempre" };
 export const parseEarnRange = (v: unknown): EarnRange => (EARN_RANGES.includes(v as EarnRange) ? (v as EarnRange) : "365");
 
-export type Job = { id: string; userId: string; userName: string; client: string; description: string; amountCents: number; date: string; area: Area | null };
-export type LeaderRow = { userId: string; name: string; area: Area | null; totalCents: number; jobs: number };
+export type Job = { id: string; userId: string; userName: string; avatarUrl: string | null; client: string; description: string; amountCents: number; date: string; area: Area | null };
+export type LeaderRow = { userId: string; name: string; avatarUrl: string | null; area: Area | null; totalCents: number; jobs: number };
 export type MonthPoint = { month: string; cents: number };
 
 export type Earnings = {
@@ -55,7 +57,7 @@ export type Earnings = {
   list: Job[];
   series: MonthPoint[];
   leaderboard: LeaderRow[] | null;
-  people: { id: string; name: string }[];
+  people: { id: string; name: string; avatarUrl: string | null }[];
 };
 
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
@@ -85,22 +87,22 @@ export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: s
     [
       { sql: `SELECT COALESCE(SUM(amount_cents),0) AS c, COUNT(*) AS n FROM team_jobs j WHERE date BETWEEN ? AND ?${who}`, args: [from, to, ...whoArgs] },
       { sql: `SELECT COALESCE(SUM(amount_cents),0) AS c FROM team_jobs j WHERE date >= ? AND date < ?${who}`, args: [prevFrom ?? from, from, ...whoArgs] },
-      { sql: `SELECT j.id, j.user_id, u.name, j.client, j.description, j.amount_cents, j.date, j.area
+      { sql: `SELECT j.id, j.user_id, u.name, u.email, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at, j.client, j.description, j.amount_cents, j.date, j.area
               FROM team_jobs j JOIN admin_users u ON u.id = j.user_id
               WHERE j.date BETWEEN ? AND ?${who} ORDER BY j.date DESC, j.created_at DESC LIMIT 200`, args: [from, to, ...whoArgs] },
       { sql: `SELECT substr(date,1,7) AS m, SUM(amount_cents) AS c FROM team_jobs j WHERE date >= ?${who} GROUP BY m`, args: [`${months[0]}-01`, ...whoArgs] },
       // Totals only: never job rows. Shown to members only when the founder enabled it.
       { sql: showBoard
-          ? `SELECT u.id, u.name, u.area, COALESCE(SUM(j.amount_cents),0) AS c, COUNT(j.id) AS n
+          ? `SELECT u.id, u.name, u.email, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at, u.area, COALESCE(SUM(j.amount_cents),0) AS c, COUNT(j.id) AS n
              FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id AND j.date BETWEEN ? AND ?
              WHERE u.active = 1 OR j.id IS NOT NULL GROUP BY u.id ORDER BY c DESC, u.name`
           : "SELECT 1 WHERE 0", args: showBoard ? [from, to] : [] },
-      { sql: founder ? "SELECT id, name FROM admin_users ORDER BY name" : "SELECT 1 WHERE 0", args: [] },
+      { sql: founder ? "SELECT id, name, email, avatar_url IS NOT NULL AS has_avatar, updated_at FROM admin_users ORDER BY name" : "SELECT 1 WHERE 0", args: [] },
     ],
     "read",
   );
   const byMonth = new Map(seriesRes.rows.map((r) => [String(r.m), Number(r.c)]));
-  const people = peopleRes.rows.map((r) => ({ id: String(r.id), name: String(r.name) }));
+  const people = peopleRes.rows.map((r) => ({ id: String(r.id), name: String(r.name), avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)) }));
   return {
     scope: { userId, label: userId ? (userId === me.id ? "Tu" : (people.find((p) => p.id === userId)?.name ?? "Utente")) : "Tutto il team" },
     totalCents: Number(sumRes.rows[0]?.c ?? 0),
@@ -110,6 +112,7 @@ export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: s
       id: String(r.id),
       userId: String(r.user_id),
       userName: String(r.name),
+      avatarUrl: avatarFor(String(r.user_id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)),
       client: String(r.client),
       description: String(r.description),
       amountCents: Number(r.amount_cents),
@@ -118,7 +121,7 @@ export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: s
     })),
     series: months.map((m) => ({ month: m, cents: byMonth.get(m) ?? 0 })),
     leaderboard: showBoard
-      ? boardRes.rows.map((r) => ({ userId: String(r.id), name: String(r.name), area: isArea(r.area) ? r.area : null, totalCents: Number(r.c), jobs: Number(r.n) }))
+      ? boardRes.rows.map((r) => ({ userId: String(r.id), name: String(r.name), avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)), area: isArea(r.area) ? r.area : null, totalCents: Number(r.c), jobs: Number(r.n) }))
       : null,
     people,
   };
