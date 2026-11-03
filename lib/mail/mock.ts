@@ -2,16 +2,16 @@ import "server-only";
 import MailComposer from "nodemailer/lib/mail-composer";
 import {
   PAGE_SIZE, parseSource, pickAttachment, replyContextOf, toMessage,
-  type MailProvider, type MailboxView, type OutgoingMail,
+  type ViewQuery, type MailProvider, type MailboxView, type OutgoingMail,
 } from "@/lib/mail/provider";
-import type { FolderId, MailSummary } from "@/lib/mail/types";
+import type { FolderId, MailSummary, MailMutation } from "@/lib/mail/types";
 
 /**
  * Fake mailbox for local development and UI tests (AGENCY_MAIL_MOCK=1, never on Vercel production).
  * Messages are real RFC 822 sources built with nodemailer's composer, so parsing, sanitizing and
  * attachments go through exactly the same code as the IMAP provider. State lives in memory.
  */
-type Stored = { folder: Exclude<FolderId, "all">; uid: number; seen: boolean; threadId: string; date: Date; source: Buffer };
+type Stored = { folder: FolderId; starred?: boolean; labels?: string[]; uid: number; seen: boolean; threadId: string; date: Date; source: Buffer };
 
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAUElEQVR42u3WsQ0AIAgEQFZwAgdy/3l0ASmNxR+hJOEq+NprXns09Xq+gICA4kC/FnfzQEBAeSCXGggISB7yOoCA5CGXGggISB7yOoCAokEHoHQ+ajbjuNMAAAAASUVORK5CYII=",
@@ -90,7 +90,7 @@ const SEEDS: Seed[] = [
 
 const build = (mail: Seed["mail"]) => new MailComposer(mail).compile().build();
 
-type State = { boxes: Stored[]; nextUid: number };
+type State = { boxes: Stored[]; nextUid: number; labels: string[] };
 const g = globalThis as unknown as { __ctrlMockMail?: Promise<State> };
 
 function state(): Promise<State> {
@@ -100,33 +100,35 @@ function state(): Promise<State> {
     let uid = 100;
     for (const s of SEEDS) {
       const date = new Date(now - s.hoursAgo * 3600_000);
-      boxes.push({ folder: s.folder, uid: uid++, seen: s.seen ?? false, threadId: s.thread ?? `t-${uid}`, date, source: await build({ ...s.mail, date }) });
+      boxes.push({ folder: s.folder, uid: uid++, seen: s.seen ?? false, starred: uid % 4 === 0, labels: [uid % 2 ? "Clienti" : "Amministrazione"], threadId: s.thread ?? `t-${uid}`, date, source: await build({ ...s.mail, date }) });
     }
-    return { boxes, nextUid: uid };
+    return { boxes, nextUid: uid, labels: ["Clienti", "Amministrazione"] };
   })();
   return g.__ctrlMockMail;
 }
 
-const inFolder = (st: State, folder: FolderId) => st.boxes.filter((b) => folder === "all" || b.folder === folder).sort((a, b) => a.date.getTime() - b.date.getTime());
+const inFolder = (st: State, folder: FolderId) => st.boxes.filter((b) => folder === "all" ? b.folder !== "spam" && b.folder !== "trash" : folder === "starred" ? Boolean(b.starred) : folder.startsWith("label:") ? b.labels?.includes(folder.slice(6)) : b.folder === folder).sort((a, b) => a.date.getTime() - b.date.getTime());
 /** "all" uses its own uid space (like Gmail All Mail): uid + 10000. */
-const uidIn = (b: Stored, folder: FolderId) => (folder === "all" ? b.uid + 10000 : b.uid);
+const uidIn = (b: Stored, folder: FolderId) => ((folder === "all" || folder === "starred") ? b.uid + 10000 : b.uid);
 const find = (st: State, folder: FolderId, uid: number) => inFolder(st, folder).find((b) => uidIn(b, folder) === uid) ?? null;
 
 async function summarize(b: Stored, folder: FolderId): Promise<MailSummary> {
   const parsed = await parseSource(b.source);
   const m = toMessage(parsed, { folder, uid: uidIn(b, folder), from: null, to: [], subject: "", date: b.date.toISOString(), seen: b.seen, threadId: b.threadId });
-  return { folder, uid: m.uid, key: m.key, from: m.from, to: m.to, subject: m.subject, date: m.date, seen: m.seen, hasAttachments: m.hasAttachments, threadId: m.threadId };
+  return { folder, uid: m.uid, key: m.key, from: m.from, to: m.to, subject: m.subject, date: m.date, starred: b.starred, labels: b.labels, seen: m.seen, hasAttachments: m.hasAttachments, threadId: m.threadId };
 }
 
 export class MockProvider implements MailProvider {
-  async view({ folder, page, open }: { folder: FolderId; page: number; open?: number | null }): Promise<MailboxView> {
+  async view({ folder, page, open, search, category }: ViewQuery): Promise<MailboxView> {
     await new Promise((r) => setTimeout(r, 120)); // a little latency, like a real IMAP round trip
     const st = await state();
-    const folders = (["inbox", "sent", "spam"] as const).map((id) => {
+    const folders = (["inbox", "sent", "drafts", "all", "spam", "trash"] as const).map((id) => {
       const msgs = inFolder(st, id);
       return { id, unread: msgs.filter((m) => !m.seen).length, total: msgs.length };
     });
-    const all = inFolder(st, folder).reverse();
+    let all = inFolder(st, folder).reverse();
+    if (search) all = all.filter((box) => box.source.toString().toLowerCase().includes(search.toLowerCase()));
+    if (category && folder === "inbox") all = all.filter((box) => (box.threadId === "t-news" ? "promotions" : box.threadId === "t-sc" || box.threadId === "t-fattura" ? "updates" : "primary") === category);
     const slice = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     const list = await Promise.all(slice.map((b) => summarize(b, folder)));
     let openMsg: MailboxView["open"] = null;
@@ -134,12 +136,36 @@ export class MockProvider implements MailProvider {
     const hit = open ? find(st, folder, open) : null;
     if (hit) {
       openMsg = toMessage(await parseSource(hit.source), {
-        folder, uid: uidIn(hit, folder), from: null, to: [], subject: "", date: hit.date.toISOString(), seen: hit.seen, threadId: hit.threadId,
+        folder, uid: uidIn(hit, folder), from: null, to: [], subject: "", date: hit.date.toISOString(), starred: hit.starred, labels: hit.labels, seen: hit.seen, threadId: hit.threadId,
       });
       const conv = inFolder(st, "all").filter((b) => b.threadId === hit.threadId);
       if (conv.length > 1) thread = await Promise.all(conv.map((b) => summarize(b, "all")));
     }
-    return { folders, list, total: all.length, open: openMsg, thread };
+    return { labels: st.labels.map((name) => ({ id: `label:${name}`, name, unread: 0, total: 0 })), folders, list, total: all.length, open: openMsg, thread };
+  }
+
+  async createLabel(name: string) { const st = await state(); if (st.labels.includes(name)) throw new Error("exists"); st.labels.push(name); }
+
+  async mutate(folder: FolderId, uids: number[], operation: MailMutation, label?: string) {
+    const st = await state();
+    for (const uid of uids) {
+      const box = find(st, folder, uid); if (!box) continue;
+      if (operation === "read" || operation === "unread") box.seen = operation === "read";
+      else if (operation === "star" || operation === "unstar") box.starred = operation === "star";
+      else if (operation === "archive") box.folder = "all";
+      else if (operation === "trash" || operation === "spam" || operation === "inbox") box.folder = operation;
+      else if (label && st.labels.includes(label)) box.labels = operation === "label" ? [...new Set([...(box.labels ?? []), label])] : box.labels?.filter((value) => value !== label);
+    }
+  }
+
+  async saveDraft(mail: OutgoingMail, previousUid?: number) {
+    const st = await state();
+    const original = mail.attachmentsFrom ? find(st, mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
+    const parsed = original ? await parseSource(original.source) : null;
+    const uid = st.nextUid++;
+    st.boxes.push({ folder: "drafts", uid, seen: true, date: new Date(), threadId: `draft-${uid}`, source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments: [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])] }) });
+    if (previousUid) await this.mutate("drafts", [previousUid], "trash");
+    return uid;
   }
 
   async unread() {
@@ -163,12 +189,15 @@ export class MockProvider implements MailProvider {
 
   async send(mail: OutgoingMail) {
     const st = await state();
+    const original = mail.attachmentsFrom ? find(st, mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
+    const parsed = original ? await parseSource(original.source) : null;
+    const attachments = [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])];
     const messageId = `<${crypto.randomUUID()}@ctrl.example>`;
     const parent = mail.inReplyTo ? st.boxes.find((b) => b.source.includes(mail.inReplyTo!)) : undefined;
     const date = new Date();
     st.boxes.push({
       folder: "sent", uid: st.nextUid++, seen: true, threadId: parent?.threadId ?? `t-${messageId}`, date,
-      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
+      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
     });
     return { messageId };
   }

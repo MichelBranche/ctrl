@@ -1,4 +1,7 @@
 import { Suspense } from "react";
+import { ProfileForm } from "@/components/admin/profile-form";
+import { db } from "@/lib/db";
+import { ProfilePhoto } from "@/components/admin/profile-photo";
 import { PasswordForm } from "@/components/admin/password-form";
 import { requireSection } from "@/lib/admin";
 import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
@@ -15,6 +18,8 @@ const fmt = (ms: number) => new Date(ms).toLocaleString("it-IT", { timeZone: "Eu
 
 async function Body() {
   const admin = await requireSection("settings");
+  const result = await db().execute({ sql: "SELECT contact_email, phone, website FROM admin_users WHERE id = ?", args: [admin.id] });
+  const profile = result.rows[0];
   return (
     <main className="adm-main">
       <header className="adm-top">
@@ -23,6 +28,12 @@ async function Body() {
         </div>
       </header>
       <div className="adm-grid2">
+        <section className="adm-panel">
+          <h2 className="adm-h2">Il tuo profilo</h2>
+          <p className="adm-muted">Lo staff vedrà questa foto sulle email che apri. Il nome compare passando il mouse sull’avatar.</p>
+          <ProfilePhoto current={admin.avatarUrl} name={admin.name} />
+          <ProfileForm name={admin.name} loginEmail={admin.email} contactEmail={String(profile?.contact_email ?? "")} phone={String(profile?.phone ?? "")} website={String(profile?.website ?? "")} />
+        </section>
         <section className="adm-panel">
           <h2 className="adm-h2">Sessione</h2>
           {admin ? (

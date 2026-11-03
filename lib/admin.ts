@@ -4,6 +4,7 @@ import { jwtVerify, SignJWT } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { avatarFor } from "@/lib/avatars";
 import { db, dbConfigured } from "@/lib/db";
 import { ensureTeamSchema } from "@/lib/migrate";
 import { canAccess, isArea, isRole, type Area, type Role, type Section } from "@/lib/team-types";
@@ -93,6 +94,7 @@ export type AdminUser = {
   name: string;
   role: Role;
   area: Area | null;
+  avatarUrl: string | null;
   emailAccess: boolean;
   issuedAt: number;
   expiresAt: number;
@@ -209,7 +211,7 @@ export const getAdmin = cache(async (): Promise<AdminUser | null> => {
     if (!payload.sub) return null;
     await ensureTeam();
     const res = await db().execute({
-      sql: "SELECT id, email, name, role, area, email_access, session_version FROM admin_users WHERE id = ? AND active = 1",
+      sql: "SELECT id, email, name, role, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version FROM admin_users WHERE id = ? AND active = 1",
       args: [payload.sub],
     });
     const u = res.rows[0];
@@ -221,6 +223,7 @@ export const getAdmin = cache(async (): Promise<AdminUser | null> => {
       name: String(u.name),
       role,
       area: isArea(u.area) ? u.area : null,
+      avatarUrl: avatarFor(String(u.id), Number(u.has_avatar) === 1, u.updated_at, String(u.email)),
       emailAccess: role === "founder" || Number(u.email_access) === 1,
       issuedAt: Number(payload.iat ?? 0) * 1000,
       expiresAt: Number(payload.exp ?? 0) * 1000,

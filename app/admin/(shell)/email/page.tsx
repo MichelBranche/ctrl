@@ -1,13 +1,19 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ClaimButton, ComposeForm, MailFrame, MailLive, MarkOpened, UnreadButton } from "@/components/admin/email/mail-client";
+import { ComposeForm, MailFrame, MailLive, MailOpening, MarkOpened, UnreadButton } from "@/components/admin/email/mail-client";
 import { requireSection, type AdminUser } from "@/lib/admin";
 import { agencyAddress, mailProvider } from "@/lib/mail";
 import { collabFor } from "@/lib/mail/collab";
 import { MailError, PAGE_SIZE, type MailboxView } from "@/lib/mail/provider";
 import { emailDocument, sanitizeEmailHtml } from "@/lib/mail/sanitize";
-import { FOLDER_LABEL, isFolder, type Address, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
+import { CATEGORIES, folderLabel, isFolder, type MailCategory, type Address, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
+
+import { MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, MailSelection, MailSelectionBar, MailStar } from "@/components/admin/email/mailbox-ui";
+
+import { MailPeople, MailPeopleProvider, MailTeamStatus } from "@/components/admin/email/mail-people";
+
+import { MailSplitPane } from "@/components/admin/email/mail-split-pane";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -33,10 +39,12 @@ function MailSkeleton() {
   );
 }
 
-type Q = { f: FolderId; p: number; m: number | null; img: boolean; compose: "new" | "reply" | "all" | null };
+type Q = { search?: string; category?: MailCategory; f: FolderId; p: number; m: number | null; img: boolean; compose: "new" | "reply" | "all" | "forward" | "draft" | null };
 
 function href(q: Partial<Q> & { f: FolderId }): string {
   const s = new URLSearchParams();
+  if (q.search) s.set("search", q.search);
+  if (q.category) s.set("category", q.category);
   if (q.f !== "inbox") s.set("f", q.f);
   if (q.p && q.p > 1) s.set("p", String(q.p));
   if (q.m) s.set("m", String(q.m));
@@ -61,18 +69,20 @@ const longDate = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZo
 const who = (a: Address | null | undefined) => (a ? a.name || a.address : "—");
 const fmtAddr = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address);
 const size = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
-const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const [me, sp] = await Promise.all([requireSection("email"), searchParams]);
   const f = one(sp.f);
   const compose = one(sp.compose);
   const q: Q = {
+    search: one(sp.search)?.trim().slice(0, 300),
+    category: one(sp.category) && Object.hasOwn(CATEGORIES, one(sp.category)!) ? one(sp.category) as MailCategory : undefined,
     f: isFolder(f) ? f : "inbox",
     p: Math.min(Math.max(Number.parseInt(one(sp.p) ?? "1", 10) || 1, 1), 500),
     m: /^\d{1,10}$/.test(one(sp.m) ?? "") ? Number(one(sp.m)) : null,
     img: one(sp.img) === "1",
-    compose: compose === "new" || compose === "reply" || compose === "all" ? compose : null,
+    compose: compose === "new" || compose === "reply" || compose === "all" || compose === "forward" || compose === "draft" ? compose : null,
   };
   const address = agencyAddress();
   const provider = mailProvider();
@@ -81,7 +91,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
   let view: MailboxView;
   try {
-    view = await provider.view({ folder: q.f, page: q.p, open: q.m });
+    view = await provider.view({ folder: q.f, page: q.p, open: q.m, search: q.search, category: q.category });
   } catch (error) {
     return (
       <>
@@ -101,21 +111,51 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   return (
     <>
       <Header address={address} q={q} />
-      <nav className="adm-tabs adm-mail-folders" aria-label="Cartelle">
-        {view.folders.map((fo) => (
-          <Link key={fo.id} href={href({ f: fo.id }) as Route} className="adm-tab" aria-current={q.f === fo.id ? "page" : undefined}>
-            {FOLDER_LABEL[fo.id]}
-            {fo.unread && fo.id !== "sent" ? <span className="adm-count">{fo.unread}</span> : null}
-          </Link>
-        ))}
-        {q.f === "all" ? <span className="adm-tab" aria-current="page">Conversazione</span> : null}
-      </nav>
-      <div className="adm-mail" data-detail={detailOpen || undefined}>
-        <section className="adm-panel adm-mail-list adm-rise" aria-label={`Messaggi: ${FOLDER_LABEL[q.f]}`}>
+      <MailPeopleProvider initial={[...collab]}>
+      <div className="mail-workspace">
+        <aside className="mail-sidebar" aria-label="Navigazione email">
+          <Link className="mail-compose-button" href={href({ f: q.f, compose: "new" }) as Route}><MailIcon name="write" />Scrivi</Link>
+          <nav aria-label="Cartelle email">
+            {(["inbox", "starred", "sent", "drafts", "all", "spam", "trash"] as const).map((id) => {
+              const count = view.folders.find((folder) => folder.id === id);
+              return <Link key={id} className="mail-folder" aria-current={q.f === id && !q.search ? "page" : undefined} href={href({ f: id }) as Route}>
+                <MailIcon name={id === "starred" ? "star" : id} /><span>{folderLabel(id)}<MailOpening label="Caricamento…" /></span>{count?.unread ? <b>{count.unread}</b> : null}
+              </Link>;
+            })}
+          </nav>
+          <div className="mail-sidebar-heading">Etichette</div>
+          <nav aria-label="Etichette Gmail">
+            {(view.labels ?? []).map((label) => <Link key={label.id} className="mail-folder" aria-current={q.f === label.id ? "page" : undefined} href={href({ f: label.id }) as Route}><MailIcon name="label" /><span>{label.name}<MailOpening label="Caricamento…" /></span>{label.unread ? <b>{label.unread}</b> : null}</Link>)}
+            {!view.labels?.length ? <p className="mail-label-empty">Le tue etichette Gmail appariranno qui.</p> : null}
+          </nav>
+          <MailLabelCreate />
+          <p className="mail-sidebar-foot">Sincronizzata con Gmail</p>
+        </aside>
+        <div className="mail-content">
+          <form className="mail-search" action="/admin/email" role="search">
+            <MailIcon name="search" />
+            <input type="hidden" name="f" value={q.f} />
+            <input aria-label="Cerca nella posta" type="search" name="search" defaultValue={q.search} key={q.search ?? ""} placeholder="Cerca nella posta · mittente, oggetto, from:, has:attachment…" maxLength={300} />
+            <button className="adm-btn adm-btn-sm" type="submit">Cerca</button>
+            {q.search ? <Link className="adm-link" href={href({ f: q.f }) as Route}>Cancella</Link> : null}
+          </form>
+          {q.f === "inbox" && !q.search ? <nav className="mail-categories" aria-label="Categorie Gmail">
+            <Link aria-current={!q.category ? "page" : undefined} href={href({ f: "inbox" }) as Route}>Tutte</Link>
+            {Object.entries(CATEGORIES).map(([id, name]) => <Link key={id} aria-current={q.category === id ? "page" : undefined} href={href({ f: "inbox", category: id as MailCategory }) as Route}>{name}<MailOpening label="Caricamento…" /></Link>)}
+          </nav> : <div className="mail-view-title"><strong>{folderLabel(q.f)}</strong>{q.search ? <span>Risultati per “{q.search}”</span> : null}<span>{view.total} messaggi</span></div>}
+          <MailSelection key={`${q.f}:${q.search}:${q.category}:${q.p}:${view.list.map((m) => m.uid).join(",")}`} folder={q.f} uids={view.list.map((message) => message.uid)} labels={view.labels ?? []}>
+          <MailSelectionBar />
+      <MailSplitPane detail={detailOpen}>
+        <section className="adm-panel adm-mail-list adm-rise" aria-label={`Messaggi: ${folderLabel(q.f)}`}>
           <MailList q={q} list={view.list} collab={collab} me={me} />
           <Pager q={q} total={view.total} />
         </section>
         <section className="adm-panel adm-mail-detail adm-rise" style={{ "--i": 1 } as React.CSSProperties}>
+          {view.open ? <nav className="mail-message-navigation" aria-label="Naviga tra i messaggi">
+            <Link href={href({ ...q, m: null, compose: null }) as Route} scroll={false}>← Lista</Link>
+            {view.list.findIndex((m) => m.uid === q.m) > 0 ? <Link href={href({ ...q, m: view.list[view.list.findIndex((m) => m.uid === q.m) - 1].uid, compose: null }) as Route} scroll={false} aria-label="Messaggio precedente">↑ Precedente<MailOpening /></Link> : null}
+            {view.list.findIndex((m) => m.uid === q.m) >= 0 && view.list.findIndex((m) => m.uid === q.m) < view.list.length - 1 ? <Link href={href({ ...q, m: view.list[view.list.findIndex((m) => m.uid === q.m) + 1].uid, compose: null }) as Route} scroll={false} aria-label="Messaggio successivo">↓ Successivo<MailOpening /></Link> : null}
+          </nav> : null}
           {q.compose === "new" ? (
             <>
               <div className="adm-panel-head">
@@ -125,7 +165,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <ComposeForm draft={{ to: "", cc: "", subject: "", body: "" }} reply={null} from={address} cancelHref={href({ f: q.f, p: q.p })} />
             </>
           ) : view.open ? (
-            <Detail q={q} msg={view.open} thread={view.thread} collab={collab} me={me} address={address} />
+            <Detail q={q} msg={view.open} thread={view.thread} collab={collab} me={me} address={address} labels={view.labels ?? []} />
           ) : q.m ? (
             <p className="adm-empty">Messaggio non trovato: forse è stato spostato o eliminato in Gmail.</p>
           ) : (
@@ -136,21 +176,25 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             </div>
           )}
         </section>
+      </MailSplitPane>
+          </MailSelection>
+        </div>
       </div>
+      </MailPeopleProvider>
     </>
   );
 }
 
-function Header({ address, q }: { address: string; q: Q }) {
+function Header({ address }: { address: string; q: Q }) {
   return (
     <header className="adm-top">
       <div>
-        <h1 className="adm-h1">Email</h1>
+        <h1 className="adm-h1">Posta</h1>
         <p className="adm-muted">Casella condivisa dell&apos;agenzia · {address}</p>
       </div>
       <div className="adm-top-actions">
         <MailLive renderedAt={renderStamp()} />
-        <Link className="adm-btn adm-btn-primary" href={href({ f: q.f, p: q.p, compose: "new" }) as Route}>Scrivi</Link>
+
       </div>
     </header>
   );
@@ -181,44 +225,25 @@ function NotConnected({ founder }: { founder: boolean }) {
   );
 }
 
-function CollabChips({ c, me }: { c: Collab | undefined; me: AdminUser }) {
-  if (!c) return null;
-  const others = c.readBy.filter((r) => r.id !== me.id);
-  return (
-    <span className="adm-mail-chips">
-      {c.claimedBy ? (
-        <span className="adm-badge adm-mail-claim" data-mine={c.claimedBy.id === me.id || undefined}>
-          In carico: {c.claimedBy.id === me.id ? "tu" : c.claimedBy.name}
-        </span>
-      ) : null}
-      {others.length ? (
-        <span className="adm-mail-readers" title={`Letta da ${others.map((r) => r.name).join(", ")}`}>
-          {others.slice(0, 3).map((r) => (
-            <span key={r.id} className="adm-avatar adm-avatar-xs" aria-hidden="true">{initials(r.name)}</span>
-          ))}
-          <span className="adm-sr">Letta da {others.map((r) => r.name).join(", ")}</span>
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
 function MailList({ q, list, collab, me }: { q: Q; list: MailSummary[]; collab: Map<string, Collab>; me: AdminUser }) {
-  if (!list.length) return <p className="adm-empty">Nessun messaggio in {FOLDER_LABEL[q.f].toLowerCase()}.</p>;
+  if (!list.length) return <p className="adm-empty">Nessun messaggio in {folderLabel(q.f).toLowerCase()}.</p>;
   const sent = q.f === "sent";
   return (
     <ul className="adm-mail-items">
       {list.map((m) => (
-        <li key={`${m.folder}:${m.uid}`}>
+        <li key={`${m.folder}:${m.uid}`} className="mail-message-row" data-current={q.m === m.uid || undefined}>
+          <MailRowCheck uid={m.uid} subject={m.subject} />
+          <MailStar folder={m.folder} uid={m.uid} starred={m.starred} />
           <Link
-            href={href({ f: q.f, p: q.p, m: m.uid }) as Route}
+            href={href({ ...q, m: m.uid, compose: null }) as Route}
+            scroll={false}
             className="adm-mail-item"
-            data-unread={!m.seen || undefined}
+            data-unread={(!m.seen && q.m !== m.uid) || undefined}
             aria-current={q.m === m.uid ? "true" : undefined}
             prefetch={false}
           >
             <span className="adm-mail-from">
-              {!m.seen ? <span className="adm-mail-dot" aria-label="Non letta" /> : null}
+              {!m.seen && q.m !== m.uid ? <span className="adm-mail-dot" aria-label="Non letta" /> : null}
               {sent ? `A: ${m.to.map(who).join(", ") || "—"}` : who(m.from)}
             </span>
             <time className="adm-muted" dateTime={m.date}>{shortDate(m.date)}</time>
@@ -228,7 +253,9 @@ function MailList({ q, list, collab, me }: { q: Q; list: MailSummary[]; collab: 
               ) : null}
               {m.subject || "(nessun oggetto)"}
             </span>
-            <CollabChips c={collab.get(m.key)} me={me} />
+            {m.labels?.length ? <span className="mail-row-labels">{m.labels.slice(0, 3).map((label) => <span key={label}>{label}</span>)}</span> : null}
+            <MailPeople mkey={m.key} initial={collab.get(m.key)} meId={me.id} />
+            <MailOpening />
           </Link>
         </li>
       ))}
@@ -241,9 +268,9 @@ function Pager({ q, total }: { q: Q; total: number }) {
   if (pages <= 1) return null;
   return (
     <nav className="adm-mail-pager" aria-label="Pagine">
-      {q.p > 1 ? <Link className="adm-btn adm-btn-sm" href={href({ f: q.f, p: q.p - 1 }) as Route}>← Più recenti</Link> : <span />}
+      {q.p > 1 ? <Link className="adm-btn adm-btn-sm" href={href({ ...q, p: q.p - 1, m: null, compose: null }) as Route}>← Più recenti</Link> : <span />}
       <span className="adm-muted">Pagina {q.p} di {pages}</span>
-      {q.p < pages ? <Link className="adm-btn adm-btn-sm" href={href({ f: q.f, p: q.p + 1 }) as Route}>Meno recenti →</Link> : <span />}
+      {q.p < pages ? <Link className="adm-btn adm-btn-sm" href={href({ ...q, p: q.p + 1, m: null, compose: null }) as Route}>Meno recenti →</Link> : <span />}
     </nav>
   );
 }
@@ -265,15 +292,15 @@ function replyDraft(msg: MailMessage, all: boolean, address: string) {
   };
 }
 
-function Detail({ q, msg, thread, collab, me, address }: { q: Q; msg: MailMessage; thread: MailSummary[]; collab: Map<string, Collab>; me: AdminUser; address: string }) {
+function Detail({ q, msg, thread, collab, me, address, labels }: { labels: import("@/lib/mail/types").MailLabel[]; q: Q; msg: MailMessage; thread: MailSummary[]; collab: Map<string, Collab>; me: AdminUser; address: string }) {
   const c = collab.get(msg.key);
-  const att = (i: number) => `/admin/email/attachment?f=${msg.folder}&m=${msg.uid}&i=${i}`;
+  const att = (i: number) => `/admin/email/attachment?f=${encodeURIComponent(msg.folder)}&m=${msg.uid}&i=${i}`;
   let body: React.ReactNode;
   let blocked = 0;
   if (msg.html) {
     const clean = sanitizeEmailHtml(msg.html, {
       showImages: q.img,
-      cidUrl: (cid) => `/admin/email/attachment?f=${msg.folder}&m=${msg.uid}&cid=${encodeURIComponent(cid)}`,
+      cidUrl: (cid) => `/admin/email/attachment?f=${encodeURIComponent(msg.folder)}&m=${msg.uid}&cid=${encodeURIComponent(cid)}`,
     });
     blocked = clean.blockedImages;
     body = <MailFrame doc={emailDocument(clean.html, q.img)} title={`Contenuto: ${msg.subject}`} />;
@@ -281,13 +308,13 @@ function Detail({ q, msg, thread, collab, me, address }: { q: Q; msg: MailMessag
     body = <div className="adm-mail-text">{msg.text || "(messaggio vuoto)"}</div>;
   }
   const files = msg.attachments.filter((a) => !a.inline);
-  const back = href({ f: q.f, p: q.p });
+  const back = href({ ...q, m: null, compose: null });
   const self = href({ f: q.f, p: q.p, m: msg.uid });
-  const claimedByOther = c?.claimedBy && c.claimedBy.id !== me.id ? c.claimedBy.name : null;
   return (
     <article className="adm-mail-msg">
       <MarkOpened folder={msg.folder} uid={msg.uid} mkey={msg.key} />
       <Link className="adm-back adm-mail-back" href={back as Route}>← Torna alla lista</Link>
+      <MailMessageActions folder={msg.folder} uids={[msg.uid]} backHref={back} labels={labels} starred={msg.starred} applied={msg.labels} />
       <h2 className="adm-mail-title">{msg.subject || "(nessun oggetto)"}</h2>
       <dl className="adm-mail-meta">
         <dt>Da</dt><dd>{msg.from ? fmtAddr(msg.from) : "—"}</dd>
@@ -296,16 +323,11 @@ function Detail({ q, msg, thread, collab, me, address }: { q: Q; msg: MailMessag
         <dt>Data</dt><dd><time dateTime={msg.date}>{longDate(msg.date)}</time></dd>
       </dl>
 
-      <div className="adm-mail-team">
-        <span className="adm-muted">
-          {c?.claimedBy ? <>In carico a <strong>{c.claimedBy.id === me.id ? "te" : c.claimedBy.name}</strong> · </> : "Nessuno l'ha presa in carico · "}
-          Letta da {c?.readBy.length ? c.readBy.map((r) => (r.id === me.id ? "te" : r.name)).join(", ") : "te"}
-        </span>
-        <ClaimButton mkey={msg.key} mine={c?.claimedBy?.id === me.id} other={claimedByOther} />
-      </div>
+      <MailTeamStatus mkey={msg.key} initial={c} meId={me.id} />
 
       <div className="adm-row-actions adm-mail-actions">
-        <Link className="adm-btn adm-btn-sm adm-btn-primary" href={href({ ...q, compose: "reply" }) as Route}>Rispondi</Link>
+        {msg.folder === "drafts" ? <Link className="adm-btn adm-btn-sm adm-btn-primary" href={href({ ...q, compose: "draft" }) as Route}>Modifica bozza</Link> : <Link className="adm-btn adm-btn-sm adm-btn-primary" href={href({ ...q, compose: "reply" }) as Route}>Rispondi</Link>}
+        <Link className="adm-btn adm-btn-sm" href={href({ ...q, compose: "forward" }) as Route}>Inoltra</Link>
         {msg.to.length + msg.cc.length > 1 ? <Link className="adm-btn adm-btn-sm" href={href({ ...q, compose: "all" }) as Route}>Rispondi a tutti</Link> : null}
         {msg.folder !== "sent" ? <UnreadButton folder={msg.folder} uid={msg.uid} href={back} /> : null}
       </div>
@@ -338,15 +360,22 @@ function Detail({ q, msg, thread, collab, me, address }: { q: Q; msg: MailMessag
         </ul>
       ) : null}
 
-      {q.compose === "reply" || q.compose === "all" ? (
+      {q.compose === "reply" || q.compose === "all" || q.compose === "forward" || q.compose === "draft" ? (
         <section className="adm-mail-reply" aria-label="Risposta">
-          <ComposeForm draft={replyDraft(msg, q.compose === "all", address)} reply={{ folder: msg.folder, uid: msg.uid }} from={address} cancelHref={self} />
+          <ComposeForm
+            key={`${msg.folder}:${msg.uid}:${q.compose}`}
+            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: msg.text } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all", address)}
+            reply={q.compose === "reply" || q.compose === "all" ? { folder: msg.folder, uid: msg.uid } : null}
+            original={(q.compose === "draft" || q.compose === "forward") && msg.attachments.length ? { folder: msg.folder, uid: msg.uid, files: msg.attachments.length } : undefined}
+            draftUid={q.compose === "draft" ? msg.uid : undefined}
+            from={address} cancelHref={self}
+          />
         </section>
       ) : null}
 
       {thread.length > 1 ? (
-        <section className="adm-mail-thread" aria-label="Conversazione">
-          <h3 className="adm-kicker">Conversazione · {thread.length} messaggi</h3>
+        <details className="adm-mail-thread mail-thread-compact" aria-label="Conversazione">
+          <summary><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M8 4H3v12h5M8 8h13v12H8V8Z" /></svg><span>Conversazione</span><span className="mail-thread-count">{thread.length} messaggi</span><span className="mail-thread-chevron" aria-hidden="true">⌄</span></summary>
           <ol>
             {thread.map((t) => {
               const current = t.key === msg.key;
@@ -355,13 +384,14 @@ function Detail({ q, msg, thread, collab, me, address }: { q: Q; msg: MailMessag
                   <Link href={href({ f: "all", m: t.uid }) as Route} prefetch={false} aria-current={current ? "true" : undefined}>
                     <strong>{t.from?.address.toLowerCase() === address.toLowerCase() ? "CTRL (noi)" : who(t.from)}</strong>
                     <span className="adm-muted">{shortDate(t.date)}</span>
+                    <MailOpening />
                   </Link>
-                  <CollabChips c={collab.get(t.key)} me={me} />
+                  <MailPeople mkey={t.key} initial={collab.get(t.key)} meId={me.id} />
                 </li>
               );
             })}
           </ol>
-        </section>
+        </details>
       ) : null}
     </article>
   );

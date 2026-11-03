@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
   active INTEGER NOT NULL DEFAULT 1, session_version INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  avatar_url TEXT, contact_email TEXT, phone TEXT, website TEXT,
   last_login_at TEXT
 );
 CREATE TABLE IF NOT EXISTS team_jobs (

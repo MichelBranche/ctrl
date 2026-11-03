@@ -3,8 +3,8 @@
 import { guardSection } from "@/lib/admin";
 import { KEY, finishSend, logSend, markReadBy, sendAllowed, setClaim } from "@/lib/mail/collab";
 import { mailProvider } from "@/lib/mail";
-import { MailError } from "@/lib/mail/provider";
-import { isFolder, type FolderId } from "@/lib/mail/types";
+import { MailError, type OutgoingFile } from "@/lib/mail/provider";
+import { isFolder, type FolderId, type MailMutation } from "@/lib/mail/types";
 
 /* Every action re-checks the session and the "email" permission server-side (guardSection throws otherwise). */
 
@@ -42,7 +42,7 @@ export async function toggleClaim(key: string, claim: boolean): Promise<{ ok: bo
   return { ok: true };
 }
 
-export type SendState = { ok?: string; error?: string; at?: number };
+export type SendState = { draftUid?: number; ok?: string; error?: string; at?: number };
 
 const EMAIL = /^[^\s@<>(),;:"]+@[^\s@<>(),;:"]+\.[^\s@<>(),;:"]+$/;
 const parseList = (v: FormDataEntryValue | null) =>
@@ -51,6 +51,14 @@ const parseList = (v: FormDataEntryValue | null) =>
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => s.match(/<([^>]+)>$/)?.[1]?.trim() ?? s);
+
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+async function uploadedFiles(form: FormData): Promise<OutgoingFile[]> {
+  const files = form.getAll("attachments").filter((value): value is File => value instanceof File && value.size > 0);
+  if (files.length > 10 || files.reduce((size, file) => size + file.size, 0) > MAX_UPLOAD_BYTES) throw new Error("Massimo 10 allegati, 3 MB complessivi.");
+  return Promise.all(files.map(async (file) => ({ filename: file.name.replace(/[\r\n]/g, "_"), contentType: file.type || "application/octet-stream", content: Buffer.from(await file.arrayBuffer()) })));
+}
+const attachmentOrigin = (form: FormData) => form.get("keepOriginal") === "on" ? validRef(form.get("originalFolder"), Number(form.get("originalUid"))) ?? undefined : undefined;
 
 export async function sendMail(_: SendState, form: FormData): Promise<SendState> {
   let me;
@@ -92,14 +100,60 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
     }
   }
 
+  let attachments: OutgoingFile[];
+  try { attachments = await uploadedFiles(form); }
+  catch (error) { return { error: (error as Error).message }; }
   const id = crypto.randomUUID();
   await logSend({ id, userId: me.id, recipients: [...to, ...cc], subject, inReplyTo });
   try {
-    const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references });
+    const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form) });
     await finishSend(id, messageId);
+    const draftUid = Number(form.get("draftUid"));
+    if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
     return { ok: `Inviata a ${to.join(", ")}.`, at: Date.now() };
   } catch (error) {
     await finishSend(id, null).catch(() => {});
     return { error: error instanceof MailError ? error.message : "Invio non riuscito, riprova tra poco." };
   }
+}
+
+export async function organizeMail(folder: string, uids: number[], operation: MailMutation, label?: string): Promise<{ error?: string; ok?: boolean }> {
+  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const operations: MailMutation[] = ["archive", "trash", "inbox", "spam", "read", "unread", "star", "unstar", "label", "unlabel"];
+  if (!isFolder(folder) || !Array.isArray(uids) || !uids.length || uids.length > 30 || !uids.every((uid) => Number.isSafeInteger(uid) && uid > 0) || !operations.includes(operation)) return { error: "Selezione non valida." };
+  const provider = mailProvider();
+  if (!provider?.mutate) return { error: "Organizzazione non disponibile in questa casella." };
+  try {
+    await provider.mutate(folder, [...new Set(uids)], operation, label);
+    return { ok: true };
+  } catch (error) { return { error: error instanceof MailError ? error.message : "Operazione non riuscita. Riprova." }; }
+}
+
+export async function createMailLabel(_: { error?: string; ok?: boolean }, form: FormData): Promise<{ error?: string; ok?: boolean }> {
+  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const name = String(form.get("name") ?? "").trim();
+  if (!name || name.length > 100 || /[\x00-\x1f\x7f]/.test(name) || name.startsWith("\\") || name.startsWith("[")) return { error: "Scegli un nome valido (massimo 100 caratteri)." };
+  const provider = mailProvider();
+  if (!provider?.createLabel) return { error: "Etichette non disponibili in questa casella." };
+  try { await provider.createLabel(name); return { ok: true }; }
+  catch { return { error: "Etichetta non creata: il nome potrebbe essere già in uso." }; }
+}
+
+export async function saveMailDraft(_: SendState, form: FormData): Promise<SendState> {
+  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const provider = mailProvider();
+  if (!provider?.saveDraft) return { error: "Salvataggio bozze non disponibile." };
+  const to = parseList(form.get("to"));
+  const cc = parseList(form.get("cc"));
+  if ([...to, ...cc].some((address) => !EMAIL.test(address))) return { error: "Controlla gli indirizzi email." };
+  const subject = String(form.get("subject") ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, 250);
+  const text = String(form.get("body") ?? "").replace(/\r\n/g, "\n");
+  if (text.length > 50_000 || to.length + cc.length > 20) return { error: "Bozza troppo lunga." };
+  const prior = Number(form.get("draftUid"));
+  if (!Number.isSafeInteger(prior) || prior < 0) return { error: "Bozza non valida." };
+  try {
+    const attachments = await uploadedFiles(form);
+    const draftUid = await provider.saveDraft({ to, cc, subject, text, attachments, attachmentsFrom: attachmentOrigin(form) }, prior || undefined);
+    return { ok: "Bozza salvata in Gmail.", at: Date.now(), draftUid };
+  } catch (error) { return { error: error instanceof MailError ? error.message : "Impossibile salvare la bozza. Riprova." }; }
 }

@@ -136,6 +136,8 @@ export function ensureTeamSchema(): Promise<void> {
     // Columns added after the first release of these tables go here via addColumn (tolerates concurrent migrators).
     const cols = await db().execute("PRAGMA table_info(admin_users)");
     const have = new Set(cols.rows.map((r) => String(r.name)));
+    for (const name of ["contact_email", "phone", "website"]) if (!have.has(name)) await addColumn("admin_users", name, "TEXT");
+    if (!have.has("avatar_url")) await addColumn("admin_users", "avatar_url", "TEXT");
     if (!have.has("last_login_at")) await addColumn("admin_users", "last_login_at", "TEXT");
     if (!have.has("email_access")) await addColumn("admin_users", "email_access", "INTEGER NOT NULL DEFAULT 0");
   }).catch((error) => {

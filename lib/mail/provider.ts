@@ -1,17 +1,20 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
-import type { Address, FolderId, MailAttachment, MailMessage, MailSummary } from "@/lib/mail/types";
+import type { MailLabel, MailCategory, MailMutation, Address, FolderId, MailAttachment, MailMessage, MailSummary } from "@/lib/mail/types";
 
 /**
  * Everything the admin needs from a mailbox. The real implementation speaks IMAP/SMTP (imap.ts);
- * a fake one (mock.ts) serves seeded messages for local tests. Every call opens and closes its own
- * short connection, so it fits serverless functions.
+ * a fake one (mock.ts) serves seeded messages for local tests. IMAP leases bounded,
+ * short-lived connections scoped to one account within a warm server instance.
  */
 export interface MailProvider {
   /** Folder list with unread counts, one page of a folder (newest first) and optionally one opened message with its conversation. */
   view(query: ViewQuery): Promise<MailboxView>;
   unread(): Promise<number>;
+  mutate?(folder: FolderId, uids: number[], operation: MailMutation, label?: string): Promise<void>;
+  createLabel?(name: string): Promise<void>;
+  saveDraft?(mail: OutgoingMail, previousUid?: number): Promise<number>;
   /** Marks a message seen/unseen on the server (\Seen flag). */
   setSeen(folder: FolderId, uid: number, seen: boolean): Promise<void>;
   attachment(folder: FolderId, uid: number, pick: { index?: number; cid?: string }): Promise<AttachmentFile | null>;
@@ -20,9 +23,10 @@ export interface MailProvider {
   send(mail: OutgoingMail): Promise<{ messageId: string }>;
 }
 
-export type ViewQuery = { folder: FolderId; page: number; open?: number | null };
+export type ViewQuery = { folder: FolderId; page: number; open?: number | null; search?: string; category?: MailCategory };
 export type FolderInfo = { id: FolderId; unread: number; total: number };
 export type MailboxView = {
+  labels?: MailLabel[];
   folders: FolderInfo[];
   list: MailSummary[];
   total: number;
@@ -31,7 +35,8 @@ export type MailboxView = {
 };
 export type AttachmentFile = { filename: string; contentType: string; content: Buffer };
 export type ReplyContext = { messageId: string | null; references: string[]; subject: string; replyTo: Address[]; from: Address | null; to: Address[]; cc: Address[] };
-export type OutgoingMail = { to: string[]; cc: string[]; subject: string; text: string; inReplyTo?: string | null; references?: string[] };
+export type OutgoingFile = { filename: string; contentType: string; content: Buffer };
+export type OutgoingMail = { attachments?: OutgoingFile[]; attachmentsFrom?: { folder: FolderId; uid: number }; to: string[]; cc: string[]; subject: string; text: string; inReplyTo?: string | null; references?: string[] };
 
 export const PAGE_SIZE = 30;
 /** Messages bigger than this are not downloaded for viewing (Vercel function memory and time). */

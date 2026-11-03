@@ -1,12 +1,18 @@
 "use client";
 
 import type { Route } from "next";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { markOpened, markUnread, sendMail, toggleClaim, type SendState } from "@/app/admin/email-actions";
+import { markOpened, markUnread, sendMail, saveMailDraft, toggleClaim, type SendState } from "@/app/admin/email-actions";
 
 const POLL_MS = 30_000;
+
+/** Feedback belongs inside the Link, so it follows the latest navigation. */
+export function MailOpening({ label = "Apertura email…" }: { label?: string }) {
+  const { pending } = useLinkStatus();
+  return <span className="adm-mail-opening" role="status">{pending ? label : ""}</span>;
+}
 
 /** Re-renders the inbox from the server every ~30s while the tab is visible, plus a manual refresh. */
 export function MailLive({ renderedAt }: { renderedAt: number }) {
@@ -51,14 +57,15 @@ export function MailLive({ renderedAt }: { renderedAt: number }) {
 
 /** Marks the opened message as read (IMAP \Seen + "letta da") once it is actually shown, never on prefetch. */
 export function MarkOpened({ folder, uid, mkey }: { folder: string; uid: number; mkey: string }) {
-  const router = useRouter();
   const done = useRef<string | null>(null);
   useEffect(() => {
     const id = `${folder}:${uid}`;
     if (done.current === id) return;
     done.current = id;
-    markOpened(folder, uid, mkey).then(() => { router.refresh(); window.dispatchEvent(new Event("ctrl-mail-changed")); }, () => {});
-  }, [folder, uid, mkey, router]);
+    // A full refresh here redownloaded the newly opened message and could race
+    // the next click. The scheduled refresh reconciles read/collaboration state.
+    markOpened(folder, uid, mkey).then(() => { window.dispatchEvent(new Event("ctrl-mail-changed")); }, () => {});
+  }, [folder, uid, mkey]);
   return null;
 }
 
@@ -100,21 +107,26 @@ export function MailFrame({ doc, title }: { doc: string; title: string }) {
 }
 
 export function ClaimButton({ mkey, mine, other }: { mkey: string; mine: boolean; other: string | null }) {
-  const router = useRouter();
   const [pending, start] = useTransition();
-  return (
+  const [error, setError] = useState("");
+  return <span className="mail-claim-action">
     <button
       type="button"
       className={`adm-btn adm-btn-sm${mine ? "" : " adm-btn-primary"}`}
       disabled={pending}
       onClick={() => start(async () => {
-        await toggleClaim(mkey, !mine);
-        router.refresh();
+        setError("");
+        try {
+          const result = await toggleClaim(mkey, !mine);
+          if (!result.ok) { setError("Presa in carico non aggiornata. Riprova."); return; }
+          window.dispatchEvent(new Event("ctrl-mail-changed"));
+        } catch { setError("Connessione interrotta. Riprova."); }
       })}
     >
       {pending ? "…" : mine ? "Rilascia" : other ? `Prendi tu (ora: ${other})` : "Prendi in carico"}
     </button>
-  );
+    {error ? <span className="adm-error" role="alert">{error}</span> : null}
+  </span>;
 }
 
 export function UnreadButton({ folder, uid, href }: { folder: string; uid: number; href: string }) {
@@ -137,17 +149,30 @@ export function UnreadButton({ folder, uid, href }: { folder: string; uid: numbe
 
 type Draft = { to: string; cc: string; subject: string; body: string };
 
-export function ComposeForm({ draft, reply, from, cancelHref }: { draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string }) {
+export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0 }: { original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<SendState, FormData>(sendMail, {});
+  const [saved, saveAction, saving] = useActionState<SendState, FormData>(async (previous, data) => {
+    const result = await saveMailDraft(previous, data);
+    return { ...result, draftUid: result.draftUid ?? previous.draftUid };
+  }, {});
+  const activeDraftUid = saved.draftUid ?? draftUid;
   const [showCc, setShowCc] = useState(Boolean(draft.cc));
   const form = useRef<HTMLFormElement>(null);
   const handled = useRef<number | undefined>(undefined);
+  const savedHandled = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (saved.at && saved.at !== savedHandled.current) {
+      savedHandled.current = saved.at;
+      const upload = form.current?.elements.namedItem("attachments") as HTMLInputElement | null;
+      if (upload) upload.value = "";
+    }
+  }, [saved.at]);
   useEffect(() => {
     if (state.ok && state.at !== handled.current) {
       handled.current = state.at;
       form.current?.reset();
-      router.refresh();
+      router.push("/admin/email?f=sent" as Route);
     }
   }, [state, router]);
   return (
@@ -158,6 +183,12 @@ export function ComposeForm({ draft, reply, from, cancelHref }: { draft: Draft; 
           <input type="hidden" name="replyUid" value={reply.uid} />
         </>
       ) : null}
+      <input type="hidden" name="draftUid" value={activeDraftUid} />
+      {original || saved.draftUid ? <>
+        <input type="hidden" name="originalFolder" value={saved.draftUid ? "drafts" : original!.folder} />
+        <input type="hidden" name="originalUid" value={saved.draftUid ?? original!.uid} />
+        <label className="mail-keep-files"><input name="keepOriginal" type="checkbox" defaultChecked /> Mantieni gli allegati {saved.draftUid ? "della bozza salvata" : `originali (${original!.files})`}</label>
+      </> : null}
       <p className="adm-muted">Da: <strong>{from}</strong></p>
       <label className="adm-field">
         <span>A</span>
@@ -179,10 +210,13 @@ export function ComposeForm({ draft, reply, from, cancelHref }: { draft: Draft; 
         <span>Messaggio</span>
         <textarea className="adm-input" name="body" defaultValue={draft.body} rows={12} required autoFocus={Boolean(reply)} />
       </label>
+      <label className="adm-field"><span>Allegati · massimo 10 file, 3 MB complessivi</span><input className="adm-input" name="attachments" type="file" multiple /></label>
       <div className="adm-row-actions">
-        <button className="adm-btn adm-btn-primary" disabled={pending}>{pending ? "Invio…" : "Invia"}</button>
-        <Link className="adm-btn" href={cancelHref as Route}>Annulla</Link>
-        <p role="status" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? ""}</p>
+        <button className="adm-btn adm-btn-primary" disabled={pending || saving}>{pending ? "Invio…" : "Invia"}</button>
+        <button type="submit" formAction={saveAction} formNoValidate className="adm-btn" disabled={pending || saving}>{saving ? "Salvataggio…" : "Salva bozza"}</button>
+        {saved.draftUid ? <Link className="adm-link" href={`/admin/email?f=drafts&m=${saved.draftUid}` as Route}>Apri bozza salvata</Link> : null}
+        <Link className="adm-btn" href={cancelHref as Route}>Chiudi</Link>
+        <p role="status" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? saved.error ?? saved.ok ?? ""}</p>
       </div>
     </form>
   );

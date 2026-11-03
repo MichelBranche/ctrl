@@ -1,18 +1,19 @@
 import "server-only";
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from "imapflow";
 import nodemailer from "nodemailer";
+import MailComposer from "nodemailer/lib/mail-composer";
 import {
   MAX_SOURCE_BYTES, MailError, PAGE_SIZE, messageKey, parseSource, pickAttachment, replyContextOf, toMessage,
-  type MailProvider, type MailboxView, type OutgoingMail,
+  type ViewQuery, type MailProvider, type MailboxView, type OutgoingMail,
 } from "@/lib/mail/provider";
-import type { FolderId, MailSummary } from "@/lib/mail/types";
+import type { FolderId, MailSummary, MailLabel, MailMutation } from "@/lib/mail/types";
 
 type Creds = { user: string; pass: string; fromName: string };
 
 const IMAP = { host: "imap.gmail.com", port: 993 };
 const SMTP = { host: "smtp.gmail.com", port: 465 };
 /** Gmail folder roles; the actual (localized) paths are discovered once per instance via SPECIAL-USE. */
-const ROLE: Record<Exclude<FolderId, "inbox">, string> = { sent: "\\Sent", spam: "\\Junk", all: "\\All" };
+const ROLE = { sent: "\\Sent", drafts: "\\Drafts", spam: "\\Junk", all: "\\All", trash: "\\Trash" } as const;
 
 function hasAttachment(node: MessageStructureObject | undefined): boolean {
   if (!node) return false;
@@ -36,66 +37,106 @@ function summary(folder: FolderId, m: FetchMessageObject): MailSummary {
     to: (env?.to ?? []).map((a) => ({ name: a.name ?? "", address: a.address ?? "" })),
     subject: env?.subject ?? "",
     date: isoDate(env?.date ?? m.internalDate),
+    starred: m.flags?.has("\\Flagged") ?? false,
+    labels: [...(m.labels ?? [])].filter((label) => !label.startsWith("\\")),
     seen: m.flags?.has("\\Seen") ?? false,
     hasAttachments: hasAttachment(m.bodyStructure),
     threadId: m.threadId ?? null,
   };
 }
 
-const LIST_QUERY = { uid: true, flags: true, envelope: true, bodyStructure: true, internalDate: true, threadId: true } as const;
+const LIST_QUERY = { uid: true, flags: true, envelope: true, bodyStructure: true, internalDate: true, threadId: true, labels: true } as const;
 
 export class ImapProvider implements MailProvider {
-  private static paths: Partial<Record<FolderId, string>> | null = null;
+  private clients = new Set<{ client: ImapFlow; busy: boolean; expiresAt: number; timer?: ReturnType<typeof setTimeout> }>();
+  private catalog: { expiresAt: number; labels: MailLabel[]; folders: MailboxView["folders"] } | null = null;
+  private paths: Partial<Record<FolderId, string>> | null = null;
+  // Metadata only: never retain message bodies or attachments here. Bounded per account,
+  // expires after 15 seconds, and is bypassed for a fresh folder/manual refresh.
+  private overview = new Map<string, {
+    expiresAt: number;
+    folders: MailboxView["folders"];
+    list: MailSummary[];
+    total: number;
+  }>();
 
   constructor(private creds: Creds) {}
 
   private async withClient<T>(run: (client: ImapFlow) => Promise<T>): Promise<T> {
-    const client = new ImapFlow({
-      ...IMAP,
-      secure: true,
-      auth: { user: this.creds.user, pass: this.creds.pass },
-      logger: false,
-      disableAutoIdle: true,
-      connectionTimeout: 8_000,
-      greetingTimeout: 6_000,
-      socketTimeout: 20_000,
+    // Keep at most two idle connections in a warm instance. Concurrent overflow
+    // uses a short connection; expired/frozen sockets are never leased again.
+    for (const entry of this.clients) {
+      if (!entry.busy && (!entry.client.usable || entry.expiresAt <= Date.now())) {
+        clearTimeout(entry.timer); entry.client.close(); this.clients.delete(entry);
+      }
+    }
+    let lease = [...this.clients].find((entry) => !entry.busy);
+    const retained = Boolean(lease) || this.clients.size < 2;
+    if (!lease) {
+      const client = new ImapFlow({ ...IMAP, secure: true, auth: { user: this.creds.user, pass: this.creds.pass }, logger: false, disableAutoIdle: true, connectionTimeout: 8_000, greetingTimeout: 6_000, socketTimeout: 20_000 });
+      client.on("error", () => {});
+      lease = { client, busy: true, expiresAt: 0, timer: undefined };
+      if (retained) this.clients.add(lease);
+      try { await client.connect(); }
+      catch (error) {
+        this.clients.delete(lease); client.close();
+        throw (error as { authenticationFailed?: boolean })?.authenticationFailed
+          ? new MailError("auth", "Gmail ha rifiutato l'accesso: controlla la password per le app.")
+          : new MailError("network", "Impossibile raggiungere Gmail in questo momento.");
+      }
+    }
+    lease.busy = true;
+    clearTimeout(lease.timer);
+    try { return await run(lease.client); }
+    catch (error) { lease.client.close(); this.clients.delete(lease); throw error; }
+    finally {
+      lease.busy = false;
+      if (retained && lease.client.usable) {
+        lease.expiresAt = Date.now() + 15_000;
+        const released = lease;
+        lease.timer = setTimeout(() => { released.client.close(); this.clients.delete(released); }, 15_000);
+        lease.timer.unref();
+      } else { lease.client.close(); this.clients.delete(lease); }
+    }
+  }
+
+  private async loadCatalog(client: ImapFlow) {
+    if (this.catalog && this.catalog.expiresAt > Date.now()) return this.catalog;
+    const boxes = await client.list({ listOnly: true });
+    const inbox = boxes.find((box) => box.path === "INBOX");
+    if (inbox) inbox.status = (await client.status("INBOX", { messages: true, unseen: true })) || undefined;
+    this.paths = { inbox: "INBOX" };
+    for (const [id, role] of Object.entries(ROLE)) {
+      this.paths[id as FolderId] = boxes.find((box) => box.specialUse === role)?.path;
+    }
+    const ids = ["inbox", "sent", "drafts", "all", "spam", "trash"] as const;
+    const folders = ids.flatMap((id) => {
+      const box = boxes.find((b) => b.path === this.paths?.[id]);
+      return box ? [{ id, unread: box.status?.unseen ?? 0, total: box.status?.messages ?? 0 }] : [];
     });
-    client.on("error", () => {}); // socket errors surface through the pending command instead
-    try {
-      await client.connect();
-    } catch (error) {
-      const e = error as { authenticationFailed?: boolean };
-      throw e?.authenticationFailed
-        ? new MailError("auth", "Gmail ha rifiutato l'accesso: controlla la password per le app.")
-        : new MailError("network", "Impossibile raggiungere Gmail in questo momento.");
-    }
-    try {
-      return await run(client);
-    } finally {
-      await client.logout().catch(() => client.close());
-    }
+    const labels: MailLabel[] = boxes.filter((box) => !box.specialUse && box.path !== "INBOX" && !box.flags.has("\\Noselect"))
+      .map((box) => ({ id: `label:${box.path}`, name: box.path, unread: box.status?.unseen ?? 0, total: box.status?.messages ?? 0 }));
+    this.catalog = { expiresAt: Date.now() + 15_000, folders, labels };
+    return this.catalog;
   }
 
   private async path(client: ImapFlow, folder: FolderId): Promise<string | null> {
     if (folder === "inbox") return "INBOX";
-    if (!ImapProvider.paths) {
-      const boxes = await client.list();
-      const found: Partial<Record<FolderId, string>> = { inbox: "INBOX" };
-      for (const [id, role] of Object.entries(ROLE) as [FolderId, string][]) found[id] = boxes.find((b) => b.specialUse === role)?.path;
-      ImapProvider.paths = found;
-    }
-    return ImapProvider.paths[folder] ?? null;
+    const catalog = await this.loadCatalog(client);
+    if (folder.startsWith("label:")) return catalog.labels.some((l) => l.id === folder) ? folder.slice(6) : null;
+    return this.paths?.[folder === "starred" ? "all" : folder] ?? null;
   }
 
-  async view({ folder, page, open }: { folder: FolderId; page: number; open?: number | null }): Promise<MailboxView> {
+  async view({ folder, page, open, search = "", category }: ViewQuery): Promise<MailboxView> {
     return this.withClient(async (client) => {
-      const folders = [];
-      for (const id of ["inbox", "sent", "spam"] as const) {
-        const p = await this.path(client, id);
-        if (!p) continue;
-        const st = await client.status(p, { messages: true, unseen: true });
-        folders.push({ id, unread: st ? st.unseen ?? 0 : 0, total: st ? st.messages ?? 0 : 0 });
+      const cacheKey = JSON.stringify([folder, page, search, category]);
+      for (const [key, entry] of this.overview) {
+        if (entry.expiresAt <= Date.now()) this.overview.delete(key);
       }
+      if (!open) this.catalog = null;
+      const catalog = await this.loadCatalog(client);
+      const cached = open ? this.overview.get(cacheKey) : undefined;
+      const folders = catalog.folders;
       const path = await this.path(client, folder);
       if (!path) throw new MailError("notfound", "Cartella non disponibile.");
 
@@ -106,10 +147,23 @@ export class ImapProvider implements MailProvider {
       const lock = await client.getMailboxLock(path, { readOnly: true });
       try {
         total = client.mailbox ? client.mailbox.exists : 0;
-        const end = total - (page - 1) * PAGE_SIZE;
-        if (end >= 1) {
-          const start = Math.max(1, end - PAGE_SIZE + 1);
-          list = (await client.fetchAll(`${start}:${end}`, LIST_QUERY)).map((m) => summary(folder, m)).reverse();
+        const raw = [search ? `(${search})` : "", category && folder === "inbox" ? `category:${category}` : "", folder === "starred" ? "is:starred" : ""].filter(Boolean).join(" ");
+        if (cached) {
+          list = cached.list;
+          total = cached.total;
+        } else if (raw) {
+          const matches = await client.search({ gmraw: raw }, { uid: true });
+          const uids = (matches || []).sort((a, b) => b - a);
+          total = uids.length;
+          const slice = uids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+          if (slice.length) list = (await client.fetchAll(slice.join(","), LIST_QUERY, { uid: true })).map((m) => summary(folder, m)).sort((a, b) => b.uid - a.uid);
+        } else {
+          const end = total - (page - 1) * PAGE_SIZE;
+          if (end >= 1) list = (await client.fetchAll(`${Math.max(1, end - PAGE_SIZE + 1)}:${end}`, LIST_QUERY)).map((m) => summary(folder, m)).reverse();
+        }
+        if (!cached) {
+          if (this.overview.size >= 12) this.overview.delete(this.overview.keys().next().value!);
+          this.overview.set(cacheKey, { expiresAt: Date.now() + 15_000, folders, list, total });
         }
         if (open) {
           const head = await client.fetchOne(String(open), { ...LIST_QUERY, size: true }, { uid: true });
@@ -139,8 +193,38 @@ export class ImapProvider implements MailProvider {
           tl.release();
         }
       }
-      return { folders, list, total, open: opened, thread };
+      return { labels: catalog.labels, folders, list, total, open: opened, thread };
     });
+  }
+
+  async createLabel(name: string) {
+    await this.withClient(async (client) => { await client.mailboxCreate(name); });
+    this.catalog = null;
+    this.overview.clear();
+  }
+
+  async mutate(folder: FolderId, uids: number[], operation: MailMutation, label?: string) {
+    await this.withClient(async (client) => {
+      const source = await this.path(client, folder);
+      if (!source) throw new MailError("notfound", "Cartella non disponibile.");
+      if ((operation === "label" || operation === "unlabel") && !(await this.loadCatalog(client)).labels.some((l) => l.name === label)) {
+        throw new MailError("notfound", "Etichetta non disponibile. Aggiorna la casella.");
+      }
+      const destination = operation === "trash" || operation === "spam" || operation === "inbox" ? await this.path(client, operation) : null;
+      const lock = await client.getMailboxLock(source);
+      try {
+        const range = uids.join(",");
+        let ok: unknown;
+        if (operation === "archive") ok = await client.messageFlagsRemove(range, ["\\Inbox"], { uid: true, useLabels: true });
+        else if (destination) ok = await client.messageMove(range, destination, { uid: true });
+        else if (operation === "read" || operation === "unread") ok = await client[operation === "read" ? "messageFlagsAdd" : "messageFlagsRemove"](range, ["\\Seen"], { uid: true });
+        else if (operation === "star" || operation === "unstar") ok = await client[operation === "star" ? "messageFlagsAdd" : "messageFlagsRemove"](range, ["\\Flagged"], { uid: true });
+        else if (label && (operation === "label" || operation === "unlabel")) ok = await client[operation === "label" ? "messageFlagsAdd" : "messageFlagsRemove"](range, [label], { uid: true, useLabels: true });
+        if (!ok) throw new MailError("network", "Operazione non riuscita. Aggiorna la casella e riprova.");
+      } finally { lock.release(); }
+    });
+    this.overview.clear();
+    this.catalog = null;
   }
 
   async unread(): Promise<number> {
@@ -160,6 +244,17 @@ export class ImapProvider implements MailProvider {
         else await client.messageFlagsRemove(String(uid), ["\\Seen"], { uid: true });
       } finally {
         lock.release();
+      }
+      // Several cached searches may reference the same message/catalog.
+      // Update each list, but adjust each shared counter just once.
+      const counters = new Set<MailboxView["folders"]>();
+      for (const entry of this.overview.values()) {
+        const item = entry.list.find((m) => m.folder === folder && m.uid === uid);
+        if (item && item.seen !== seen) { item.seen = seen; counters.add(entry.folders); }
+      }
+      for (const folders of counters) {
+        const box = folders.find((f) => f.id === folder);
+        if (box) box.unread = Math.max(0, box.unread + (seen ? -1 : 1));
       }
     });
   }
@@ -191,7 +286,36 @@ export class ImapProvider implements MailProvider {
     return parsed ? replyContextOf(parsed) : null;
   }
 
+  private async outgoingAttachments(mail: OutgoingMail) {
+    const existing = mail.attachmentsFrom ? await this.source(mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
+    if (mail.attachmentsFrom && !existing) throw new MailError("notfound", "Messaggio originale non disponibile: gli allegati non possono essere recuperati.");
+    return [...(existing?.attachments.map((a) => ({ filename: a.filename || "allegato", contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])];
+  }
+
+  async saveDraft(mail: OutgoingMail, previousUid?: number): Promise<number> {
+    const attachments = await this.outgoingAttachments(mail);
+    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.user }, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
+    return this.withClient(async (client) => {
+      const path = await this.path(client, "drafts");
+      if (!path) throw new MailError("notfound", "Cartella bozze non disponibile.");
+      const result = await client.append(path, source, ["\\Draft"]);
+      if (!result || !result.uid) throw new MailError("network", "Salvataggio bozza non confermato. Aggiorna la cartella Bozze.");
+      // Preserve the old draft in Trash until the replacement has been saved.
+      if (previousUid) {
+        const trash = await this.path(client, "trash");
+        if (trash) {
+          const lock = await client.getMailboxLock(path);
+          try { await client.messageMove(String(previousUid), trash, { uid: true }); }
+          finally { lock.release(); }
+        }
+      }
+      this.overview.clear(); this.catalog = null;
+      return result.uid;
+    });
+  }
+
   async send(mail: OutgoingMail) {
+    const attachments = await this.outgoingAttachments(mail);
     const transport = nodemailer.createTransport({
       ...SMTP,
       secure: true,
@@ -204,6 +328,7 @@ export class ImapProvider implements MailProvider {
       // Gmail stores a copy in "Inviati" automatically for SMTP-submitted mail.
       const info = await transport.sendMail({
         from: { name: this.creds.fromName, address: this.creds.user },
+        attachments,
         to: mail.to,
         cc: mail.cc.length ? mail.cc : undefined,
         subject: mail.subject,

@@ -1,4 +1,5 @@
 import "server-only";
+import { avatarFor } from "@/lib/avatars";
 import { db } from "@/lib/db";
 import { ensureEmailSchema } from "@/lib/migrate";
 import type { Collab } from "@/lib/mail/types";
@@ -14,7 +15,7 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
   const marks = valid.map(() => "?").join(",");
   const [reads, claims] = await Promise.all([
     db().execute({
-      sql: `SELECT r.message_key, u.id, u.name FROM email_reads r JOIN admin_users u ON u.id = r.user_id WHERE r.message_key IN (${marks}) ORDER BY r.read_at`,
+      sql: `SELECT r.message_key, u.id, u.name, u.email, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at FROM email_reads r JOIN admin_users u ON u.id = r.user_id WHERE r.message_key IN (${marks}) ORDER BY r.read_at`,
       args: valid,
     }),
     db().execute({
@@ -23,7 +24,7 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
     }),
   ]);
   for (const k of valid) out.set(k, { readBy: [], claimedBy: null });
-  for (const r of reads.rows) out.get(String(r.message_key))?.readBy.push({ id: String(r.id), name: String(r.name) });
+  for (const r of reads.rows) out.get(String(r.message_key))?.readBy.push({ id: String(r.id), name: String(r.name), avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)) });
   for (const c of claims.rows) {
     const entry = out.get(String(c.message_key));
     if (entry) entry.claimedBy = { id: String(c.id), name: String(c.name), at: String(c.claimed_at) };
