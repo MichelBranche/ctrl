@@ -102,7 +102,9 @@ export class ImapProvider implements MailProvider {
 
   private async loadCatalog(client: ImapFlow) {
     if (this.catalog && this.catalog.expiresAt > Date.now()) return this.catalog;
-    const boxes = await client.list({ listOnly: true });
+    // Full LIST processing assigns specialUse; listOnly returns before that step.
+    // No statusQuery: avoid per-folder STATUS round trips.
+    const boxes = await client.list();
     const inbox = boxes.find((box) => box.path === "INBOX");
     if (inbox) inbox.status = (await client.status("INBOX", { messages: true, unseen: true })) || undefined;
     this.paths = { inbox: "INBOX" };
@@ -210,13 +212,18 @@ export class ImapProvider implements MailProvider {
       if ((operation === "label" || operation === "unlabel") && !(await this.loadCatalog(client)).labels.some((l) => l.name === label)) {
         throw new MailError("notfound", "Etichetta non disponibile. Aggiorna la casella.");
       }
-      const destination = operation === "trash" || operation === "spam" || operation === "inbox" ? await this.path(client, operation) : null;
+      const destination = operation === "archive" && folder === "inbox"
+        ? await this.path(client, "all")
+        : operation === "trash" || operation === "spam" || operation === "inbox" ? await this.path(client, operation) : null;
+      if ((["trash", "spam", "inbox"].includes(operation) || (operation === "archive" && folder === "inbox")) && !destination) {
+        throw new MailError("notfound", "Cartella Gmail di destinazione non disponibile. Controlla che sia visibile in IMAP e aggiorna la casella.");
+      }
       const lock = await client.getMailboxLock(source);
       try {
         const range = uids.join(",");
         let ok: unknown;
-        if (operation === "archive") ok = await client.messageFlagsRemove(range, ["\\Inbox"], { uid: true, useLabels: true });
-        else if (destination) ok = await client.messageMove(range, destination, { uid: true });
+        if (destination) ok = await client.messageMove(range, destination, { uid: true });
+        else if (operation === "archive") ok = await client.messageFlagsRemove(range, ["\\Inbox"], { uid: true, useLabels: true });
         else if (operation === "read" || operation === "unread") ok = await client[operation === "read" ? "messageFlagsAdd" : "messageFlagsRemove"](range, ["\\Seen"], { uid: true });
         else if (operation === "star" || operation === "unstar") ok = await client[operation === "star" ? "messageFlagsAdd" : "messageFlagsRemove"](range, ["\\Flagged"], { uid: true });
         else if (label && (operation === "label" || operation === "unlabel")) ok = await client[operation === "label" ? "messageFlagsAdd" : "messageFlagsRemove"](range, [label], { uid: true, useLabels: true });
