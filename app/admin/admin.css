@@ -556,3 +556,17 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-user-avatar.is-small { width: 1.5rem; height: 1.5rem; font-size: .55rem; }
 .adm-avatar > .adm-user-avatar { width: 100%; height: 100%; border: 0; }
 .adm-person { display: inline-flex; align-items: center; gap: .5rem; }
+
+.mail-workflow { margin: .75rem 0; padding: .75rem; border: 1px solid var(--adm-rule); border-radius: .5rem; }
+.mail-workflow > .adm-field { max-width: 20rem; }
+.mail-workflow-badge { font-size: .65rem; padding: .15rem .4rem; border: 1px solid var(--adm-rule); border-radius: .25rem; }
+.mail-workflow-badge[data-status="done"] { color: #9bd7aa; }
+.mail-workflow-badge[data-status="waiting"] { color: #e7c285; }
+.mail-internal-notes { margin-top: .75rem; border-top: 1px solid var(--adm-rule); padding-top: .75rem; }
+.mail-internal-notes summary { cursor: pointer; font-size: .8rem; }
+.mail-internal-notes summary span { margin-left: .5rem; }
+.mail-notes-content { padding-top: .75rem; }
+.mail-notes-list { list-style: none; margin: .75rem 0; padding: 0; max-height: 24rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--adm-rule) transparent; }
+.mail-notes-list li { padding: .75rem 0; border-top: 1px solid var(--adm-rule); }
+.mail-notes-list p { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0 0; font-size: .85rem; }
+.mail-notes-list .adm-person { flex-wrap: wrap; font-size: .75rem; }

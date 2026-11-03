@@ -2,6 +2,7 @@ import "server-only";
 import { avatarFor } from "@/lib/avatars";
 import { db } from "@/lib/db";
 import { ensureEmailSchema } from "@/lib/migrate";
+import { isMailStatus } from "@/lib/mail/workflow-types";
 import type { Collab } from "@/lib/mail/types";
 
 export const KEY = /^[a-f0-9]{32}$/;
@@ -13,7 +14,9 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
   if (!valid.length) return out;
   await ensureEmailSchema();
   const marks = valid.map(() => "?").join(",");
-  const [reads, claims] = await Promise.all([
+  const [workflows, notes, reads, claims] = await Promise.all([
+    db().execute({ sql: `SELECT message_key, status FROM email_workflow WHERE message_key IN (${marks})`, args: valid }),
+    db().execute({ sql: `SELECT message_key, COUNT(*) AS n FROM email_notes WHERE message_key IN (${marks}) GROUP BY message_key`, args: valid }),
     db().execute({
       sql: `SELECT r.message_key, u.id, u.name, u.email, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at FROM email_reads r JOIN admin_users u ON u.id = r.user_id WHERE r.message_key IN (${marks}) ORDER BY r.read_at`,
       args: valid,
@@ -29,6 +32,8 @@ export async function collabFor(keys: string[]): Promise<Map<string, Collab>> {
     const entry = out.get(String(c.message_key));
     if (entry) entry.claimedBy = { id: String(c.id), name: String(c.name), avatarUrl: avatarFor(String(c.id), Number(c.has_avatar) === 1, c.updated_at, String(c.email)), at: String(c.claimed_at) };
   }
+  for (const row of workflows.rows) { const entry = out.get(String(row.message_key)); if (entry && isMailStatus(row.status)) entry.status = row.status; }
+  for (const row of notes.rows) { const entry = out.get(String(row.message_key)); if (entry) entry.noteCount = Number(row.n); }
   return out;
 }
 
