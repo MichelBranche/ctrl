@@ -66,7 +66,8 @@ export function CartDrawer({ lang }: { lang: Locale }) {
     void refreshCartPrices(cart, lang).then((fresh) => { if (fresh) setItems(fresh); });
   }, [lang]);
   useEffect(() => {
-    sync();
+    // Initial read from localStorage, deferred so state is not set synchronously in the effect body.
+    queueMicrotask(sync);
     const onStorage = (event: StorageEvent) => { if (event.key === STORAGE_KEY) sync(); };
     const onCartUpdate = (event: Event) => {
       sync();

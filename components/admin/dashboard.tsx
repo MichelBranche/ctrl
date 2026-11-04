@@ -55,8 +55,15 @@ function Unavailable({ what }: { what: string }) {
   );
 }
 
-export async function StatCards({ range, content }: { range: Range; content?: { pub: number; draft: number; reqNew: number; subs: number } | null }) {
-  const [t, c] = await Promise.all([traffic(range).catch(() => null), dailyCounts(range)]);
+type CardScope = { traffic: boolean; requests: boolean; subscribers: boolean; posts: boolean };
+const ALL: CardScope = { traffic: true, requests: true, subscribers: true, posts: true };
+
+/** `show` limits which numbers are fetched at all (members: only their area, see lib/overview-scope.ts). */
+export async function StatCards({ range, content, show = ALL }: { range: Range; content?: { pub: number; draft: number; reqNew: number; subs: number } | null; show?: CardScope }) {
+  const [t, c] = await Promise.all([
+    show.traffic ? traffic(range).catch(() => null) : null,
+    show.requests || show.subscribers ? dailyCounts(range) : null,
+  ]);
   const pvNow = t ? sum(t.current.map((p) => p.pageviews)) : 0;
   const pvPrev = t ? sum(t.previous.map((p) => p.pageviews)) : 0;
   const viNow = t ? sum(t.current.map((p) => p.visitors)) : 0;
@@ -66,7 +73,7 @@ export async function StatCards({ range, content }: { range: Range; content?: { 
   let i = 0;
   return (
     <section className="adm-stats" aria-label="Riepilogo">
-      {t ? (
+      {!show.traffic ? null : t ? (
         <>
           <Card i={i++} label={`Visualizzazioni, ${range}g`} value={pvNow} now={pvNow} before={pvPrev} spark={t.current.map((p) => p.pageviews)} href={`/admin/stats?range=${range}`} />
           <Card i={i++} label={`Visitatori, ${range}g`} value={viNow} now={viNow} before={viPrev} spark={t.current.map((p) => p.visitors)} href={`/admin/stats?range=${range}`} note="Somma dei visitatori giornalieri" />
@@ -74,15 +81,15 @@ export async function StatCards({ range, content }: { range: Range; content?: { 
       ) : (
         <Unavailable what="Visite" />
       )}
-      {c ? (
+      {!show.requests && !show.subscribers ? null : c ? (
         <>
-          <Card i={i++} label={`Richieste, ${range}g`} value={rq} now={rq} before={c.prevRequests} spark={c.requests} href="/admin/requests" note={content ? `${content.reqNew} da leggere` : undefined} />
-          <Card i={i++} label={`Nuovi iscritti, ${range}g`} value={sb} now={sb} before={c.prevSubscribers} spark={c.subscribers} href="/admin/newsletter" note={content ? `${content.subs} iscritti attivi` : undefined} />
+          {show.requests ? <Card i={i++} label={`Richieste, ${range}g`} value={rq} now={rq} before={c.prevRequests} spark={c.requests} href="/admin/requests" note={content ? `${content.reqNew} da leggere` : undefined} /> : null}
+          {show.subscribers ? <Card i={i++} label={`Nuovi iscritti, ${range}g`} value={sb} now={sb} before={c.prevSubscribers} spark={c.subscribers} href="/admin/newsletter" note={content ? `${content.subs} iscritti attivi` : undefined} /> : null}
         </>
       ) : (
         <p className="adm-error" role="alert">Database non raggiungibile: i conteggi non sono disponibili.</p>
       )}
-      {content ? <Card i={i++} label="Articoli pubblicati" value={content.pub} href="/admin/journal" note={`${content.draft} bozze`} /> : null}
+      {content && show.posts ? <Card i={i++} label="Articoli pubblicati" value={content.pub} href="/admin/journal" note={`${content.draft} bozze`} /> : null}
     </section>
   );
 }

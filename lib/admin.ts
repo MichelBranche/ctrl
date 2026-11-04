@@ -1,5 +1,5 @@
 import "server-only";
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -34,6 +34,14 @@ const SESSION_HOURS = 12;
 const MAX_FAILURES = 5;
 const WINDOW_MS = 15 * 60_000;
 const LOCK_MS = 15 * 60_000;
+/**
+ * Per-account password lockout, on top of the per-IP one: stops slow guessing from many IPs against one email.
+ * Higher threshold than per IP and always temporary (15 min, then the counter starts over), so an attacker can at most
+ * delay a founder by minutes, never lock them out for good. Keyed on a hash of the submitted email whether or not
+ * the account exists, and the answer is the same generic "locked" either way, so it reveals nothing about accounts.
+ */
+const ACCOUNT_MAX_FAILURES = 10;
+export const accountKey = (email: string) => `acct:${createHash("sha256").update(email.trim().toLowerCase()).digest("base64url").slice(0, 32)}`;
 
 const adminEmail = () => (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
 const secretKey = () => {
@@ -169,7 +177,7 @@ async function isLocked(key: string) {
   return Number(res.rows[0]?.locked_til ?? 0) > Date.now();
 }
 
-async function recordFailure(key: string) {
+async function recordFailure(key: string, max = MAX_FAILURES) {
   const now = Date.now();
   await db().execute({
     sql: `INSERT INTO login_attempts (key, failures, first_at, locked_til) VALUES (?1, 1, ?2, 0)
@@ -177,7 +185,7 @@ async function recordFailure(key: string) {
             failures = CASE WHEN first_at < ?2 - ?3 THEN 1 ELSE failures + 1 END,
             first_at = CASE WHEN first_at < ?2 - ?3 THEN ?2 ELSE first_at END,
             locked_til = CASE WHEN first_at >= ?2 - ?3 AND failures + 1 >= ?4 THEN ?2 + ?5 ELSE locked_til END`,
-    args: [key, now, WINDOW_MS, MAX_FAILURES, LOCK_MS],
+    args: [key, now, WINDOW_MS, max, LOCK_MS],
   });
 }
 
@@ -217,7 +225,8 @@ export async function login(email: string, password: string): Promise<LoginResul
   if (!authConfigured()) return "unconfigured";
   await ensureTeam();
   const key = await clientKey();
-  if (await isLocked(key)) return "locked";
+  const acct = accountKey(email);
+  if ((await isLocked(key)) || (await isLocked(acct))) return "locked";
   const res = await db().execute({
     sql: "SELECT id, name, email, role, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
     args: [email.trim().toLowerCase()],
@@ -227,6 +236,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   const passOk = await verifyPassword(password, row ? String(row.password_hash) : await dummyHash()).catch(() => false);
   if (!row || !passOk) {
     await recordFailure(key);
+    await recordFailure(acct, ACCOUNT_MAX_FAILURES);
     await logAction("auth.login_failed", undefined, { email: email.trim().toLowerCase().slice(0, 200) }, null);
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     return "invalid";
@@ -248,7 +258,7 @@ export async function login(email: string, password: string): Promise<LoginResul
 
 async function completeLogin(key: string, u: { id: string; name: string; email: string; sv: number }, extra?: Record<string, unknown>) {
   await db().batch([
-    { sql: "DELETE FROM login_attempts WHERE key = ?", args: [key] },
+    { sql: "DELETE FROM login_attempts WHERE key IN (?, ?)", args: [key, accountKey(u.email)] },
     { sql: "UPDATE admin_users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [u.id] },
   ], "write");
   await issueSession(u.id, u.sv);

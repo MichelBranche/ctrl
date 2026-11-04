@@ -144,13 +144,18 @@ export function CtrlAssistant() {
     setBusy(true);
     try {
       const [res] = await Promise.all([
-        fetch("/api/chat", {
+        fetch(`/api/chat?lang=${lang}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ lang, messages: next.map(({ role, content }) => ({ role, content })) }),
         }),
         new Promise((r) => setTimeout(r, 600)), // let the "thinking" state read
       ]);
+      if (res.status === 429) {
+        const { reply } = (await res.json().catch(() => ({}))) as { reply?: string };
+        setMsgs((m) => [...m, { role: "assistant", content: reply || c.error }]);
+        return;
+      }
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { reply: string; links: ChatLink[] };
       setMsgs((m) => [...m, { role: "assistant", content: data.reply, links: data.links }]);

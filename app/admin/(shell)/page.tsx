@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ActivityFeed, BreakdownPanels, CardsSkeleton, DeployPill, PanelSkeleton, RangeTabs, StatCards, TrafficPanel } from "@/components/admin/dashboard";
 import { ShopOverview } from "@/components/admin/shop-overview";
 import { requireSection } from "@/lib/admin";
+import { overviewScope, type OverviewScope } from "@/lib/overview-scope";
 import { canAccess } from "@/lib/team-types";
 import { parseRange, type Range } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
@@ -29,7 +30,8 @@ function OverviewSkeleton() {
   );
 }
 
-async function content() {
+async function content(scope: OverviewScope) {
+  if (!scope.posts && !scope.requests && !scope.subscribers) return null;
   try {
     const [c] = await db().batch(
       [
@@ -40,7 +42,13 @@ async function content() {
       "read",
     );
     const r = c.rows[0];
-    return { pub: Number(r.pub), draft: Number(r.draft), reqNew: Number(r.req_new), subs: Number(r.subs) };
+    // Zero out what is outside the scope before it can reach the client payload.
+    return {
+      pub: scope.posts ? Number(r.pub) : 0,
+      draft: scope.posts ? Number(r.draft) : 0,
+      reqNew: scope.requests ? Number(r.req_new) : 0,
+      subs: scope.subscribers ? Number(r.subs) : 0,
+    };
   } catch {
     return null;
   }
@@ -49,9 +57,9 @@ async function content() {
 async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
   const [me, sp] = await Promise.all([requireSection("overview"), searchParams]);
   const { email } = me;
-  const kinds = (["post", "request", "subscriber", "order"] as const).filter((k) => canAccess(me, ({ post: "journal", request: "requests", subscriber: "newsletter", order: "shop" } as const)[k]));
+  const scope = overviewScope(me);
   const range: Range = parseRange(sp.range);
-  const counts = await content();
+  const counts = await content(scope);
   return (
     <>
       <header className="adm-top">
@@ -77,24 +85,28 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searc
         </div>
       </header>
       <Suspense key={`c${range}`} fallback={<CardsSkeleton n={5} />}>
-        <StatCards range={range} content={counts} />
+        <StatCards range={range} content={counts} show={scope} />
       </Suspense>
-      {canAccess(me, "shop") ? (
+      {scope.revenue ? (
         <Suspense key={`s${range}`} fallback={<CardsSkeleton n={4} />}>
           <ShopOverview range={range} />
         </Suspense>
       ) : null}
       <div className="adm-dash">
-        <Suspense key={`t${range}`} fallback={<PanelSkeleton />}>
-          <TrafficPanel range={range} />
-        </Suspense>
+        {scope.traffic ? (
+          <Suspense key={`t${range}`} fallback={<PanelSkeleton />}>
+            <TrafficPanel range={range} />
+          </Suspense>
+        ) : null}
         <Suspense fallback={<PanelSkeleton />}>
-          <ActivityFeed kinds={me.role === "founder" ? undefined : [...kinds]} />
+          <ActivityFeed kinds={scope.activity} />
         </Suspense>
       </div>
-      <Suspense key={`b${range}`} fallback={<PanelSkeleton h="14rem" />}>
-        <BreakdownPanels range={range} limit={5} />
-      </Suspense>
+      {scope.traffic ? (
+        <Suspense key={`b${range}`} fallback={<PanelSkeleton h="14rem" />}>
+          <BreakdownPanels range={range} limit={5} />
+        </Suspense>
+      ) : null}
     </>
   );
 }

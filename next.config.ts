@@ -1,5 +1,25 @@
 import type { NextConfig } from "next";
 
+// Static CSP (no nonce): a per-request nonce would make every page dynamic and defeat Cache Components.
+// Next streams inline bootstrap scripts, so script-src keeps 'unsafe-inline' but only same-origin script files load.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://va.vercel-scripts.com",
+  "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
+  "frame-src 'self' https://www.youtube-nocookie.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const nextConfig: NextConfig = {
   /* config options here */
   // Admin cover uploads go through a Server Action (covers are capped at 5 MB).
@@ -12,7 +32,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3440, 3840],
     qualities: [75, 90],
   },
-  // Baseline hardening for every response. No script CSP: Next inline bootstrap scripts would need nonces, which break prerendering.
+  // Baseline hardening for every response.
   async headers() {
     return [
       {
@@ -20,10 +40,10 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()" },
-          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'" },
+          { key: "Content-Security-Policy", value: CSP },
         ],
       },
     ];

@@ -58,8 +58,10 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
         price: Number.isFinite(Number(item.price)) ? Number(item.price) : undefined,
       }));
     } catch { cart = []; }
-    setItems(cart);
-    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh) setItems(fresh); });
+    let live = true;
+    queueMicrotask(() => { if (live) setItems(cart); });
+    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh && live) setItems(fresh); });
+    return () => { live = false; };
   }, [lang]);
   const f = form[lang];
   const [pending, start] = useTransition();
