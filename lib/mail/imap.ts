@@ -9,7 +9,8 @@ import {
 } from "@/lib/mail/provider";
 import type { FolderId, MailSummary, MailLabel, MailMutation } from "@/lib/mail/types";
 
-type Creds = { user: string; pass: string; fromName: string };
+/** user/pass authenticate IMAP+SMTP; fromAddress is the visible sender (MAIL_FROM alias, else user). */
+type Creds = { user: string; pass: string; fromName: string; fromAddress: string };
 
 const IMAP = { host: "imap.gmail.com", port: 993 };
 const SMTP = { host: "smtp.gmail.com", port: 465 };
@@ -302,7 +303,7 @@ export class ImapProvider implements MailProvider {
 
   async saveDraft(mail: OutgoingMail, previousUid?: number): Promise<number> {
     const attachments = await this.outgoingAttachments(mail);
-    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.user }, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
+    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.fromAddress }, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
     return this.withClient(async (client) => {
       const path = await this.path(client, "drafts");
       if (!path) throw new MailError("notfound", "Cartella bozze non disponibile.");
@@ -335,7 +336,8 @@ export class ImapProvider implements MailProvider {
     try {
       // Gmail stores a copy in "Inviati" automatically for SMTP-submitted mail.
       const info = await transport.sendMail({
-        from: { name: this.creds.fromName, address: this.creds.user },
+        from: { name: this.creds.fromName, address: this.creds.fromAddress },
+        envelope: { from: this.creds.fromAddress, to: [...mail.to, ...mail.cc] },
         attachments,
         to: mail.to,
         cc: mail.cc.length ? mail.cc : undefined,

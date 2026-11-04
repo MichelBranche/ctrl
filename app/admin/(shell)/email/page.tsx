@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ComposeForm, MailFrame, MailLive, MailOpening, MarkOpened, UnreadButton } from "@/components/admin/email/mail-client";
 import { requireSection, type AdminUser } from "@/lib/admin";
-import { agencyAddress, mailProvider } from "@/lib/mail";
+import { agencyAddress, isAgencyAddress, mailProvider } from "@/lib/mail";
 import { collabFor } from "@/lib/mail/collab";
 import { MailError, PAGE_SIZE, type MailboxView } from "@/lib/mail/provider";
 import { emailDocument, sanitizeEmailHtml, textDocumentBody } from "@/lib/mail/sanitize";
@@ -287,10 +287,9 @@ function quote(msg: MailMessage) {
   return `\n\n\nIl ${longDate(msg.date)}, ${who(msg.from)} ha scritto:\n${lines.join("\n")}`;
 }
 
-function replyDraft(msg: MailMessage, all: boolean, address: string) {
+function replyDraft(msg: MailMessage, all: boolean) {
   const target = msg.folder === "sent" ? msg.to : msg.replyTo.length ? msg.replyTo : msg.from ? [msg.from] : [];
-  const self = address.toLowerCase();
-  const cc = all ? [...(msg.folder === "sent" ? [] : msg.to), ...msg.cc].filter((a) => a.address.toLowerCase() !== self && !target.some((t) => t.address === a.address)) : [];
+  const cc = all ? [...(msg.folder === "sent" ? [] : msg.to), ...msg.cc].filter((a) => !isAgencyAddress(a.address) && !target.some((t) => t.address === a.address)) : [];
   return {
     to: target.map(fmtAddr).join(", "),
     cc: cc.map(fmtAddr).join(", "),
@@ -371,7 +370,7 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
         <section className="adm-mail-reply" aria-label="Risposta">
           <ComposeForm
             key={`${msg.folder}:${msg.uid}:${q.compose}`}
-            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all", address)}
+            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all")}
             reply={q.compose === "reply" || q.compose === "all" ? { folder: msg.folder, uid: msg.uid } : null}
             original={(q.compose === "draft" || q.compose === "forward") && msg.attachments.length ? { folder: msg.folder, uid: msg.uid, files: msg.attachments.length } : undefined}
             draftUid={q.compose === "draft" ? msg.uid : undefined}
@@ -389,7 +388,7 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
               return (
                 <li key={`${t.folder}:${t.uid}`} data-current={current || undefined}>
                   <Link href={href({ f: "all", m: t.uid }) as Route} prefetch={false} aria-current={current ? "true" : undefined}>
-                    <strong>{t.from?.address.toLowerCase() === address.toLowerCase() ? "CTRL (noi)" : who(t.from)}</strong>
+                    <strong>{isAgencyAddress(t.from?.address) ? "CTRL (noi)" : who(t.from)}</strong>
                     <span className="adm-muted">{shortDate(t.date)}</span>
                     <MailOpening />
                   </Link>
