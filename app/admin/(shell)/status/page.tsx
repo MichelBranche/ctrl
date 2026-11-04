@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { requireSection } from "@/lib/admin";
+import { BackupButton } from "@/components/admin/backup-button";
+import { readBackupStatus } from "@/lib/backup";
 import { db, dbConfigured } from "@/lib/db";
 import { deployments, vercelConfigured, type Deployment } from "@/lib/vercel";
 
@@ -32,7 +34,8 @@ const page = (path: string) => async () => {
 };
 
 async function Body() {
-  await requireSection("status");
+  const me = await requireSection("status");
+  const backup = me.role === "founder" ? await readBackupStatus() : null;
   const checks = await Promise.all([
     timed(`Home (${ORIGIN.replace("https://", "")})`, page("/")),
     timed("Journal", page("/journal")),
@@ -114,6 +117,33 @@ async function Body() {
           </div>
         )}
       </section>
+      {me.role === "founder" ? (
+        <section className="adm-panel">
+          <h2 className="adm-h2">Backup database</h2>
+          <p className="adm-muted">Ogni notte alle 04:17 (ora di Roma, 05:17 con l&apos;ora legale) il database viene esportato, compresso e cifrato. Restano gli ultimi 14 backup. Visibile solo ai founder.</p>
+          {!backup ? (
+            <p className="adm-muted">Nessun backup ancora eseguito.</p>
+          ) : (
+            <ul className="adm-list">
+              <li className="adm-check">
+                <span className={`adm-dot ${backup.ok ? "is-ok" : "is-bad"}`} aria-hidden="true" />
+                <span>Ultimo backup: {new Date(backup.at).toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "medium", timeStyle: "short" })}</span>
+                <span className="adm-muted adm-num">
+                  {backup.ok ? `${kb(backup.bytes)} cifrato (${kb(backup.rawBytes)} non compresso) · ${backup.kept ?? 0} conservati` : `Problema: ${backup.error ?? "errore"}`}
+                </span>
+              </li>
+            </ul>
+          )}
+          <div className="adm-row">
+            {backup?.ok && backup.pathname ? (
+              <a className="adm-btn" href={`/admin/backup/download?p=${encodeURIComponent(backup.pathname)}`} download>Scarica ultimo backup</a>
+            ) : null}
+            <BackupButton />
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
+
+const kb = (n?: number) => (n == null ? "?" : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
