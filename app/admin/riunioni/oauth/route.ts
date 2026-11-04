@@ -9,9 +9,19 @@ const back = (q: string) => new Response(null, { status: 303, headers: { Locatio
 
 /** Google redirects here after consent. Checks the signed state (CSRF) and the founder, then stores the encrypted refresh token. */
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  // The session cookie is SameSite=strict, so it is not sent on the cross-site redirect back from Google.
+  // Bounce once through a same-origin navigation (meta refresh, no script) so the browser attaches it.
+  if (!url.searchParams.has("r")) {
+    url.searchParams.set("r", "1");
+    const target = `${url.pathname}${url.search}`.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    return new Response(`<!doctype html><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta http-equiv="refresh" content="0;url=${target}"><title>Collegamento…</title>`, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
+    });
+  }
   const me = await getAdmin();
   if (!me || !isFounder(me)) return new Response("Solo i founder possono collegare Google.", { status: 403 });
-  const url = new URL(request.url);
   const jar = await cookies();
   const verifier = await readOAuthState(jar.get(STATE_COOKIE)?.value, url.searchParams.get("state"), me.id);
   jar.delete({ name: STATE_COOKIE, path: "/admin/riunioni" });
