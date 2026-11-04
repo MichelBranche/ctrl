@@ -2,7 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { requireSection } from "@/lib/admin";
-import { canAccess } from "@/lib/team-types";
+import { canAccess, isFounder } from "@/lib/team-types";
+import { dueActions, type DueAction } from "@/lib/crm";
+import { STAGE_LABEL } from "@/lib/crm-core";
 import { ensureDeskSchema, ensureEmailSchema } from "@/lib/migrate";
 import { db } from "@/lib/db";
 import { DeskForm, DeskAction } from "@/components/admin/desk-controls";
@@ -18,6 +20,9 @@ async function Body(){
     emailAccess ? db().execute({sql:`SELECT c.message_key,r.subject,r.sender,COALESCE(w.status,'todo') AS status FROM email_claims c LEFT JOIN email_references r ON r.message_key=c.message_key LEFT JOIN email_workflow w ON w.message_key=c.message_key WHERE c.user_id=? ORDER BY c.claimed_at DESC`,args:[me.id]}) : Promise.resolve({rows:[]}),
   ]);
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  // CRM follow-ups due today or overdue: your own, or everyone's for founders. Never breaks the desk.
+  const crmAccess=canAccess(me,"crm"), founder=isFounder(me);
+  const crmDue:DueAction[]=crmAccess ? await dueActions(founder ? null : me.id,today).catch(()=>[]) : [];
   const tasks=items.rows.filter(row=>row.kind==='task'),notes=items.rows.filter(row=>row.kind==='note');
   const dueToday=tasks.filter(row=>!row.done && row.due && String(row.due)<=today).length;
   const activeEmails=mail.rows.filter(row=>row.status!=='done');
@@ -41,6 +46,9 @@ async function Body(){
     <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">Le mie email</h2>{emailAccess ? <Link href="/admin/email">Apri casella →</Link> : null}</div>
       {!emailAccess ? <p className="adm-muted">L’accesso alla casella condivisa non è attivo per il tuo account.</p> : <><ul className="desk-list">{activeEmails.map(renderMail)}</ul>{!activeEmails.length ? <p className="adm-muted">Nessuna email da seguire. Premi “Prendi in carico” nella casella per ritrovarla qui.</p> : null}{mail.rows.some(row=>row.status==='done') ? <details><summary>Concluse ({mail.rows.length-activeEmails.length})</summary><ul className="desk-list">{mail.rows.filter(row=>row.status==='done').map(renderMail)}</ul></details> : null}</>}
     </section>
+    {crmAccess ? <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">CRM da seguire</h2><Link href={"/admin/crm/pipeline" as Route}>Pipeline →</Link></div>
+      <ul className="desk-list">{crmDue.map(a=><li key={a.id} className="desk-item"><Link className="desk-mail-link" href={`/admin/crm/${a.id}` as Route}>{a.businessName}</Link><div className="desk-item-head"><span className="adm-muted">{a.nextAction || "Prossima azione da definire"}{founder && a.ownerName ? ` · ${a.ownerName}` : ""}</span><span className={a.nextActionAt<today ? "adm-error" : "adm-muted"}>{a.nextActionAt<today ? "Scaduta · " : "Oggi · "}{STAGE_LABEL[a.stage]}</span></div></li>)}</ul>
+      {!crmDue.length ? <p className="adm-muted">Nessuna prossima azione per oggi.</p> : null}</section> : null}
     <section className="adm-panel desk-notes"><div className="adm-panel-head"><h2 className="adm-h2">Note personali</h2><span className="adm-muted">Private · Solo tu</span></div><details className="desk-add"><summary>+ Nuova nota</summary><DeskForm kind="note"/></details><ul className="desk-list">{notes.filter(row=>!row.done).map(renderItem)}</ul>{!notes.some(row=>!row.done) ? <p className="adm-muted">Appunti, idee e riferimenti da tenere a portata di mano.</p> : null}{notes.some(row=>row.done) ? <details><summary>Archiviate ({notes.filter(row=>row.done).length})</summary><ul className="desk-list">{notes.filter(row=>row.done).map(renderItem)}</ul></details> : null}</section></div>
   </>;
 }

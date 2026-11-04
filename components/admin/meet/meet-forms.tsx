@@ -11,11 +11,11 @@ function Msg({ s }: { s: MeetState }) {
   return s.error ? <p className="adm-error" role="alert">{s.error}</p> : s.ok ? <p className="adm-ok" role="status">{s.ok}{s.url ? <> <a href={s.url} target="_blank" rel="noopener noreferrer">Entra ora</a></> : null}</p> : null;
 }
 
-export function NewMeetingForm({ members, today, time }: { members: MemberOption[]; today: string; time: string }) {
+export function NewMeetingForm({ members, today, time, title, external }: { members: MemberOption[]; today: string; time: string; title?: string; external?: string }) {
   const [state, action, pending] = useActionState(createMeetingAction, {});
   return (
     <form action={action} className="adm-form adm-meet-form">
-      <label className="adm-field"><span>Titolo</span><input className="adm-input" name="title" maxLength={120} required placeholder="Es. Allineamento progetto sito" /></label>
+      <label className="adm-field"><span>Titolo</span><input className="adm-input" name="title" maxLength={120} required defaultValue={title} placeholder="Es. Allineamento progetto sito" /></label>
       <div className="adm-meet-when">
         <label className="adm-field"><span>Data</span><input className="adm-input" name="date" type="date" min={today} defaultValue={today} required /></label>
         <label className="adm-field"><span>Ora</span><input className="adm-input" name="time" type="time" step={300} defaultValue={time} required /></label>
@@ -34,7 +34,7 @@ export function NewMeetingForm({ members, today, time }: { members: MemberOption
           {!members.length ? <span className="adm-muted">Nessun altro membro attivo.</span> : null}
         </div>
       </fieldset>
-      <label className="adm-field"><span>Ospiti esterni (email separate da virgola)</span><input className="adm-input" name="external" placeholder="cliente@azienda.it, altro@esempio.it" autoComplete="off" /></label>
+      <label className="adm-field"><span>Ospiti esterni (email separate da virgola)</span><input className="adm-input" name="external" defaultValue={external} placeholder="cliente@azienda.it, altro@esempio.it" autoComplete="off" /></label>
       <label className="adm-field"><span>Note (finiscono nell&apos;invito)</span><textarea className="adm-input" name="notes" rows={3} maxLength={2000} placeholder="Ordine del giorno, link utili…" /></label>
       <p className="adm-muted">Google Calendar crea il link Meet e manda l&apos;invito a tutti, te compreso.</p>
       <div><button className="adm-btn adm-btn-primary" disabled={pending}>{pending ? "Creo la riunione…" : "Crea riunione"}</button></div>

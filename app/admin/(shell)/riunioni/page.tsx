@@ -34,6 +34,11 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
   const founder = isFounder(me);
   const sp = await searchParams;
   const notice = typeof sp.g === "string" ? NOTICE[sp.g] : undefined;
+  // Prefill from the CRM contact card (?titolo=…&ospite=…); plain text into inputs, validated again on submit.
+  const prefill = {
+    title: typeof sp.titolo === "string" ? sp.titolo.slice(0, 120) : undefined,
+    external: typeof sp.ospite === "string" && /^[^\s@,]+@[^\s@,]+\.[^\s@,]{2,}$/.test(sp.ospite) ? sp.ospite.slice(0, 200) : undefined,
+  };
   const configured = googleConfigured();
   const conn = configured ? await connection().catch(() => null) : null;
   let meetings: Meeting[] = [];
@@ -89,7 +94,7 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
         <div className="adm-grid2">
           <section className="adm-panel adm-rise" style={{ "--i": 0 } as React.CSSProperties}>
             <h2 className="adm-h2">Nuova riunione</h2>
-            <NewMeetingForm members={members} today={today} time={time} />
+            <NewMeetingForm members={members} today={today} time={time} title={prefill.title} external={prefill.external} />
           </section>
           <section className="adm-panel adm-rise" style={{ "--i": 1 } as React.CSSProperties}>
             <div className="adm-panel-head">

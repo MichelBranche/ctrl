@@ -1,6 +1,8 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
+import { after } from "next/server";
+import { leadFromRequest } from "@/lib/crm";
 import { db, dbConfigured } from "@/lib/db";
 import { allow } from "@/lib/request-guard";
 
@@ -21,10 +23,14 @@ export async function submitContact(form: FormData): Promise<ContactResult> {
   if (!dbConfigured) return { ok: false, error: "unavailable" };
   try {
     if (!(await allow("contact", 5, 3_600_000))) return { ok: false, error: "rate" };
+    const id = crypto.randomUUID();
     await db().execute({
       sql: "INSERT INTO contact_requests (id, name, email, subject, message, lang) VALUES (?, ?, ?, ?, ?, ?)",
-      args: [crypto.randomUUID(), name, email, subject, message, langOf(form)],
+      args: [id, name, email, subject, message, langOf(form)],
     });
+    // CRM lead after the response: leadFromRequest never throws, so the form result cannot change.
+    const lead = () => leadFromRequest({ id, name, email, subject, message });
+    try { after(lead); } catch { await lead(); }
     return { ok: true };
   } catch (error) {
     console.error("[contact] save failed:", error instanceof Error ? error.message : error);

@@ -22,6 +22,7 @@ const NAV: Nav[] = [
   { href: "/admin/media", label: "Media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
   { href: "/admin/shop", label: "Shop", icon: I("M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2") },
   { href: "/admin/requests", label: "Richieste", icon: I("M4 6h16v12H4zM4 7l8 6 8-6"), badge: "requests" },
+  { href: "/admin/crm", label: "CRM", icon: I("M4 5h16v4H4zM4 11h10v4H4zM4 17h6v3H4z") },
   { href: "/admin/email", label: "Email", icon: I("M3 6h18v12H3zM3 7l9 6 9-6M8 3h8"), badge: "email" },
   { href: "/admin/newsletter", label: "Newsletter", icon: I("M4 19V5l16 7zM4 12h8") },
   { href: "/admin/riunioni", label: "Riunioni", icon: I("M3 7h12v10H3zM15 10l6-3v10l-6-3") },
@@ -144,7 +145,7 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
           <ul className="adm-nav">
             {["/admin", "/admin/desk"].flatMap(href => nav.filter(n => n.href === href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
             <NavGroup key={`content:${path}`} id="content" label="Contenuti" icon={I("M4 6h6l2 2h8v12H4z")} items={nav.filter(n => ["/admin/journal", "/admin/media", "/admin/social"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            {nav.filter(n => n.href === "/admin/shop").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            {nav.filter(n => ["/admin/shop", "/admin/crm"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
             <NavGroup key={`communications:${path}`} id="communications" label="Comunicazioni" icon={I("M4 5h16v12H9l-5 4zM8 9h8M8 13h5")} items={nav.filter(n => ["/admin/requests", "/admin/email", "/admin/newsletter", "/admin/riunioni"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
             <NavGroup key={`analysis:${path}`} id="analysis" label="Analisi e sito" icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
             {nav.filter(n => ["/admin/introiti", "/admin/team", "/admin/audit"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}

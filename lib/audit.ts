@@ -106,6 +106,16 @@ export const AUDIT_LABEL: Record<string, string> = {
   "shop.order_fulfilment": "Spedizione ordine",
   "backup.run": "Backup eseguito",
   "backup.download": "Backup scaricato",
+  "crm.contact_create": "Contatto CRM creato",
+  "crm.contact_update": "Contatto CRM modificato",
+  "crm.contact_archive": "Contatto CRM archiviato",
+  "crm.contact_restore": "Contatto CRM ripristinato",
+  "crm.stage": "Fase pipeline",
+  "crm.note": "Nota CRM",
+  "crm.draft_sent": "Bozza Radar inviata",
+  "crm.draft_send_failed": "Invio bozza Radar fallito",
+  "crm.draft_discard": "Bozza Radar scartata",
+  "crm.ingest": "Contatti Radar importati",
 };
 
 /** Deletes audit entries older than 12 months (daily cron). */

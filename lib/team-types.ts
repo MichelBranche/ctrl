@@ -82,7 +82,7 @@ export const AREA_LABEL: Record<Area, string> = {
 export const isArea = (v: unknown): v is Area => AREAS.includes(v as Area);
 
 /** Admin sections. Each maps to the URL prefix(es) it owns. */
-export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "audit" | "email" | "meetings";
+export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "audit" | "email" | "meetings" | "crm";
 
 export const SECTION_HREF: Record<Section, string> = {
   overview: "/admin",
@@ -101,6 +101,7 @@ export const SECTION_HREF: Record<Section, string> = {
   audit: "/admin/audit",
   email: "/admin/email",
   meetings: "/admin/riunioni",
+  crm: "/admin/crm",
 };
 
 export const SECTION_LABEL: Record<Section, string> = {
@@ -120,6 +121,7 @@ export const SECTION_LABEL: Record<Section, string> = {
   audit: "Registro",
   email: "Email",
   meetings: "Riunioni",
+  crm: "CRM",
 };
 
 /** Every signed-in user: overview, desk, their own earnings and their own account. */
@@ -138,14 +140,14 @@ export const ROLE_SECTIONS: Record<Exclude<TeamRole, "founder">, readonly Sectio
   dev_backend: ["status", "stats"],
   copywriter: ["journal", "media", "social", "newsletter"],
   social_media: ["social", "media", "newsletter", "stats"],
-  marketing: ["newsletter", "social", "stats", "requests"],
+  marketing: ["newsletter", "social", "stats", "requests", "crm"],
   seo: ["stats", "journal", "status"],
   video_motion: ["media", "social"],
   ecommerce: ["shop", "requests"],
   ai_automation: ["journal", "media"],
-  commerciale: ["requests", "shop", "stats", "meetings"],
+  commerciale: ["requests", "shop", "stats", "meetings", "crm"],
   amministrazione: ["shop", "requests"],
-  assistenza: ["requests", "shop", "meetings"],
+  assistenza: ["requests", "shop", "meetings", "crm"],
   esterno: [],
 };
 
