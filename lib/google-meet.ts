@@ -124,7 +124,7 @@ export const nowLocal = (now = new Date()) => {
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 };
 
-export type NewMeeting = { title: string; start: string; minutes: number; attendees: string[]; notes: string };
+export type NewMeeting = { title: string; start: string; minutes: number; attendees: string[]; notes: string; tag?: "client"; notify?: boolean };
 
 /** Creates the Calendar event with a Meet link; Google emails the invitation to every attendee (sendUpdates=all). */
 export async function createMeeting(m: NewMeeting): Promise<Meeting> {
@@ -133,10 +133,10 @@ export async function createMeeting(m: NewMeeting): Promise<Meeting> {
     start: { dateTime: `${m.start}:00`, timeZone: MEET_TZ }, end: { dateTime: `${addMinutes(m.start, m.minutes)}:00`, timeZone: MEET_TZ },
     attendees: m.attendees.map((email) => ({ email })),
     conferenceData: { createRequest: { requestId: randomUUID(), conferenceSolutionKey: { type: "hangoutsMeet" } } },
-    extendedProperties: { private: { ctrl: "1" } },
+    extendedProperties: { private: m.tag ? { ctrl_client: "1" } : { ctrl: "1" } },
     guestsCanModify: false,
   };
-  return toMeeting(await api("?conferenceDataVersion=1&sendUpdates=all", { method: "POST", body: JSON.stringify(body) }));
+  return toMeeting(await api(`?conferenceDataVersion=1&sendUpdates=${m.notify === false ? "none" : "all"}`, { method: "POST", body: JSON.stringify(body) }));
 }
 
 /** Upcoming meetings created from this panel (tagged ctrl=1), soonest first. */
@@ -152,9 +152,9 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
 }
 
 /** Cancels the event and tells every attendee (Google sends the cancellation). */
-export async function cancelMeeting(id: string) {
+export async function cancelMeeting(id: string, notify = true) {
   if (!/^[a-zA-Z0-9_-]{5,200}$/.test(id)) throw new GoogleError("api", "Riunione non valida.");
-  await api(`/${id}?sendUpdates=all`, { method: "DELETE" });
+  await api(`/${id}?sendUpdates=${notify ? "all" : "none"}`, { method: "DELETE" });
 }
 
 /** Revokes the grant at Google (best effort) and deletes the stored token. */

@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { CAN_SIGN_IN_SQL, guardSection } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { cancelMeeting, createMeeting, disconnect, getMeeting, GoogleError, nowLocal, parseEmails } from "@/lib/google-meet";
+import { cancelEmail, type ClientMeeting, getClientMeeting, icsFile, inviteEmail, longWhen, markCancelled, MEET_URL_RE, saveClientMeeting } from "@/lib/client-meet";
+import { addNote, getContact, setStage } from "@/lib/crm";
+import { cancelMeeting, connection, createMeeting, disconnect, EMAIL_RE, getMeeting, googleConfigured, GoogleError, nowLocal, parseEmails } from "@/lib/google-meet";
+import { mailProvider } from "@/lib/mail";
+import { emailSender } from "@/lib/mail/sender";
+import { sendTransactional } from "@/lib/mail/transactional";
 import { isFounder } from "@/lib/team-types";
 
 /* Every action re-checks the session and the "meetings" permission server-side. */
@@ -82,4 +87,81 @@ export async function disconnectGoogleAction(): Promise<MeetState> {
   await logAction("meet.google_disconnected");
   revalidatePath("/admin/riunioni");
   return { ok: "Account Google scollegato." };
+}
+
+/* Client invites (Riunioni > Clienti). */
+
+const organizer = () => (process.env.MAIL_FROM?.match(/[^\s<>]+@[^\s<>]+/)?.[0] ?? "hello@ctrlagency.dev").toLowerCase();
+
+export async function inviteClientAction(_: MeetState, form: FormData): Promise<MeetState> {
+  const me = await guardSection("meetings");
+  const name = String(form.get("client_name") ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+  const email = String(form.get("client_email") ?? "").trim().toLowerCase();
+  const title = String(form.get("title") ?? "").trim().slice(0, 120);
+  const agenda = String(form.get("agenda") ?? "").trim().slice(0, 2000) || null;
+  const date = String(form.get("date") ?? ""), time = String(form.get("time") ?? "");
+  const minutes = Number(form.get("minutes"));
+  const contactRaw = String(form.get("contact_id") ?? "");
+  const manualUrl = String(form.get("meet_url") ?? "").trim();
+  if (name.length < 2) return { error: "Indica il nome del cliente." };
+  if (!EMAIL_RE.test(email)) return { error: "Email del cliente non valida." };
+  if (title.length < 2) return { error: "Dai un titolo alla riunione." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return { error: "Data o ora non valide." };
+  const start = `${date}T${time}`;
+  if (start < nowLocal(new Date(Date.now() - 10 * 60_000))) return { error: "La riunione è nel passato." };
+  if (![15, 30, 45, 60, 90, 120].includes(minutes)) return { error: "Durata non valida." };
+  const contact = ID.test(contactRaw) ? await getContact(contactRaw) : null;
+  const provider = mailProvider();
+  if (!provider && !process.env.RESEND_API_KEY) return { error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
+
+  let meetUrl: string | null = null, eventId: string | null = null;
+  const live = googleConfigured() && Boolean(await connection().catch(() => null));
+  if (live) {
+    try {
+      // Client listed as attendee, but Google stays silent: the client receives only our branded email.
+      const m = await createMeeting({ title, start, minutes, attendees: [me.email.toLowerCase(), email], notes: agenda ?? "", tag: "client", notify: false });
+      meetUrl = m.meetUrl; eventId = m.id;
+    } catch (e) {
+      if (!MEET_URL_RE.test(manualUrl)) return fail(e);
+    }
+  }
+  meetUrl ??= MEET_URL_RE.test(manualUrl) ? manualUrl : null;
+  if (!meetUrl) return { error: live ? "Google non ha creato il link Meet. Riprova." : "Google Calendar non è collegato: incolla un link Meet (da meet.new) per inviare l'invito." };
+
+  const cm: ClientMeeting = { id: crypto.randomUUID(), contactId: contact?.id ?? null, clientName: name, clientEmail: email, title, agenda, start, minutes, meetUrl, eventId, createdBy: me.id };
+  try {
+    const { via } = await sendTransactional({ to: [email], cc: [], ...inviteEmail(cm), sender: emailSender(me), attachments: [icsFile(cm, organizer())] }, provider);
+    console.info(`[mail] invito cliente inviato via ${via}`);
+  } catch {
+    if (eventId) await cancelMeeting(eventId, false).catch(() => {});
+    return { error: "Invio dell'email non riuscito, la riunione non è stata creata. Riprova tra poco." };
+  }
+  await saveClientMeeting(cm);
+  if (contact) {
+    const w = longWhen(start, minutes);
+    await addNote(contact.id, me.id, `Invito Google Meet inviato a ${email}: "${title}", ${w.day} alle ${w.from} (${minutes} min). Link: ${meetUrl}`);
+    await db().execute({ sql: "UPDATE crm_contacts SET next_action = ?, next_action_at = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [`Riunione Meet: ${title} alle ${w.from}`.slice(0, 300), date, contact.id] });
+    if (contact.stage === "nuovo" || contact.stage === "contattato") await setStage(contact.id, "call");
+    revalidatePath(`/admin/crm/${contact.id}`); revalidatePath("/admin/crm");
+  }
+  await logAction("meet.client_invited", { type: "client_meeting", id: cm.id }, { to: email, contact: contact?.id ?? null, start, minutes, calendar: Boolean(eventId) });
+  revalidatePath("/admin/riunioni");
+  return { ok: `Invito inviato a ${email}${eventId ? " ed evento creato in Google Calendar" : ""}.`, url: meetUrl };
+}
+
+export async function cancelClientMeetingAction(id: string, notify: boolean): Promise<MeetState> {
+  const me = await guardSection("meetings");
+  if (!/^[\w-]{1,64}$/.test(id)) return { error: "Riunione non valida." };
+  const cm = await getClientMeeting(id);
+  if (!cm) return { error: "Riunione non trovata." };
+  if (cm.eventId) await cancelMeeting(cm.eventId, false).catch(() => {});
+  await markCancelled(id);
+  let mailed = false;
+  if (notify) {
+    try { await sendTransactional({ to: [cm.clientEmail], cc: [], ...cancelEmail(cm), sender: emailSender(me), attachments: [icsFile(cm, organizer(), true)] }, mailProvider()); mailed = true; } catch { /* reported below */ }
+  }
+  if (cm.contactId) await addNote(cm.contactId, me.id, `Riunione Meet annullata: "${cm.title}"${mailed ? ", cliente avvisato via email" : ""}.`).catch(() => {});
+  await logAction("meet.client_cancelled", { type: "client_meeting", id }, { to: cm.clientEmail, notified: mailed });
+  revalidatePath("/admin/riunioni");
+  return notify && !mailed ? { error: "Riunione annullata, ma l'email al cliente non è partita. Avvisalo dalla casella Email." } : { ok: mailed ? "Riunione annullata, cliente avvisato." : "Riunione annullata." };
 }
