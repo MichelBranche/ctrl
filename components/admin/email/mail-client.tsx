@@ -5,7 +5,7 @@ import Link, { useLinkStatus } from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
 import { emailDocument } from "@/lib/mail/document";
-import { brandedEmail } from "@/lib/mail/template";
+import { brandedEmail, type EmailSender } from "@/lib/mail/template";
 import { markOpened, markUnread, sendMail, saveMailDraft, toggleClaim, type SendState } from "@/app/admin/email-actions";
 
 const POLL_MS = 30_000;
@@ -156,7 +156,7 @@ export function UnreadButton({ folder, uid, href }: { folder: string; uid: numbe
 
 type Draft = { to: string; cc: string; subject: string; body: string };
 
-export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0 }: { original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string }) {
+export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<SendState, FormData>(sendMail, {});
   const [saved, saveAction, saving] = useActionState<SendState, FormData>(async (previous, data) => {
@@ -225,7 +225,7 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
       <button type="button" className="adm-link" aria-expanded={preview} onClick={() => setPreview((v) => !v)}>{preview ? "Nascondi anteprima" : "Anteprima"}</button>
       {preview ? (
         <div className="adm-mail-preview" aria-label="Anteprima dell'email">
-          <MailFrame doc={emailDocument(brandedEmail(previewBody).html, false)} title="Anteprima dell'email" />
+          <MailFrame doc={emailDocument(brandedEmail(previewBody, { sender }).html, false)} title="Anteprima dell'email" />
         </div>
       ) : null}
       <label className="adm-field"><span>Allegati · massimo 10 file, 3 MB complessivi</span><input className="adm-input" name="attachments" type="file" multiple /></label>

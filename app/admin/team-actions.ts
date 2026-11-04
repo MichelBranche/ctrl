@@ -1,5 +1,6 @@
 "use server";
 
+import { emailSender } from "@/lib/mail/sender";
 import { removeTwoFactor } from "@/lib/two-factor";
 import { revalidatePath } from "next/cache";
 import { ensureTeam, guardSection, hashPassword, passwordOk } from "@/lib/admin";
@@ -238,7 +239,7 @@ export async function removeUser(_: TeamState, form: FormData): Promise<TeamStat
   const provider = mailProvider();
   const to = String(row.rows[0].email);
   try {
-    await sendTransactional({ to: [to], cc: [], subject: OFFBOARDING_SUBJECT, text }, provider);
+    await sendTransactional({ to: [to], cc: [], subject: OFFBOARDING_SUBJECT, text, sender: emailSender(me) }, provider);
   } catch {
     await logAction("team.offboarding_email_failed", { type: "user", id }, { to });
     return { error: "Rimosso dal team, ma l'email di cessazione non è partita. Puoi scrivergli dalla casella Email." };

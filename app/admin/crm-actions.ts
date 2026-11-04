@@ -1,4 +1,5 @@
 "use server";
+import { emailSender } from "@/lib/mail/sender";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardSection } from "@/lib/admin";
@@ -181,7 +182,7 @@ export async function sendDraftAction(id: string): Promise<CrmState> {
   const logId = crypto.randomUUID();
   try {
     await logSend({ id: logId, userId: me.id, recipients: [contact.email], subject: draft.subject, inReplyTo: null });
-    const { messageId } = await provider.send({ to: [contact.email], cc: [], subject: draft.subject, text: draft.bodyText });
+    const { messageId } = await provider.send({ to: [contact.email], cc: [], subject: draft.subject, text: draft.bodyText, sender: emailSender(me) });
     await finishSend(logId, messageId);
   } catch {
     await finishSend(logId, null).catch(() => {});

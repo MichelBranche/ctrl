@@ -1,7 +1,7 @@
 /*
  * CTRL branded email (Kallebe's design): orange header with the C mark, white card, body, signature,
  * contacts and footer. Pure and dependency-free so the compose preview (client) and the send path
- * (server) produce byte-identical HTML. Email-client safe: tables, inline styles, no images, no scripts.
+ * (server) produce byte-identical HTML. Email-client safe: tables, inline styles, no scripts; the only image is the sender photo (absolute https URL).
  * Everything the user typed is HTML-escaped; only a tiny markdown subset becomes markup.
  */
 import { CONTACT_PHONE } from "@/lib/content";
@@ -10,7 +10,13 @@ const ACCENT = "#ff4a1c";
 const SITE = "ctrlagency.dev";
 /** Standard signature delimiter: lets drafts strip the signature before re-editing. */
 export const SIG_DELIM = "\n\n-- \n";
-export const SIGNATURE_TEXT = `Ctrl Agency\nMichel Branche & Kallebe Gallo\nFounders\n\nTelefono: ${CONTACT_PHONE}\nSito: https://${SITE}`;
+/** Who is sending: name, roles already joined ("Founder e Designer UI/UX"), optional absolute https photo URL. */
+export type EmailSender = { name: string; role?: string | null; photoUrl?: string | null };
+const CONTACTS_TEXT = `Telefono: ${CONTACT_PHONE}\nSito: https://${SITE}`;
+/** Per-sender signature (no fixed names): "Nome Cognome\nRuolo\nCtrl Agency", or just "Ctrl Agency" without a sender. */
+export const signatureText = (sender?: EmailSender | null) =>
+  `${sender?.name ? `${sender.name}\n` : ""}${sender?.role ? `${sender.role}\n` : ""}Ctrl Agency\n\n${CONTACTS_TEXT}`;
+export const SIGNATURE_TEXT = signatureText(null);
 const FOOTER_TEXT = "CTRL AGENCY · Soluzioni digitali per imprese e professionisti";
 const LEGAL = "Hai ricevuto questa email perché sei in contatto con Ctrl Agency. Se non desideri altre comunicazioni, rispondi a questa email e non ti scriveremo più.";
 
@@ -62,8 +68,18 @@ function bodyHtml(text: string): string {
   return blocks.join("\n");
 }
 
+function signatureHtml(sender?: EmailSender | null) {
+  const photo = sender?.photoUrl && /^https:\/\/[^\s"<>]+$/.test(sender.photoUrl) ? sender.photoUrl : null;
+  const lines = `${sender?.name ? `<strong style="color:#111111">${esc(sender.name)}</strong><br>` : ""}${sender?.role ? `${esc(sender.role)}<br>` : ""}Ctrl Agency`;
+  if (!photo) return `<p style="${P};margin-top:22px">${lines}</p>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 14px"><tr>
+<td valign="middle" width="48" style="width:48px;padding-right:12px"><img src="${esc(photo)}" width="48" height="48" alt="${esc(sender?.name ?? "")}" style="display:block;width:48px;height:48px;border-radius:50%;object-fit:cover;border:0"></td>
+<td valign="middle" style="font:14px/1.45 Arial,Helvetica,sans-serif;color:#333333">${lines}</td>
+</tr></table>`;
+}
+
 /** Both MIME parts for a message the user typed. The text part carries the same signature after "-- ". */
-export function brandedEmail(body: string, opts: { cta?: { label: string; href: string }; legal?: boolean } = {}): { html: string; text: string } {
+export function brandedEmail(body: string, opts: { cta?: { label: string; href: string }; legal?: boolean; sender?: EmailSender | null } = {}): { html: string; text: string } {
   const clean = body.replace(/\r\n/g, "\n").replace(/\s+$/, "");
   // Bulletproof table button (Outlook-safe). Only https links: never javascript: or data: from any caller.
   const cta = opts.cta && /^https:\/\/[^\s"<>]+$/.test(opts.cta.href) ? opts.cta : null;
@@ -87,7 +103,7 @@ export function brandedEmail(body: string, opts: { cta?: { label: string; href: 
 <tr><td style="padding:28px 24px 8px">
 ${bodyHtml(clean)}
 ${ctaHtml}
-<p style="${P};margin-top:22px">Ctrl Agency<br>Michel Branche &amp; Kallebe Gallo<br>Founders</p>
+${signatureHtml(opts.sender)}
 <p style="${P}">Telefono: <a href="tel:${CONTACT_PHONE}" style="color:#1a56db">${CONTACT_PHONE}</a><br>Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
 </td></tr>
 <tr><td style="padding:18px 24px 22px;border-top:1px solid #eeeeee">
@@ -97,7 +113,7 @@ ${opts.legal ? `<p style="margin:0;font:10px/1.5 Arial,Helvetica,sans-serif;colo
 </td></tr>
 </table></td></tr></table>
 </body></html>`;
-  return { html, text: `${clean}${ctaText}${SIG_DELIM}${SIGNATURE_TEXT}\n\n${FOOTER_TEXT}\n` };
+  return { html, text: `${clean}${ctaText}${SIG_DELIM}${signatureText(opts.sender)}\n\n${FOOTER_TEXT}\n` };
 }
 
 /** Removes the signature added by brandedEmail (for re-editing a saved draft). */

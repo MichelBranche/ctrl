@@ -1,4 +1,5 @@
 import "server-only";
+import { emailSender } from "@/lib/mail/sender";
 import { ensureTeam, hashPassword, ROLES_SQL, rowRoles } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -42,7 +43,7 @@ export type InviteResult = { ok: true } | { ok: false; error: string };
  * Sends (or resends) the invite: new token, the previous link stops working. Rate limited per person
  * (2 minutes between emails, 5 per 24 hours). Only for accounts that never accepted (active accounts can't be invited).
  */
-export async function sendInvite(userId: string, inviter: { id: string; name: string }, kind: "sent" | "resent"): Promise<InviteResult> {
+export async function sendInvite(userId: string, inviter: { id: string; name: string; roles: TeamRole[]; avatarUrl: string | null }, kind: "sent" | "resent"): Promise<InviteResult> {
   await ensureTeam();
   const provider = mailProvider();
   if (!provider && !process.env.RESEND_API_KEY) return { ok: false, error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
@@ -75,7 +76,7 @@ export async function sendInvite(userId: string, inviter: { id: string; name: st
   });
   const mail = inviteEmail({ name: String(u.name), roles, inviter: inviter.name, url: inviteUrl(token) });
   try {
-    const { via } = await sendTransactional({ to: [String(u.email)], cc: [], ...mail }, provider);
+    const { via } = await sendTransactional({ to: [String(u.email)], cc: [], ...mail, sender: emailSender(inviter) }, provider);
     console.info(`[mail] invito inviato via ${via}`);
   } catch {
     return { ok: false, error: "Invio non riuscito. Controlla la connessione dell'email dell'agenzia e riprova tra qualche minuto." };

@@ -38,7 +38,10 @@ export type ReplyContext = { messageId: string | null; references: string[]; sub
 export type OutgoingFile = { filename: string; contentType: string; content: Buffer };
 export type OutgoingMail = { attachments?: OutgoingFile[]; attachmentsFrom?: { folder: FolderId; uid: number }; to: string[]; cc: string[]; subject: string; text: string; inReplyTo?: string | null; references?: string[];
   /** Optional call-to-action button (https only) rendered under the body, e.g. "Accetta l'invito". */
-  cta?: EmailCta };
+  cta?: EmailCta;
+  /** Signature block of the admin who sends (photo, name, roles). Without it the signature is just "Ctrl Agency". */
+  sender?: EmailSender | null };
+import type { EmailSender } from "@/lib/mail/template";
 export type EmailCta = { label: string; href: string };
 
 export const PAGE_SIZE = 30;

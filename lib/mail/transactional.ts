@@ -2,7 +2,7 @@ import "server-only";
 import type { MailProvider, OutgoingMail } from "@/lib/mail/provider";
 import { brandedEmail } from "@/lib/mail/template";
 
-export type TransactionalMail = Pick<OutgoingMail, "to" | "cc" | "subject" | "text" | "cta">;
+export type TransactionalMail = Pick<OutgoingMail, "to" | "cc" | "subject" | "text" | "cta" | "sender" | "attachments">;
 export type MailVia = "resend" | "gmail";
 
 /**
@@ -16,7 +16,7 @@ export async function sendTransactional(mail: TransactionalMail, provider: MailP
   if (key && from) {
     try {
       const replyTo = process.env.AGENCY_IMAP_USER?.trim();
-      const body = brandedEmail(mail.text, { cta: mail.cta, legal: true });
+      const body = brandedEmail(mail.text, { cta: mail.cta, legal: true, sender: mail.sender });
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -28,6 +28,7 @@ export async function sendTransactional(mail: TransactionalMail, provider: MailP
           subject: mail.subject,
           html: body.html,
           text: body.text,
+          ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: a.content.toString("base64"), content_type: a.contentType })) } : {}),
         }),
         signal: AbortSignal.timeout(10_000),
       });
@@ -41,6 +42,6 @@ export async function sendTransactional(mail: TransactionalMail, provider: MailP
     }
   }
   if (!provider) throw new Error("Nessun provider email configurato");
-  const { messageId } = await provider.send({ to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, cta: mail.cta });
+  const { messageId } = await provider.send({ to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, cta: mail.cta, sender: mail.sender, attachments: mail.attachments });
   return { messageId, via: "gmail" };
 }

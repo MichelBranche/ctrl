@@ -1,5 +1,6 @@
 "use server";
 
+import { emailSender } from "@/lib/mail/sender";
 import { guardSection } from "@/lib/admin";
 import { KEY, finishSend, logSend, markReadBy, sendAllowed, setClaim } from "@/lib/mail/collab";
 import { logAction } from "@/lib/audit";
@@ -108,7 +109,7 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
   const id = crypto.randomUUID();
   await logSend({ id, userId: me.id, recipients: [...to, ...cc], subject, inReplyTo });
   try {
-    const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form) });
+    const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form), sender: emailSender(me) });
     await finishSend(id, messageId);
     await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length }, me);
     const draftUid = Number(form.get("draftUid"));
@@ -143,7 +144,8 @@ export async function createMailLabel(_: { error?: string; ok?: boolean }, form:
 }
 
 export async function saveMailDraft(_: SendState, form: FormData): Promise<SendState> {
-  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  let me;
+  try { me = await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
   const provider = mailProvider();
   if (!provider?.saveDraft) return { error: "Salvataggio bozze non disponibile." };
   const to = parseList(form.get("to"));
@@ -156,7 +158,7 @@ export async function saveMailDraft(_: SendState, form: FormData): Promise<SendS
   if (!Number.isSafeInteger(prior) || prior < 0) return { error: "Bozza non valida." };
   try {
     const attachments = await uploadedFiles(form);
-    const draftUid = await provider.saveDraft({ to, cc, subject, text, attachments, attachmentsFrom: attachmentOrigin(form) }, prior || undefined);
+    const draftUid = await provider.saveDraft({ to, cc, subject, text, attachments, attachmentsFrom: attachmentOrigin(form), sender: emailSender(me) }, prior || undefined);
     return { ok: "Bozza salvata in Gmail.", at: Date.now(), draftUid };
   } catch (error) { return { error: error instanceof MailError ? error.message : "Impossibile salvare la bozza. Riprova." }; }
 }

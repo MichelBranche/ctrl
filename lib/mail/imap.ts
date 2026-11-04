@@ -304,7 +304,7 @@ export class ImapProvider implements MailProvider {
 
   async saveDraft(mail: OutgoingMail, previousUid?: number): Promise<number> {
     const attachments = await this.outgoingAttachments(mail);
-    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.fromAddress }, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
+    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.fromAddress }, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text, { sender: mail.sender }), attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
     return this.withClient(async (client) => {
       const path = await this.path(client, "drafts");
       if (!path) throw new MailError("notfound", "Cartella bozze non disponibile.");
@@ -339,7 +339,7 @@ export class ImapProvider implements MailProvider {
       to: mail.to,
       cc: mail.cc.length ? mail.cc : undefined,
       subject: mail.subject,
-      ...brandedEmail(mail.text, { cta: mail.cta }),
+      ...brandedEmail(mail.text, { cta: mail.cta, sender: mail.sender }),
       attachments,
       messageId,
       date: new Date(),
@@ -393,7 +393,7 @@ export class ImapProvider implements MailProvider {
         cc: mail.cc.length ? mail.cc : undefined,
         subject: mail.subject,
         // multipart/alternative: branded HTML + the same words as plain text. Gmail files this exact MIME in Inviati.
-        ...brandedEmail(mail.text, { cta: mail.cta }),
+        ...brandedEmail(mail.text, { cta: mail.cta, sender: mail.sender }),
         inReplyTo: mail.inReplyTo ?? undefined,
         references: mail.references?.length ? mail.references : undefined,
       });

@@ -1,4 +1,5 @@
 import { isFounder } from "@/lib/team-types";
+import { emailSender } from "@/lib/mail/sender";
 import { rememberMailReferences } from "@/lib/desk";
 import type { Route } from "next";
 import Link from "next/link";
@@ -169,7 +170,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                 <h2 className="adm-h2">Nuova email</h2>
                 <Link className="adm-btn adm-btn-sm adm-mail-back" href={href({ f: q.f, p: q.p }) as Route}>Chiudi</Link>
               </div>
-              <ComposeForm draft={{ to: "", cc: "", subject: "", body: "" }} reply={null} from={address} cancelHref={href({ f: q.f, p: q.p })} />
+              <ComposeForm draft={{ to: "", cc: "", subject: "", body: "" }} reply={null} sender={emailSender(me)} from={address} cancelHref={href({ f: q.f, p: q.p })} />
             </>
           ) : view.open ? (
             <Detail q={q} msg={view.open} thread={view.thread} collab={collab} me={me} address={address} labels={view.labels ?? []} />
@@ -369,6 +370,7 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
       {q.compose === "reply" || q.compose === "all" || q.compose === "forward" || q.compose === "draft" ? (
         <section className="adm-mail-reply" aria-label="Risposta">
           <ComposeForm
+            sender={emailSender(me)}
             key={`${msg.folder}:${msg.uid}:${q.compose}`}
             draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all")}
             reply={q.compose === "reply" || q.compose === "all" ? { folder: msg.folder, uid: msg.uid } : null}
