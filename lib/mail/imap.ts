@@ -1,5 +1,6 @@
 import "server-only";
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from "imapflow";
+import { randomUUID } from "node:crypto";
 import nodemailer from "nodemailer";
 import { brandedEmail } from "@/lib/mail/template";
 import MailComposer from "nodemailer/lib/mail-composer";
@@ -323,8 +324,57 @@ export class ImapProvider implements MailProvider {
     });
   }
 
+  /**
+   * With RESEND_API_KEY + MAIL_FROM: submit through Resend SMTP (DKIM signed for the MAIL_FROM domain, no "via gmail.com"),
+   * then APPEND the exact same raw message to Gmail's Sent folder so Inviati and threading keep working.
+   * Returns null if Resend is not configured or refused the message (caller falls back to Gmail SMTP).
+   */
+  private async sendViaResend(mail: OutgoingMail, attachments: Awaited<ReturnType<ImapProvider["outgoingAttachments"]>>): Promise<{ messageId: string } | null> {
+    const key = process.env.RESEND_API_KEY?.trim();
+    if (!key || !process.env.MAIL_FROM?.trim()) return null;
+    const domain = this.creds.fromAddress.split("@")[1] || "ctrlagency.dev";
+    const messageId = `<${randomUUID()}@${domain}>`;
+    const raw = await new MailComposer({
+      from: { name: this.creds.fromName, address: this.creds.fromAddress },
+      to: mail.to,
+      cc: mail.cc.length ? mail.cc : undefined,
+      subject: mail.subject,
+      ...brandedEmail(mail.text, { cta: mail.cta }),
+      attachments,
+      messageId,
+      date: new Date(),
+      inReplyTo: mail.inReplyTo ?? undefined,
+      references: mail.references?.length ? mail.references : undefined,
+    }).compile().build();
+    const transport = nodemailer.createTransport({
+      host: "smtp.resend.com", port: 465, secure: true, auth: { user: "resend", pass: key },
+      connectionTimeout: 8_000, greetingTimeout: 6_000, socketTimeout: 20_000,
+    });
+    try {
+      await transport.sendMail({ envelope: { from: this.creds.fromAddress, to: [...mail.to, ...mail.cc] }, raw });
+    } catch {
+      console.warn("[mail] Resend SMTP non riuscito, uso Gmail");
+      return null;
+    } finally {
+      transport.close();
+    }
+    // Already delivered: a failed copy in Inviati must not report the send as failed.
+    try {
+      await this.withClient(async (client) => {
+        const path = await this.path(client, "sent");
+        if (path) await client.append(path, raw, ["\\Seen"]);
+      });
+      this.overview.clear(); this.catalog = null;
+    } catch {
+      console.warn("[mail] copia in Inviati non salvata");
+    }
+    return { messageId };
+  }
+
   async send(mail: OutgoingMail) {
     const attachments = await this.outgoingAttachments(mail);
+    const viaResend = await this.sendViaResend(mail, attachments);
+    if (viaResend) return viaResend;
     const transport = nodemailer.createTransport({
       ...SMTP,
       secure: true,

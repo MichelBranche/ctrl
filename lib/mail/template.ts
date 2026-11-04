@@ -63,7 +63,7 @@ function bodyHtml(text: string): string {
 }
 
 /** Both MIME parts for a message the user typed. The text part carries the same signature after "-- ". */
-export function brandedEmail(body: string, opts: { cta?: { label: string; href: string } } = {}): { html: string; text: string } {
+export function brandedEmail(body: string, opts: { cta?: { label: string; href: string }; legal?: boolean } = {}): { html: string; text: string } {
   const clean = body.replace(/\r\n/g, "\n").replace(/\s+$/, "");
   // Bulletproof table button (Outlook-safe). Only https links: never javascript: or data: from any caller.
   const cta = opts.cta && /^https:\/\/[^\s"<>]+$/.test(opts.cta.href) ? opts.cta : null;
@@ -93,7 +93,7 @@ ${ctaHtml}
 <tr><td style="padding:18px 24px 22px;border-top:1px solid #eeeeee">
 <p style="margin:0 0 4px;font:700 11px/1.4 Arial,Helvetica,sans-serif;letter-spacing:.08em;color:#111111">CTRL AGENCY</p>
 <p style="margin:0 0 10px;font:12px/1.4 Arial,Helvetica,sans-serif;color:#666666">Soluzioni digitali per imprese e professionisti</p>
-<p style="margin:0;font:10px/1.5 Arial,Helvetica,sans-serif;color:#999999">${esc(LEGAL)}</p>
+${opts.legal ? `<p style="margin:0;font:10px/1.5 Arial,Helvetica,sans-serif;color:#999999">${esc(LEGAL)}</p>` : ""}
 </td></tr>
 </table></td></tr></table>
 </body></html>`;

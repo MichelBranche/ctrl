@@ -16,7 +16,7 @@ export async function sendTransactional(mail: TransactionalMail, provider: MailP
   if (key && from) {
     try {
       const replyTo = process.env.AGENCY_IMAP_USER?.trim();
-      const body = brandedEmail(mail.text, { cta: mail.cta });
+      const body = brandedEmail(mail.text, { cta: mail.cta, legal: true });
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
