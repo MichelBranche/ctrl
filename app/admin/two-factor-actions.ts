@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { confirmOwnPassword, getAdmin, recordSecondFactorFailure, secondFactorLocked } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
+import { canDisableTwoFactor } from "@/lib/two-factor-policy";
 import { beginSetup, checkSecondFactor, confirmSetup, removeTwoFactor, twoFactorEnabled } from "@/lib/two-factor";
 
 export type TwoFactorState = { error?: string; ok?: string; setup?: { secret: string; qrSvg: string }; codes?: string[] };
@@ -37,6 +38,7 @@ export async function confirmTwoFactor(prev: TwoFactorState, form: FormData): Pr
 export async function disableTwoFactor(_: TwoFactorState, form: FormData): Promise<TwoFactorState> {
   const me = await getAdmin();
   if (!me) return { error: "Sessione scaduta. Accedi di nuovo." };
+  if (!canDisableTwoFactor(me.role)) return { error: "Per i founder la verifica in due passaggi è obbligatoria. Può azzerarla solo un altro founder." };
   if (await secondFactorLocked(me.id)) return { error: LOCKED };
   const pw = await confirmOwnPassword(String(form.get("password") ?? "").slice(0, 500));
   if (pw === "locked") return { error: LOCKED };

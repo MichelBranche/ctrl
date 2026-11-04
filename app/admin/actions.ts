@@ -3,7 +3,7 @@
 import { put } from "@vercel/blob";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdmin, login, logout, verifySecondStep } from "@/lib/admin";
+import { confirmForcedSetup, finishForcedSetup, getAdmin, login, logout, startForcedSetup, verifySecondStep } from "@/lib/admin";
 import { canAccess } from "@/lib/team-types";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -12,7 +12,7 @@ import { ensureTranslationSchema } from "@/lib/migrate";
 import { translatePost, translationConfigured } from "@/lib/translate";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
 
-export type FormState = { error?: string; ok?: string; warning?: string; twoFactor?: boolean };
+export type FormState = { error?: string; ok?: string; warning?: string; twoFactor?: boolean; setup?: boolean };
 
 export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").slice(0, 200);
@@ -24,7 +24,32 @@ export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   if (result === "invalid") return { error: "Credenziali non valide." };
   // Same card switches to the code step; /admin/login/verifica serves a reload during those 5 minutes.
   if (result === "2fa") return { twoFactor: true };
+  if (result === "setup") return { setup: true };
   redirect("/admin");
+}
+
+const SETUP_EXPIRED = "Configurazione scaduta (15 minuti). Torna all’accesso e inserisci di nuovo la password.";
+
+/** Mandatory founder setup, step QR: needs the setup ticket set by signIn, never a session. */
+export async function beginRequiredSetup(): Promise<{ error?: string; setup?: { secret: string; qrSvg: string } }> {
+  const r = await startForcedSetup();
+  return r === "expired" ? { error: SETUP_EXPIRED } : { setup: r };
+}
+
+export type RequiredSetupState = { error?: string; ok?: string; codes?: string[] };
+export async function confirmRequiredSetup(_: RequiredSetupState, form: FormData): Promise<RequiredSetupState> {
+  const r = await confirmForcedSetup(String(form.get("code") ?? ""));
+  if (r === "expired") return { error: SETUP_EXPIRED };
+  if (r === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
+  if (r === "invalid") return { error: "Codice non valido. Controlla che l’ora del telefono sia automatica e riprova." };
+  return { codes: r.codes, ok: "Verifica attiva." };
+}
+
+export async function finishRequiredSetup(): Promise<{ error?: string; ok?: string }> {
+  const r = await finishForcedSetup();
+  if (r === "expired") return { error: SETUP_EXPIRED };
+  if (r === "incomplete") return { error: "Prima conferma il codice dell’app." };
+  return { ok: "Account protetto." };
 }
 
 export async function signInSecondStep(_: FormState, form: FormData): Promise<FormState> {

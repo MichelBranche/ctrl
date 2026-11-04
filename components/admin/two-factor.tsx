@@ -7,7 +7,7 @@ import { signInSecondStep, type FormState } from "@/app/admin/actions";
 import { confirmTwoFactor, disableTwoFactor, startTwoFactor, type TwoFactorState } from "@/app/admin/two-factor-actions";
 
 /** Animated 6-digit field that submits its form when complete, plus a link to type a recovery code instead. */
-function CodeField({ state, pending, form, allowRecovery, autoFocus }: {
+export function CodeField({ state, pending, form, allowRecovery, autoFocus }: {
   state: { error?: string; ok?: string }; pending: boolean; form: React.RefObject<HTMLFormElement | null>; allowRecovery: boolean; autoFocus?: boolean;
 }) {
   const [code, setCode] = useState("");
@@ -71,7 +71,14 @@ export function SecondStepForm() {
 }
 
 /** Settings panel: enable (QR + manual key + confirm) or disable (password + code). */
-export function TwoFactorPanel({ enabled, recoveryLeft }: { enabled: boolean; recoveryLeft: number }) {
+export function TwoFactorPanel({ enabled, recoveryLeft, canDisable = true }: { enabled: boolean; recoveryLeft: number; canDisable?: boolean }) {
+  if (enabled && !canDisable) {
+    return (
+      <p className="adm-muted">
+        Stato: <strong>attiva</strong>. Codici di recupero rimasti: {recoveryLeft} su 10. Come founder non puoi disattivarla: se perdi telefono e codici, un altro founder può azzerarla dal Team e al prossimo accesso la configuri di nuovo.
+      </p>
+    );
+  }
   if (enabled) return <DisableForm recoveryLeft={recoveryLeft} />;
   return <EnableFlow />;
 }

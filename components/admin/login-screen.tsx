@@ -1,75 +1,107 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useAnimationControls, useReducedMotion, type Variants } from "motion/react";
 import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { signIn, type FormState } from "@/app/admin/actions";
+import { AuthBackdrop, AuthCursor, ChromeMark, MagneticButton } from "@/components/admin/auth-fx";
+import { RequiredSetup } from "@/components/admin/required-setup";
 import { SecondStepForm } from "@/components/admin/two-factor";
 
-type Step = "password" | "code";
+type Step = "password" | "code" | "setup";
+
+const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } } };
+export const item: Variants = {
+  hidden: { opacity: 0, y: 12, filter: "blur(6px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+};
 
 /**
- * Admin sign-in: password step and 2FA code step in one glass card, switched with a Motion slide.
- * Background: a still grid plus a soft orange glow that follows the pointer through two CSS variables
- * (one rAF per frame, compositor-only). Reduced motion: no glow tracking, fades instead of slides.
- * Security is unchanged: server actions (Next CSRF origin check), lockout, signed cookies all live server-side.
+ * Admin sign-in: password, 2FA code and the mandatory founder setup, all in one glass card switched with Motion.
+ * Security lives server-side and is unchanged: server actions (Next origin check), lockout, signed short-lived tickets.
  */
-export function LoginScreen({ initialStep = "password" }: { initialStep?: Step }) {
+export function LoginScreen({ initialStep = "password", notice }: { initialStep?: Step; notice?: string }) {
   const [step, setStep] = useState<Step>(initialStep);
   const reduce = useReducedMotion();
-  const root = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = root.current;
-    if (!el || reduce || !matchMedia("(pointer: fine)").matches) return;
-    let raf = 0, x = 0, y = 0;
-    const move = (e: PointerEvent) => {
-      x = e.clientX; y = e.clientY;
-      if (!raf) raf = requestAnimationFrame(() => { raf = 0; el.style.setProperty("--gx", `${x}px`); el.style.setProperty("--gy", `${y}px`); });
-    };
-    window.addEventListener("pointermove", move, { passive: true });
-    return () => { window.removeEventListener("pointermove", move); cancelAnimationFrame(raf); };
-  }, [reduce]);
-
   const slide = reduce
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-    : { initial: { opacity: 0, x: 28, filter: "blur(4px)" }, animate: { opacity: 1, x: 0, filter: "blur(0px)" }, exit: { opacity: 0, x: -28, filter: "blur(4px)" } };
+    : { initial: { opacity: 0, x: 32, filter: "blur(6px)" }, animate: { opacity: 1, x: 0, filter: "blur(0px)" }, exit: { opacity: 0, x: -32, filter: "blur(6px)" } };
+  const back = initialStep === "password"
+    ? <button type="button" className="adm-otp-alt" onClick={() => setStep("password")}>Torna all’accesso</button>
+    : <Link className="adm-otp-alt" href="/admin/login">Torna all’accesso</Link>;
 
   return (
-    <main ref={root} className="adm-auth">
-      <div className="adm-auth-bg" aria-hidden="true"><div className="adm-auth-grid" /><div className="adm-auth-glow" /></div>
-      <motion.div className="adm-auth-card" layout={!reduce} transition={{ type: "spring", stiffness: 260, damping: 30 }}
-        initial={reduce ? false : { opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}>
-        <div className="adm-auth-brand">
-          <span className="adm-auth-mark" aria-hidden="true">C</span>
-          <span className="adm-auth-word">CTRL<sup>®</sup></span>
-          <span className="adm-auth-tag">Admin</span>
-        </div>
-        <AnimatePresence mode="wait" initial={false}>
-          {step === "password" ? (
-            <motion.div key="pw" {...slide} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
-              <h1 className="adm-auth-title">Bentornato</h1>
-              <p className="adm-auth-sub">Accedi all’area riservata dello studio.</p>
-              <PasswordStep onTwoFactor={() => setStep("code")} />
-            </motion.div>
-          ) : (
-            <motion.div key="code" {...slide} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
-              <h1 className="adm-auth-title">Verifica in due passaggi</h1>
-              <p className="adm-auth-sub">Inserisci il codice a 6 cifre dell’app di autenticazione.</p>
-              <SecondStepForm />
-              {initialStep === "code"
-                ? <Link className="adm-otp-alt" href="/admin/login">Torna all’accesso</Link>
-                : <button type="button" className="adm-otp-alt" onClick={() => setStep("password")}>Torna all’accesso</button>}
-            </motion.div>
-          )}
-        </AnimatePresence>
+    <main className="adm-auth">
+      <AuthBackdrop />
+      <AuthCursor />
+      <motion.div
+        className={`adm-auth-card${step === "setup" ? " is-wide" : ""}`}
+        layout={!reduce}
+        transition={{ layout: { type: "spring", stiffness: 240, damping: 30 } }}
+        initial={reduce ? false : { opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }}
+      >
+        <motion.div variants={list} initial={reduce ? false : "hidden"} animate="show">
+          <motion.div variants={item} className="adm-auth-brand">
+            <ChromeMark />
+            <span className="adm-auth-word">CTRL<sup>®</sup></span>
+            <span className="adm-auth-tag">Admin</span>
+          </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            {step === "password" ? (
+              <motion.div key="pw" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+                <motion.p variants={item} className="adm-auth-kicker">Area riservata</motion.p>
+                <motion.h1 variants={item} className="adm-auth-title">Bentornato.</motion.h1>
+                <motion.p variants={item} className="adm-auth-sub">Accedi per gestire progetti, journal e team dello studio.</motion.p>
+                {notice ? <motion.p variants={item} className="adm-auth-notice" role="status">{notice}</motion.p> : null}
+                <PasswordStep onNext={setStep} />
+              </motion.div>
+            ) : step === "code" ? (
+              <motion.div key="code" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="adm-auth-kicker">Passo 2 di 2</p>
+                <h1 className="adm-auth-title">Verifica in due passaggi</h1>
+                <p className="adm-auth-sub">Apri l’app di autenticazione e inserisci il codice a 6 cifre.</p>
+                <SecondStepForm />
+                {back}
+              </motion.div>
+            ) : (
+              <motion.div key="setup" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+                <RequiredSetup />
+                {back}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </motion.div>
-      <p className="adm-auth-foot">Connessione protetta · accesso registrato</p>
+      <p className="adm-auth-foot">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+        Connessione cifrata · ogni accesso è registrato
+      </p>
     </main>
   );
 }
 
-function PasswordStep({ onTwoFactor }: { onTwoFactor: () => void }) {
+function FloatField({ id, name, type, label, autoComplete, invalid, value, onChange, children }: {
+  id: string; name: string; type: string; label: string; autoComplete: string; invalid: boolean;
+  value?: string; onChange?: (v: string) => void; children?: React.ReactNode;
+}) {
+  const [filled, setFilled] = useState(false);
+  return (
+    <div className={`adm-float${children ? " has-eye" : ""}`}>
+      <input
+        id={id} name={name} type={type} autoComplete={autoComplete} required placeholder=" " value={value}
+        data-filled={filled || undefined} aria-invalid={invalid || undefined}
+        onChange={(e) => { onChange?.(e.target.value); setFilled(e.target.value !== ""); }}
+        // Chrome fires this when it autofills (CSS animation on :-webkit-autofill), before the value is exposed to JS.
+        onAnimationStart={(e) => { if (e.animationName === "adm-autofill") setFilled(true); }}
+      />
+      <label htmlFor={id}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signIn, {});
   const [email, setEmail] = useState("");
   const [show, setShow] = useState(false);
@@ -80,36 +112,46 @@ function PasswordStep({ onTwoFactor }: { onTwoFactor: () => void }) {
   useEffect(() => {
     if (seen.current === state) return;
     seen.current = state;
-    if (state.twoFactor) onTwoFactor();
+    if (state.twoFactor) onNext("code");
+    else if (state.setup) onNext("setup");
     else if (state.error && !reduce) void shake.start({ x: [0, -10, 9, -6, 4, -2, 0], transition: { duration: 0.45 } });
-  }, [state, onTwoFactor, reduce, shake]);
+  }, [state, onNext, reduce, shake]);
+  const bad = Boolean(state.error);
   return (
-    <motion.form action={action} animate={shake} className="adm-auth-form" noValidate={false}>
-      <div className="adm-float">
-        <input id={`${id}-e`} name="email" type="email" autoComplete="username" required placeholder=" " value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(state.error) || undefined} />
-        <label htmlFor={`${id}-e`}>Email</label>
-      </div>
-      <div className="adm-float">
-        <input id={`${id}-p`} name="password" type={show ? "text" : "password"} autoComplete="current-password" required placeholder=" " aria-invalid={Boolean(state.error) || undefined} />
-        <label htmlFor={`${id}-p`}>Password</label>
-        <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? "Nascondi password" : "Mostra password"}>
-          {show ? <EyeOff /> : <Eye />}
-        </button>
-      </div>
+    <motion.form action={action} animate={shake} className="adm-auth-form">
+      <motion.div variants={item}>
+        <FloatField id={`${id}-e`} name="email" type="email" label="Email" autoComplete="username" invalid={bad} value={email} onChange={setEmail} />
+      </motion.div>
+      <motion.div variants={item}>
+        <FloatField id={`${id}-p`} name="password" type={show ? "text" : "password"} label="Password" autoComplete="current-password" invalid={bad}>
+          <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? "Nascondi password" : "Mostra password"}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={show ? "off" : "on"} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={{ duration: 0.15 }} style={{ display: "grid" }}>
+                {show ? <EyeOff /> : <Eye />}
+              </motion.span>
+            </AnimatePresence>
+          </button>
+        </FloatField>
+      </motion.div>
       <AnimatePresence>
         {state.error ? (
-          <motion.p key={state.error} className="adm-auth-error" role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+          <motion.p key={state.error} className="adm-auth-error" role="alert" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
             {state.error}
           </motion.p>
         ) : null}
       </AnimatePresence>
-      <button className="adm-auth-btn" disabled={pending} aria-busy={pending}>
-        {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> Accesso in corso…</> : "Accedi"}
-      </button>
+      <motion.div variants={item}>
+        <MagneticButton className="adm-auth-btn" disabled={pending} aria-busy={pending}>
+          {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> Accesso in corso…</> : <>Accedi <Arrow /></>}
+        </MagneticButton>
+      </motion.div>
     </motion.form>
   );
 }
 
+const Arrow = () => (
+  <svg className="arrow" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+);
 const Eye = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
 );

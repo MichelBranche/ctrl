@@ -7,8 +7,9 @@ import { cache } from "react";
 import { logAction } from "@/lib/audit";
 import { avatarFor } from "@/lib/avatars";
 import { db, dbConfigured } from "@/lib/db";
-import { ensureTeamSchema } from "@/lib/migrate";
-import { checkSecondFactor, twoFactorEnabled } from "@/lib/two-factor";
+import { ensureTeamSchema, ensureTwoFactorSchema } from "@/lib/migrate";
+import { beginSetup, checkSecondFactor, confirmSetup, twoFactorEnabled, twoFactorStatus } from "@/lib/two-factor";
+import { forcedSetupFinishable, loginNext, sessionAllowed } from "@/lib/two-factor-policy";
 import { canAccess, isArea, isRole, type Area, type Role, type Section } from "@/lib/team-types";
 
 /**
@@ -26,6 +27,9 @@ export const SESSION_COOKIE = "ctrl_admin";
 /** Password ok, second factor still missing. Not a session: only /admin/login/verifica accepts it. */
 export const PENDING_COOKIE = "ctrl_admin_2fa";
 const PENDING_MINUTES = 5;
+const SETUP_MINUTES = 15;
+const AUD_CODE = "ctrl-admin-2fa";
+const AUD_SETUP = "ctrl-admin-2fa-setup";
 const SESSION_HOURS = 12;
 const MAX_FAILURES = 5;
 const WINDOW_MS = 15 * 60_000;
@@ -194,7 +198,20 @@ async function issueSession(userId: string, version: number) {
   });
 }
 
-export type LoginResult = "ok" | "2fa" | "invalid" | "locked" | "unconfigured";
+export type LoginResult = "ok" | "2fa" | "setup" | "invalid" | "locked" | "unconfigured";
+
+async function setTicket(userId: string, sv: number, audience: string, minutes: number) {
+  const ticket = await new SignJWT({ sv })
+    .setSubject(userId)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${minutes}m`)
+    .setAudience(audience)
+    .sign(secretKey()!);
+  (await cookies()).set(PENDING_COOKIE, ticket, {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/admin", maxAge: minutes * 60,
+  });
+}
 
 export async function login(email: string, password: string): Promise<LoginResult> {
   if (!authConfigured()) return "unconfigured";
@@ -202,7 +219,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   const key = await clientKey();
   if (await isLocked(key)) return "locked";
   const res = await db().execute({
-    sql: "SELECT id, name, email, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
+    sql: "SELECT id, name, email, role, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
     args: [email.trim().toLowerCase()],
   });
   const row = res.rows[0];
@@ -214,19 +231,16 @@ export async function login(email: string, password: string): Promise<LoginResul
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     return "invalid";
   }
-  if (await twoFactorEnabled(String(row.id))) {
-    // Password ok but no session yet: a 5-minute signed ticket for the code step. Failures are kept until the code passes.
-    const ticket = await new SignJWT({ sv: Number(row.session_version) })
-      .setSubject(String(row.id))
-      .setProtectedHeader({ alg: "HS256" })
-      .setIssuedAt()
-      .setExpirationTime(`${PENDING_MINUTES}m`)
-      .setAudience("ctrl-admin-2fa")
-      .sign(secretKey()!);
-    (await cookies()).set(PENDING_COOKIE, ticket, {
-      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/admin", maxAge: PENDING_MINUTES * 60,
-    });
+  const next = loginNext(String(row.role), await twoFactorEnabled(String(row.id)));
+  // Password ok but no session yet: a signed ticket for the code step (5 min) or the mandatory founder setup (15 min).
+  // Failures are kept until the second step passes.
+  if (next === "code") {
+    await setTicket(String(row.id), Number(row.session_version), AUD_CODE, PENDING_MINUTES);
     return "2fa";
+  }
+  if (next === "setup") {
+    await setTicket(String(row.id), Number(row.session_version), AUD_SETUP, SETUP_MINUTES);
+    return "setup";
   }
   await completeLogin(key, { id: String(row.id), name: String(row.name), email: String(row.email), sv: Number(row.session_version) });
   return "ok";
@@ -242,15 +256,15 @@ async function completeLogin(key: string, u: { id: string; name: string; email: 
 }
 
 /** Who is waiting at the code step (valid, unexpired ticket for an active account with the same session_version), or null. */
-async function pendingUser() {
+async function pendingUser(audience: string = AUD_CODE) {
   const token = (await cookies()).get(PENDING_COOKIE)?.value;
   if (!authConfigured() || !token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience: "ctrl-admin-2fa" });
+    const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience });
     if (!payload.sub) return null;
     const u = (await db().execute({ sql: "SELECT id, name, email, session_version FROM admin_users WHERE id = ? AND active = 1", args: [payload.sub] })).rows[0];
     if (!u || Number(u.session_version) !== Number(payload.sv)) return null;
-    return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version) };
+    return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version), iat: Number(payload.iat ?? 0) * 1000 };
   } catch {
     return null;
   }
@@ -283,6 +297,43 @@ export async function verifySecondStep(input: string): Promise<SecondStepResult>
   return "ok";
 }
 
+/* Mandatory founder setup inside the login card: QR, confirm code, recovery codes, then the session. */
+export type ForcedSetupStart = { secret: string; qrSvg: string } | "expired";
+export async function startForcedSetup(): Promise<ForcedSetupStart> {
+  const u = await pendingUser(AUD_SETUP);
+  if (!u) return "expired";
+  return beginSetup(u.id, u.email);
+}
+
+export type ForcedConfirm = { codes: string[] } | "invalid" | "locked" | "expired";
+export async function confirmForcedSetup(code: string): Promise<ForcedConfirm> {
+  const u = await pendingUser(AUD_SETUP);
+  if (!u) return "expired";
+  const actor = { id: u.id, name: u.name, email: u.email };
+  if (await secondFactorLocked(u.id)) return "locked";
+  const codes = await confirmSetup(u.id, code.slice(0, 20)).catch(() => null);
+  if (!codes) {
+    await recordSecondFactorFailure(u.id);
+    await logAction("auth.2fa_failed", { type: "user", id: u.id }, { step: "forced_setup" }, actor);
+    return "invalid";
+  }
+  await logAction("auth.2fa_enabled", { type: "user", id: u.id }, { forced: true }, actor);
+  return { codes };
+}
+
+/** Last step ("Ho salvato i codici"): only now the full session, and only if 2FA was activated in this same flow. */
+export async function finishForcedSetup(): Promise<"ok" | "expired" | "incomplete"> {
+  const u = await pendingUser(AUD_SETUP);
+  if (!u) return "expired";
+  const status = await twoFactorStatus(u.id);
+  if (!status.enabled || !forcedSetupFinishable(status.enabledAt, u.iat)) return "incomplete";
+  (await cookies()).delete({ name: PENDING_COOKIE, path: "/admin" });
+  await db().execute({ sql: "DELETE FROM login_attempts WHERE key = ?", args: [`2fa:${u.id}`] });
+  await logAction("auth.2fa_forced_setup", { type: "user", id: u.id }, undefined, { id: u.id, name: u.name, email: u.email });
+  await completeLogin(await clientKey(), u, { second_factor: "setup" });
+  return "ok";
+}
+
 /** Signs out and revokes the token server-side (session_version bump), so a copied cookie stops working too. Closes the user's other sessions as well. */
 export async function logout() {
   const me = await getAdmin().catch(() => null);
@@ -299,22 +350,28 @@ export async function logout() {
  * Verifies the signed session cookie and re-reads the account on every request (deduped per request):
  * a disabled user, a changed role/area or a password change (session_version bump) takes effect immediately.
  */
-export const getAdmin = cache(async (): Promise<AdminUser | null> => {
+const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: boolean }> => {
+  const none = { admin: null, blocked: false };
   // Read the cookie first so the check is always request-time, never baked into a prerender.
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!authConfigured() || !token) return null;
+  if (!authConfigured() || !token) return none;
   try {
     const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience: "ctrl-admin" });
-    if (!payload.sub) return null;
+    if (!payload.sub) return none;
     await ensureTeam();
+    await ensureTwoFactorSchema();
     const res = await db().execute({
-      sql: "SELECT id, email, name, role, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version FROM admin_users WHERE id = ? AND active = 1",
+      sql: `SELECT id, email, name, role, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
+              EXISTS (SELECT 1 FROM admin_2fa t WHERE t.user_id = admin_users.id AND t.secret_enc IS NOT NULL) AS tfa
+            FROM admin_users WHERE id = ? AND active = 1`,
       args: [payload.sub],
     });
     const u = res.rows[0];
-    if (!u || Number(u.session_version) !== Number(payload.sv)) return null;
+    if (!u || Number(u.session_version) !== Number(payload.sv)) return none;
     const role = isRole(u.role) ? u.role : "member";
-    return {
+    // Founder without 2FA (session from before the rule, or after a reset): no admin access until the guided setup.
+    if (!sessionAllowed(role, Number(u.tfa) === 1)) return { admin: null, blocked: true };
+    return { blocked: false, admin: {
       id: String(u.id),
       email: String(u.email),
       name: String(u.name),
@@ -324,15 +381,18 @@ export const getAdmin = cache(async (): Promise<AdminUser | null> => {
       emailAccess: role === "founder" || Number(u.email_access) === 1,
       issuedAt: Number(payload.iat ?? 0) * 1000,
       expiresAt: Number(payload.exp ?? 0) * 1000,
-    };
+    } };
   } catch {
-    return null;
+    return none;
   }
 });
 
+/** Signed-in admin allowed to use the panel, or null. Pages and actions all go through this. */
+export const getAdmin = async (): Promise<AdminUser | null> => (await readSession()).admin;
+
 export async function requireAdmin() {
   const admin = await getAdmin();
-  if (!admin) redirect("/admin/login");
+  if (!admin) redirect((await readSession()).blocked ? "/admin/login/proteggi" : "/admin/login");
   return admin;
 }
 

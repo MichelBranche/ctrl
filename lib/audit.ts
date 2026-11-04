@@ -63,6 +63,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "auth.2fa_disabled": "Verifica in due passaggi disattivata",
   "auth.2fa_failed": "Codice 2FA errato",
   "auth.2fa_recovery_used": "Codice di recupero usato",
+  "auth.2fa_forced_setup": "Verifica in due passaggi obbligatoria completata",
   "team.user_create": "Utente creato",
   "team.user_update": "Utente modificato",
   "team.password_reset": "Password reimpostata",

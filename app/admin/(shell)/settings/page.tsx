@@ -6,6 +6,7 @@ import { ProfilePhoto } from "@/components/admin/profile-photo";
 import { PasswordForm } from "@/components/admin/password-form";
 import { TwoFactorPanel } from "@/components/admin/two-factor";
 import { twoFactorStatus } from "@/lib/two-factor";
+import { canDisableTwoFactor, twoFactorRequired } from "@/lib/two-factor-policy";
 import { requireSection } from "@/lib/admin";
 import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
 
@@ -62,8 +63,10 @@ async function Body() {
         </section>
         <section className="adm-panel">
           <h2 className="adm-h2">Verifica in due passaggi</h2>
-          <p className="adm-muted">Facoltativa, solo per il tuo account. Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.</p>
-          <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} />
+          <p className="adm-muted">
+            {twoFactorRequired(admin.role) ? "Obbligatoria per i founder." : "Facoltativa, solo per il tuo account."} Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.
+          </p>
+          <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} canDisable={canDisableTwoFactor(admin.role)} />
         </section>
       </div>
     </main>
