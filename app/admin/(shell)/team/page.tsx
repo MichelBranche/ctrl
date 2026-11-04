@@ -1,3 +1,5 @@
+import { CallButton } from "@/components/admin/meet/meet-forms";
+import { connection as googleConnection, googleConfigured } from "@/lib/google-meet";
 import { UserAvatar } from "@/components/admin/user-avatar";
 import { Suspense } from "react";
 import { PanelSkeleton } from "@/components/admin/dashboard";
@@ -26,6 +28,7 @@ const STATUS_CLASS = { attivo: "is-published", invitato: "is-scheduled", scaduto
 
 async function Body() {
   const me = await requireSection("team");
+  const googleLive = googleConfigured() && Boolean(await googleConnection().catch(() => null));
   let users: Awaited<ReturnType<typeof listUsers>>;
   let board = false;
   try {
@@ -87,6 +90,7 @@ async function Body() {
                   <span className="adm-num">{eur.format(u.totalCents / 100)} <span className="adm-muted">· {u.jobs} lavori</span></span>
                   <span className="adm-user-seen">
                     <span className={`adm-badge ${STATUS_CLASS[u.status]}`}>{INVITE_STATUS_LABEL[u.status]}</span>{" "}
+                    {u.status === "attivo" && u.id !== me.id ? <><CallButton memberId={u.id} name={u.name} connected={googleLive} />{" "}</> : null}
                     <span className="adm-muted">
                       {u.status === "attivo" ? `Ultimo accesso: ${when(u.lastLoginAt)}` : u.status === "invitato" ? `Scade: ${until(u.inviteExpiresAt)}` : u.status === "scaduto" ? "Reinvia per un nuovo link" : ""}
                     </span>

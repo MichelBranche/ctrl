@@ -82,7 +82,7 @@ export const AREA_LABEL: Record<Area, string> = {
 export const isArea = (v: unknown): v is Area => AREAS.includes(v as Area);
 
 /** Admin sections. Each maps to the URL prefix(es) it owns. */
-export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "audit" | "email";
+export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "audit" | "email" | "meetings";
 
 export const SECTION_HREF: Record<Section, string> = {
   overview: "/admin",
@@ -100,6 +100,7 @@ export const SECTION_HREF: Record<Section, string> = {
   team: "/admin/team",
   audit: "/admin/audit",
   email: "/admin/email",
+  meetings: "/admin/riunioni",
 };
 
 export const SECTION_LABEL: Record<Section, string> = {
@@ -118,6 +119,7 @@ export const SECTION_LABEL: Record<Section, string> = {
   team: "Team",
   audit: "Registro",
   email: "Email",
+  meetings: "Riunioni",
 };
 
 /** Every signed-in user: overview, desk, their own earnings and their own account. */
@@ -130,7 +132,7 @@ const FOUNDER_ONLY: readonly Section[] = ["team", "audit"];
  * The shared agency inbox ("email") is not in any role: the founder grants it per person (emailAccess).
  */
 export const ROLE_SECTIONS: Record<Exclude<TeamRole, "founder">, readonly Section[]> = {
-  project_manager: ["requests", "journal", "media", "stats", "status"],
+  project_manager: ["requests", "journal", "media", "stats", "status", "meetings"],
   designer: ["media", "journal"],
   dev_frontend: ["status", "stats", "media"],
   dev_backend: ["status", "stats"],
@@ -141,9 +143,9 @@ export const ROLE_SECTIONS: Record<Exclude<TeamRole, "founder">, readonly Sectio
   video_motion: ["media", "social"],
   ecommerce: ["shop", "requests"],
   ai_automation: ["journal", "media"],
-  commerciale: ["requests", "shop", "stats"],
+  commerciale: ["requests", "shop", "stats", "meetings"],
   amministrazione: ["shop", "requests"],
-  assistenza: ["requests", "shop"],
+  assistenza: ["requests", "shop", "meetings"],
   esterno: [],
 };
 
