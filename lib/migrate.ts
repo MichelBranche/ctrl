@@ -181,6 +181,7 @@ export function ensureEmailSchema(): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
       )` },
       { sql: "CREATE INDEX IF NOT EXISTS email_send_log_user_time ON email_send_log (user_id, created_at)" },
+      { sql: "CREATE INDEX IF NOT EXISTS email_claims_user ON email_claims (user_id, claimed_at)" },
     ], "write");
   }).catch((error) => {
     emailReady = null;

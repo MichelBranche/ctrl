@@ -4,3 +4,4 @@ CREATE TABLE IF NOT EXISTS email_reads (message_key TEXT NOT NULL, user_id TEXT 
 CREATE TABLE IF NOT EXISTS email_claims (message_key TEXT PRIMARY KEY, user_id TEXT NOT NULL, claimed_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS email_send_log (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, recipients TEXT NOT NULL, subject TEXT NOT NULL, in_reply_to TEXT, message_id TEXT, ok INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS email_send_log_user_time ON email_send_log (user_id, created_at);
+CREATE INDEX IF NOT EXISTS email_claims_user ON email_claims (user_id, claimed_at);

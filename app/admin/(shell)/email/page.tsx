@@ -105,9 +105,12 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       </>
     );
   }
-  await rememberMailReferences(view).catch(() => {});
   const keys = [...view.list.map((m) => m.key), ...(view.open ? [view.open.key] : []), ...view.thread.map((t) => t.key)];
-  const collab = await collabFor(keys).catch(() => new Map<string, Collab>());
+  // Independent DB round trips: run them together.
+  const [, collab] = await Promise.all([
+    rememberMailReferences(view).catch(() => {}),
+    collabFor(keys).catch(() => new Map<string, Collab>()),
+  ]);
 
   const detailOpen = Boolean(view.open || q.compose === "new");
   return (
