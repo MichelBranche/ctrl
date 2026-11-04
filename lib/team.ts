@@ -15,13 +15,13 @@ export async function leaderboardVisible(): Promise<boolean> {
   return (await readSettings([LEADERBOARD_KEY]).catch(() => ({}) as Record<string, string>))[LEADERBOARD_KEY] === "1";
 }
 
-export type TeamUser = { id: string; email: string; name: string; avatarUrl: string | null; roles: TeamRole[]; area: Area | null; active: boolean; status: InviteStatus; inviteExpiresAt: number | null; inviteSentAt: number | null; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; removedAt: string | null; removedBy: string | null; totalCents: number; jobs: number };
+export type TeamUser = { id: string; email: string; name: string; lastName: string | null; avatarUrl: string | null; roles: TeamRole[]; area: Area | null; active: boolean; status: InviteStatus; inviteExpiresAt: number | null; inviteSentAt: number | null; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; removedAt: string | null; removedBy: string | null; totalCents: number; jobs: number };
 
 /** Founder-only: every account (never the password hash) with its lifetime totals. */
 export async function listUsers(): Promise<TeamUser[]> {
   await ensureTeam();
   const res = await db().execute(`
-    SELECT u.id, u.email, u.name, u.role, (SELECT GROUP_CONCAT(r.role) FROM admin_user_roles r WHERE r.user_id = u.id) AS roles, u.area, u.invite_state, u.invite_expires_at, u.invite_sent_at, u.removed_at, (SELECT b.name FROM admin_users b WHERE b.id = u.removed_by) AS removed_by_name, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
+    SELECT u.id, u.email, u.name, u.last_name, u.role, (SELECT GROUP_CONCAT(r.role) FROM admin_user_roles r WHERE r.user_id = u.id) AS roles, u.area, u.invite_state, u.invite_expires_at, u.invite_sent_at, u.removed_at, (SELECT b.name FROM admin_users b WHERE b.id = u.removed_by) AS removed_by_name, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
            COALESCE(SUM(j.amount_cents), 0) AS total, COUNT(j.id) AS jobs
     FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id
     GROUP BY u.id ORDER BY (u.role = 'founder') DESC, (u.invite_state IS NOT NULL), u.created_at`);
@@ -29,6 +29,7 @@ export async function listUsers(): Promise<TeamUser[]> {
     id: String(r.id),
     email: String(r.email),
     name: String(r.name),
+    lastName: r.last_name ? String(r.last_name) : null,
     avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)),
     roles: rowRoles(r),
     area: isArea(r.area) ? r.area : null,

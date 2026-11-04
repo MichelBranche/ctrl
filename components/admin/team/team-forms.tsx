@@ -187,6 +187,10 @@ export function NewUserForm() {
         <input className="adm-input" name="name" maxLength={80} required />
       </label>
       <label className="adm-field">
+        <span>Cognome</span>
+        <input className="adm-input" name="last_name" maxLength={80} autoComplete="off" />
+      </label>
+      <label className="adm-field">
         <span>Email</span>
         <input className="adm-input" name="email" type="email" autoComplete="off" required />
       </label>
@@ -242,7 +246,7 @@ export function InviteControls({ id, status, canInvite }: { id: string; status: 
   );
 }
 
-export function EditUserForm({ user, self }: { user: { id: string; name: string; roles: TeamRole[]; area: Area | null; active: boolean; emailAccess: boolean; status: InviteStatus; lastLoginAt: string | null }; self: boolean }) {
+export function EditUserForm({ user, self }: { user: { id: string; name: string; lastName: string | null; roles: TeamRole[]; area: Area | null; active: boolean; emailAccess: boolean; status: InviteStatus; lastLoginAt: string | null }; self: boolean }) {
   const [state, action, pending] = useActionState<TeamState, FormData>(updateUser, {});
   const [pwState, pwAction, pwPending] = useActionState<TeamState, FormData>(resetUserPassword, {});
   const pwForm = useResetOnOk(pwState);
@@ -258,6 +262,10 @@ export function EditUserForm({ user, self }: { user: { id: string; name: string;
         <label className="adm-field">
           <span>Nome</span>
           <input className="adm-input" name="name" defaultValue={user.name} maxLength={80} required />
+        </label>
+        <label className="adm-field">
+          <span>Cognome</span>
+          <input className="adm-input" name="last_name" defaultValue={user.lastName ?? ""} maxLength={80} />
         </label>
         <label className="adm-field">
           <span>Area principale (introiti)</span>

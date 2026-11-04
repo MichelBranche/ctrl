@@ -141,6 +141,7 @@ export function ensureTeamSchema(): Promise<void> {
     if (!have.has("avatar_url")) await addColumn("admin_users", "avatar_url", "TEXT");
     if (!have.has("last_login_at")) await addColumn("admin_users", "last_login_at", "TEXT");
     if (!have.has("email_access")) await addColumn("admin_users", "email_access", "INTEGER NOT NULL DEFAULT 0");
+    if (!have.has("last_name")) await addColumn("admin_users", "last_name", "TEXT");
     // Team invites (db/011_team_roles_invites.sql): only the SHA-256 of the token is stored.
     for (const [name, type] of [["invite_state", "TEXT"], ["invite_hash", "TEXT"], ["invite_expires_at", "INTEGER"], ["invite_sent_at", "INTEGER"],
       ["invite_window_at", "INTEGER"], ["invite_window_count", "INTEGER NOT NULL DEFAULT 0"], ["invited_by", "TEXT"], ["removed_at", "TEXT"], ["removed_by", "TEXT"]] as const)

@@ -128,6 +128,8 @@ export type AdminUser = {
   id: string;
   email: string;
   name: string;
+  /** Optional surname (Cognome); email signatures use "Nome Cognome". */
+  lastName?: string | null;
   /** Display roles; permissions are their union (see lib/team-types.ts). */
   roles: TeamRole[];
   area: Area | null;
@@ -404,7 +406,7 @@ const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: 
     await ensureTeam();
     await ensureTwoFactorSchema();
     const res = await db().execute({
-      sql: `SELECT id, email, name, role, ${ROLES_SQL}, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
+      sql: `SELECT id, email, name, last_name, role, ${ROLES_SQL}, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
               EXISTS (SELECT 1 FROM admin_2fa t WHERE t.user_id = admin_users.id AND t.secret_enc IS NOT NULL) AS tfa
             FROM admin_users WHERE id = ? AND ${CAN_SIGN_IN_SQL}`,
       args: [payload.sub],
@@ -418,6 +420,7 @@ const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: 
       id: String(u.id),
       email: String(u.email),
       name: String(u.name),
+      lastName: u.last_name ? String(u.last_name) : null,
       roles,
       area: isArea(u.area) ? u.area : null,
       avatarUrl: avatarFor(String(u.id), Number(u.has_avatar) === 1, u.updated_at, String(u.email)),

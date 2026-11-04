@@ -101,6 +101,7 @@ export async function createUser(_: TeamState, form: FormData): Promise<TeamStat
   const me = await guardSection("team");
   await ensureTeam();
   const name = str(form, "name", 80);
+  const lastName = str(form, "last_name", 80) || null;
   const email = str(form, "email", 200).toLowerCase();
   const roles = formRoles(form);
   const area = str(form, "area", 32);
@@ -119,8 +120,8 @@ export async function createUser(_: TeamState, form: FormData): Promise<TeamStat
   const hash = await hashPassword(mode === "password" ? password : crypto.randomUUID() + crypto.randomUUID());
   await db().batch([
     {
-      sql: `INSERT INTO admin_users (id, email, name, role, area, password_hash, email_access, active, invite_state, invited_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, email, name, legacyTier(roles), isArea(area) ? area : null, hash, emailAccess ? 1 : 0, mode === "password" ? 1 : 0, mode === "password" ? null : "pending", mode === "password" ? null : me.id],
+      sql: `INSERT INTO admin_users (id, email, name, last_name, role, area, password_hash, email_access, active, invite_state, invited_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, email, name, lastName, legacyTier(roles), isArea(area) ? area : null, hash, emailAccess ? 1 : 0, mode === "password" ? 1 : 0, mode === "password" ? null : "pending", mode === "password" ? null : me.id],
     },
     ...roleWrites(id, roles),
   ], "write");
@@ -137,6 +138,7 @@ export async function updateUser(_: TeamState, form: FormData): Promise<TeamStat
   const me = await guardSection("team");
   const id = str(form, "id", 64);
   const name = str(form, "name", 80);
+  const lastName = str(form, "last_name", 80) || null;
   const roles = formRoles(form);
   const area = str(form, "area", 32);
   const active = form.get("active") === "on";
@@ -151,9 +153,9 @@ export async function updateUser(_: TeamState, form: FormData): Promise<TeamStat
   // An open invite keeps the account blocked: "active" can only be switched on after acceptance.
   const [res] = await db().batch([
     {
-      sql: `UPDATE admin_users SET name = ?, role = ?, area = ?, active = CASE WHEN invite_state IS NULL THEN ? ELSE 0 END, email_access = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      sql: `UPDATE admin_users SET name = ?, last_name = ?, role = ?, area = ?, active = CASE WHEN invite_state IS NULL THEN ? ELSE 0 END, email_access = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
             WHERE id = ? AND (? = 'founder' AND ? = 1 OR (SELECT COUNT(*) FROM admin_users WHERE role = 'founder' AND active = 1 AND invite_state IS NULL AND id <> ?) > 0)`,
-      args: [name, tier, isArea(area) ? area : null, active ? 1 : 0, emailAccess ? 1 : 0, id, tier, active ? 1 : 0, id],
+      args: [name, lastName, tier, isArea(area) ? area : null, active ? 1 : 0, emailAccess ? 1 : 0, id, tier, active ? 1 : 0, id],
     },
   ], "write");
   if (!res.rowsAffected) return { error: "Serve sempre almeno un founder attivo." };

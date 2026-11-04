@@ -1,7 +1,7 @@
 -- Team accounts + paid jobs. Applied automatically at runtime by ensureTeamSchema() in lib/migrate.ts;
 -- this file documents the schema and can be applied by hand (idempotent).
 CREATE TABLE IF NOT EXISTS admin_users (
-  id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+  id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, last_name TEXT,
   role TEXT NOT NULL DEFAULT 'member', area TEXT, password_hash TEXT NOT NULL,
   active INTEGER NOT NULL DEFAULT 1, session_version INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),

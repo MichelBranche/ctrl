@@ -22,7 +22,7 @@ const fmt = (ms: number) => new Date(ms).toLocaleString("it-IT", { timeZone: "Eu
 
 async function Body() {
   const admin = await requireSection("settings");
-  const result = await db().execute({ sql: "SELECT contact_email, phone, website FROM admin_users WHERE id = ?", args: [admin.id] });
+  const result = await db().execute({ sql: "SELECT last_name, contact_email, phone, website FROM admin_users WHERE id = ?", args: [admin.id] });
   const profile = result.rows[0];
   const twoFactor = await twoFactorStatus(admin.id);
   return (
@@ -37,7 +37,7 @@ async function Body() {
           <h2 className="adm-h2">Il tuo profilo</h2>
           <p className="adm-muted">Lo staff vedrà questa foto sulle email che apri. Il nome compare passando il mouse sull’avatar.</p>
           <ProfilePhoto current={admin.avatarUrl} name={admin.name} />
-          <ProfileForm name={admin.name} loginEmail={admin.email} contactEmail={String(profile?.contact_email ?? "")} phone={String(profile?.phone ?? "")} website={String(profile?.website ?? "")} />
+          <ProfileForm name={admin.name} lastName={String(profile?.last_name ?? "")} loginEmail={admin.email} contactEmail={String(profile?.contact_email ?? "")} phone={String(profile?.phone ?? "")} website={String(profile?.website ?? "")} />
         </section>
         <section className="adm-panel">
           <h2 className="adm-h2">Sessione</h2>

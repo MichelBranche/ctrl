@@ -36,6 +36,6 @@ function photoUrl(id: string, avatarUrl: string | null): string | null {
   return null;
 }
 
-export function emailSender(u: { id: string; name: string; roles: readonly TeamRole[]; avatarUrl: string | null }): EmailSender {
-  return { name: u.name.trim(), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl) };
+export function emailSender(u: { id: string; name: string; lastName?: string | null; roles: readonly TeamRole[]; avatarUrl: string | null }): EmailSender {
+  return { name: [u.name.trim(), u.lastName?.trim()].filter(Boolean).join(" "), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl) };
 }

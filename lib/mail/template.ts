@@ -71,11 +71,13 @@ function bodyHtml(text: string): string {
 function signatureHtml(sender?: EmailSender | null) {
   const photo = sender?.photoUrl && /^https:\/\/[^\s"<>]+$/.test(sender.photoUrl) ? sender.photoUrl : null;
   const lines = `${sender?.name ? `<strong style="color:#111111">${esc(sender.name)}</strong><br>` : ""}${sender?.role ? `${esc(sender.role)}<br>` : ""}Ctrl Agency`;
-  if (!photo) return `<p style="${P};margin-top:22px">${lines}</p>`;
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 14px"><tr>
-<td valign="middle" width="48" style="width:48px;padding-right:12px"><img src="${esc(photo)}" width="48" height="48" alt="${esc(sender?.name ?? "")}" style="display:block;width:48px;height:48px;border-radius:50%;object-fit:cover;border:0"></td>
-<td valign="middle" style="font:14px/1.45 Arial,Helvetica,sans-serif;color:#333333">${lines}</td>
-</tr></table>`;
+  // Centered like the old founders signature: photo above, text below, email-safe table with align=center.
+  const img = photo ? `<tr><td align="center" style="padding:0 0 10px"><img src="${esc(photo)}" width="48" height="48" alt="${esc(sender?.name ?? "")}" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:50%;object-fit:cover;border:0"></td></tr>\n` : "";
+  return `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 14px"><tr><td align="center">
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0">
+${img}<tr><td align="center" style="font:14px/1.45 Arial,Helvetica,sans-serif;color:#333333;text-align:center">${lines}</td></tr>
+</table>
+</td></tr></table>`;
 }
 
 /** Both MIME parts for a message the user typed. The text part carries the same signature after "-- ". */
@@ -104,7 +106,7 @@ export function brandedEmail(body: string, opts: { cta?: { label: string; href: 
 ${bodyHtml(clean)}
 ${ctaHtml}
 ${signatureHtml(opts.sender)}
-<p style="${P}">Telefono: <a href="tel:${CONTACT_PHONE}" style="color:#1a56db">${CONTACT_PHONE}</a><br>Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
+<p align="center" style="${P};text-align:center">Telefono: <a href="tel:${CONTACT_PHONE}" style="color:#1a56db">${CONTACT_PHONE}</a><br>Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
 </td></tr>
 <tr><td style="padding:18px 24px 22px;border-top:1px solid #eeeeee">
 <p style="margin:0 0 4px;font:700 11px/1.4 Arial,Helvetica,sans-serif;letter-spacing:.08em;color:#111111">CTRL AGENCY</p>

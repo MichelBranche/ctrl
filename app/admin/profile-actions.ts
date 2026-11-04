@@ -23,8 +23,9 @@ export async function saveProfilePhoto(photo: string | null): Promise<{ error?: 
 export async function saveProfile(_previous: { error?: string; ok?: string }, form: FormData): Promise<{ error?: string; ok?: string }> {
   const me = await guardSection("settings");
   const read = (key: string) => typeof form.get(key) === "string" ? String(form.get(key)).trim() : "";
-  const name = read("name"), email = read("contactEmail"), phone = read("phone"), website = read("website");
+  const name = read("name"), lastName = read("lastName"), email = read("contactEmail"), phone = read("phone"), website = read("website");
   if (!name || name.length > 100 || /[\x00-\x1f\x7f]/.test(name)) return { error: "Inserisci un nome valido, fino a 100 caratteri." };
+  if (lastName.length > 100 || /[\x00-\x1f\x7f]/.test(lastName)) return { error: "Inserisci un cognome valido, fino a 100 caratteri." };
   if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return { error: "Inserisci un’email di contatto valida." };
   if (phone && (phone.length > 40 || !/^[+0-9().\s-]{3,40}$/.test(phone))) return { error: "Inserisci un numero di telefono valido." };
   if (website) {
@@ -34,7 +35,7 @@ export async function saveProfile(_previous: { error?: string; ok?: string }, fo
     } catch { return { error: "Inserisci un link completo, che inizi con https:// o http://." }; }
   }
   try {
-    await db().execute({ sql: "UPDATE admin_users SET name = ?, contact_email = ?, phone = ?, website = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [name, email || null, phone || null, website || null, me.id] });
+    await db().execute({ sql: "UPDATE admin_users SET name = ?, last_name = ?, contact_email = ?, phone = ?, website = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [name, lastName || null, email || null, phone || null, website || null, me.id] });
   } catch { return { error: "Impossibile salvare il profilo. Riprova." }; }
   await logAction("settings.profile", { type: "user", id: me.id }, undefined, me);
   revalidatePath("/admin", "layout");
