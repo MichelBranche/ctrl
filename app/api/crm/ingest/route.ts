@@ -4,7 +4,6 @@ import { ingestContact } from "@/lib/crm";
 import { ingestAuth, ingestSchema } from "@/lib/crm-core";
 import { dbConfigured } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
 const MAX_BYTES = 1_000_000;
 const json = (body: unknown, status: number) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
