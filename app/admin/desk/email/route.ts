@@ -18,9 +18,11 @@ export async function GET(request:Request){
   try {
     // Verify the stable message key before linking: UIDs can change after a move.
     const view=await provider.view({folder:row.folder,page:1,open:Number(row.uid)});
-    if(view.open?.key===key)return go(`/admin/email?f=${encodeURIComponent(row.folder)}&m=${row.uid}`);
-    if(row.message_id){
-      const search='rfc822msgid:'+String(row.message_id).replace(/[<>]/g,'');
+    if(view.open?.key===key)return go(`/admin/email?f=${encodeURIComponent(row.folder)}&m=${Number(row.uid)}`);
+    // The Message-ID comes from the sender: keep only RFC 5322 id characters so it cannot add Gmail search operators.
+    const messageId=String(row.message_id ?? '').replace(/[<>]/g,'');
+    if(messageId && messageId.length<=250 && /^[\w.!#$%&'*+/=?^`{|}~@-]+$/.test(messageId)){
+      const search='rfc822msgid:'+messageId;
       for(const folder of ['all','trash','spam'] as const){const found=await provider.view({folder,page:1,search});const match=found.list.find(item=>item.key===key);if(match)return go(`/admin/email?f=${folder}&m=${match.uid}`);}
     }
     return go('/admin/email');
