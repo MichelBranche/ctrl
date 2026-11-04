@@ -11,6 +11,11 @@ import { crmOwners, getContact, listDrafts, listNotes } from "@/lib/crm";
 import { SOURCE_LABEL, STAGES, STAGE_LABEL, websiteDomain } from "@/lib/crm-core";
 import { NoteForm } from "@/components/admin/crm/note-form";
 
+/** Build-time placeholder only (an invalid id renders notFound inside Suspense); real ids render on request. */
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
 export default function ContactPage({ params }: { params: Promise<{ id: string }> }) {
   return <main className="adm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body params={params} /></Suspense></main>;
 }
