@@ -858,3 +858,7 @@ a.adm-stat:hover::after { opacity: 1; }
 .crm-dl dd { margin: 0; overflow-wrap: anywhere; }
 .crm-reasons { margin: 0 0 1rem; padding-left: 1.1rem; color: var(--adm-dim); font-size: 0.85rem; }
 .crm-preview { width: 100%; min-height: 18rem; border: 1px solid var(--adm-rule); border-radius: 0.5rem; background: #fff; }
+.crm-maps-icon { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-left: 0.3rem; vertical-align: middle; border: 1px solid transparent; border-radius: 0.4rem; color: var(--adm-dim); transition: color 0.15s ease, border-color 0.15s ease, scale 0.1s ease; }
+.crm-maps-icon:hover { color: var(--adm-accent); border-color: var(--adm-rule); }
+.crm-maps-icon:active { scale: 0.92; }
+.crm-maps-icon:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; }

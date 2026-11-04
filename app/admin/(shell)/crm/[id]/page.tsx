@@ -4,7 +4,7 @@ import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { archiveAction, stageFormAction } from "@/app/admin/crm-actions";
 import { ContactForm } from "@/components/admin/crm/contact-form";
-import { CrmTabs, day, eur, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { CrmTabs, day, eur, MapsLink, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { DraftEditor } from "@/components/admin/crm/draft-editor";
 import { requireSection } from "@/lib/admin";
 import { crmOwners, getContact, listDrafts, listNotes } from "@/lib/crm";
@@ -38,6 +38,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
       <header className="adm-top">
         <div><p className="adm-muted"><Link href={"/admin/crm" as Route}>CRM</Link> · {SOURCE_LABEL[c.source]}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} /></h1></div>
         <div className="adm-row-actions">
+          <MapsLink contact={c} />
           <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link>
           {mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
         </div>

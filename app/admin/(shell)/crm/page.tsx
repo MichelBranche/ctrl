@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ContactForm } from "@/components/admin/crm/contact-form";
-import { CrmTabs, day, eur, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { CrmTabs, day, eur, MapsLink, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { requireSection } from "@/lib/admin";
 import { backfillRequests, crmOwners, crmStats, facets, listContacts } from "@/lib/crm";
 import { conversionRate, isSource, isStage, SOURCES, SOURCE_LABEL, STAGES, STAGE_LABEL } from "@/lib/crm-core";
@@ -59,7 +59,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <tr key={c.id}>
                 <td><Link href={`/admin/crm/${c.id}` as Route}>{c.businessName}</Link>{c.type ? <div className="adm-muted">{c.type}</div> : null}</td>
                 <td><span className="adm-badge">{STAGE_LABEL[c.stage]}</span></td>
-                <td>{c.city ?? ""}</td><td>{SOURCE_LABEL[c.source]}</td><td>{eur(c.valueEur)}</td>
+                <td>{c.city ?? ""}{c.city || c.address ? <MapsLink contact={c} compact /> : null}</td><td>{SOURCE_LABEL[c.source]}</td><td>{eur(c.valueEur)}</td>
                 <td className={c.nextActionAt && c.nextActionAt.slice(0, 10) < today && !["vinto", "perso"].includes(c.stage) ? "adm-error" : undefined}>{c.nextAction ?? ""}{c.nextActionAt ? <div className="adm-muted">{day(c.nextActionAt)}</div> : null}</td>
                 <td><ScoreBadge score={c.score} /></td>
               </tr>
