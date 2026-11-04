@@ -8,6 +8,7 @@ import { logAction } from "@/lib/audit";
 import { avatarFor } from "@/lib/avatars";
 import { db, dbConfigured } from "@/lib/db";
 import { ensureTeamSchema } from "@/lib/migrate";
+import { checkSecondFactor, twoFactorEnabled } from "@/lib/two-factor";
 import { canAccess, isArea, isRole, type Area, type Role, type Section } from "@/lib/team-types";
 
 /**
@@ -22,6 +23,9 @@ import { canAccess, isArea, isRole, type Area, type Role, type Section } from "@
  */
 const PASSWORD_SETTING = "admin_password_hash";
 export const SESSION_COOKIE = "ctrl_admin";
+/** Password ok, second factor still missing. Not a session: only /admin/login/verifica accepts it. */
+export const PENDING_COOKIE = "ctrl_admin_2fa";
+const PENDING_MINUTES = 5;
 const SESSION_HOURS = 12;
 const MAX_FAILURES = 5;
 const WINDOW_MS = 15 * 60_000;
@@ -103,6 +107,27 @@ export type AdminUser = {
 
 export type ChangeResult = "ok" | "wrong" | "weak" | "mismatch" | "locked";
 
+/** Re-checks the signed-in user's password with the login lockout (used to disable 2FA). */
+export async function confirmOwnPassword(password: string): Promise<"ok" | "wrong" | "locked"> {
+  const me = await getAdmin();
+  if (!me) return "wrong";
+  const key = await clientKey();
+  if (await isLocked(key)) return "locked";
+  const row = await db().execute({ sql: "SELECT password_hash FROM admin_users WHERE id = ?", args: [me.id] });
+  if (await verifyPassword(password, String(row.rows[0]?.password_hash ?? "")).catch(() => false)) return "ok";
+  await recordFailure(key);
+  return "wrong";
+}
+
+/** Shared lockout for the 2FA step: per IP and per account, so rotating IPs does not buy more guesses. */
+export async function secondFactorLocked(userId: string) {
+  return (await isLocked(await clientKey())) || (await isLocked(`2fa:${userId}`));
+}
+export async function recordSecondFactorFailure(userId: string) {
+  await recordFailure(await clientKey());
+  await recordFailure(`2fa:${userId}`);
+}
+
 export const passwordOk = (pw: string) => pw.length >= 12 && pw.length <= 500;
 
 /** Verifies the user's current password (same lockout as login), stores a new hash and signs out their other sessions. */
@@ -169,7 +194,7 @@ async function issueSession(userId: string, version: number) {
   });
 }
 
-export type LoginResult = "ok" | "invalid" | "locked" | "unconfigured";
+export type LoginResult = "ok" | "2fa" | "invalid" | "locked" | "unconfigured";
 
 export async function login(email: string, password: string): Promise<LoginResult> {
   if (!authConfigured()) return "unconfigured";
@@ -189,12 +214,72 @@ export async function login(email: string, password: string): Promise<LoginResul
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     return "invalid";
   }
+  if (await twoFactorEnabled(String(row.id))) {
+    // Password ok but no session yet: a 5-minute signed ticket for the code step. Failures are kept until the code passes.
+    const ticket = await new SignJWT({ sv: Number(row.session_version) })
+      .setSubject(String(row.id))
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(`${PENDING_MINUTES}m`)
+      .setAudience("ctrl-admin-2fa")
+      .sign(secretKey()!);
+    (await cookies()).set(PENDING_COOKIE, ticket, {
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/admin", maxAge: PENDING_MINUTES * 60,
+    });
+    return "2fa";
+  }
+  await completeLogin(key, { id: String(row.id), name: String(row.name), email: String(row.email), sv: Number(row.session_version) });
+  return "ok";
+}
+
+async function completeLogin(key: string, u: { id: string; name: string; email: string; sv: number }, extra?: Record<string, unknown>) {
   await db().batch([
     { sql: "DELETE FROM login_attempts WHERE key = ?", args: [key] },
-    { sql: "UPDATE admin_users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [String(row.id)] },
+    { sql: "UPDATE admin_users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [u.id] },
   ], "write");
-  await issueSession(String(row.id), Number(row.session_version));
-  await logAction("auth.login", { type: "user", id: String(row.id) }, undefined, { id: String(row.id), name: String(row.name), email: String(row.email) });
+  await issueSession(u.id, u.sv);
+  await logAction("auth.login", { type: "user", id: u.id }, extra, { id: u.id, name: u.name, email: u.email });
+}
+
+/** Who is waiting at the code step (valid, unexpired ticket for an active account with the same session_version), or null. */
+async function pendingUser() {
+  const token = (await cookies()).get(PENDING_COOKIE)?.value;
+  if (!authConfigured() || !token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience: "ctrl-admin-2fa" });
+    if (!payload.sub) return null;
+    const u = (await db().execute({ sql: "SELECT id, name, email, session_version FROM admin_users WHERE id = ? AND active = 1", args: [payload.sub] })).rows[0];
+    if (!u || Number(u.session_version) !== Number(payload.sv)) return null;
+    return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version) };
+  } catch {
+    return null;
+  }
+}
+
+export const hasPendingLogin = async () => Boolean(await pendingUser());
+
+export type SecondStepResult = "ok" | "invalid" | "locked" | "expired";
+
+/** Second login step: TOTP or recovery code. Same lockout as the password (per IP + per account), audit on every outcome. */
+export async function verifySecondStep(input: string): Promise<SecondStepResult> {
+  const u = await pendingUser();
+  if (!u) {
+    (await cookies()).delete({ name: PENDING_COOKIE, path: "/admin" });
+    return "expired";
+  }
+  const actor = { id: u.id, name: u.name, email: u.email };
+  if (await secondFactorLocked(u.id)) return "locked";
+  const kind = await checkSecondFactor(u.id, input.slice(0, 40)).catch(() => null);
+  if (!kind) {
+    await recordSecondFactorFailure(u.id);
+    await logAction("auth.2fa_failed", { type: "user", id: u.id }, { step: "login" }, actor);
+    await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+    return "invalid";
+  }
+  if (kind === "recovery") await logAction("auth.2fa_recovery_used", { type: "user", id: u.id }, undefined, actor);
+  (await cookies()).delete({ name: PENDING_COOKIE, path: "/admin" });
+  await db().execute({ sql: "DELETE FROM login_attempts WHERE key = ?", args: [`2fa:${u.id}`] });
+  await completeLogin(await clientKey(), u, { second_factor: kind });
   return "ok";
 }
 

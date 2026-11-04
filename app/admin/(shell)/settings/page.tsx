@@ -4,6 +4,8 @@ import { ProfileForm } from "@/components/admin/profile-form";
 import { db } from "@/lib/db";
 import { ProfilePhoto } from "@/components/admin/profile-photo";
 import { PasswordForm } from "@/components/admin/password-form";
+import { TwoFactorPanel } from "@/components/admin/two-factor";
+import { twoFactorStatus } from "@/lib/two-factor";
 import { requireSection } from "@/lib/admin";
 import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
 
@@ -21,6 +23,7 @@ async function Body() {
   const admin = await requireSection("settings");
   const result = await db().execute({ sql: "SELECT contact_email, phone, website FROM admin_users WHERE id = ?", args: [admin.id] });
   const profile = result.rows[0];
+  const twoFactor = await twoFactorStatus(admin.id);
   return (
     <main className="adm-main">
       <header className="adm-top">
@@ -56,6 +59,11 @@ async function Body() {
           <h2 className="adm-h2">Cambia password</h2>
           <p className="adm-muted">La password è salvata solo come hash scrypt nel database. Cambiandola chiudi le altre sessioni aperte con questo account.</p>
           <PasswordForm />
+        </section>
+        <section className="adm-panel">
+          <h2 className="adm-h2">Verifica in due passaggi</h2>
+          <p className="adm-muted">Facoltativa, solo per il tuo account. Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.</p>
+          <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} />
         </section>
       </div>
     </main>

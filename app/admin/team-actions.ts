@@ -1,5 +1,6 @@
 "use server";
 
+import { removeTwoFactor } from "@/lib/two-factor";
 import { revalidatePath } from "next/cache";
 import { ensureTeam, guardSection, hashPassword, passwordOk } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
@@ -147,4 +148,15 @@ export async function setLeaderboardVisible(visible: boolean): Promise<{ ok: boo
   await logAction("team.leaderboard", undefined, { visible });
   refresh();
   return { ok: true };
+}
+
+/** Founder rescue when a member lost phone and recovery codes: removes their 2FA and closes their sessions. */
+export async function resetUserTwoFactor(_: TeamState, form: FormData): Promise<TeamState> {
+  const me = await guardSection("team");
+  const id = str(form, "id", 64);
+  if (!ID.test(id) || id === me.id) return { error: "Utente non valido." };
+  await removeTwoFactor(id);
+  await db().execute({ sql: "UPDATE admin_users SET session_version = session_version + 1 WHERE id = ?", args: [id] });
+  await logAction("auth.2fa_disabled", { type: "user", id }, { by: "founder_reset" });
+  return { ok: "Verifica in due passaggi azzerata." };
 }

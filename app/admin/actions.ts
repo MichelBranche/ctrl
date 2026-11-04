@@ -3,7 +3,7 @@
 import { put } from "@vercel/blob";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdmin, login, logout } from "@/lib/admin";
+import { getAdmin, login, logout, verifySecondStep } from "@/lib/admin";
 import { canAccess } from "@/lib/team-types";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -12,7 +12,7 @@ import { ensureTranslationSchema } from "@/lib/migrate";
 import { translatePost, translationConfigured } from "@/lib/translate";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
 
-export type FormState = { error?: string; ok?: string; warning?: string };
+export type FormState = { error?: string; ok?: string; warning?: string; twoFactor?: boolean };
 
 export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").slice(0, 200);
@@ -22,7 +22,20 @@ export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   if (result === "unconfigured") return { error: "Accesso non configurato sul server." };
   if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
   if (result === "invalid") return { error: "Credenziali non valide." };
+  // Same card switches to the code step; /admin/login/verifica serves a reload during those 5 minutes.
+  if (result === "2fa") return { twoFactor: true };
   redirect("/admin");
+}
+
+export async function signInSecondStep(_: FormState, form: FormData): Promise<FormState> {
+  const code = String(form.get("code") ?? "").trim().slice(0, 40);
+  if (!code) return { error: "Inserisci il codice." };
+  const result = await verifySecondStep(code);
+  if (result === "expired") return { error: "Verifica scaduta (5 minuti). Torna all’accesso e inserisci di nuovo la password." };
+  if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
+  if (result === "invalid") return { error: "Codice non valido o già usato." };
+  // The session cookie is set; the client shows the success animation and then opens /admin.
+  return { ok: "Accesso verificato." };
 }
 
 export async function signOut() {

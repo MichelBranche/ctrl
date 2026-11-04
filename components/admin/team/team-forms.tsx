@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useOptimistic, useRef, useTransition } from "react";
-import { addJob, createUser, deleteJob, resetUserPassword, setLeaderboardVisible, updateUser, type TeamState } from "@/app/admin/team-actions";
+import { addJob, createUser, deleteJob, resetUserPassword, resetUserTwoFactor, setLeaderboardVisible, updateUser, type TeamState } from "@/app/admin/team-actions";
 import { AREA_LABEL, AREAS, ROLE_LABEL, ROLES, type Area, type Role } from "@/lib/team-types";
 
 function Status({ state }: { state: TeamState }) {
@@ -172,6 +172,7 @@ export function EditUserForm({ user, self }: { user: { id: string; name: string;
   const [state, action, pending] = useActionState<TeamState, FormData>(updateUser, {});
   const [pwState, pwAction, pwPending] = useActionState<TeamState, FormData>(resetUserPassword, {});
   const pwForm = useResetOnOk(pwState);
+  const [tfState, tfAction, tfPending] = useActionState<TeamState, FormData>(resetUserTwoFactor, {});
   return (
     <div className="adm-user-edit">
       <form action={action} className="adm-form adm-job-form">
@@ -219,6 +220,15 @@ export function EditUserForm({ user, self }: { user: { id: string; name: string;
             <button className="adm-btn adm-btn-sm" disabled={pwPending}>{pwPending ? "…" : "Reimposta password"}</button>
             <Status state={pwState} />
           </div>
+        </form>
+      )}
+      {self ? null : (
+        <form action={tfAction} className="adm-row-actions">
+          <input type="hidden" name="id" value={user.id} />
+          <button className="adm-btn adm-btn-sm" disabled={tfPending} title="Se ha perso telefono e codici di recupero: potrà accedere con la sola password e riattivarla.">
+            {tfPending ? "…" : "Azzera verifica in due passaggi"}
+          </button>
+          <Status state={tfState} />
         </form>
       )}
     </div>

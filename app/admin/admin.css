@@ -610,3 +610,69 @@ a.adm-stat:hover::after { opacity: 1; }
 /* Backup panel and audit filters */
 .adm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
 .adm-row .adm-field { min-width: 10rem; }
+.adm-2fa-qr { width: 200px; max-width: 100%; padding: 8px; background: #fff; border-radius: 8px; line-height: 0; }
+.adm-2fa-qr svg { width: 100%; height: auto; }
+.adm-2fa-secret { display: block; padding: 0.6rem 0.75rem; border-radius: 6px; background: var(--adm-panel-2, rgba(255,255,255,0.06)); font-size: 0.95rem; letter-spacing: 0.06em; overflow-wrap: anywhere; user-select: all; }
+.adm-2fa-code { font-variant-numeric: tabular-nums; letter-spacing: 0.15em; }
+.adm-2fa-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 1rem; margin: 0; padding-left: 1.5rem; font-variant-numeric: tabular-nums; }
+/* OTP input (components/admin/otp-input.tsx) */
+.adm-otp-wrap { width: fit-content; max-width: 100%; }
+.adm-otp { display: flex; align-items: center; gap: 0.6rem; }
+.adm-otp-group { display: flex; gap: 0.45rem; }
+.adm-otp-sep { width: 0.5rem; height: 2px; border-radius: 2px; background: var(--adm-dim, #888); opacity: 0.5; }
+.adm-otp-slot {
+  position: relative; display: grid; place-items: center; width: 2.8rem; height: 3.4rem; border-radius: 12px;
+  font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; color: inherit;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: border-color 0.18s, box-shadow 0.18s, background-color 0.25s, color 0.25s;
+}
+.adm-otp-slot.is-active { border-color: #ff4a1c; box-shadow: 0 0 0 3px rgba(255, 74, 28, 0.28); }
+.adm-otp-slot[data-status="error"] { border-color: #ef4444; color: #fca5a5; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
+.adm-otp-slot[data-status="success"] { border-color: #22c55e; color: #86efac; background: rgba(34, 197, 94, 0.12); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2); }
+.adm-otp-caret { position: absolute; width: 2px; height: 1.5rem; border-radius: 1px; background: #ff4a1c; animation: adm-otp-blink 1.1s step-end infinite; }
+@keyframes adm-otp-blink { 50% { opacity: 0; } }
+.adm-otp-alt { justify-self: start; padding: 0; border: 0; background: none; color: var(--adm-dim, #aaa); font: inherit; font-size: 0.85rem; text-decoration: underline; cursor: pointer; }
+@media (max-width: 380px) { .adm-otp-slot { width: 2.4rem; height: 3rem; font-size: 1.25rem; } .adm-otp { gap: 0.35rem; } .adm-otp-group { gap: 0.3rem; } }
+@media (prefers-reduced-motion: reduce) { .adm-otp-caret { animation: none; } .adm-otp-slot { transition: none; } }
+/* Sign-in (components/admin/login-screen.tsx) */
+.adm-auth *, .adm-auth *::before, .adm-auth *::after { box-sizing: border-box; }
+.adm-auth { --gx: 50vw; --gy: 30vh; position: relative; isolation: isolate; display: grid; place-items: center; align-content: center; gap: 1.25rem; min-height: 100svh; padding: 1.25rem; overflow: hidden; background: #070707; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.adm-auth-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.adm-auth-grid { position: absolute; inset: -1px; background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%); }
+.adm-auth-glow { position: absolute; left: 0; top: 0; width: 640px; height: 640px; border-radius: 50%; background: radial-gradient(circle, rgba(255,74,28,.22), rgba(255,74,28,.06) 40%, transparent 68%); transform: translate3d(calc(var(--gx) - 320px), calc(var(--gy) - 320px), 0); transition: transform .5s cubic-bezier(.22,1,.36,1); will-change: transform; }
+.adm-auth-card { width: min(100%, 25rem); padding: 1.75rem 1.5rem 1.5rem; border-radius: 22px; background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.03)); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 30px 80px -20px rgba(0,0,0,.8); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); overflow: hidden; }
+@media (min-width: 480px) { .adm-auth-card { padding: 2.25rem 2rem 2rem; } }
+.adm-auth-brand { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.75rem; }
+.adm-auth-mark { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 9px; background: #ff4a1c; color: #0b0b0b; font-weight: 900; font-size: 1.15rem; box-shadow: 0 6px 20px -6px rgba(255,74,28,.7); }
+.adm-auth-word { font-weight: 700; letter-spacing: .02em; }
+.adm-auth-word sup { font-size: .55em; opacity: .7; }
+.adm-auth-tag { margin-left: auto; padding: .2rem .55rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); color: #a1a1aa; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+.adm-auth-title { margin: 0; font-size: 1.6rem; font-weight: 650; letter-spacing: -.025em; }
+.adm-auth-sub { margin: .35rem 0 1.4rem; color: #a1a1aa; font-size: .92rem; line-height: 1.45; }
+.adm-auth-form, .adm-auth .adm-form { display: grid; gap: .85rem; }
+.adm-float { position: relative; }
+.adm-float input { width: 100%; height: 3.4rem; padding: 1.35rem .95rem .45rem; border-radius: 12px; border: 1px solid rgba(255,255,255,.13); background: rgba(0,0,0,.35); color: inherit; font: inherit; font-size: 1rem; outline: none; transition: border-color .18s, box-shadow .18s; }
+.adm-float input:has(+ label + .adm-float-eye) { padding-right: 3rem; }
+.adm-float label { position: absolute; left: .95rem; top: 50%; transform: translateY(-50%); color: #8b8b93; font-size: 1rem; pointer-events: none; transform-origin: left center; transition: transform .18s cubic-bezier(.22,1,.36,1), color .18s; }
+.adm-float input:focus + label, .adm-float input:not(:placeholder-shown) + label { transform: translateY(-1.2rem) scale(.74); color: #c4c4cc; }
+.adm-float input:focus { border-color: #ff4a1c; box-shadow: 0 0 0 3px rgba(255,74,28,.22); }
+.adm-float input[aria-invalid] { border-color: rgba(239,68,68,.7); }
+.adm-float input:-webkit-autofill { -webkit-text-fill-color: #f4f4f5; box-shadow: 0 0 0 100px #151515 inset; caret-color: #f4f4f5; }
+.adm-float-eye { position: absolute; right: .45rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 9px; background: none; color: #8b8b93; cursor: pointer; }
+.adm-float-eye:hover, .adm-float-eye:focus-visible { color: #f4f4f5; background: rgba(255,255,255,.06); outline: none; }
+.adm-auth-error { margin: 0; padding: .6rem .75rem; border-radius: 10px; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; font-size: .88rem; }
+.adm-auth-btn, .adm-auth .adm-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; height: 3.1rem; margin-top: .2rem; border: 0; border-radius: 12px; background: #ff4a1c; color: #0b0b0b; font: inherit; font-weight: 650; font-size: 1rem; cursor: pointer; transition: transform .12s, filter .18s, opacity .18s; }
+.adm-auth-btn:hover, .adm-auth .adm-btn-primary:hover { filter: brightness(1.08); }
+.adm-auth-btn:active, .adm-auth .adm-btn-primary:active { transform: scale(.985); }
+.adm-auth-btn:disabled, .adm-auth .adm-btn-primary:disabled { opacity: .7; cursor: progress; }
+.adm-auth-spin { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid rgba(0,0,0,.25); border-top-color: #0b0b0b; animation: adm-spin .7s linear infinite; }
+@keyframes adm-spin { to { transform: rotate(360deg); } }
+.adm-auth .adm-otp-alt { margin-top: .9rem; color: #a1a1aa; }
+.adm-auth .adm-field > span { color: #a1a1aa; }
+.adm-auth .adm-ok:empty, .adm-auth .adm-error:empty { display: none; }
+.adm-auth-foot { margin: 0; color: #5f5f66; font-size: .75rem; letter-spacing: .02em; }
+@media (prefers-reduced-motion: reduce) { .adm-auth-glow { transition: none; } .adm-auth-spin { animation-duration: 1.6s; } }
+.adm-auth .adm-otp-wrap { width: 100%; }
+.adm-auth .adm-otp { gap: clamp(.3rem, 2vw, .6rem); }
+.adm-auth .adm-otp-group { flex: 1; gap: clamp(.25rem, 1.5vw, .45rem); }
+.adm-auth .adm-otp-slot { flex: 1; width: auto; min-width: 0; height: 3.4rem; }

@@ -223,3 +223,22 @@ export function ensureAuditSchema(): Promise<void> {
   ], "write"); }).catch((error) => { auditReady = null; throw error; });
   return auditReady;
 }
+
+let twoFactorReady: Promise<void> | null = null;
+/** Optional TOTP 2FA per admin user (see db/010_two_factor.sql). */
+export function ensureTwoFactorSchema(): Promise<void> {
+  twoFactorReady ??= retryBusy(async () => { await ensureTeamSchema(); await db().batch([
+    { sql: `CREATE TABLE IF NOT EXISTS admin_2fa (
+      user_id TEXT PRIMARY KEY REFERENCES admin_users(id) ON DELETE CASCADE,
+      secret_enc TEXT, pending_enc TEXT, pending_at INTEGER,
+      last_step INTEGER NOT NULL DEFAULT 0, enabled_at TEXT
+    )` },
+    { sql: `CREATE TABLE IF NOT EXISTS admin_2fa_recovery (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+      code_hash TEXT NOT NULL, used_at TEXT
+    )` },
+    { sql: "CREATE INDEX IF NOT EXISTS admin_2fa_recovery_user ON admin_2fa_recovery (user_id)" },
+  ], "write"); }).catch((error) => { twoFactorReady = null; throw error; });
+  return twoFactorReady;
+}
