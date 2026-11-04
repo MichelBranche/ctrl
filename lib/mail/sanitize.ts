@@ -26,14 +26,14 @@ export function sanitizeEmailHtml(html: string, opts: { showImages: boolean; cid
   const out = sanitizeHtml(html, {
     allowedTags: [
       ...sanitizeHtml.defaults.allowedTags.filter((t) => t !== "style"),
-      "img", "font", "center", "span", "div", "table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "col", "colgroup", "style",
+      "img", "font", "center", "span", "div", "table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "col", "colgroup", "style", "u", "s", "small", "big", "sub", "sup", "hr", "wbr",
     ],
     disallowedTagsMode: "discard",
     allowVulnerableTags: true, // only <style>, whose content is cleaned in textFilter/transform below
     allowedAttributes: {
-      "*": ["style", "align", "valign", "width", "height", "bgcolor", "color", "dir", "title", "class", "border", "cellpadding", "cellspacing", "colspan", "rowspan"],
+      "*": ["style", "align", "valign", "width", "height", "bgcolor", "color", "dir", "lang", "title", "class", "role", "border", "cellpadding", "cellspacing", "colspan", "rowspan", "nowrap", "hspace", "vspace"],
       a: ["href", "name", "target", "rel"],
-      img: ["src", "alt", "width", "height"],
+      img: ["src", "alt", "width", "height", "border"],
       font: ["face", "size", "color"],
     },
     allowedSchemes: ["http", "https", "mailto", "tel"],
@@ -59,11 +59,4 @@ export function sanitizeEmailHtml(html: string, opts: { showImages: boolean; cid
   return { html: html2, blockedImages };
 }
 
-/** Wraps sanitized HTML in a document for an iframe srcdoc with a strict CSP (no scripts, no remote loads unless allowed). */
-export function emailDocument(body: string, showImages: boolean): string {
-  const img = showImages ? "img-src 'self' data: https: http:;" : "img-src 'self' data:;";
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; ${img} style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'"><base target="_blank"><style>
-html{color-scheme:light}body{margin:0;padding:16px;font:14px/1.5 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;color:#111;background:#fff;word-wrap:break-word;overflow-wrap:anywhere}
-img{max-width:100%;height:auto}table{max-width:100%}.ctrl-blocked-img{display:inline-block;color:#888;font-size:12px}
-</style></head><body>${body}</body></html>`;
-}
+export { emailDocument, textDocumentBody } from "@/lib/mail/document";

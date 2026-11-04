@@ -1,5 +1,6 @@
 import "server-only";
 import MailComposer from "nodemailer/lib/mail-composer";
+import { brandedEmail } from "@/lib/mail/template";
 import {
   PAGE_SIZE, parseSource, pickAttachment, replyContextOf, toMessage,
   type ViewQuery, type MailProvider, type MailboxView, type OutgoingMail,
@@ -80,6 +81,19 @@ const SEEDS: Seed[] = [
   { folder: "sent", seen: true, thread: "t-offerta", hoursAgo: 80, mail: {
     from: AGENCY, to: '"Ottica Luce" <info@otticaluce.example>', subject: "Proposta restyling logo",
     messageId: "<offerta@ctrl.example>", text: "Buongiorno,\nin allegato la proposta per il restyling del logo.\n\nCTRL" } },
+  // Kallebe's branded send from Gmail: multipart/alternative + inline cid logo, as Gmail keeps it in Inviati.
+  { folder: "sent", seen: true, thread: "t-brand", hoursAgo: 20, mail: {
+    from: AGENCY, to: '"Ottica Luce" <info@otticaluce.example>', subject: "Benvenuti in Ctrl Agency",
+    messageId: "<brand@ctrl.example>", ...(() => {
+      const b = brandedEmail("Buongiorno,\n\ngrazie per averci scelto. Nei prossimi giorni vi invieremo:\n- la bozza del nuovo sito\n- il calendario dei contenuti\n\nPer qualsiasi dubbio scriveteci a info@ctrlagency.dev.");
+      return { text: b.text, html: b.html.replace(/<td style="font:900 22px[^>]*>C<\/td>/, '<td style="padding-right:10px"><img src="cid:ctrl-logo" alt="C" width="28" height="28" style="display:block"></td>') };
+    })(),
+    attachments: [{ filename: "ctrl-logo.png", content: PNG, cid: "ctrl-logo", contentType: "image/png", contentDisposition: "inline" }] } },
+  // Plain-text only, markdown-ish: must stay readable text with clickable links, never rendered as raw HTML.
+  { folder: "inbox", seen: false, thread: "t-md", hoursAgo: 1, mail: {
+    from: '"Sara Neri" <sara@neristudio.example>', to: AGENCY, subject: "Note per la landing",
+    messageId: "<md@neristudio.example>",
+    text: "Ciao!\n\n## Punti chiave\n- **Hero** con video breve\n- Prezzi in evidenza\n- <b>niente</b> popup\n\nRiferimento: https://example.com/brief?id=42\nScrivetemi a sara@neristudio.example\n\n> Citazione dal cliente:\n> vogliamo un sito pulito\n\nSara" } },
   { folder: "spam", seen: false, thread: "t-spam1", hoursAgo: 12, mail: {
     from: '"Premio" <win@lottery.example>', to: AGENCY, subject: "Hai vinto un iPhone 18!!!",
     messageId: "<spam1@lottery.example>", html: '<p>Clicca <a href="http://phish.example/login">qui</a> per riscattare.</p><img src="http://phish.example/p.gif">' } },
@@ -163,7 +177,7 @@ export class MockProvider implements MailProvider {
     const original = mail.attachmentsFrom ? find(st, mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
     const parsed = original ? await parseSource(original.source) : null;
     const uid = st.nextUid++;
-    st.boxes.push({ folder: "drafts", uid, seen: true, date: new Date(), threadId: `draft-${uid}`, source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments: [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])] }) });
+    st.boxes.push({ folder: "drafts", uid, seen: true, date: new Date(), threadId: `draft-${uid}`, source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments: [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])] }) });
     if (previousUid) await this.mutate("drafts", [previousUid], "trash");
     return uid;
   }
@@ -197,7 +211,7 @@ export class MockProvider implements MailProvider {
     const date = new Date();
     st.boxes.push({
       folder: "sent", uid: st.nextUid++, seen: true, threadId: parent?.threadId ?? `t-${messageId}`, date,
-      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
+      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
     });
     return { messageId };
   }

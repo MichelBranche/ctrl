@@ -7,7 +7,8 @@ import { requireSection, type AdminUser } from "@/lib/admin";
 import { agencyAddress, mailProvider } from "@/lib/mail";
 import { collabFor } from "@/lib/mail/collab";
 import { MailError, PAGE_SIZE, type MailboxView } from "@/lib/mail/provider";
-import { emailDocument, sanitizeEmailHtml } from "@/lib/mail/sanitize";
+import { emailDocument, sanitizeEmailHtml, textDocumentBody } from "@/lib/mail/sanitize";
+import { stripSignature } from "@/lib/mail/template";
 import { CATEGORIES, folderLabel, isFolder, type MailCategory, type Address, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
 
 import { MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, MailSelection, MailSelectionBar, MailStar } from "@/components/admin/email/mailbox-ui";
@@ -310,7 +311,7 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
     blocked = clean.blockedImages;
     body = <MailFrame doc={emailDocument(clean.html, q.img)} title={`Contenuto: ${msg.subject}`} />;
   } else {
-    body = <div className="adm-mail-text">{msg.text || "(messaggio vuoto)"}</div>;
+    body = <MailFrame doc={emailDocument(textDocumentBody(msg.text || "(messaggio vuoto)"), false)} title={`Contenuto: ${msg.subject}`} />;
   }
   const files = msg.attachments.filter((a) => !a.inline);
   const back = href({ ...q, m: null, compose: null });
@@ -369,7 +370,7 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
         <section className="adm-mail-reply" aria-label="Risposta">
           <ComposeForm
             key={`${msg.folder}:${msg.uid}:${q.compose}`}
-            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: msg.text } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all", address)}
+            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all", address)}
             reply={q.compose === "reply" || q.compose === "all" ? { folder: msg.folder, uid: msg.uid } : null}
             original={(q.compose === "draft" || q.compose === "forward") && msg.attachments.length ? { folder: msg.folder, uid: msg.uid, files: msg.attachments.length } : undefined}
             draftUid={q.compose === "draft" ? msg.uid : undefined}

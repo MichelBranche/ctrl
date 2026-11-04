@@ -1,6 +1,7 @@
 import "server-only";
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from "imapflow";
 import nodemailer from "nodemailer";
+import { brandedEmail } from "@/lib/mail/template";
 import MailComposer from "nodemailer/lib/mail-composer";
 import {
   MAX_SOURCE_BYTES, MailError, PAGE_SIZE, messageKey, parseSource, pickAttachment, replyContextOf, toMessage,
@@ -301,7 +302,7 @@ export class ImapProvider implements MailProvider {
 
   async saveDraft(mail: OutgoingMail, previousUid?: number): Promise<number> {
     const attachments = await this.outgoingAttachments(mail);
-    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.user }, to: mail.to, cc: mail.cc, subject: mail.subject, text: mail.text, attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
+    const source = await new MailComposer({ from: { name: this.creds.fromName, address: this.creds.user }, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references }).compile().build();
     return this.withClient(async (client) => {
       const path = await this.path(client, "drafts");
       if (!path) throw new MailError("notfound", "Cartella bozze non disponibile.");
@@ -339,7 +340,8 @@ export class ImapProvider implements MailProvider {
         to: mail.to,
         cc: mail.cc.length ? mail.cc : undefined,
         subject: mail.subject,
-        text: mail.text,
+        // multipart/alternative: branded HTML + the same words as plain text. Gmail files this exact MIME in Inviati.
+        ...brandedEmail(mail.text),
         inReplyTo: mail.inReplyTo ?? undefined,
         references: mail.references?.length ? mail.references : undefined,
       });

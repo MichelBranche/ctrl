@@ -396,8 +396,8 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-mail-actions { margin-bottom: 0.8rem; }
 .adm-mail-images { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0.8rem; margin: 0 0 0.8rem; border-radius: 0.5rem; background: var(--adm-raise); font-size: 0.82rem; color: var(--adm-dim); }
 .adm-mail-body { border: 1px solid var(--adm-rule); border-radius: 0.5rem; overflow: hidden; background: #fff; }
-.adm-mail-frame { display: block; width: 100%; min-height: 12rem; border: 0; background: #fff; }
-.adm-mail-text { padding: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; background: var(--adm-panel); color: var(--adm-fg); }
+.adm-mail-frame { display: block; width: 100%; min-height: 8rem; border: 0; background: #fff; color-scheme: light; }
+.adm-mail-preview { border: 1px solid var(--adm-line, #333); border-radius: 8px; overflow: hidden; background: #fff; }
 .adm-mail-files { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 0; padding: 0; list-style: none; }
 .adm-mail-files .adm-btn { gap: 0.4rem; }
 .adm-mail-reply { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--adm-rule); }

@@ -3,7 +3,9 @@
 import type { Route } from "next";
 import Link, { useLinkStatus } from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
+import { emailDocument } from "@/lib/mail/document";
+import { brandedEmail } from "@/lib/mail/template";
 import { markOpened, markUnread, sendMail, saveMailDraft, toggleClaim, type SendState } from "@/app/admin/email-actions";
 
 const POLL_MS = 30_000;
@@ -78,12 +80,17 @@ export function MailFrame({ doc, title }: { doc: string; title: string }) {
     if (!frame) return;
     let ro: ResizeObserver | undefined;
     const measure = () => {
-      const body = frame.contentDocument?.body;
-      if (!body) return;
-      setHeight(Math.min(Math.max(body.scrollHeight + 4, 120), 6000));
+      const doc = frame.contentDocument;
+      const body = doc?.body;
+      if (!doc || !body) return;
+      const fit = () => setHeight(Math.min(Math.max(doc.documentElement.scrollHeight, body.scrollHeight) + 2, 12000));
+      fit();
       ro?.disconnect();
-      ro = new ResizeObserver(() => setHeight(Math.min(Math.max(body.scrollHeight + 4, 120), 6000)));
+      ro = new ResizeObserver(fit);
       ro.observe(body);
+      ro.observe(doc.documentElement);
+      // Inline (cid:) images can arrive after load and change the height.
+      for (const img of Array.from(doc.images)) if (!img.complete) img.addEventListener("load", fit, { once: true });
     };
     frame.addEventListener("load", measure);
     measure();
@@ -158,6 +165,9 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
   }, {});
   const activeDraftUid = saved.draftUid ?? draftUid;
   const [showCc, setShowCc] = useState(Boolean(draft.cc));
+  const [body, setBody] = useState(draft.body);
+  const [preview, setPreview] = useState(false);
+  const previewBody = useDeferredValue(body);
   const form = useRef<HTMLFormElement>(null);
   const handled = useRef<number | undefined>(undefined);
   const savedHandled = useRef<number | undefined>(undefined);
@@ -172,6 +182,7 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
     if (state.ok && state.at !== handled.current) {
       handled.current = state.at;
       form.current?.reset();
+      setBody("");
       router.push("/admin/email?f=sent" as Route);
     }
   }, [state, router]);
@@ -208,8 +219,15 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
       </label>
       <label className="adm-field">
         <span>Messaggio</span>
-        <textarea className="adm-input" name="body" defaultValue={draft.body} rows={12} required autoFocus={Boolean(reply)} />
+        <textarea className="adm-input" name="body" value={body} onChange={(e) => setBody(e.target.value)} rows={12} required autoFocus={Boolean(reply)} />
       </label>
+      <p className="adm-muted">Il messaggio parte con il modello grafico CTRL (intestazione, firma e piè di pagina). Puoi usare **grassetto**, *corsivo*, elenchi con &quot;- &quot; e link.</p>
+      <button type="button" className="adm-link" aria-expanded={preview} onClick={() => setPreview((v) => !v)}>{preview ? "Nascondi anteprima" : "Anteprima"}</button>
+      {preview ? (
+        <div className="adm-mail-preview" aria-label="Anteprima dell'email">
+          <MailFrame doc={emailDocument(brandedEmail(previewBody).html, false)} title="Anteprima dell'email" />
+        </div>
+      ) : null}
       <label className="adm-field"><span>Allegati · massimo 10 file, 3 MB complessivi</span><input className="adm-input" name="attachments" type="file" multiple /></label>
       <div className="adm-row-actions">
         <button className="adm-btn adm-btn-primary" disabled={pending || saving}>{pending ? "Invio…" : "Invia"}</button>
