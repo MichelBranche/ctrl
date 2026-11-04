@@ -3,6 +3,7 @@ import { ensureTeam, hashPassword, ROLES_SQL, rowRoles } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { mailProvider } from "@/lib/mail";
+import { sendTransactional } from "@/lib/mail/transactional";
 import { hashInviteToken, INVITE_TTL_MS, newInviteToken, resendCheck, tokenShapeOk } from "@/lib/team-invite-core";
 import { isFounder, ROLE_LABEL, type TeamRole } from "@/lib/team-types";
 
@@ -26,12 +27,13 @@ export function inviteEmail(p: { name: string; roles: TeamRole[]; inviter: strin
     `Ciao ${first},`,
     `${p.inviter} ti ha invitato a entrare nel team di Ctrl Agency con ${p.roles.length > 1 ? "i ruoli" : "il ruolo"} **${list(p.roles)}**.`,
     "Premi il pulsante qui sotto per scegliere la tua password personale e accedere all'area riservata. Il link vale 48 ore e si può usare una sola volta.",
+    `Se preferisci, apri direttamente questo indirizzo: ${p.url}`,
     isFounder(p.roles)
       ? "Come founder, subito dopo ti chiederemo di attivare la verifica in due passaggi con un'app di autenticazione sul telefono."
       : "Dopo la password potrai attivare la verifica in due passaggi, oppure farlo più tardi dalle impostazioni.",
     "Se non aspettavi questo invito puoi ignorare questa email: senza il tuo passaggio l'account resta bloccato.",
   ].join("\n\n");
-  return { subject: `${p.inviter} ti invita nel team di Ctrl Agency`, text, cta: { label: "Accetta l'invito", href: p.url } };
+  return { subject: `${p.inviter} ti ha invitato nel team CTRL®`, text, cta: { label: "Accetta l'invito", href: p.url } };
 }
 
 export type InviteResult = { ok: true } | { ok: false; error: string };
@@ -43,7 +45,7 @@ export type InviteResult = { ok: true } | { ok: false; error: string };
 export async function sendInvite(userId: string, inviter: { id: string; name: string }, kind: "sent" | "resent"): Promise<InviteResult> {
   await ensureTeam();
   const provider = mailProvider();
-  if (!provider) return { ok: false, error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
+  if (!provider && !process.env.RESEND_API_KEY) return { ok: false, error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
   const res = await db().execute({
     sql: `SELECT id, name, email, role, ${ROLES_SQL}, active, last_login_at, removed_at, invite_state, invite_sent_at, invite_window_at, invite_window_count FROM admin_users WHERE id = ?`,
     args: [userId],
@@ -73,7 +75,8 @@ export async function sendInvite(userId: string, inviter: { id: string; name: st
   });
   const mail = inviteEmail({ name: String(u.name), roles, inviter: inviter.name, url: inviteUrl(token) });
   try {
-    await provider.send({ to: [String(u.email)], cc: [], ...mail });
+    const { via } = await sendTransactional({ to: [String(u.email)], cc: [], ...mail }, provider);
+    console.info(`[mail] invito inviato via ${via}`);
   } catch {
     return { ok: false, error: "Invio non riuscito. Controlla la connessione dell'email dell'agenzia e riprova tra qualche minuto." };
   }

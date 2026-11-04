@@ -90,6 +90,8 @@ try {
   const mail = globalThis.__sent.at(-1);
   assert.deepEqual(mail.to, ["n@t.test"]);
   assert.equal(mail.cta.label, "Accetta l'invito");
+  assert.equal(mail.subject, "Fondatore Uno ti ha invitato nel team CTRL®");
+  assert.ok(mail.text.includes(mail.cta.href), "full link in body");
   const token = mail.cta.href.split("/").pop();
   assert.ok(core.tokenShapeOk(token));
   assert.ok(!/password\s*:/i.test(mail.text) && mail.text.includes("48 ore"), "no password in the email");

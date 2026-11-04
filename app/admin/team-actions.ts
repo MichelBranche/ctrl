@@ -10,6 +10,7 @@ import { LEADERBOARD_KEY } from "@/lib/team";
 import { mailProvider } from "@/lib/mail";
 import { reactivateMember, removeMember } from "@/lib/team-delete";
 import { OFFBOARDING_SUBJECT } from "@/lib/team-offboarding";
+import { sendTransactional } from "@/lib/mail/transactional";
 import { sendInvite, revokeInvite } from "@/lib/team-invite";
 import { isArea, isFounder, legacyTier, normalizeRoles, type TeamRole } from "@/lib/team-types";
 
@@ -237,8 +238,7 @@ export async function removeUser(_: TeamState, form: FormData): Promise<TeamStat
   const provider = mailProvider();
   const to = String(row.rows[0].email);
   try {
-    if (!provider) throw new Error("no provider");
-    await provider.send({ to: [to], cc: [], subject: OFFBOARDING_SUBJECT, text });
+    await sendTransactional({ to: [to], cc: [], subject: OFFBOARDING_SUBJECT, text }, provider);
   } catch {
     await logAction("team.offboarding_email_failed", { type: "user", id }, { to });
     return { error: "Rimosso dal team, ma l'email di cessazione non è partita. Puoi scrivergli dalla casella Email." };
