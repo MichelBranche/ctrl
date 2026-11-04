@@ -17,7 +17,11 @@ type Step = "password" | "setup" | "twofactor";
 export type InviteInfo = { state: "valid"; name: string; email: string; roles: string[]; founder: boolean } | { state: "expired" | "invalid" };
 
 /** Invite acceptance card, same glass look as the sign-in: password (+ strength meter), then 2FA. */
-export function InviteScreen({ token, invite }: { token: string; invite: InviteInfo }) {
+export function InviteScreen({ token, invite: live }: { token: string; invite: InviteInfo }) {
+  // Accepting sets the session cookie, which re-renders the page with the now-consumed token ("invalid").
+  // Keep the invite this card opened with, so the flow continues to the 2FA step instead of flipping to the error card.
+  const [opened] = useState(live);
+  const invite = opened.state === "valid" ? opened : live;
   const [step, setStep] = useState<Step>("password");
   const reduce = useReducedMotion();
   const slide = reduce
