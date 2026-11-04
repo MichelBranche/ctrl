@@ -16,6 +16,7 @@ const I = (d: string) => (
 );
 
 const NAV: Nav[] = [
+  { href: "/admin/desk", label: "La mia scrivania", icon: I("M3 5h18v12H3zM8 21h8M12 17v4M6 9h5M6 12h8") },
   { href: "/admin", label: "Panoramica", icon: I("M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 17v3h6v-3z") },
   { href: "/admin/journal", label: "Journal", icon: I("M5 4h11l3 3v13H5zM9 9h6M9 13h6M9 17h4") },
   { href: "/admin/media", label: "Media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
@@ -137,25 +138,17 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
             {I("M6 6l12 12M18 6L6 18")}
           </button>
         </div>
-        <nav>
+        <nav className="adm-navigation" aria-label="Navigazione principale">
           <ul className="adm-nav">
-            {nav.map((n) => {
-              const active = isActive(path, n.href);
-              const count = n.badge ? counts[n.badge] : 0;
-              return (
-                <li key={n.href}>
-                  <Link href={n.href} className="adm-nav-link" aria-current={active ? "page" : undefined} title={collapsed ? n.label : undefined}>
-                    {n.icon}
-                    <span className="adm-side-text">{n.label}</span>
-                    {count ? (
-                      <span className="adm-count" aria-label={`${count} nuove`}>
-                        {count}
-                      </span>
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
+            {["/admin", "/admin/desk"].flatMap(href => nav.filter(n => n.href === href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            <NavGroup key={`content:${path}`} id="content" label="Contenuti" icon={I("M4 6h6l2 2h8v12H4z")} items={nav.filter(n => ["/admin/journal", "/admin/media", "/admin/social"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            {nav.filter(n => n.href === "/admin/shop").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            <NavGroup key={`communications:${path}`} id="communications" label="Comunicazioni" icon={I("M4 5h16v12H9l-5 4zM8 9h8M8 13h5")} items={nav.filter(n => ["/admin/requests", "/admin/email", "/admin/newsletter"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            <NavGroup key={`analysis:${path}`} id="analysis" label="Analisi e sito" icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            {nav.filter(n => ["/admin/introiti", "/admin/team"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+          </ul>
+          <ul className="adm-nav adm-nav-footer">
+            {nav.filter(n => n.href === "/admin/settings").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
           </ul>
         </nav>
       </aside>
@@ -211,6 +204,37 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
       {palette ? <Palette nav={nav} actions={actions} onClose={() => setPalette(false)} /> : null}
     </div>
   );
+}
+
+type NavCounts = { requests: number; email: number };
+function NavItem({ item, path, collapsed, counts }: { item: Nav; path: string; collapsed: boolean; counts: NavCounts }) {
+  const count = item.badge ? counts[item.badge] : 0;
+  return <li><Link href={item.href} className="adm-nav-link" aria-current={isActive(path,item.href) ? "page" : undefined} title={collapsed ? item.label : undefined} aria-label={collapsed ? `${item.label}${count ? `, ${count} nuove` : ""}` : undefined}>
+    {item.icon}<span className="adm-side-text">{item.label}</span>{count ? <span className="adm-count" aria-label={`${count} nuove`}>{count}</span> : null}
+  </Link></li>;
+}
+
+const readGroups = () => { try { return localStorage.getItem("adm-nav-groups") ?? "{}"; } catch { return "{}"; } };
+const subscribeGroups = (callback: () => void) => {
+  window.addEventListener("adm-nav-groups",callback); window.addEventListener("storage",callback);
+  return () => { window.removeEventListener("adm-nav-groups",callback); window.removeEventListener("storage",callback); };
+};
+function groupPreferences(raw: string): Record<string, boolean> { try { const value = JSON.parse(raw); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; } catch { return {}; } }
+
+function NavGroup({ id, label, icon, items, path, collapsed, counts }: { id: string; label: string; icon: ReactNode; items: Nav[]; path: string; collapsed: boolean; counts: NavCounts }) {
+  const saved = useSyncExternalStore(subscribeGroups,readGroups,()=>"{}");
+  const [override,setOverride] = useState<boolean | null>(null);
+  if (!items.length) return null;
+  const active = items.some(item => isActive(path,item.href));
+  const open = override ?? (active || groupPreferences(saved)[id] === true);
+  const count = items.reduce((sum,item)=>sum+(item.badge ? counts[item.badge] : 0),0);
+  return <li className="adm-nav-group" data-open={open || undefined} data-active={active || undefined}>
+    <button type="button" className="adm-nav-link adm-nav-group-toggle" aria-expanded={open} aria-controls={`adm-group-${id}`} onClick={()=>{
+      setOverride(!open);
+      try { localStorage.setItem("adm-nav-groups",JSON.stringify({...groupPreferences(readGroups()),[id]:!open})); window.dispatchEvent(new Event("adm-nav-groups")); } catch { /* Still works when storage is unavailable. */ }
+    }}>{icon}<span className="adm-side-text">{label}</span>{!open && count ? <span className="adm-count" aria-label={`${count} nuove`}>{count}</span> : null}<span className="adm-group-chevron" aria-hidden="true">{I("m9 5 7 7-7 7")}</span></button>
+    <ul id={`adm-group-${id}`} className="adm-nav-children" hidden={!open}>{items.map(item=><NavItem key={item.href} item={item} path={path} collapsed={collapsed} counts={counts} />)}</ul>
+  </li>;
 }
 
 function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; onClose: () => void }) {

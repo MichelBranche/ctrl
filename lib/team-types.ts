@@ -18,10 +18,11 @@ export const isArea = (v: unknown): v is Area => AREAS.includes(v as Area);
 export const isRole = (v: unknown): v is Role => ROLES.includes(v as Role);
 
 /** Admin sections. Each maps to the URL prefix(es) it owns. */
-export type Section = "overview" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "email";
+export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "team" | "email";
 
 export const SECTION_HREF: Record<Section, string> = {
   overview: "/admin",
+  desk: "/admin/desk",
   journal: "/admin/journal",
   media: "/admin/media",
   shop: "/admin/shop",
@@ -37,7 +38,7 @@ export const SECTION_HREF: Record<Section, string> = {
 };
 
 /** Every signed-in user: overview, their own earnings and their own account/password. */
-const EVERYONE: Section[] = ["overview", "introiti", "settings"];
+const EVERYONE: Section[] = ["overview", "desk", "introiti", "settings"];
 
 /** Sections a member of each area may open and edit. Founders get everything. */
 export const AREA_SECTIONS: Record<Area, Section[]> = {

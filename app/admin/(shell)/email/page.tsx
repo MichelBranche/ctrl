@@ -1,3 +1,4 @@
+import { rememberMailReferences } from "@/lib/desk";
 import type { Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -104,6 +105,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       </>
     );
   }
+  await rememberMailReferences(view).catch(() => {});
   const keys = [...view.list.map((m) => m.key), ...(view.open ? [view.open.key] : []), ...view.thread.map((t) => t.key)];
   const collab = await collabFor(keys).catch(() => new Map<string, Collab>());
 
