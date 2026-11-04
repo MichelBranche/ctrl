@@ -105,6 +105,12 @@ export function ensureTeam(): Promise<void> {
     const override = await db().execute({ sql: "SELECT value FROM settings WHERE key = ?", args: [PASSWORD_SETTING] }).catch(() => null);
     const hash = override?.rows[0]?.value ? String(override.rows[0].value) : process.env.ADMIN_PASSWORD_HASH;
     if (!hash) return;
+    // Seed only a brand-new install: once any account exists, a removed legacy founder must stay removed.
+    const existing = await db().execute("SELECT 1 FROM admin_users LIMIT 1");
+    if (existing.rows.length) {
+      await backfillRoles();
+      return;
+    }
     // OR IGNORE: a concurrent instance may have seeded it already, or a member may already use this email.
     await db().execute({
       sql: "INSERT OR IGNORE INTO admin_users (id, email, name, role, area, password_hash) VALUES ('founder', ?, 'Founder', 'founder', NULL, ?)",
