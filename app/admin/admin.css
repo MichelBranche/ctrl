@@ -781,3 +781,40 @@ a.adm-stat:hover::after { opacity: 1; }
   .adm-cursor { display: none; }
 }
 @media (pointer: coarse) { .adm-cursor { display: none; } .adm-auth-grain { animation: none; } }
+
+/* Team: role chips (multi-select) and invite status */
+.adm-badge.is-scheduled { border-color: #f5b942; color: #f5b942; }
+.adm-badge.is-draft { color: var(--adm-dim); }
+.adm-roles { border: 0; padding: 0; margin: 0; min-width: 0; }
+.adm-roles legend { padding: 0; margin-bottom: 0.5rem; font-size: 0.85rem; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.adm-chips-static { gap: 0.3rem; }
+.adm-chip { --chip: var(--adm-accent); position: relative; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border: 1px solid var(--adm-rule); border-radius: 1rem; font-size: 0.8rem; color: var(--adm-dim); cursor: pointer; user-select: none; transition: border-color 0.2s var(--adm-ease), background-color 0.2s var(--adm-ease), color 0.2s var(--adm-ease); }
+.adm-chips-static .adm-chip { cursor: default; padding: 0.12rem 0.55rem; font-size: 0.74rem; }
+.adm-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.adm-chip[data-on] { border-color: var(--chip); color: var(--adm-fg); background: color-mix(in srgb, var(--chip) 16%, transparent); }
+.adm-chip:has(input:focus-visible) { outline: 2px solid var(--chip); outline-offset: 2px; }
+.adm-chip:has(input:disabled) { cursor: not-allowed; }
+.adm-chip-dot { --chip: inherit; display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--chip); flex: none; }
+.adm-roles-sum { margin-top: 0.5rem; font-size: 0.8rem; }
+.adm-alt summary { cursor: pointer; font-size: 0.82rem; }
+.adm-alt[open] summary { margin-bottom: 0.6rem; }
+.adm-invite-actions { margin-bottom: 0.6rem; }
+@media (prefers-reduced-motion: reduce) { .adm-chip { transition: none; } }
+
+/* Invite acceptance: password strength meter */
+.adm-meter { display: grid; gap: 0.35rem; margin-top: 0.5rem; }
+.adm-meter-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem; }
+.adm-meter-bar i { height: 4px; border-radius: 2px; background: var(--adm-rule); transition: background-color 0.25s var(--adm-ease); }
+.adm-meter[data-score="1"] i:nth-child(-n + 1) { background: #ef4444; }
+.adm-meter[data-score="2"] i:nth-child(-n + 2) { background: #f59e0b; }
+.adm-meter[data-score="3"] i:nth-child(-n + 3) { background: #84cc16; }
+.adm-meter[data-score="4"] i { background: var(--adm-ok); }
+.adm-meter-label { font-size: 0.78rem; color: var(--adm-dim); margin: 0; }
+.adm-meter-bad { color: #ff8a7a; margin-top: 0.4rem; }
+.adm-invite-tfa { margin: 1rem 0; }
+.adm-invite-later { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem; }
+.adm-danger-zone { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed rgba(255, 90, 70, 0.35); }
+.adm-danger-text { margin: 0; color: #ffb4a8; font-size: 0.85rem; line-height: 1.5; }
+.adm-user-former { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; padding: 0.8rem 0; }
+.adm-offboard-text { min-height: 12rem; font: inherit; line-height: 1.5; resize: vertical; }

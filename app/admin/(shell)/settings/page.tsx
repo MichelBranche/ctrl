@@ -46,7 +46,7 @@ async function Body() {
               <dt>Account</dt>
               <dd className="adm-person"><UserAvatar name={admin.name} src={admin.avatarUrl} small />{admin.name} · {admin.email}</dd>
               <dt>Ruolo</dt>
-              <dd>{ROLE_LABEL[admin.role]}{admin.area ? ` · ${AREA_LABEL[admin.area]}` : ""}</dd>
+              <dd>{admin.roles.map((r) => ROLE_LABEL[r]).join(", ")}{admin.area ? ` · ${AREA_LABEL[admin.area]}` : ""}</dd>
               <dt>Accesso</dt>
               <dd className="adm-num">{fmt(admin.issuedAt)}</dd>
               <dt>Scade</dt>
@@ -64,9 +64,9 @@ async function Body() {
         <section className="adm-panel">
           <h2 className="adm-h2">Verifica in due passaggi</h2>
           <p className="adm-muted">
-            {twoFactorRequired(admin.role) ? "Obbligatoria per i founder." : "Facoltativa, solo per il tuo account."} Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.
+            {twoFactorRequired(admin.roles) ? "Obbligatoria per i founder." : "Facoltativa, solo per il tuo account."} Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.
           </p>
-          <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} canDisable={canDisableTwoFactor(admin.role)} />
+          <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} canDisable={canDisableTwoFactor(admin.roles)} />
         </section>
       </div>
     </main>

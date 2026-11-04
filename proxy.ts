@@ -18,6 +18,8 @@ export function proxy(req: NextRequest) {
     const response = NextResponse.next();
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Cache-Control", "private, no-store");
+    // The invite link carries a single-use token in the path: never leak it in a Referer header.
+    if (pathname.startsWith("/admin/invito/")) response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   }
 

@@ -7,10 +7,10 @@ import { cache } from "react";
 import { logAction } from "@/lib/audit";
 import { avatarFor } from "@/lib/avatars";
 import { db, dbConfigured } from "@/lib/db";
-import { ensureTeamSchema, ensureTwoFactorSchema } from "@/lib/migrate";
+import { backfillRoles, ensureTeamSchema, ensureTwoFactorSchema } from "@/lib/migrate";
 import { beginSetup, checkSecondFactor, confirmSetup, twoFactorEnabled, twoFactorStatus } from "@/lib/two-factor";
 import { forcedSetupFinishable, loginNext, sessionAllowed } from "@/lib/two-factor-policy";
-import { canAccess, isArea, isRole, type Area, type Role, type Section } from "@/lib/team-types";
+import { canAccess, isArea, isFounder, normalizeRoles, type Area, type Section, type TeamRole } from "@/lib/team-types";
 
 /**
  * Multi-user admin auth, no third party. Accounts live in admin_users (scrypt hashes), sessions are signed
@@ -41,6 +41,18 @@ const LOCK_MS = 15 * 60_000;
  * the account exists, and the answer is the same generic "locked" either way, so it reveals nothing about accounts.
  */
 const ACCOUNT_MAX_FAILURES = 10;
+
+/** SQL column: the account's roles as a comma list (admin_user_roles is the source of truth). */
+export const ROLES_SQL = "(SELECT GROUP_CONCAT(r.role) FROM admin_user_roles r WHERE r.user_id = admin_users.id) AS roles";
+/** Only accounts with no open or revoked invite may sign in (an invite must be accepted first). */
+export const CAN_SIGN_IN_SQL = "active = 1 AND invite_state IS NULL AND removed_at IS NULL";
+/** Roles from a row with `roles` (+ the legacy `role` column as a fail-safe so a founder is never treated as a member). */
+export function rowRoles(r: Record<string, unknown>): TeamRole[] {
+  const list = String(r.roles ?? "").split(",");
+  if (r.role === "founder") list.push("founder");
+  const roles = normalizeRoles(list);
+  return roles.length ? roles : ["esterno"];
+}
 export const accountKey = (email: string) => `acct:${createHash("sha256").update(email.trim().toLowerCase()).digest("base64url").slice(0, 32)}`;
 
 const adminEmail = () => (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
@@ -98,6 +110,7 @@ export function ensureTeam(): Promise<void> {
       sql: "INSERT OR IGNORE INTO admin_users (id, email, name, role, area, password_hash) VALUES ('founder', ?, 'Founder', 'founder', NULL, ?)",
       args: [email, hash],
     });
+    await backfillRoles();
   })().catch((error) => {
     founderSeed = null;
     throw error;
@@ -109,7 +122,8 @@ export type AdminUser = {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  /** Display roles; permissions are their union (see lib/team-types.ts). */
+  roles: TeamRole[];
   area: Area | null;
   avatarUrl: string | null;
   emailAccess: boolean;
@@ -228,7 +242,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   const acct = accountKey(email);
   if ((await isLocked(key)) || (await isLocked(acct))) return "locked";
   const res = await db().execute({
-    sql: "SELECT id, name, email, role, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
+    sql: `SELECT id, name, email, role, ${ROLES_SQL}, password_hash, session_version FROM admin_users WHERE email = ? AND ${CAN_SIGN_IN_SQL}`,
     args: [email.trim().toLowerCase()],
   });
   const row = res.rows[0];
@@ -241,7 +255,7 @@ export async function login(email: string, password: string): Promise<LoginResul
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     return "invalid";
   }
-  const next = loginNext(String(row.role), await twoFactorEnabled(String(row.id)));
+  const next = loginNext(rowRoles(row), await twoFactorEnabled(String(row.id)));
   // Password ok but no session yet: a signed ticket for the code step (5 min) or the mandatory founder setup (15 min).
   // Failures are kept until the second step passes.
   if (next === "code") {
@@ -272,7 +286,7 @@ async function pendingUser(audience: string = AUD_CODE) {
   try {
     const { payload } = await jwtVerify(token, secretKey()!, { algorithms: ["HS256"], audience });
     if (!payload.sub) return null;
-    const u = (await db().execute({ sql: "SELECT id, name, email, session_version FROM admin_users WHERE id = ? AND active = 1", args: [payload.sub] })).rows[0];
+    const u = (await db().execute({ sql: `SELECT id, name, email, session_version FROM admin_users WHERE id = ? AND ${CAN_SIGN_IN_SQL}`, args: [payload.sub] })).rows[0];
     if (!u || Number(u.session_version) !== Number(payload.sv)) return null;
     return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version), iat: Number(payload.iat ?? 0) * 1000 };
   } catch {
@@ -344,6 +358,19 @@ export async function finishForcedSetup(): Promise<"ok" | "expired" | "incomplet
   return "ok";
 }
 
+/**
+ * Right after an accepted invite (password just set): founders get the 15-minute guided 2FA setup ticket (no session
+ * until 2FA is on, same flow as the login card); everyone else gets the session and may set up 2FA now or later.
+ */
+export async function signInAfterInvite(u: { id: string; name: string; email: string; sv: number; roles: readonly string[] }): Promise<"setup" | "ok"> {
+  if (loginNext(u.roles, await twoFactorEnabled(u.id)) === "setup") {
+    await setTicket(u.id, u.sv, AUD_SETUP, SETUP_MINUTES);
+    return "setup";
+  }
+  await completeLogin(await clientKey(), u, { via: "invite" });
+  return "ok";
+}
+
 /** Signs out and revokes the token server-side (session_version bump), so a copied cookie stops working too. Closes the user's other sessions as well. */
 export async function logout() {
   const me = await getAdmin().catch(() => null);
@@ -371,24 +398,24 @@ const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: 
     await ensureTeam();
     await ensureTwoFactorSchema();
     const res = await db().execute({
-      sql: `SELECT id, email, name, role, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
+      sql: `SELECT id, email, name, role, ${ROLES_SQL}, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
               EXISTS (SELECT 1 FROM admin_2fa t WHERE t.user_id = admin_users.id AND t.secret_enc IS NOT NULL) AS tfa
-            FROM admin_users WHERE id = ? AND active = 1`,
+            FROM admin_users WHERE id = ? AND ${CAN_SIGN_IN_SQL}`,
       args: [payload.sub],
     });
     const u = res.rows[0];
     if (!u || Number(u.session_version) !== Number(payload.sv)) return none;
-    const role = isRole(u.role) ? u.role : "member";
+    const roles = rowRoles(u);
     // Founder without 2FA (session from before the rule, or after a reset): no admin access until the guided setup.
-    if (!sessionAllowed(role, Number(u.tfa) === 1)) return { admin: null, blocked: true };
+    if (!sessionAllowed(roles, Number(u.tfa) === 1)) return { admin: null, blocked: true };
     return { blocked: false, admin: {
       id: String(u.id),
       email: String(u.email),
       name: String(u.name),
-      role,
+      roles,
       area: isArea(u.area) ? u.area : null,
       avatarUrl: avatarFor(String(u.id), Number(u.has_avatar) === 1, u.updated_at, String(u.email)),
-      emailAccess: role === "founder" || Number(u.email_access) === 1,
+      emailAccess: isFounder(roles) || Number(u.email_access) === 1,
       issuedAt: Number(payload.iat ?? 0) * 1000,
       expiresAt: Number(payload.exp ?? 0) * 1000,
     } };

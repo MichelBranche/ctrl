@@ -81,7 +81,7 @@ export function LoginScreen({ initialStep = "password", notice }: { initialStep?
   );
 }
 
-function FloatField({ id, name, type, label, autoComplete, invalid, value, onChange, children }: {
+export function FloatField({ id, name, type, label, autoComplete, invalid, value, onChange, children }: {
   id: string; name: string; type: string; label: string; autoComplete: string; invalid: boolean;
   value?: string; onChange?: (v: string) => void; children?: React.ReactNode;
 }) {
@@ -149,12 +149,12 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
   );
 }
 
-const Arrow = () => (
+export const Arrow = () => (
   <svg className="arrow" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
 );
-const Eye = () => (
+export const Eye = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
 );
-const EyeOff = () => (
+export const EyeOff = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.9 9.9 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></svg>
 );

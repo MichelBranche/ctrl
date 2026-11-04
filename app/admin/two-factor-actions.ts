@@ -38,7 +38,7 @@ export async function confirmTwoFactor(prev: TwoFactorState, form: FormData): Pr
 export async function disableTwoFactor(_: TwoFactorState, form: FormData): Promise<TwoFactorState> {
   const me = await getAdmin();
   if (!me) return { error: "Sessione scaduta. Accedi di nuovo." };
-  if (!canDisableTwoFactor(me.role)) return { error: "Per i founder la verifica in due passaggi è obbligatoria. Può azzerarla solo un altro founder." };
+  if (!canDisableTwoFactor(me.roles)) return { error: "Per i founder la verifica in due passaggi è obbligatoria. Può azzerarla solo un altro founder." };
   if (await secondFactorLocked(me.id)) return { error: LOCKED };
   const pw = await confirmOwnPassword(String(form.get("password") ?? "").slice(0, 500));
   if (pw === "locked") return { error: LOCKED };

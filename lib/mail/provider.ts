@@ -36,7 +36,10 @@ export type MailboxView = {
 export type AttachmentFile = { filename: string; contentType: string; content: Buffer };
 export type ReplyContext = { messageId: string | null; references: string[]; subject: string; replyTo: Address[]; from: Address | null; to: Address[]; cc: Address[] };
 export type OutgoingFile = { filename: string; contentType: string; content: Buffer };
-export type OutgoingMail = { attachments?: OutgoingFile[]; attachmentsFrom?: { folder: FolderId; uid: number }; to: string[]; cc: string[]; subject: string; text: string; inReplyTo?: string | null; references?: string[] };
+export type OutgoingMail = { attachments?: OutgoingFile[]; attachmentsFrom?: { folder: FolderId; uid: number }; to: string[]; cc: string[]; subject: string; text: string; inReplyTo?: string | null; references?: string[];
+  /** Optional call-to-action button (https only) rendered under the body, e.g. "Accetta l'invito". */
+  cta?: EmailCta };
+export type EmailCta = { label: string; href: string };
 
 export const PAGE_SIZE = 30;
 /** Messages bigger than this are not downloaded for viewing (Vercel function memory and time). */

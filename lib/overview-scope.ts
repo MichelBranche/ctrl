@@ -1,4 +1,4 @@
-import { canAccess, type Perms } from "@/lib/team-types";
+import { canAccess, isFounder, type Perms } from "@/lib/team-types";
 
 /**
  * What the Panoramica may load for a user. Founders see studio-wide totals and revenue; members only the blocks of the
@@ -17,7 +17,7 @@ export type OverviewScope = {
 };
 
 export function overviewScope(me: Perms): OverviewScope {
-  const founder = me.role === "founder";
+  const founder = isFounder(me);
   const kinds = (["post", "request", "subscriber", "order"] as const).filter((k) =>
     canAccess(me, ({ post: "journal", request: "requests", subscriber: "newsletter", order: "shop" } as const)[k]),
   );

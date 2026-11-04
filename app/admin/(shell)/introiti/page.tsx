@@ -7,7 +7,7 @@ import { Leaderboard, MonthlyBars } from "@/components/admin/team/earnings-chart
 import { DeleteJob, JobForm } from "@/components/admin/team/team-forms";
 import { requireSection, type AdminUser } from "@/lib/admin";
 import { EARN_RANGE_LABEL, EARN_RANGES, getEarnings, leaderboardVisible, parseEarnRange, type EarnRange } from "@/lib/team";
-import { AREA_LABEL } from "@/lib/team-types";
+import { AREA_LABEL, isFounder } from "@/lib/team-types";
 
 export default function IntroitiPage({ searchParams }: PageProps<"/admin/introiti">) {
   return (
@@ -35,7 +35,7 @@ function href(range: EarnRange, user: string | null) {
 async function Body({ searchParams }: { searchParams: PageProps<"/admin/introiti">["searchParams"] }) {
   const [me, sp] = await Promise.all([requireSection("introiti"), searchParams]);
   const range = parseEarnRange(sp.range);
-  const founder = me.role === "founder";
+  const founder = isFounder(me);
   const filter = founder && typeof sp.u === "string" && /^[\w-]{1,64}$/.test(sp.u) ? sp.u : null;
   return (
     <>
@@ -63,7 +63,7 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin/introiti
 }
 
 async function Report({ me, range, filter }: { me: AdminUser; range: EarnRange; filter: string | null }) {
-  const founder = me.role === "founder";
+  const founder = isFounder(me);
   let data: Awaited<ReturnType<typeof getEarnings>>;
   let boardOn = false;
   try {

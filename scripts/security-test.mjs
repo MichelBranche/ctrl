@@ -87,17 +87,17 @@ try {
 
   // 3. Panoramica scope.
   const { overviewScope } = await import("../lib/overview-scope.ts");
-  const f = overviewScope({ role: "founder", area: null });
+  const f = overviewScope({ roles: ["founder"] });
   assert.deepEqual([f.traffic, f.requests, f.subscribers, f.posts, f.revenue, f.activity], [true, true, true, true, true, undefined]);
-  const shop = overviewScope({ role: "member", area: "shop" });
+  const shop = overviewScope({ roles: ["ecommerce"] });
   assert.equal(shop.revenue, false, "shop member sees no studio revenue");
   assert.equal(shop.traffic, false);
   assert.equal(shop.requests, true);
   assert.deepEqual(shop.activity, ["request", "order"]);
-  const design = overviewScope({ role: "member", area: "design" });
+  const design = overviewScope({ roles: ["designer"] });
   assert.deepEqual([design.traffic, design.requests, design.subscribers, design.posts, design.revenue], [false, false, false, true, false]);
   assert.deepEqual(design.activity, ["post"]);
-  const none = overviewScope({ role: "member", area: null });
+  const none = overviewScope({ roles: ["esterno"] });
   assert.deepEqual([none.traffic, none.requests, none.subscribers, none.posts, none.revenue, none.activity.length], [false, false, false, false, false, 0]);
   console.log("ok overview scope");
   console.log("security-test: all passed");

@@ -341,7 +341,7 @@ export class ImapProvider implements MailProvider {
         cc: mail.cc.length ? mail.cc : undefined,
         subject: mail.subject,
         // multipart/alternative: branded HTML + the same words as plain text. Gmail files this exact MIME in Inviati.
-        ...brandedEmail(mail.text),
+        ...brandedEmail(mail.text, { cta: mail.cta }),
         inReplyTo: mail.inReplyTo ?? undefined,
         references: mail.references?.length ? mail.references : undefined,
       });

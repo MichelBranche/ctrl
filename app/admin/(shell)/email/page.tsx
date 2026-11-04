@@ -1,3 +1,4 @@
+import { isFounder } from "@/lib/team-types";
 import { rememberMailReferences } from "@/lib/desk";
 import type { Route } from "next";
 import Link from "next/link";
@@ -89,7 +90,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const address = agencyAddress();
   const provider = mailProvider();
 
-  if (!provider || !address) return <NotConnected founder={me.role === "founder"} />;
+  if (!provider || !address) return <NotConnected founder={isFounder(me)} />;
 
   let view: MailboxView;
   try {

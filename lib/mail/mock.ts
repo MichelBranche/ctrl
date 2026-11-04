@@ -211,7 +211,7 @@ export class MockProvider implements MailProvider {
     const date = new Date();
     st.boxes.push({
       folder: "sent", uid: st.nextUid++, seen: true, threadId: parent?.threadId ?? `t-${messageId}`, date,
-      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
+      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text, { cta: mail.cta }), attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
     });
     return { messageId };
   }

@@ -1,3 +1,4 @@
+import { isFounder } from "@/lib/team-types";
 import { Suspense } from "react";
 import { requireSection } from "@/lib/admin";
 import { BackupButton } from "@/components/admin/backup-button";
@@ -35,7 +36,7 @@ const page = (path: string) => async () => {
 
 async function Body() {
   const me = await requireSection("status");
-  const backup = me.role === "founder" ? await readBackupStatus() : null;
+  const backup = isFounder(me) ? await readBackupStatus() : null;
   const checks = await Promise.all([
     timed(`Home (${ORIGIN.replace("https://", "")})`, page("/")),
     timed("Journal", page("/journal")),
@@ -117,7 +118,7 @@ async function Body() {
           </div>
         )}
       </section>
-      {me.role === "founder" ? (
+      {isFounder(me) ? (
         <section className="adm-panel">
           <h2 className="adm-h2">Backup database</h2>
           <p className="adm-muted">Ogni notte alle 04:17 (ora di Roma, 05:17 con l&apos;ora legale) il database viene esportato, compresso e cifrato. Restano gli ultimi 14 backup. Visibile solo ai founder.</p>

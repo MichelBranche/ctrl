@@ -63,8 +63,17 @@ function bodyHtml(text: string): string {
 }
 
 /** Both MIME parts for a message the user typed. The text part carries the same signature after "-- ". */
-export function brandedEmail(body: string): { html: string; text: string } {
+export function brandedEmail(body: string, opts: { cta?: { label: string; href: string } } = {}): { html: string; text: string } {
   const clean = body.replace(/\r\n/g, "\n").replace(/\s+$/, "");
+  // Bulletproof table button (Outlook-safe). Only https links: never javascript: or data: from any caller.
+  const cta = opts.cta && /^https:\/\/[^\s"<>]+$/.test(opts.cta.href) ? opts.cta : null;
+  const ctaHtml = cta
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 22px"><tr><td bgcolor="#0c0c0c" style="background:#0c0c0c;border-radius:999px">
+<a href="${esc(cta.href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font:700 15px/1 Arial,Helvetica,sans-serif;color:#ffffff;text-decoration:none;border-radius:999px">${esc(cta.label)}</a>
+</td></tr></table>
+<p style="margin:0 0 14px;font-size:12px;line-height:1.5;color:#666666">Se il pulsante non funziona, copia questo indirizzo nel browser:<br><a href="${esc(cta.href)}" style="color:#1a56db;word-break:break-all">${esc(cta.href)}</a></p>`
+    : "";
+  const ctaText = cta ? `\n\n${cta.label}: ${cta.href}` : "";
   const html = `<!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>Ctrl Agency</title></head>
 <body style="margin:0;padding:0;background:#f4f4f5">
@@ -77,6 +86,7 @@ export function brandedEmail(body: string): { html: string; text: string } {
 </tr></table></td></tr>
 <tr><td style="padding:28px 24px 8px">
 ${bodyHtml(clean)}
+${ctaHtml}
 <p style="${P};margin-top:22px">Ctrl Agency<br>Michel Branche &amp; Kallebe Gallo<br>Founders</p>
 <p style="${P}">Telefono: <a href="tel:${CONTACT_PHONE}" style="color:#1a56db">${CONTACT_PHONE}</a><br>Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
 </td></tr>
@@ -87,7 +97,7 @@ ${bodyHtml(clean)}
 </td></tr>
 </table></td></tr></table>
 </body></html>`;
-  return { html, text: `${clean}${SIG_DELIM}${SIGNATURE_TEXT}\n\n${FOOTER_TEXT}\n` };
+  return { html, text: `${clean}${ctaText}${SIG_DELIM}${SIGNATURE_TEXT}\n\n${FOOTER_TEXT}\n` };
 }
 
 /** Removes the signature added by brandedEmail (for re-editing a saved draft). */

@@ -1,9 +1,10 @@
 import "server-only";
 import { avatarFor } from "@/lib/avatars";
-import { ensureTeam, type AdminUser } from "@/lib/admin";
+import { ensureTeam, rowRoles, type AdminUser } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { readSettings } from "@/lib/settings";
-import { isArea, isRole, type Area, type Role } from "@/lib/team-types";
+import { inviteStatus, type InviteStatus } from "@/lib/team-invite-core";
+import { isArea, isFounder, type Area, type TeamRole } from "@/lib/team-types";
 
 /* Team accounts and earnings reads. Every function takes the signed-in user and scopes what it returns:
    job-level rows only ever belong to the viewer, unless the viewer is a founder. */
@@ -14,27 +15,32 @@ export async function leaderboardVisible(): Promise<boolean> {
   return (await readSettings([LEADERBOARD_KEY]).catch(() => ({}) as Record<string, string>))[LEADERBOARD_KEY] === "1";
 }
 
-export type TeamUser = { id: string; email: string; name: string; avatarUrl: string | null; role: Role; area: Area | null; active: boolean; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; totalCents: number; jobs: number };
+export type TeamUser = { id: string; email: string; name: string; avatarUrl: string | null; roles: TeamRole[]; area: Area | null; active: boolean; status: InviteStatus; inviteExpiresAt: number | null; inviteSentAt: number | null; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; removedAt: string | null; removedBy: string | null; totalCents: number; jobs: number };
 
 /** Founder-only: every account (never the password hash) with its lifetime totals. */
 export async function listUsers(): Promise<TeamUser[]> {
   await ensureTeam();
   const res = await db().execute(`
-    SELECT u.id, u.email, u.name, u.role, u.area, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
+    SELECT u.id, u.email, u.name, u.role, (SELECT GROUP_CONCAT(r.role) FROM admin_user_roles r WHERE r.user_id = u.id) AS roles, u.area, u.invite_state, u.invite_expires_at, u.invite_sent_at, u.removed_at, (SELECT b.name FROM admin_users b WHERE b.id = u.removed_by) AS removed_by_name, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
            COALESCE(SUM(j.amount_cents), 0) AS total, COUNT(j.id) AS jobs
     FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id
-    GROUP BY u.id ORDER BY (u.role = 'founder') DESC, u.created_at`);
+    GROUP BY u.id ORDER BY (u.role = 'founder') DESC, (u.invite_state IS NOT NULL), u.created_at`);
   return res.rows.map((r) => ({
     id: String(r.id),
     email: String(r.email),
     name: String(r.name),
     avatarUrl: avatarFor(String(r.id), Number(r.has_avatar) === 1, r.updated_at, String(r.email)),
-    role: isRole(r.role) ? r.role : "member",
+    roles: rowRoles(r),
     area: isArea(r.area) ? r.area : null,
     active: Number(r.active) === 1,
-    emailAccess: r.role === "founder" || Number(r.email_access) === 1,
+    status: r.removed_at ? "rimosso" : inviteStatus({ active: Number(r.active) === 1, inviteState: r.invite_state === null ? null : String(r.invite_state), inviteExpiresAt: r.invite_expires_at === null ? null : Number(r.invite_expires_at) }),
+    inviteExpiresAt: r.invite_expires_at === null ? null : Number(r.invite_expires_at),
+    inviteSentAt: r.invite_sent_at === null ? null : Number(r.invite_sent_at),
+    emailAccess: isFounder(rowRoles(r)) || Number(r.email_access) === 1,
     createdAt: String(r.created_at),
     lastLoginAt: r.last_login_at ? String(r.last_login_at) : null,
+    removedAt: r.removed_at ? String(r.removed_at) : null,
+    removedBy: r.removed_by_name ? String(r.removed_by_name) : null,
     totalCents: Number(r.total),
     jobs: Number(r.jobs),
   }));
@@ -73,7 +79,7 @@ function rangeBounds(range: EarnRange, now: Date) {
 /** Earnings for the Introiti page. Members: only their own jobs (+ totals-only leaderboard when the founder allows it). */
 export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: string | null, now = new Date()): Promise<Earnings> {
   await ensureTeam();
-  const founder = me.role === "founder";
+  const founder = isFounder(me);
   const userId = founder ? filterUser : me.id;
   const { from, prevFrom } = rangeBounds(range, now);
   const to = isoDay(now);
@@ -97,7 +103,7 @@ export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: s
              FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id AND j.date BETWEEN ? AND ?
              WHERE u.active = 1 OR j.id IS NOT NULL GROUP BY u.id ORDER BY c DESC, u.name`
           : "SELECT 1 WHERE 0", args: showBoard ? [from, to] : [] },
-      { sql: founder ? "SELECT id, name, email, avatar_url IS NOT NULL AS has_avatar, updated_at FROM admin_users ORDER BY name" : "SELECT 1 WHERE 0", args: [] },
+      { sql: founder ? "SELECT id, name, email, avatar_url IS NOT NULL AS has_avatar, updated_at FROM admin_users WHERE removed_at IS NULL ORDER BY name" : "SELECT 1 WHERE 0", args: [] },
     ],
     "read",
   );

@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { LEGACY_AREA_ROLE } from "@/lib/team-types";
 
 let ready: Promise<void> | null = null;
 
@@ -140,6 +141,17 @@ export function ensureTeamSchema(): Promise<void> {
     if (!have.has("avatar_url")) await addColumn("admin_users", "avatar_url", "TEXT");
     if (!have.has("last_login_at")) await addColumn("admin_users", "last_login_at", "TEXT");
     if (!have.has("email_access")) await addColumn("admin_users", "email_access", "INTEGER NOT NULL DEFAULT 0");
+    // Team invites (db/011_team_roles_invites.sql): only the SHA-256 of the token is stored.
+    for (const [name, type] of [["invite_state", "TEXT"], ["invite_hash", "TEXT"], ["invite_expires_at", "INTEGER"], ["invite_sent_at", "INTEGER"],
+      ["invite_window_at", "INTEGER"], ["invite_window_count", "INTEGER NOT NULL DEFAULT 0"], ["invited_by", "TEXT"], ["removed_at", "TEXT"], ["removed_by", "TEXT"]] as const)
+      if (!have.has(name)) await addColumn("admin_users", name, type);
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS admin_user_roles (
+        user_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE, role TEXT NOT NULL, PRIMARY KEY (user_id, role)
+      )` },
+      { sql: "CREATE UNIQUE INDEX IF NOT EXISTS admin_users_invite_hash ON admin_users (invite_hash) WHERE invite_hash IS NOT NULL" },
+    ], "write");
+    await backfillRoles();
   }).catch((error) => {
     teamReady = null;
     throw error;
@@ -241,4 +253,16 @@ export function ensureTwoFactorSchema(): Promise<void> {
     { sql: "CREATE INDEX IF NOT EXISTS admin_2fa_recovery_user ON admin_2fa_recovery (user_id)" },
   ], "write"); }).catch((error) => { twoFactorReady = null; throw error; });
   return twoFactorReady;
+}
+
+/**
+ * Multi-role migration, idempotent: every account without rows in admin_user_roles gets the role(s) matching its
+ * legacy role/area (founder stays founder; a member gets the role that opens the same sections as their old area).
+ * Also run after the founder seed. Existing rows are never touched.
+ */
+export async function backfillRoles(): Promise<void> {
+  const cases = Object.entries(LEGACY_AREA_ROLE).map(([a, r]) => `WHEN u.area = '${a}' THEN '${r}'`).join(" ");
+  await db().execute(`INSERT OR IGNORE INTO admin_user_roles (user_id, role)
+    SELECT u.id, CASE WHEN u.role = 'founder' THEN 'founder' ${cases} ELSE 'esterno' END FROM admin_users u
+    WHERE NOT EXISTS (SELECT 1 FROM admin_user_roles r WHERE r.user_id = u.id)`);
 }
