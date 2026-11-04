@@ -23,11 +23,11 @@ export function ProfilePhoto({ current, name }: { current: string | null; name: 
       if (file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setMessage("Scegli una foto JPG, PNG o WebP fino a 5 MB."); return; }
       try {
         const bitmap = await createImageBitmap(file);
-        const canvas = document.createElement("canvas"); canvas.width = 96; canvas.height = 96;
+        const canvas = document.createElement("canvas"); canvas.width = 256; canvas.height = 256;
         const context = canvas.getContext("2d"); if (!context) { bitmap.close(); throw new Error(); }
         const side = Math.min(bitmap.width, bitmap.height);
-        context.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 96, 96);
-        bitmap.close(); setPhoto(canvas.toDataURL("image/webp", .85));
+        context.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
+        bitmap.close(); let url = canvas.toDataURL("image/webp", .82); if (!url.startsWith("data:image/webp")) url = canvas.toDataURL("image/jpeg", .85); setPhoto(url);
       } catch { setMessage("Impossibile leggere questa immagine. Scegli un’altra foto."); }
     }} /></label>
     <div className="adm-row-actions"><button className="adm-btn adm-btn-primary" type="button" disabled={!photo || pending} onClick={() => save(photo)}>{pending ? "Salvataggio…" : "Salva foto"}</button>{current ? <button className="adm-btn" type="button" disabled={pending} onClick={() => save(null)}>Rimuovi foto</button> : null}</div>

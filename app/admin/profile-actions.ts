@@ -8,9 +8,11 @@ import { db } from "@/lib/db";
 export async function saveProfilePhoto(photo: string | null): Promise<{ error?: string; ok?: boolean }> {
   const me = await guardSection("settings");
   if (photo !== null) {
-    if (typeof photo !== "string" || photo.length > 90_000 || !/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo)) return { error: "Foto non valida." };
+    if (typeof photo !== "string" || photo.length > 140_000 || !/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(photo)) return { error: "Foto non valida." };
     const bytes = Buffer.from(photo.split(",")[1], "base64");
-    if (bytes.length > 64_000 || bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WEBP") return { error: "Formato della foto non valido." };
+    const webp = bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
+    const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    if (bytes.length > 100_000 || (photo.startsWith("data:image/webp") ? !webp : !jpeg)) return { error: "Formato della foto non valido." };
   }
   await db().execute({ sql: "UPDATE admin_users SET avatar_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [photo, me.id] });
   revalidatePath("/admin/settings");
