@@ -194,7 +194,14 @@ export async function login(email: string, password: string): Promise<LoginResul
   return "ok";
 }
 
+/** Signs out and revokes the token server-side (session_version bump), so a copied cookie stops working too. Closes the user's other sessions as well. */
 export async function logout() {
+  const me = await getAdmin().catch(() => null);
+  if (me) {
+    await db()
+      .execute({ sql: "UPDATE admin_users SET session_version = session_version + 1 WHERE id = ?", args: [me.id] })
+      .catch(() => {});
+  }
   (await cookies()).delete(SESSION_COOKIE);
 }
 
