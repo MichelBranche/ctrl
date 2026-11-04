@@ -1,5 +1,6 @@
 import { getAdmin } from "@/lib/admin";
 import { canAccess } from "@/lib/team-types";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 
 /** CSV of active subscribers. Admin-only; never cached. */
@@ -13,6 +14,7 @@ export async function GET() {
     if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return `"${s.replace(/"/g, '""')}"`;
   };
+  await logAction("newsletter.export", undefined, { rows: res.rows.length }, admin);
   const csv = ["email,lang,subscribed_at", ...res.rows.map((r) => [r.email, r.lang, r.created_at].map(cell).join(","))].join("\r\n");
   return new Response(`\uFEFF${csv}\r\n`, {
     headers: {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { guardSection } from "@/lib/admin";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 
 export async function saveProfilePhoto(photo: string | null): Promise<{ error?: string; ok?: boolean }> {
@@ -33,6 +34,7 @@ export async function saveProfile(_previous: { error?: string; ok?: string }, fo
   try {
     await db().execute({ sql: "UPDATE admin_users SET name = ?, contact_email = ?, phone = ?, website = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [name, email || null, phone || null, website || null, me.id] });
   } catch { return { error: "Impossibile salvare il profilo. Riprova." }; }
+  await logAction("settings.profile", { type: "user", id: me.id }, undefined, me);
   revalidatePath("/admin", "layout");
   return { ok: "Profilo aggiornato." };
 }

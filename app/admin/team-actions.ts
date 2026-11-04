@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ensureTeam, guardSection, hashPassword, passwordOk } from "@/lib/admin";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { writeSettings } from "@/lib/settings";
 import { LEADERBOARD_KEY } from "@/lib/team";
@@ -58,6 +59,7 @@ export async function addJob(_: TeamState, form: FormData): Promise<TeamState> {
     sql: "INSERT INTO team_jobs (id, user_id, client, description, amount_cents, date, area, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     args: [crypto.randomUUID(), target, client, description, cents, date, area, me.id],
   });
+  await logAction("introiti.job_add", { type: "user", id: target }, { cents, date, area });
   refresh();
   return { ok: "Lavoro registrato." };
 }
@@ -71,6 +73,7 @@ export async function deleteJob(id: string): Promise<{ ok: boolean }> {
       ? { sql: "DELETE FROM team_jobs WHERE id = ?", args: [id] }
       : { sql: "DELETE FROM team_jobs WHERE id = ? AND user_id = ?", args: [id, me.id] },
   );
+  if (res.rowsAffected) await logAction("introiti.job_delete", { type: "job", id });
   refresh();
   return { ok: res.rowsAffected > 0 };
 }
@@ -94,6 +97,7 @@ export async function createUser(_: TeamState, form: FormData): Promise<TeamStat
     args: [crypto.randomUUID(), email, name, role, isArea(area) ? area : null, await hashPassword(password), emailAccess ? 1 : 0],
   });
   if (!res.rowsAffected) return { error: "Esiste già un utente con questa email." };
+  await logAction("team.user_create", { type: "user", id: email }, { role, area: isArea(area) ? area : null, emailAccess });
   refresh();
   return { ok: `Profilo creato per ${name}. Comunicagli la password di persona.` };
 }
@@ -116,6 +120,7 @@ export async function updateUser(_: TeamState, form: FormData): Promise<TeamStat
     args: [name, role, isArea(area) ? area : null, active ? 1 : 0, emailAccess ? 1 : 0, id, role, active ? 1 : 0, id],
   });
   if (!res.rowsAffected) return { error: "Serve sempre almeno un founder attivo." };
+  await logAction("team.user_update", { type: "user", id }, { role, area: isArea(area) ? area : null, active, emailAccess });
   refresh();
   return { ok: "Profilo aggiornato." };
 }
@@ -132,12 +137,14 @@ export async function resetUserPassword(_: TeamState, form: FormData): Promise<T
     args: [await hashPassword(password), id],
   });
   if (!res.rowsAffected) return { error: "Utente non trovato." };
+  await logAction("team.password_reset", { type: "user", id });
   return { ok: "Password reimpostata: le sue sessioni aperte sono state chiuse." };
 }
 
 export async function setLeaderboardVisible(visible: boolean): Promise<{ ok: boolean }> {
   await guardSection("team");
   await writeSettings({ [LEADERBOARD_KEY]: visible ? "1" : "" });
+  await logAction("team.leaderboard", undefined, { visible });
   refresh();
   return { ok: true };
 }

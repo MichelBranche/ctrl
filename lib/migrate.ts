@@ -206,3 +206,20 @@ export function ensureDeskSchema(): Promise<void> {
   ], "write"); }).catch(error => { deskReady = null; throw error; });
   return deskReady;
 }
+
+let auditReady: Promise<void> | null = null;
+/** Admin audit log (see db/009_audit_backup.sql). */
+export function ensureAuditSchema(): Promise<void> {
+  auditReady ??= retryBusy(async () => { await db().batch([
+    { sql: `CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT, user_name TEXT, user_email TEXT,
+      action TEXT NOT NULL, target_type TEXT, target_id TEXT, details TEXT,
+      ip TEXT, user_agent TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )` },
+    { sql: "CREATE INDEX IF NOT EXISTS audit_log_created ON audit_log (created_at)" },
+    { sql: "CREATE INDEX IF NOT EXISTS audit_log_user ON audit_log (user_id, created_at)" },
+  ], "write"); }).catch((error) => { auditReady = null; throw error; });
+  return auditReady;
+}

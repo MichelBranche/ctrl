@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdmin, login, logout } from "@/lib/admin";
 import { canAccess } from "@/lib/team-types";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { POSTS_TAG } from "@/lib/journal";
 import { ensureTranslationSchema } from "@/lib/migrate";
@@ -93,6 +94,7 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
     console.error("[admin] save failed:", msg);
     return { error: "Salvataggio non riuscito." };
   }
+  await logAction("journal.post_save", { type: "post", id: newId }, { lang, status, created: !id });
   const warning = lang === "it" ? await syncEnglish(newId, args, form.get("retranslate") === "1") : undefined;
   updateTag(POSTS_TAG);
   if (!id) redirect(`/admin/edit?id=${newId}${warning ? `&tw=${encodeURIComponent(warning)}` : ""}`);
@@ -153,6 +155,7 @@ export async function deletePost(form: FormData) {
         { sql: "UPDATE posts SET translation_of = NULL WHERE translation_of = ?", args: [id] },
       ]),
     ).catch(() => {});
+    await logAction("journal.post_delete", { type: "post", id });
     updateTag(POSTS_TAG);
   }
   redirect("/admin/journal");

@@ -606,3 +606,7 @@ a.adm-stat:hover::after { opacity: 1; }
 .desk-mail-link { display:block; margin-bottom:.5rem; color:var(--adm-fg); text-decoration:none; overflow-wrap:anywhere; }
 .desk-mail-link:hover { color:var(--adm-accent); }
 @media(max-width:60rem) { .desk-grid { grid-template-columns:minmax(0,1fr); } }
+
+/* Backup panel and audit filters */
+.adm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+.adm-row .adm-field { min-width: 10rem; }

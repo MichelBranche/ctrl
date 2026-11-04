@@ -4,6 +4,7 @@ import { del } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
 import { changePassword, getAdmin, guardSection } from "@/lib/admin";
 import { canAccess } from "@/lib/team-types";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { SETTINGS_TAG, SOCIAL_HOSTS, SOCIAL_KEYS, writeSettings } from "@/lib/settings";
 
@@ -25,6 +26,7 @@ export async function setRequestStatus(form: FormData) {
   const status = String(form.get("status"));
   if (!id || !STATUSES.includes(status as (typeof STATUSES)[number])) return;
   await db().execute({ sql: "UPDATE contact_requests SET status = ?, updated_at = ? WHERE id = ?", args: [status, new Date().toISOString(), id] });
+  await logAction("requests.status", { type: "request", id }, { status });
   revalidatePath("/admin/requests");
 }
 
@@ -33,6 +35,7 @@ export async function deleteRequest(form: FormData) {
   const id = idOf(form);
   if (!id) return;
   await db().execute({ sql: "DELETE FROM contact_requests WHERE id = ?", args: [id] });
+  await logAction("requests.delete", { type: "request", id });
   revalidatePath("/admin/requests");
 }
 
@@ -46,6 +49,7 @@ export async function setSubscriberActive(id: string, active: boolean): Promise<
       : "UPDATE subscribers SET unsubscribed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND unsubscribed_at IS NULL",
     args: [id],
   });
+  await logAction("newsletter.subscriber", { type: "subscriber", id }, { active });
   revalidatePath("/admin/newsletter");
   return { ok: res.rowsAffected > 0 || active };
 }
@@ -55,6 +59,7 @@ export async function removeSubscriber(form: FormData) {
   const id = idOf(form);
   if (!id) return;
   await db().execute({ sql: "DELETE FROM subscribers WHERE id = ?", args: [id] });
+  await logAction("newsletter.subscriber_delete", { type: "subscriber", id });
   revalidatePath("/admin/newsletter");
 }
 
@@ -75,6 +80,7 @@ export async function deleteMedia(form: FormData): Promise<ActionState> {
   } catch {
     return { error: "Eliminazione non riuscita." };
   }
+  await logAction("media.delete", { type: "media", id: u.pathname });
   revalidatePath("/admin/media");
   return { ok: "Immagine eliminata." };
 }
@@ -101,6 +107,7 @@ export async function saveSocial(_: ActionState, form: FormData): Promise<Action
     values[`social.${key}`] = u.toString();
   }
   await writeSettings(values);
+  await logAction("settings.social");
   updateTag(SETTINGS_TAG);
   return { ok: "Profili salvati. Il footer del sito è aggiornato." };
 }

@@ -2,6 +2,7 @@
 
 import { guardSection } from "@/lib/admin";
 import { KEY, finishSend, logSend, markReadBy, sendAllowed, setClaim } from "@/lib/mail/collab";
+import { logAction } from "@/lib/audit";
 import { mailProvider } from "@/lib/mail";
 import { MailError, type OutgoingFile } from "@/lib/mail/provider";
 import { isFolder, type FolderId, type MailMutation } from "@/lib/mail/types";
@@ -39,6 +40,7 @@ export async function toggleClaim(key: string, claim: boolean): Promise<{ ok: bo
   const me = await guardSection("email");
   if (!KEY.test(key)) return { ok: false };
   await setClaim(key, me.id, claim);
+  await logAction(claim ? "email.claim" : "email.unclaim", { type: "email", id: key }, undefined, me);
   return { ok: true };
 }
 
@@ -108,6 +110,7 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
   try {
     const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form) });
     await finishSend(id, messageId);
+    await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length }, me);
     const draftUid = Number(form.get("draftUid"));
     if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
     return { ok: `Inviata a ${to.join(", ")}.`, at: Date.now() };

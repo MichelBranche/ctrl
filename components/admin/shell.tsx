@@ -28,6 +28,7 @@ const NAV: Nav[] = [
   { href: "/admin/social", label: "Social", icon: I("M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0M12 2v2M12 20v2M2 12h2M20 12h2") },
   { href: "/admin/status", label: "Stato sito", icon: I("M3 12h4l3-7 4 14 3-7h4") },
   { href: "/admin/introiti", label: "Introiti", icon: I("M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3") },
+  { href: "/admin/audit", label: "Registro attività", icon: I("M9 4h6v3H9zM6 6h12v15H6zM9 11h6M9 15h4") },
   { href: "/admin/team", label: "Team", icon: I("M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8") },
   { href: "/admin/settings", label: "Impostazioni", icon: I("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .2-1.3-1.3L17 5l-3-1-1 2h-2L10 4 7 5l.2 2L6 8.3 4 8l-1 3 2 1v1l-2 1 1 3 2-.2L7.3 17 7 19l3 1 1-2h2l1 2 3-1-.2-2 1.3-1.3 2 .3 1-3-2-1z") },
 ];
@@ -145,7 +146,7 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
             {nav.filter(n => n.href === "/admin/shop").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
             <NavGroup key={`communications:${path}`} id="communications" label="Comunicazioni" icon={I("M4 5h16v12H9l-5 4zM8 9h8M8 13h5")} items={nav.filter(n => ["/admin/requests", "/admin/email", "/admin/newsletter"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
             <NavGroup key={`analysis:${path}`} id="analysis" label="Analisi e sito" icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            {nav.filter(n => ["/admin/introiti", "/admin/team"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            {nav.filter(n => ["/admin/introiti", "/admin/team", "/admin/audit"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
           </ul>
           <ul className="adm-nav adm-nav-footer">
             {nav.filter(n => n.href === "/admin/settings").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}

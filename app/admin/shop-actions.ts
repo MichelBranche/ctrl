@@ -3,6 +3,7 @@
 import { del, put } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
 import { guardSection } from "@/lib/admin";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { ensureShopSchema } from "@/lib/migrate";
 import { SHOP_PRODUCT_TAG } from "@/lib/shop";
@@ -167,6 +168,7 @@ export async function saveShopProduct(_: ShopActionState, form: FormData): Promi
     if (Array.isArray(before)) await deleteBlobs(before.filter((u): u is string => typeof u === "string" && !(images as string[]).includes(u)));
   }
   const oldSlug = existing ? String(existing.slug) : slug;
+  await logAction("shop.product_save", { type: "product", id: slug }, { created: !existing });
   refresh([slug, oldSlug]);
   return { ok: existing ? "Prodotto aggiornato." : "Prodotto aggiunto.", warning, slug };
 }
@@ -181,6 +183,7 @@ export async function deleteShopProduct(id: string): Promise<ShopActionState> {
   let images: unknown = [];
   try { images = JSON.parse(String(row.images_json)); } catch { images = []; }
   if (Array.isArray(images)) await deleteBlobs(images.filter((u): u is string => typeof u === "string"));
+  await logAction("shop.product_delete", { type: "product", id: String(row.slug) });
   refresh([String(row.slug)]);
   return { ok: "Prodotto eliminato." };
 }
@@ -206,6 +209,7 @@ export async function setOrderStatus(id: string, status: string): Promise<{ ok: 
     sql: `UPDATE shop_orders SET status = ?, updated_at = ?${col ? `, ${col} = COALESCE(${col}, ?)` : ""} WHERE id = ?`,
     args: col ? [status, at, at, id] : [status, at, id],
   });
+  if (res.rowsAffected) await logAction("shop.order_status", { type: "order", id }, { status });
   revalidatePath("/admin/shop");
   return { ok: res.rowsAffected > 0, at };
 }
@@ -222,6 +226,7 @@ export async function updateOrderFulfilment(id: string, input: { trackingNumber:
     sql: "UPDATE shop_orders SET tracking_number = ?, tracking_url = ?, notes = ?, updated_at = ? WHERE id = ?",
     args: [trackingNumber || null, trackingUrl || null, notes || null, new Date().toISOString(), id],
   });
+  if (res.rowsAffected) await logAction("shop.order_fulfilment", { type: "order", id }, { tracking: Boolean(trackingNumber || trackingUrl) });
   revalidatePath("/admin/shop");
   return res.rowsAffected > 0 ? { ok: true } : { ok: false, error: "Ordine non trovato." };
 }
@@ -233,6 +238,7 @@ export async function setProductPublished(id: string, published: boolean): Promi
   const row = (await db().execute({ sql: "SELECT slug FROM shop_products WHERE id = ?", args: [id] })).rows[0];
   if (!row) return { ok: false };
   await db().execute({ sql: "UPDATE shop_products SET published = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [published ? 1 : 0, id] });
+  await logAction("shop.product_publish", { type: "product", id: String(row.slug) }, { published });
   refresh([String(row.slug)]);
   return { ok: true };
 }

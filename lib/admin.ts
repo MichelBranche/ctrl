@@ -4,6 +4,7 @@ import { jwtVerify, SignJWT } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { logAction } from "@/lib/audit";
 import { avatarFor } from "@/lib/avatars";
 import { db, dbConfigured } from "@/lib/db";
 import { ensureTeamSchema } from "@/lib/migrate";
@@ -124,6 +125,7 @@ export async function changePassword(current: string, next: string, confirm: str
     args: [await hashPassword(next), me.id],
   });
   await issueSession(me.id, Number(res.rows[0]?.session_version ?? 1));
+  await logAction("auth.password_change", { type: "user", id: me.id }, undefined, me);
   return "ok";
 }
 
@@ -175,7 +177,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   const key = await clientKey();
   if (await isLocked(key)) return "locked";
   const res = await db().execute({
-    sql: "SELECT id, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
+    sql: "SELECT id, name, email, password_hash, session_version FROM admin_users WHERE email = ? AND active = 1",
     args: [email.trim().toLowerCase()],
   });
   const row = res.rows[0];
@@ -183,6 +185,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   const passOk = await verifyPassword(password, row ? String(row.password_hash) : await dummyHash()).catch(() => false);
   if (!row || !passOk) {
     await recordFailure(key);
+    await logAction("auth.login_failed", undefined, { email: email.trim().toLowerCase().slice(0, 200) }, null);
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     return "invalid";
   }
@@ -191,6 +194,7 @@ export async function login(email: string, password: string): Promise<LoginResul
     { sql: "UPDATE admin_users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [String(row.id)] },
   ], "write");
   await issueSession(String(row.id), Number(row.session_version));
+  await logAction("auth.login", { type: "user", id: String(row.id) }, undefined, { id: String(row.id), name: String(row.name), email: String(row.email) });
   return "ok";
 }
 
@@ -198,6 +202,7 @@ export async function login(email: string, password: string): Promise<LoginResul
 export async function logout() {
   const me = await getAdmin().catch(() => null);
   if (me) {
+    await logAction("auth.logout", { type: "user", id: me.id }, undefined, me);
     await db()
       .execute({ sql: "UPDATE admin_users SET session_version = session_version + 1 WHERE id = ?", args: [me.id] })
       .catch(() => {});
