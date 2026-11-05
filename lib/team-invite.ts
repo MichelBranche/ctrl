@@ -14,7 +14,7 @@ import { isFounder, ROLE_LABEL, type TeamRole } from "@/lib/team-types";
  * chooses their own password on that page. No password ever travels by email.
  */
 
-const ORIGIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://ctrlagency.dev";
+const ORIGIN = "https://www.ctrlagency.dev";
 export const inviteUrl = (token: string) => `${ORIGIN}/admin/invito/${token}`;
 
 const list = (roles: readonly TeamRole[]) => {

@@ -14,7 +14,7 @@ export default function StatusPage() {
   );
 }
 
-const ORIGIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://ctrlagency.dev";
+const ORIGIN = "https://www.ctrlagency.dev";
 
 type Check = { name: string; ok: boolean; detail: string };
 

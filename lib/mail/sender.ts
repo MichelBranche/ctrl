@@ -8,7 +8,7 @@ import { ROLE_LABEL, type TeamRole } from "@/lib/team-types";
  * never from form input. Uploaded photos live behind the admin session, so emails point to /email-avatar with an
  * HMAC (SESSION_SECRET, own label) over id + version: recipients can load that one photo, nobody can enumerate others.
  */
-export const PUBLIC_ORIGIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://ctrlagency.dev";
+export const PUBLIC_ORIGIN = "https://www.ctrlagency.dev";
 
 const sign = (id: string, v: string) => {
   const s = process.env.SESSION_SECRET ?? "";

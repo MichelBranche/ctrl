@@ -27,7 +27,7 @@ export function ProfilePhoto({ current, name }: { current: string | null; name: 
         const context = canvas.getContext("2d"); if (!context) { bitmap.close(); throw new Error(); }
         const side = Math.min(bitmap.width, bitmap.height);
         context.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
-        bitmap.close(); let url = canvas.toDataURL("image/webp", .82); if (!url.startsWith("data:image/webp")) url = canvas.toDataURL("image/jpeg", .85); setPhoto(url);
+        bitmap.close(); setPhoto(canvas.toDataURL("image/jpeg", .85));
       } catch { setMessage("Impossibile leggere questa immagine. Scegli un’altra foto."); }
     }} /></label>
     <div className="adm-row-actions"><button className="adm-btn adm-btn-primary" type="button" disabled={!photo || pending} onClick={() => save(photo)}>{pending ? "Salvataggio…" : "Salva foto"}</button>{current ? <button className="adm-btn" type="button" disabled={pending} onClick={() => save(null)}>Rimuovi foto</button> : null}</div>
