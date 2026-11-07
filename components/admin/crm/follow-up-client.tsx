@@ -26,18 +26,23 @@ export function FollowUpDone({ id, seenAt, label }: { id: string; seenAt: string
 
 /** "N" opens the new-contact form, unless the person is typing or a dialog is open. */
 export function NewContactShortcut({ href }: { href: string }) {
+  return <KeyShortcut href={href} keyName="n" />;
+}
+
+/** Single-key navigation, ignored while typing or while a dialog is open. */
+export function KeyShortcut({ href, keyName }: { href: string; keyName: string }) {
   const router = useRouter();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      if (e.key.toLowerCase() !== keyName || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
-      if (document.querySelector("[aria-modal='true']")) return;
+      if (document.querySelector("[aria-modal='true'], dialog[open]")) return;
       e.preventDefault();
       router.push(href as Route);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [href, router]);
+  }, [href, keyName, router]);
   return null;
 }

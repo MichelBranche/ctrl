@@ -367,7 +367,7 @@ export async function completeFollowUp(id: string, seenAt: string, userId: strin
 
 export type CrmOverview = { total: number; newThisMonth: number; byStage: Record<Stage, number>; wonValue: number; radar: number; unassigned: number };
 const STAGES_SQL = STAGES.map((st) => `SUM(CASE WHEN stage = '${st}' THEN 1 ELSE 0 END) AS n_${st}`).join(", ");
-/** Counts for the Oggi page, all from crm_contacts as they are today (no opportunities table yet). */
+/** Contact counts for the Oggi page. Deal counts live in opportunityTotals and are not derived from these stages. */
 export async function crmOverview(now = new Date()): Promise<CrmOverview> {
   await ensureCrmSchema();
   const month = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit" }).format(now);

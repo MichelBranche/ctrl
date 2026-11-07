@@ -1314,3 +1314,30 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-import-dialog .crm-import-table td:nth-child(3),
   .crm-import-dialog .crm-import-table td:nth-child(4) { grid-column: 1 / -1; }
 }
+
+/* Pipeline: deals, not every contact. Perso stays collapsed until asked. */
+.crm-switch { display: inline-flex; gap: 0.25rem; padding: 0.2rem; border: 1px solid var(--adm-rule); border-radius: 999px; }
+.crm-switch a { padding: 0.35rem 0.75rem; border-radius: 999px; color: var(--adm-dim); text-decoration: none; font-size: 0.82rem; }
+.crm-switch a[aria-current="page"] { background: var(--adm-accent); color: var(--adm-ink); }
+.crm-col-sub { margin: -0.2rem 0 0.55rem; font-size: 0.75rem; }
+.crm-col.is-collapsed { align-items: flex-start; }
+.crm-col-add { margin-top: 0.55rem; color: var(--adm-dim); font-size: 0.8rem; text-decoration: none; }
+.crm-col-add:hover { color: var(--adm-accent); }
+.crm-card[data-active] { border-color: var(--adm-accent); }
+.crm-card-meta { display: flex; justify-content: space-between; gap: 0.4rem; align-items: center; }
+.crm-pipe-foot { display: flex; flex-wrap: wrap; gap: 0.8rem 1.2rem; align-items: center; margin-top: 0.9rem; padding: 0.7rem 0.2rem; border-top: 1px solid var(--adm-rule); font-size: 0.86rem; }
+.crm-deal-dialog { width: min(40rem, calc(100vw - 1.5rem)); max-height: min(86dvh, 42rem); margin: auto; overflow: auto; border: 1px solid var(--adm-rule); border-radius: 0.7rem; padding: 1.1rem 1.15rem 1rem; background: var(--adm-panel); color: var(--adm-fg); box-shadow: 0 24px 60px rgba(0, 0, 0, .28); }
+.crm-deal-dialog::backdrop { background: rgba(16, 16, 16, .55); }
+.crm-deal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.6rem 0; }
+.crm-deal-picked { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.crm-deal-hits { list-style: none; margin: 0.35rem 0 0; padding: 0; border: 1px solid var(--adm-rule); border-radius: 0.5rem; }
+.crm-deal-hits button { width: 100%; padding: 0.45rem 0.7rem; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.crm-deal-hits button:hover { background: var(--adm-raise); }
+.crm-deal-controls, .crm-deal-value { display: grid; gap: 0.35rem; margin-bottom: 0.8rem; }
+.crm-deal-table select.adm-input { min-width: 8rem; }
+@media (max-width: 40rem) {
+  .crm-deal-dialog { width: calc(100vw - 1rem); }
+  .crm-deal-grid { grid-template-columns: 1fr; }
+  .crm-pipe-foot { align-items: stretch; }
+  .crm-pipe-foot .crm-switch { flex-wrap: wrap; }
+}

@@ -7,7 +7,20 @@ import { z } from "zod";
 export const STAGES = ["nuovo", "contattato", "call", "preventivo", "vinto", "perso"] as const;
 export type Stage = (typeof STAGES)[number];
 export const STAGE_LABEL: Record<Stage, string> = { nuovo: "Nuovo", contattato: "Contattato", call: "Call", preventivo: "Preventivo", vinto: "Vinto", perso: "Perso" };
+/** Column hint on the opportunity board. The same words name a contact's relationship and a deal's phase; they are not the same row. */
+export const STAGE_HINT: Record<Stage, string> = {
+  nuovo: "Lead da qualificare", contattato: "Primo contatto effettuato", call: "In conversazione",
+  preventivo: "Offerta inviata", vinto: "Progetto confermato", perso: "Trattativa chiusa",
+};
 export const isStage = (v: unknown): v is Stage => STAGES.includes(v as Stage);
+export const CLOSED_STAGES = ["vinto", "perso"] as const;
+export const isClosedStage = (stage: Stage) => stage === "vinto" || stage === "perso";
+
+/** Set by hand on a deal. Never derived from an Iris score. */
+export const DEAL_PRIORITIES = ["alta", "media", "bassa"] as const;
+export type DealPriority = (typeof DEAL_PRIORITIES)[number];
+export const DEAL_PRIORITY_LABEL: Record<DealPriority, string> = { alta: "Alta", media: "Media", bassa: "Bassa" };
+export const isDealPriority = (v: unknown): v is DealPriority => (DEAL_PRIORITIES as readonly string[]).includes(String(v));
 
 export const SOURCES = ["sito", "manuale", "radar"] as const;
 export type Source = (typeof SOURCES)[number];
