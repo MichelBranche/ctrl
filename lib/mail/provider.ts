@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import type { MailLabel, MailCategory, MailMutation, Address, FolderId, MailAttachment, MailMessage, MailSummary } from "@/lib/mail/types";
+import type { ContactAddress, ContactMail } from "@/lib/mail/contact";
 
 /**
  * Everything the admin needs from a mailbox. The real implementation speaks IMAP/SMTP (imap.ts);
@@ -21,7 +22,18 @@ export interface MailProvider {
   /** For replies: the headers needed to thread the answer. */
   replyContext(folder: FolderId, uid: number): Promise<ReplyContext | null>;
   send(mail: OutgoingMail): Promise<{ messageId: string }>;
+  /**
+   * Mail exchanged with one exact address (All Mail: inbox, sent and archived; not Spam or Trash), newest first.
+   * Never stored in the folder-list cache, so a contact lookup cannot push the inbox pages out of it.
+   */
+  contactMessages(address: ContactAddress): Promise<ContactMail>;
+  /** One message and its conversation, without loading (or caching) a folder list. Null open when the uid is gone. */
+  message(folder: FolderId, uid: number): Promise<OpenedMessage>;
+  /** Where a message is now, by its (already sanitized) Message-ID: All Mail, then Trash, then Spam. No list cache. */
+  findByMessageId(messageId: string): Promise<MailSummary | null>;
 }
+
+export type OpenedMessage = { open: MailMessage | null; thread: MailSummary[] };
 
 export type ViewQuery = { folder: FolderId; page: number; open?: number | null; search?: string; category?: MailCategory };
 export type FolderInfo = { id: FolderId; unread: number; total: number };

@@ -12,3 +12,11 @@ export async function rememberMailReferences(view: MailboxView) {
     ON CONFLICT(message_key) DO UPDATE SET folder=excluded.folder,uid=excluded.uid,subject=excluded.subject,sender=excluded.sender,message_id=COALESCE(excluded.message_id,email_references.message_id)`,
     args: [item.key,item.folder,item.uid,item.subject,item.from?.name || item.from?.address || "",view.open?.key===item.key ? view.open.messageId : null] })), "write");
 }
+
+/** Message-ID remembered for a stable key (by any list or opened message), for the shared resolver's fallback. */
+export async function rememberedMessageId(key: string): Promise<string | null> {
+  await ensureDeskSchema();
+  const r = await db().execute({ sql: "SELECT message_id FROM email_references WHERE message_key = ?", args: [key] });
+  const v = r.rows[0]?.message_id;
+  return typeof v === "string" && v ? v : null;
+}

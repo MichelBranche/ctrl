@@ -15,11 +15,12 @@ export const CRM_SECTIONS = [
 ] as const;
 export type CrmSectionHref = (typeof CRM_SECTIONS)[number]["href"];
 
-/** Label after "CRM" in the breadcrumb, or null on the CRM home. Any other segment is a contact id. */
+/** Label after "CRM" in the breadcrumb, or null on the CRM home. Any other segment is a contact id (its mail: "Email"). */
 export function crmCrumb(path: string): string | null {
   if (!path.startsWith(`${CRM_HOME}/`)) return null;
-  const segment = path.slice(CRM_HOME.length + 1).split("/")[0];
-  return CRM_SECTIONS.find((s) => s.href === `${CRM_HOME}/${segment}`)?.label ?? "Scheda contatto";
+  const [segment, sub] = path.slice(CRM_HOME.length + 1).split("/");
+  const section = CRM_SECTIONS.find((s) => s.href === `${CRM_HOME}/${segment}`)?.label;
+  return section ?? (sub === "email" ? "Email" : "Scheda contatto");
 }
 
 /** Query keys of the rubrica, which lived on /admin/crm before the Oggi page. */
@@ -104,3 +105,54 @@ export function savedViewParams(search: string): string {
   return out.toString();
 }
 export const savedViewsKey = (userId: string) => `ctrl:crm-views:v1:${userId}`;
+
+/*
+ * Contact email view (/admin/crm/<id>/email): the Rubrica view it came from travels in `da` (filters, sort and page only,
+ * re-parsed and rebuilt here, never echoed), so "back" and the panel tabs land on the same list with the contact open.
+ * `m` + `k` open one message by All Mail uid and its stable key; `compose` opens the existing composer.
+ */
+export const contactEmailPath = (id: string) => `${CRM_HOME}/${id}/email`;
+export const CONTACT_MAIL_VIEWS = ["tutte", "ricevute", "inviate"] as const;
+export type ContactMailView = (typeof CONTACT_MAIL_VIEWS)[number];
+export type ContactMailQuery = {
+  back: RubricaQuery; vista: ContactMailView; m: number | null; k: string; compose: "new" | "reply" | "all" | null; img: boolean;
+};
+const MAIL_KEY_RE = /^[a-f0-9]{32}$/;
+
+export function parseContactMailQuery(sp: Raw): ContactMailQuery {
+  const raw = sp instanceof URLSearchParams ? sp.get("da") : sp.da;
+  const da = typeof raw === "string" && raw.length <= 1000 ? raw.replace(/^\?/, "") : "";
+  const back = parseRubricaQuery(new URLSearchParams(da));
+  const vista = read(sp, "vista");
+  const m = read(sp, "m");
+  const compose = read(sp, "compose");
+  return {
+    back: { ...back, c: "", tab: "dettagli" },
+    vista: (CONTACT_MAIL_VIEWS as readonly string[]).includes(vista) ? (vista as ContactMailView) : "tutte",
+    m: /^\d{1,10}$/.test(m) && Number(m) > 0 ? Number(m) : null,
+    k: MAIL_KEY_RE.test(read(sp, "k")) ? read(sp, "k") : "",
+    compose: compose === "new" || compose === "reply" || compose === "all" ? compose : null,
+    img: read(sp, "img") === "1",
+  };
+}
+
+/** Query string of the contact email view; `da` is rebuilt from the parsed Rubrica state. */
+export function contactMailSearch(q: ContactMailQuery, patch: Partial<ContactMailQuery> = {}): string {
+  const v = { ...q, ...patch };
+  const out = new URLSearchParams();
+  const da = rubricaSearch(v.back, { c: "", tab: "dettagli" }).slice(1);
+  if (da) out.set("da", da);
+  if (v.vista !== "tutte") out.set("vista", v.vista);
+  if (v.m) { out.set("m", String(v.m)); if (v.k) out.set("k", v.k); }
+  if (v.compose) out.set("compose", v.compose);
+  if (v.img && v.m) out.set("img", "1");
+  const s = out.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Same-origin Rubrica path with this contact's panel open on `tab` (the safe "back" of the email view). */
+export const rubricaReturn = (id: string, back: RubricaQuery, tab: PanelTab = "dettagli") =>
+  `${RUBRICA}${rubricaSearch(back, { c: ID_RE.test(id) ? id : "", tab })}`;
+
+export const defaultContactMail = (back: RubricaQuery): ContactMailQuery =>
+  ({ back: { ...back, c: "", tab: "dettagli" }, vista: "tutte", m: null, k: "", compose: null, img: false });

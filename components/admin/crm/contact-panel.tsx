@@ -1,13 +1,13 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { CopyButton, FollowUpQuick, OwnerQuick, PanelShell, StageQuick } from "@/components/admin/crm/contact-panel-client";
-import { composeHref, CrmIcon, day, eur, initials, MapsLink, meetHref, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
+import { CrmIcon, day, eur, initials, MapsLink, meetHref, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
 import { NoteForm } from "@/components/admin/crm/note-form";
 import type { AdminUser } from "@/lib/admin";
 import { AUDIT_LABEL } from "@/lib/audit";
 import { contactHistory, crmOwners, getContact, listNotes, type Contact, type CrmEvent } from "@/lib/crm";
 import { isStage, SOURCE_LABEL, STAGE_LABEL, websiteDomain } from "@/lib/crm-core";
-import { CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
+import { contactEmailPath, CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
 import { canAccess } from "@/lib/team-types";
 
 const TAB_LABEL: Record<PanelTab, string> = { dettagli: "Dettagli", note: "Note", attivita: "Attività", cronologia: "Cronologia" };
@@ -25,7 +25,8 @@ const I = {
 };
 const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-export type PanelLinks = { close: string; tabs: Record<PanelTab, string> };
+/** `email`: the contact email view with this list as its "back" (list, and the composer already open). */
+export type PanelLinks = { close: string; tabs: Record<PanelTab, string>; email?: { list: string; compose: string } };
 
 /**
  * Contact side panel, shared by the CRM lists (Rubrica today; Pipeline and Radar can mount it with their own links).
@@ -51,7 +52,8 @@ export async function ContactPanel({ id, tab, me, links }: { id: string; tab: Pa
     tab === "note" ? listNotes(id) : Promise.resolve([]),
     tab === "cronologia" ? contactHistory(id) : Promise.resolve([]),
   ]);
-  const site = siteHref(c.website), tel = telHref(c.phone), mailSearch = c.email ?? websiteDomain(c.website);
+  const site = siteHref(c.website), tel = telHref(c.phone), mailSearch = c.email ? null : websiteDomain(c.website);
+  const mailView = links.email ?? { list: contactEmailPath(c.id), compose: `${contactEmailPath(c.id)}?compose=new` };
   const place = [c.address, c.city, c.region].filter(Boolean).join(", ");
   const versioned = { id: c.id, version: c.version };
   return (
@@ -68,7 +70,7 @@ export async function ContactPanel({ id, tab, me, links }: { id: string; tab: Pa
 
       <div className="crm-panel-actions">
         {mail ? (c.email
-          ? <Link className="adm-btn adm-btn-sm adm-btn-primary" href={composeHref(c.email) as Route}><CrmIcon d={I.mail} />Email</Link>
+          ? <Link className="adm-btn adm-btn-sm adm-btn-primary" href={mailView.compose as Route}><CrmIcon d={I.mail} />Email</Link>
           : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessuna email registrata"><CrmIcon d={I.mail} />Email</span>) : null}
         {tel ? <a className="adm-btn adm-btn-sm" href={tel}><CrmIcon d={I.phone} />Chiama</a> : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessun telefono registrato"><CrmIcon d={I.phone} />Chiama</span>}
         {site ? <a className="adm-btn adm-btn-sm" href={site} target="_blank" rel="noopener noreferrer nofollow"><CrmIcon d={I.ext} />Sito</a> : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessun sito registrato"><CrmIcon d={I.ext} />Sito</span>}
@@ -78,7 +80,8 @@ export async function ContactPanel({ id, tab, me, links }: { id: string; tab: Pa
             <Link href={`${CRM_HOME}/${c.id}` as Route}>Apri scheda completa</Link>
             <MapsLinkItem contact={c} />
             {meetings ? <Link href={meetHref(c) as Route}>Organizza un Meet</Link> : null}
-            {mail && mailSearch ? <Link href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
+            {mail && c.email ? <Link href={mailView.list as Route}>Email collegate</Link> : null}
+            {mail && mailSearch ? <Link href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Cerca il dominio in Posta</Link> : null}
           </div>
         </details>
       </div>

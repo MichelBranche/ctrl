@@ -10,6 +10,7 @@ import {
 } from "@/lib/mail/provider";
 import { LIST_FRESH_MS, LIST_STALE_MS, SnapshotCache } from "@/lib/mail/snapshot";
 import type { FolderId, MailSummary, MailLabel, MailMutation } from "@/lib/mail/types";
+import { CONTACT_SCAN, CONTACT_SHOWN, involvesAddress, type ContactAddress, type ContactMail } from "@/lib/mail/contact";
 
 /** user/pass authenticate IMAP+SMTP; fromAddress is the visible sender (MAIL_FROM alias, else user). */
 type Creds = { user: string; pass: string; fromName: string; fromAddress: string };
@@ -58,6 +59,8 @@ export class ImapProvider implements MailProvider {
   private paths: Partial<Record<FolderId, string>> | null = null;
   /** List metadata only (no message bodies). One cache per mailbox connection, not shared across accounts. */
   private lists = new SnapshotCache<ListSnap>(LIST_FRESH_MS, LIST_STALE_MS);
+  /** Contact lookups (headers only) in their own small cache: they never evict the folder pages above. */
+  private contacts = new SnapshotCache<ContactMail>(LIST_FRESH_MS, LIST_STALE_MS, 4);
   private opening = new Map<string, Promise<{ open: MailboxView["open"]; thread: MailSummary[] }>>();
 
   constructor(private creds: Creds) {}
@@ -131,6 +134,7 @@ export class ImapProvider implements MailProvider {
 
   private dropCache() {
     this.lists.invalidate();
+    this.contacts.invalidate();
     this.catalog = null;
     this.opening.clear();
   }
@@ -229,6 +233,56 @@ export class ImapProvider implements MailProvider {
     return { ...snap.value, open: opened, thread, freshness: snap.age, warning: snap.warning };
   }
 
+  async contactMessages(address: ContactAddress): Promise<ContactMail> {
+    const hit = await this.contacts.read(address, () => this.fetchContact(address));
+    return hit.warning ? { ...hit.value, warning: hit.warning } : hit.value;
+  }
+
+  /** Standard IMAP SEARCH (quoted values, no Gmail X-GM-RAW operators) narrows All Mail; the envelope check is exact. */
+  private fetchContact(address: ContactAddress): Promise<ContactMail> {
+    return this.withClient(async (client) => {
+      const path = await this.path(client, "all");
+      if (!path) throw new MailError("notfound", "La cartella Tutta la posta non è visibile in IMAP: attivala nelle impostazioni di Gmail.");
+      const lock = await client.getMailboxLock(path, { readOnly: true });
+      try {
+        const found = await client.search({ or: [{ from: address }, { to: address }, { cc: address }] }, { uid: true });
+        const uids = (found || []).sort((a, b) => b - a);
+        const slice = uids.slice(0, CONTACT_SCAN);
+        const rows = slice.length ? await client.fetchAll(slice.join(","), LIST_QUERY, { uid: true }) : [];
+        const list = rows
+          .filter((m) => involvesAddress({ from: m.envelope?.from, to: m.envelope?.to, cc: m.envelope?.cc, replyTo: m.envelope?.replyTo }, address))
+          .map((m) => summary("all", m))
+          .sort((a, b) => b.uid - a.uid);
+        return { list: list.slice(0, CONTACT_SHOWN), scanned: slice.length, more: uids.length > slice.length || list.length > CONTACT_SHOWN };
+      } finally {
+        lock.release();
+      }
+    });
+  }
+
+  message(folder: FolderId, uid: number) {
+    return this.fetchOpen(folder, uid);
+  }
+
+  async findByMessageId(messageId: string): Promise<MailSummary | null> {
+    return this.withClient(async (client) => {
+      for (const folder of ["all", "trash", "spam"] as const) {
+        const path = await this.path(client, folder);
+        if (!path) continue;
+        const lock = await client.getMailboxLock(path, { readOnly: true });
+        try {
+          const uids = await client.search({ gmraw: `rfc822msgid:${messageId}` }, { uid: true });
+          const last = (uids || []).sort((a, b) => b - a)[0];
+          const head = last ? await client.fetchOne(String(last), LIST_QUERY, { uid: true }) : null;
+          if (head) return summary(folder, head);
+        } finally {
+          lock.release();
+        }
+      }
+      return null;
+    });
+  }
+
   async createLabel(name: string) {
     await this.withClient(async (client) => { await client.mailboxCreate(name); });
     this.dropCache();
@@ -286,6 +340,10 @@ export class ImapProvider implements MailProvider {
       this.lists.touch((entry) => {
         const item = entry.list.find((m) => m.folder === folder && m.uid === uid);
         if (item && item.seen !== seen) { item.seen = seen; counters.add(entry.folders); }
+      });
+      this.contacts.touch((entry) => {
+        const item = entry.list.find((m) => m.folder === folder && m.uid === uid);
+        if (item) item.seen = seen;
       });
       for (const folders of counters) {
         const box = folders.find((f) => f.id === folder);

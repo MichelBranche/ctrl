@@ -1170,3 +1170,70 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 @media (prefers-reduced-motion: reduce) {
   .crm-opening { animation-duration: 2s; }
 }
+
+/* CRM contact email view (/admin/crm/<id>/email): contact header + tabs, the contact's mail on the left, reading/composing on the right. */
+.crm-mail-main { max-width: 104rem; }
+.crm-mail-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--adm-rule); }
+.crm-mail-top .crm-avatar { width: 3rem; height: 3rem; font-size: 1rem; }
+.crm-mail-who-head { min-width: 0; }
+.crm-mail-who-head .adm-h2 { display: flex; align-items: center; gap: 0.6rem; margin: 0; overflow-wrap: anywhere; }
+.crm-mail-who-head p { margin: 0.15rem 0 0; font-size: 0.85rem; }
+.crm-mail-return { flex: none; }
+.crm-mail-tabs { display: flex; gap: 1.4rem; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.crm-mail-tabs a { display: inline-flex; flex: none; align-items: center; gap: 0.45rem; padding: 0.55rem 0.1rem; border-bottom: 2px solid transparent; color: var(--adm-dim); font-size: 0.88rem; text-decoration: none; }
+.crm-mail-tabs a:hover { color: var(--adm-fg); }
+.crm-mail-tabs a[aria-current="page"] { border-color: var(--adm-accent); color: var(--adm-fg); }
+.crm-mail-tabs a[aria-current="page"] svg { color: var(--adm-accent); }
+.crm-mail { display: grid; grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: 1.25rem; }
+.crm-mail-side { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; max-height: calc(100vh - 6rem); overflow-y: auto; padding: 0.9rem; border: 1px solid var(--adm-rule); border-radius: 0.9rem; background: var(--adm-panel); }
+.crm-mail-new { justify-content: center; width: 100%; }
+.crm-mail-address { margin: 0; font-size: 0.78rem; overflow-wrap: anywhere; }
+.crm-mail-address strong { color: var(--adm-fg); font-weight: 500; }
+.crm-mail-views { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.crm-mail-views a { padding: 0.3rem 0.7rem; border: 1px solid var(--adm-rule); border-radius: 999px; color: var(--adm-dim); font-size: 0.8rem; text-decoration: none; }
+.crm-mail-views a[aria-current="page"] { border-color: var(--adm-accent); color: var(--adm-fg); background: color-mix(in srgb, var(--adm-accent) 12%, var(--adm-panel)); }
+.crm-mail-items { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.crm-mail-item { position: relative; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr) auto; grid-template-areas: "dir subject time" "dir who who" "dir badge badge"; column-gap: 0.6rem; row-gap: 0.2rem; padding: 0.7rem 0.75rem; border: 1px solid var(--adm-rule); border-radius: 0.6rem; color: var(--adm-fg); text-decoration: none; transition: border-color 0.15s ease, background-color 0.15s ease; }
+.crm-mail-item:hover { border-color: var(--adm-dim); }
+.crm-mail-item[aria-current="true"] { border-color: color-mix(in srgb, var(--adm-accent) 70%, transparent); background: color-mix(in srgb, var(--adm-accent) 14%, var(--adm-panel)); box-shadow: inset 3px 0 0 var(--adm-accent); }
+.crm-mail-item[data-unread] .crm-mail-subject { font-weight: 700; }
+.crm-mail-item:focus-visible, .crm-mail-views a:focus-visible, .crm-mail-tabs a:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; }
+.crm-mail-dir { grid-area: dir; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; color: var(--adm-dim); }
+.crm-mail-subject { grid-area: subject; overflow: hidden; font-size: 0.88rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.crm-mail-item time { grid-area: time; color: var(--adm-dim); font-size: 0.75rem; white-space: nowrap; }
+.crm-mail-who { grid-area: who; display: flex; align-items: center; gap: 0.3rem; overflow: hidden; color: var(--adm-dim); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.crm-mail-clip svg { width: 13px; height: 13px; }
+.crm-mail-item .crm-mail-badge { grid-area: badge; justify-self: start; }
+.crm-mail-item .adm-mail-opening { position: absolute; right: 0.6rem; bottom: 0.5rem; font-size: 0.72rem; color: var(--adm-dim); }
+.crm-mail-badge { display: inline-block; padding: 0.1rem 0.55rem; border: 1px solid; border-radius: 999px; font-size: 0.72rem; font-weight: 500; line-height: 1.5; }
+.crm-mail-badge[data-dir="sent"] { border-color: color-mix(in srgb, var(--adm-ok) 45%, transparent); background: color-mix(in srgb, var(--adm-ok) 12%, transparent); color: var(--adm-ok); }
+.crm-mail-badge[data-dir="received"] { border-color: rgba(122, 167, 255, 0.45); background: rgba(122, 167, 255, 0.12); color: #a9c4ff; }
+.crm-mail-detail { min-width: 0; padding: 1.25rem 1.5rem; border: 1px solid var(--adm-rule); border-radius: 0.9rem; background: var(--adm-panel); }
+.crm-mail-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+.crm-mail-detail-head .adm-h2 { margin: 0; overflow-wrap: anywhere; }
+.crm-mail-back { display: none; }
+.crm-mail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.9rem 0; }
+.crm-mail-msg .adm-mail-meta dd { overflow-wrap: anywhere; }
+.crm-mail-msg .adm-mail-meta .crm-mail-badge { margin-left: 0.4rem; }
+.crm-mail-empty { padding: 1.25rem 0.5rem; color: var(--adm-dim); text-align: center; }
+.crm-mail-empty p { margin: 0.3rem 0; }
+.crm-mail-empty.is-detail { display: grid; place-items: center; align-content: center; gap: 0.6rem; min-height: 22rem; }
+.crm-mail-empty.is-detail .crm-mail-dir { width: 3rem; height: 3rem; border: 1px solid var(--adm-rule); border-radius: 50%; }
+.crm-mail-note { margin: 0; font-size: 0.8rem; }
+.crm-mail-note[role="alert"] { display: grid; gap: 0.5rem; justify-items: start; padding: 0.75rem; border: 1px solid color-mix(in srgb, var(--adm-accent) 45%, transparent); border-radius: 0.6rem; }
+.crm-mail-off { display: grid; gap: 0.6rem; justify-items: start; margin-top: 1.25rem; }
+.crm-mail-off p { margin: 0; }
+@media (max-width: 60rem) {
+  .crm-mail { grid-template-columns: minmax(0, 1fr); }
+  .crm-mail-side { position: static; max-height: none; }
+  .crm-mail[data-detail] .crm-mail-side { display: none; }
+  .crm-mail:not([data-detail]) .crm-mail-detail { display: none; }
+  .crm-mail-back { display: inline-flex; }
+  .crm-mail-tabs { flex-basis: 100%; margin-left: 0; gap: 1.1rem; }
+}
+@media (max-width: 40rem) {
+  .crm-mail-detail { padding: 1rem; }
+  .crm-mail-top { gap: 0.7rem; }
+  .crm-mail-top .crm-avatar { width: 2.5rem; height: 2.5rem; font-size: 0.85rem; }
+}
+@media (prefers-reduced-motion: reduce) { .crm-mail-item { transition: none; } }

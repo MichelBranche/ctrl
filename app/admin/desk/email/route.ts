@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { ensureDeskSchema, ensureEmailSchema } from "@/lib/migrate";
 import { mailProvider } from "@/lib/mail";
 import { KEY } from "@/lib/mail/collab";
+import { locateMessage } from "@/lib/mail/resolve";
 import { isFolder } from "@/lib/mail/types";
 export async function GET(request:Request){
   const me=await getAdmin();if(!me || !canAccess(me,'email'))return new Response('Non autorizzato',{status:401});
@@ -16,15 +17,8 @@ export async function GET(request:Request){
   const go=(path:string)=>new Response(null,{status:303,headers:{Location:path,"Cache-Control":"private, no-store"}});
   if(!provider || !row.folder || !isFolder(row.folder))return go('/admin/email');
   try {
-    // Verify the stable message key before linking: UIDs can change after a move.
-    const view=await provider.view({folder:row.folder,page:1,open:Number(row.uid)});
-    if(view.open?.key===key)return go(`/admin/email?f=${encodeURIComponent(row.folder)}&m=${Number(row.uid)}`);
-    // The Message-ID comes from the sender: keep only RFC 5322 id characters so it cannot add Gmail search operators.
-    const messageId=String(row.message_id ?? '').replace(/[<>]/g,'');
-    if(messageId && messageId.length<=250 && /^[\w.!#$%&'*+/=?^`{|}~@-]+$/.test(messageId)){
-      const search='rfc822msgid:'+messageId;
-      for(const folder of ['all','trash','spam'] as const){const found=await provider.view({folder,page:1,search});const match=found.list.find(item=>item.key===key);if(match)return go(`/admin/email?f=${folder}&m=${match.uid}`);}
-    }
-    return go('/admin/email');
+    // Verified by the stable key first (UIDs can change after a move), then the sanitized Message-ID.
+    const found=await locateMessage(provider,{folder:row.folder,uid:Number(row.uid),key,messageId:row.message_id==null?null:String(row.message_id)});
+    return found.kind==='missing'?go('/admin/email'):go(`/admin/email?f=${encodeURIComponent(found.folder)}&m=${found.uid}`);
   }catch{return new Response('Impossibile aprire l’email in questo momento. Torna alla scrivania e riprova.',{status:503});}
 }

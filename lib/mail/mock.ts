@@ -2,10 +2,11 @@ import "server-only";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { brandedEmail } from "@/lib/mail/template";
 import {
-  PAGE_SIZE, parseSource, pickAttachment, replyContextOf, toMessage,
+  MailError, PAGE_SIZE, parseSource, pickAttachment, replyContextOf, toMessage,
   type ViewQuery, type MailProvider, type MailboxView, type OutgoingMail,
 } from "@/lib/mail/provider";
 import type { FolderId, MailSummary, MailMutation } from "@/lib/mail/types";
+import { CONTACT_SCAN, CONTACT_SHOWN, involvesAddress, type ContactAddress, type ContactMail } from "@/lib/mail/contact";
 
 /**
  * Fake mailbox for local development and UI tests (AGENCY_MAIL_MOCK=1, never on Vercel production).
@@ -100,6 +101,33 @@ const SEEDS: Seed[] = [
   { folder: "spam", seen: true, thread: "t-spam2", hoursAgo: 60, mail: {
     from: '"SEO Pro" <seo@agency.example>', to: AGENCY, subject: "Prima posizione su Google in 7 giorni",
     messageId: "<spam2@agency.example>", text: "Garantiamo la prima posizione..." } },
+  // CRM contact "Fratelli Savigliano (QA)" (info@fratellisavigliano.example): two threads, one where the contact is only in Cc,
+  // and decoys that must never be linked to it (same domain, longer domain, name in the subject, a copy in Spam).
+  { folder: "sent", seen: true, thread: "t-sav-pres", hoursAgo: 480, mail: {
+    from: AGENCY, to: '"Fratelli Savigliano" <info@fratellisavigliano.example>', subject: "Presentazione CTRL®",
+    messageId: "<sav-1@ctrl.example>", text: "Buongiorno,\n\nle invio in allegato la nostra presentazione: siti, e-commerce e foto per cantine.\n\nCTRL",
+    attachments: [{ filename: "Presentazione CTRL.pdf", content: PDF, contentType: "application/pdf" }] } },
+  { folder: "inbox", seen: true, thread: "t-sav-pres", hoursAgo: 430, mail: {
+    from: '"Fratelli Savigliano" <INFO@FratelliSavigliano.example>', to: AGENCY, subject: "Re: Presentazione CTRL®",
+    messageId: "<sav-2@fratellisavigliano.example>", inReplyTo: "<sav-1@ctrl.example>", references: ["<sav-1@ctrl.example>"],
+    html: '<p>Interessante, possiamo sentirci la prossima settimana?</p><img src="https://track.example.test/sav.gif" width="1" height="1"><script>alert(1)</script><p onclick="x()">Fratelli Savigliano · Diano d&#39;Alba</p>',
+    text: "Interessante, possiamo sentirci la prossima settimana?" } },
+  { folder: "inbox", seen: false, thread: "t-sav-info", hoursAgo: 330, mail: {
+    from: '"Matteo Savigliano" <matteo@fratellisavigliano.example>', to: AGENCY, cc: '"Fratelli Savigliano" <info@fratellisavigliano.example>', subject: "Informazioni",
+    messageId: "<sav-3@fratellisavigliano.example>", text: "Buongiorno, vorremmo qualche informazione in più sui tempi di realizzazione.\nMatteo" } },
+  { folder: "sent", seen: true, thread: "t-sav-info", hoursAgo: 300, mail: {
+    from: AGENCY, to: '"Matteo Savigliano" <matteo@fratellisavigliano.example>', cc: '"Fratelli Savigliano" <info@fratellisavigliano.example>', subject: "Re: Informazioni",
+    messageId: "<sav-4@ctrl.example>", inReplyTo: "<sav-3@fratellisavigliano.example>", references: ["<sav-3@fratellisavigliano.example>"],
+    text: "Grazie per la disponibilità. Di solito servono 3-4 settimane dal materiale completo.\n\nCTRL" } },
+  { folder: "inbox", seen: true, thread: "t-sav-decoy1", hoursAgo: 200, mail: {
+    from: '"Fratelli Savigliano Vendite" <vendite@fratellisavigliano.example>', to: AGENCY, subject: "Listino Fratelli Savigliano",
+    messageId: "<decoy-1@fratellisavigliano.example>", text: "Listino prezzi 2027 (stesso dominio, altro indirizzo: non va collegata al contatto info@)." } },
+  { folder: "inbox", seen: true, thread: "t-sav-decoy2", hoursAgo: 150, mail: {
+    from: '"Fratelli Savigliano" <info@fratellisavigliano.example.org>', to: AGENCY, subject: "Offerta per info@fratellisavigliano.example",
+    messageId: "<decoy-2@fratellisavigliano.example.org>", text: "Dominio più lungo e indirizzo nell'oggetto: non va collegata." } },
+  { folder: "spam", seen: false, thread: "t-sav-spam", hoursAgo: 100, mail: {
+    from: '"Fratelli Savigliano" <info@fratellisavigliano.example>', to: AGENCY, subject: "Copia finita in Spam",
+    messageId: "<sav-spam@fratellisavigliano.example>", text: "Spam e Cestino non fanno parte della vista del contatto." } },
 ];
 
 const build = (mail: Seed["mail"]) => new MailComposer(mail).compile().build();
@@ -132,10 +160,14 @@ async function summarize(b: Stored, folder: FolderId): Promise<MailSummary> {
   return { folder, uid: m.uid, key: m.key, from: m.from, to: m.to, subject: m.subject, date: m.date, starred: b.starred, labels: b.labels, seen: m.seen, hasAttachments: m.hasAttachments, threadId: m.threadId };
 }
 
+const pause = () => {
+  const delay = Number(process.env.AGENCY_MAIL_MOCK_DELAY_MS ?? "120");
+  return new Promise((r) => setTimeout(r, Number.isFinite(delay) && delay >= 0 ? delay : 120));
+};
+
 export class MockProvider implements MailProvider {
   async view({ folder, page, open, search, category }: ViewQuery): Promise<MailboxView> {
-    const delay = Number(process.env.AGENCY_MAIL_MOCK_DELAY_MS ?? "120");
-    await new Promise((r) => setTimeout(r, Number.isFinite(delay) && delay >= 0 ? delay : 120));
+    await pause();
     const st = await state();
     const folders = (["inbox", "sent", "drafts", "all", "spam", "trash"] as const).map((id) => {
       const msgs = inFolder(st, id);
@@ -157,6 +189,43 @@ export class MockProvider implements MailProvider {
       if (conv.length > 1) thread = await Promise.all(conv.map((b) => summarize(b, "all")));
     }
     return { labels: st.labels.map((name) => ({ id: `label:${name}`, name, unread: 0, total: 0 })), folders, list, total: all.length, open: openMsg, thread };
+  }
+
+  async contactMessages(address: ContactAddress): Promise<ContactMail> {
+    await pause();
+    // Local QA of the error state only (the mock never runs on Vercel production).
+    if (process.env.AGENCY_MAIL_MOCK_FAIL === "contact") throw new MailError("network", "Impossibile raggiungere Gmail in questo momento.");
+    const all = inFolder(await state(), "all").reverse();
+    const matches: MailSummary[] = [];
+    let scanned = 0;
+    for (const b of all.slice(0, CONTACT_SCAN)) {
+      scanned += 1;
+      const m = toMessage(await parseSource(b.source), { folder: "all", uid: uidIn(b, "all"), from: null, to: [], subject: "", date: b.date.toISOString(), seen: b.seen, threadId: b.threadId });
+      if (involvesAddress(m, address)) matches.push(await summarize(b, "all"));
+    }
+    return { list: matches.slice(0, CONTACT_SHOWN), scanned, more: all.length > CONTACT_SCAN || matches.length > CONTACT_SHOWN };
+  }
+
+  async message(folder: FolderId, uid: number) {
+    await pause();
+    const st = await state();
+    const hit = find(st, folder, uid);
+    if (!hit) return { open: null, thread: [] };
+    const open = toMessage(await parseSource(hit.source), {
+      folder, uid: uidIn(hit, folder), from: null, to: [], subject: "", date: hit.date.toISOString(), starred: hit.starred, labels: hit.labels, seen: hit.seen, threadId: hit.threadId,
+    });
+    const conv = inFolder(st, "all").filter((b) => b.threadId === hit.threadId);
+    return { open, thread: conv.length > 1 ? await Promise.all(conv.map((b) => summarize(b, "all"))) : [] };
+  }
+
+  async findByMessageId(messageId: string) {
+    const st = await state();
+    for (const folder of ["all", "trash", "spam"] as const) {
+      for (const b of inFolder(st, folder).reverse()) {
+        if ((await parseSource(b.source)).messageId?.replace(/[<>]/g, "") === messageId) return summarize(b, folder);
+      }
+    }
+    return null;
   }
 
   async createLabel(name: string) { const st = await state(); if (st.labels.includes(name)) throw new Error("exists"); st.labels.push(name); }

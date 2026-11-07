@@ -156,7 +156,8 @@ export function UnreadButton({ folder, uid, href }: { folder: string; uid: numbe
 
 type Draft = { to: string; cc: string; subject: string; body: string };
 
-export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string }) {
+/** `sentHref`: where to go after a successful send (Posta: Inviati; the CRM contact view: back to the contact's mail). */
+export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender, sentHref = "/admin/email?f=sent" }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string; sentHref?: string }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<SendState, FormData>(sendMail, {});
   const [saved, saveAction, saving] = useActionState<SendState, FormData>(async (previous, data) => {
@@ -183,9 +184,9 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
       handled.current = state.at;
       form.current?.reset();
       setBody("");
-      router.push("/admin/email?f=sent" as Route);
+      router.push(sentHref as Route);
     }
-  }, [state, router]);
+  }, [state, router, sentHref]);
   return (
     <form ref={form} action={action} className="adm-form adm-mail-compose adm-rise">
       {reply ? (
