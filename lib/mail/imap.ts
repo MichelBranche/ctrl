@@ -53,6 +53,19 @@ function summary(folder: FolderId, m: FetchMessageObject): MailSummary {
 const LIST_QUERY = { uid: true, flags: true, envelope: true, bodyStructure: true, internalDate: true, threadId: true, labels: true } as const;
 type ListSnap = { labels: MailLabel[]; folders: MailboxView["folders"]; list: MailSummary[]; total: number };
 
+/**
+ * nodemailer errors after the DATA command started (timeout or dropped socket while the body was sent, or no
+ * final reply) may hide a message the server accepted. Explicit SMTP rejections (responseCode) did not send.
+ */
+export function mayHaveSent(error: unknown): boolean {
+  const e = error as { code?: string; command?: string; responseCode?: number } | null;
+  if (!e || typeof e !== "object") return true;
+  if (typeof e.responseCode === "number" && e.responseCode >= 400) return false;
+  if (e.command === "DATA" || e.command === "MESSAGE") return true;
+  // A dropped/timed-out socket with no command attached: we cannot tell where it stopped, so assume it may have left.
+  return e.command === undefined && (e.code === "ETIMEDOUT" || e.code === "ESOCKET" || e.code === "ECONNRESET");
+}
+
 export class ImapProvider implements MailProvider {
   private clients = new Set<{ client: ImapFlow; busy: boolean; expiresAt: number; timer?: ReturnType<typeof setTimeout> }>();
   private catalog: { expiresAt: number; labels: MailLabel[]; folders: MailboxView["folders"] } | null = null;
@@ -435,7 +448,9 @@ export class ImapProvider implements MailProvider {
     });
     try {
       await transport.sendMail({ envelope: { from: this.creds.fromAddress, to: [...mail.to, ...mail.cc] }, raw });
-    } catch {
+    } catch (error) {
+      // Once the message body was being transmitted Resend may have accepted it: falling back to Gmail could send it twice.
+      if (mayHaveSent(error)) throw new MailError("uncertain", "Esito dell'invio incerto: l'email potrebbe essere partita. Controlla in Posta › Inviati prima di riprovare.");
       console.warn("[mail] Resend SMTP non riuscito, uso Gmail");
       return null;
     } finally {
@@ -486,7 +501,9 @@ export class ImapProvider implements MailProvider {
       const code = (error as { code?: string })?.code;
       throw code === "EAUTH"
         ? new MailError("auth", "Gmail ha rifiutato l'invio: controlla la password per le app.")
-        : new MailError("network", "Invio non riuscito, riprova tra poco.");
+        : mayHaveSent(error)
+          ? new MailError("uncertain", "Esito dell'invio incerto: l'email potrebbe essere partita. Controlla in Posta › Inviati prima di riprovare.")
+          : new MailError("network", "Invio non riuscito, riprova tra poco.");
     } finally {
       transport.close();
     }

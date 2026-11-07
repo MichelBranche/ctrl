@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ComposeForm, MailFrame, MailOpening, MarkOpened } from "@/components/admin/email/mail-client";
 import { CrmIcon } from "@/components/admin/crm/crm-ui";
 import type { AdminUser } from "@/lib/admin";
+import { composeOutreach } from "@/lib/crm-outreach";
 import { contactEmailPath, contactMailSearch, type ContactMailQuery } from "@/lib/crm-nav";
 import { rememberedMessageId, rememberMailReferences } from "@/lib/desk";
 import { isAgencyAddress, mailProvider } from "@/lib/mail";
@@ -128,7 +129,8 @@ export async function ContactMailDetail({ ctx }: { ctx: ContactMailCtx }) {
           <h2 className="adm-h2">Nuova email a {ctx.name}</h2>
           <Link className="adm-btn adm-btn-sm crm-mail-back" href={list as Route}>← Email del contatto</Link>
         </div>
-        <ComposeForm key={`new:${ctx.address}`} draft={{ to: ctx.address, cc: "", subject: "", body: "" }} reply={null} sender={emailSender(ctx.me)} from={ctx.from} cancelHref={list} sentHref={list} />
+        <ComposeForm key={`new:${ctx.address}`} draft={{ to: ctx.address, cc: "", subject: "", body: "" }} reply={null} sender={emailSender(ctx.me)} from={ctx.from} cancelHref={list} sentHref={list}
+          outreach={await composeOutreach(ctx.me, ctx.address, "")} />
       </>
     );
   }
@@ -175,7 +177,7 @@ function Notice({ text, back, extra }: { text: string; back: string; extra?: Rea
   );
 }
 
-function Message({ ctx, msg, thread, list }: { ctx: ContactMailCtx; msg: MailMessage; thread: MailSummary[]; list: string }) {
+async function Message({ ctx, msg, thread, list }: { ctx: ContactMailCtx; msg: MailMessage; thread: MailSummary[]; list: string }) {
   const { q } = ctx;
   const dir = mailDirection(msg.from, isAgencyAddress);
   const self = hrefOf(ctx, { compose: null });
@@ -193,6 +195,8 @@ function Message({ ctx, msg, thread, list }: { ctx: ContactMailCtx; msg: MailMes
   }
   const files = msg.attachments.filter((a) => !a.inline);
   const replying = q.compose === "reply" || q.compose === "all";
+  const reply = replying ? replyDraft(msg, q.compose === "all") : null;
+  const outreach = reply ? await composeOutreach(ctx.me, reply.to, reply.cc) : null;
   return (
     <article className="crm-mail-msg">
       <MarkOpened folder={msg.folder} uid={msg.uid} mkey={msg.key} />
@@ -231,10 +235,10 @@ function Message({ ctx, msg, thread, list }: { ctx: ContactMailCtx; msg: MailMes
           ))}
         </ul>
       ) : null}
-      {replying ? (
+      {reply ? (
         <section className="adm-mail-reply" aria-label="Risposta">
-          <ComposeForm key={`${msg.folder}:${msg.uid}:${q.compose}`} sender={emailSender(ctx.me)} draft={replyDraft(msg, q.compose === "all")}
-            reply={{ folder: msg.folder, uid: msg.uid }} from={ctx.from} cancelHref={self} sentHref={list} />
+          <ComposeForm key={`${msg.folder}:${msg.uid}:${q.compose}`} sender={emailSender(ctx.me)} draft={reply}
+            reply={{ folder: msg.folder, uid: msg.uid }} from={ctx.from} cancelHref={self} sentHref={list} outreach={outreach} />
         </section>
       ) : null}
       {thread.length > 1 ? (

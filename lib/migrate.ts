@@ -278,6 +278,12 @@ export function ensureCrmSchema(): Promise<void> {
     // Additive only: optimistic-lock counter for contacts (every write bumps it), then the owner index for "Responsabile" filters.
     await addColumn("crm_contacts", "version", "INTEGER NOT NULL DEFAULT 1");
     await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_owner ON crm_contacts (archived, owner_user_id)");
+    // Additive only: outreach state per contact (last send, unknown outcome, short send lease). See lib/crm-outreach.ts.
+    // Rollback: the app ignores it if absent after a code rollback; DROP TABLE crm_outreach removes it with no other effect.
+    await db().execute(`CREATE TABLE IF NOT EXISTS crm_outreach (
+      contact_id TEXT PRIMARY KEY, last_sent_at TEXT, last_sent_by TEXT, uncertain_at TEXT, uncertain_by TEXT,
+      lease_token TEXT, lease_user TEXT, lease_until TEXT
+    )`);
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }

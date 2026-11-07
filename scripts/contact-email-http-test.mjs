@@ -135,4 +135,20 @@ if (process.env.ERR_BASE) {
   assert.ok(t.includes("Nuova email"), "composer still reachable");
   console.log("ok provider error state");
 }
+// 9. CRM outreach warning when the composer opens (GET only: nothing is ever submitted or sent by this script).
+{
+  const other = text((await page(mailPath("?compose=new"), "vendite")).html);
+  assert.ok(other.includes("Questo contatto è seguito da Michel Branche"), "colleague owner named in the in-app dialog");
+  assert.ok(other.includes("Continua comunque") && other.includes("Annulla") && other.includes("Vedi conversazione"));
+  const raw = (await page(mailPath("?compose=new"), "vendite")).html;
+  assert.match(raw, /<fieldset[^>]*class="adm-mail-compose-fields"[^>]*disabled/, "writing locked until Continua");
+  assert.ok(decode(raw).includes(`href="/admin/crm/${SAV}/email"`), "Vedi conversazione opens the contact's mail list");
+  const own = (await page(mailPath("?compose=new"), "founder")).html;
+  assert.ok(!text(own).includes("Questo contatto è seguito da"), "owner herself: no alarm");
+  assert.doesNotMatch(own, /<fieldset[^>]*class="adm-mail-compose-fields"[^>]*disabled/);
+  const postaOnly = text((await page(`/admin/email?compose=new&a=${encodeURIComponent("info@fratellisavigliano.example")}`, "posta")).html);
+  assert.ok(postaOnly.includes("Uno o più destinatari sono già seguiti"), "Email-only: generic notice");
+  assert.ok(!postaOnly.includes("Michel Branche") && !postaOnly.includes("Savigliano (QA)"), "no CRM names for Email-only");
+  console.log("ok outreach warning at compose time");
+}
 console.log("contact email http checks passed");
