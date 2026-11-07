@@ -18,7 +18,8 @@ import { canAccess, type Perms } from "@/lib/team-types";
  *   if (gate.kind === "warn") -> show gate.warning (in-app dialog), send nothing;
  *   if (gate.kind === "busy") -> show gate.message, send nothing;
  *   try { await provider.send(...) } catch (e) { await finishOutreach(gate.lease, sendOutcome(e)); ... }
- *   await finishOutreach(gate.lease, "sent")   // records the send, auto-assigns contacts without owner
+ *   await finishOutreach(gate.lease, "sent")   // records the send, auto-assigns contacts without owner,
+ *                                            // and moves a contact still at Nuovo to Contattato
  *
  * Invariants:
  * - Contacts are matched ONLY by the exact normalized recipient address (crm_contacts.email_norm, To + Cc), never by
@@ -29,7 +30,10 @@ import { canAccess, type Perms } from "@/lib/team-types";
  *   last send, uncertain outcome, contacted). Any change in between invalidates it; a client boolean is never trusted.
  * - The owner is set only after a real success and only where none exists (UPDATE … WHERE owner_user_id IS NULL,
  *   bumping `version` like every contact write, so open panels get the usual conflict instead of a lost update).
- *   Never overwrites, never changes the stage. Senders without CRM access are never assigned (owner must be a CRM member).
+ *   Never overwrites. Senders without CRM access are never assigned (owner must be a CRM member).
+ * - The same success moves stage only from Nuovo to Contattato, in the same write, and only while the row is still
+ *   Nuovo at commit time. Call, Preventivo, Vinto, Perso and an already Contattato row stay. It never inserts an
+ *   opportunity. A warning, a cancel, a definite failure and an uncertain outcome do not move the stage.
  * - Failed sends release the lease and change nothing else. Unknown outcomes are recorded as "uncertain" and require a
  *   new informed consent (no blind retry). SMTP cannot be exactly-once: this prevents app-side duplicates only.
  * - People with Email but without CRM get a generic notice: no contact names, owners, ids or links.
@@ -188,19 +192,20 @@ async function release(lease: OutreachLease) {
 }
 
 /**
- * Records the outcome. "sent": last send + auto-assign where no owner (never overwrites). "failed": release only.
- * "uncertain": flags the contact so the next writer must confirm again after checking Inviati.
- * Returns the ids of contacts now assigned to the sender.
+ * Records the outcome. "sent": last send + auto-assign where no owner (never overwrites) + Nuovo becomes Contattato.
+ * "failed": release only. "uncertain": flags the contact so the next writer must confirm again after checking Inviati.
+ * `assigned` is who just became responsible. `advanced` is who moved from Nuovo to Contattato. Neither creates a deal.
  */
-export async function finishOutreach(lease: OutreachLease, outcome: SendOutcome): Promise<{ assigned: string[] }> {
+export async function finishOutreach(lease: OutreachLease, outcome: SendOutcome): Promise<{ assigned: string[]; advanced: string[] }> {
   const ids = lease.contactIds;
-  if (!ids.length) return { assigned: [] };
-  if (outcome === "failed") { await release(lease); return { assigned: [] }; }
+  const none = { assigned: [] as string[], advanced: [] as string[] };
+  if (!ids.length) return none;
+  if (outcome === "failed") { await release(lease); return none; }
   const clear = `lease_token = CASE WHEN lease_token = ? THEN NULL ELSE lease_token END, lease_user = CASE WHEN lease_token = ? THEN NULL ELSE lease_user END,
     lease_until = CASE WHEN lease_token = ? THEN NULL ELSE lease_until END`;
   if (outcome === "uncertain") {
     await db().batch(ids.map((id) => ({ sql: `UPDATE crm_outreach SET uncertain_at = ${NOW}, uncertain_by = ?, ${clear} WHERE contact_id = ?`, args: [lease.actor.id, lease.token, lease.token, lease.token, id] })), "write");
-    return { assigned: [] };
+    return none;
   }
   const assign = canAccess(lease.actor, "crm");
   const results = await db().batch([
@@ -209,10 +214,17 @@ export async function finishOutreach(lease: OutreachLease, outcome: SendOutcome)
       sql: `UPDATE crm_contacts SET owner_user_id = ?, version = version + 1, updated_at = ${NOW} WHERE id = ? AND archived = 0 AND owner_user_id IS NULL`,
       args: [lease.actor.id, id],
     })) : []),
+    ...ids.map((id) => ({
+      sql: `UPDATE crm_contacts SET stage = 'contattato', stage_changed_at = ${NOW}, version = version + 1, updated_at = ${NOW} WHERE id = ? AND archived = 0 AND stage = 'nuovo'`,
+      args: [id],
+    })),
   ], "write");
   const assigned = assign ? ids.filter((_, i) => results[ids.length + i].rowsAffected > 0) : [];
+  const stageAt = ids.length + (assign ? ids.length : 0);
+  const advanced = ids.filter((_, i) => results[stageAt + i].rowsAffected > 0);
   for (const id of assigned) await logAction("crm.owner", { type: "crm_contact", id }, { from: null, to: lease.actor.id, auto: "email" }, lease.actor);
-  return { assigned };
+  for (const id of advanced) await logAction("crm.stage", { type: "crm_contact", id }, { from: "nuovo", to: "contattato", auto: "email" }, lease.actor);
+  return { assigned, advanced };
 }
 
 /** Provider errors that prove nothing left are "failed"; anything else may have been delivered. */

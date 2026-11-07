@@ -342,7 +342,6 @@ export async function sendDraftAction(id: string, ack?: string | null): Promise<
   await finishOutreach(gate.lease, "sent").catch(() => {});
   await db().execute({ sql: "UPDATE crm_drafts SET status = 'inviata', sent_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [id] });
   await addNote(contact.id, me.id, `Email inviata: ${draft.subject}`);
-  if (contact.stage === "nuovo") await setStage(contact.id, "contattato");
   await logAction("crm.draft_sent", { type: "crm_draft", id }, { to: contact.email, contact: contact.id });
   refresh(contact.id);
   return { ok: `Inviata a ${contact.email}.` };
