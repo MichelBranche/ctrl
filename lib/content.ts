@@ -592,11 +592,13 @@ export type TeamMember = {
 
 /**
  * Person -> portrait mapping (confirmed by Michel).
- * photo-a: Kallebe, black t-shirt. photo-b: Michel, black t-shirt.
+ * photo-a: Kallebe. photo-b: Michel. photo-c: Jacopo.
+ * Square originals, served as WebP. Faces stay inside the frame.
  */
 export const TEAM_PHOTOS: Record<string, string> = {
   "michel-branche": "/team/photo-b.webp",
   "kallebe-gallo": "/team/photo-a.webp",
+  "jacopo-manzalini": "/team/photo-c.webp",
 };
 
 /** Studio team. Add new members here; the Team page renders them in order. */
@@ -634,6 +636,16 @@ export const team: TeamMember[] = [
       website: "https://portafoglio-alpha.vercel.app/",
       github: "https://github.com/kallebesiqueira-dev",
     },
+  },
+  {
+    slug: "jacopo-manzalini",
+    name: "Jacopo Manzalini",
+    role: { it: "Design, Marketing & Sales", en: "Design, Marketing & Sales" },
+    // Name and role only. Bio and links stay empty until they are provided.
+    bio: { it: "", en: "" },
+    skills: [],
+    photo: TEAM_PHOTOS["jacopo-manzalini"],
+    socials: {},
   },
 ];
 
