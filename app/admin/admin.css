@@ -711,6 +711,10 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-auth .adm-float-eye { position: absolute; right: .5rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 10px; background: none; color: #7d7d83; transition: color .2s, background-color .2s; }
 .adm-auth .adm-float-eye:hover, .adm-auth .adm-float-eye:focus-visible { color: var(--fg); background: rgba(255,255,255,.07); outline: none; }
 
+.adm-auth-remember { display: flex; align-items: center; gap: .75rem; min-block-size: 2.75rem; margin: 0; color: var(--dim); font-size: .92rem; line-height: 1.35; cursor: pointer; }
+.adm-auth-remember input { inline-size: 1.15rem; block-size: 1.15rem; margin: 0; flex: none; accent-color: var(--o, #ff4a1c); }
+.adm-auth-remember input:focus-visible { outline: 2px solid var(--o, #ff4a1c); outline-offset: 3px; }
+.adm-auth-remember-note { margin: -.15rem 0 0; color: var(--faint, #8d8d95); font-size: .8rem; line-height: 1.4; }
 .adm-auth-error { margin: 0; display: flex; gap: .55rem; align-items: flex-start; padding: .7rem .85rem; border-radius: 12px; background: rgba(239,68,68,.09); border: 1px solid rgba(239,68,68,.24); color: #fecaca; font-size: .87rem; line-height: 1.4; }
 .adm-auth-error::before { content: "!"; flex: none; display: grid; place-items: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: rgba(239,68,68,.25); color: #fca5a5; font-size: .7rem; font-weight: 800; margin-top: .05rem; }
 

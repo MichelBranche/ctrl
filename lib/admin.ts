@@ -10,11 +10,13 @@ import { db, dbConfigured } from "@/lib/db";
 import { backfillRoles, ensureTeamSchema, ensureTwoFactorSchema } from "@/lib/migrate";
 import { beginSetup, checkSecondFactor, confirmSetup, twoFactorEnabled, twoFactorStatus } from "@/lib/two-factor";
 import { forcedSetupFinishable, loginNext, sessionAllowed } from "@/lib/two-factor-policy";
+import { REMEMBER_HOURS, SESSION_HOURS } from "@/lib/session-lifetime";
 import { canAccess, isArea, isFounder, normalizeRoles, type Area, type Section, type TeamRole } from "@/lib/team-types";
 
 /**
  * Multi-user admin auth, no third party. Accounts live in admin_users (scrypt hashes), sessions are signed
  * JWT cookies (SESSION_SECRET) bound to a user id + session_version, re-checked against the DB on every request.
+ * Lifetime is absolute: 12 hours, or 72 hours only when the sign-in form opts in. The cookie is not renewed on use.
  *
  * Migration from the old single-admin login: the first time the team tables are used, a founder account
  * (id 'founder') is seeded with ADMIN_EMAIL and the password that worked before: the dashboard override in
@@ -30,7 +32,6 @@ const PENDING_MINUTES = 5;
 const SETUP_MINUTES = 15;
 const AUD_CODE = "ctrl-admin-2fa";
 const AUD_SETUP = "ctrl-admin-2fa-setup";
-const SESSION_HOURS = 12;
 const MAX_FAILURES = 5;
 const WINDOW_MS = 15 * 60_000;
 const LOCK_MS = 15 * 60_000;
@@ -183,7 +184,8 @@ export async function changePassword(current: string, next: string, confirm: str
           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? RETURNING session_version`,
     args: [await hashPassword(next), me.id],
   });
-  await issueSession(me.id, Number(res.rows[0]?.session_version ?? 1));
+  // Same absolute deadline as the session that just proved the password. A new 72h window is not granted here.
+  await issueSession(me.id, Number(res.rows[0]?.session_version ?? 1), { exp: Math.floor(me.expiresAt / 1000) });
   await logAction("auth.password_change", { type: "user", id: me.id }, undefined, me);
   return "ok";
 }
@@ -211,12 +213,20 @@ async function recordFailure(key: string, max = MAX_FAILURES) {
   });
 }
 
-async function issueSession(userId: string, version: number) {
+/**
+ * Signed session cookie. `hours` is an absolute lifetime from now. `exp` keeps an existing deadline
+ * (password change, 2FA disable) so the window is never extended. Max-Age matches the JWT, so the
+ * browser keeps the cookie across restarts until that deadline. No password, OTP, or "remember" flag.
+ */
+async function issueSession(userId: string, version: number, opts: { hours?: number; exp?: number } = {}) {
+  const now = Math.floor(Date.now() / 1000);
+  const requested = opts.exp ?? now + (opts.hours ?? SESSION_HOURS) * 3600;
+  const exp = requested > now ? requested : now + SESSION_HOURS * 3600;
   const token = await new SignJWT({ sv: version })
     .setSubject(userId)
     .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_HOURS}h`)
+    .setIssuedAt(now)
+    .setExpirationTime(exp)
     .setAudience("ctrl-admin")
     .sign(secretKey()!);
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -224,14 +234,28 @@ async function issueSession(userId: string, version: number) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: SESSION_HOURS * 3600,
+    maxAge: exp - now,
   });
+}
+
+/** Other devices die (session_version + 1). This browser keeps a cookie with the same absolute expiry. */
+export async function reissueAfterRevocation() {
+  const me = await getAdmin();
+  if (!me) return;
+  const res = await db().execute({
+    sql: "UPDATE admin_users SET session_version = session_version + 1 WHERE id = ? RETURNING session_version",
+    args: [me.id],
+  });
+  const version = Number(res.rows[0]?.session_version);
+  if (!version) return;
+  await issueSession(me.id, version, { exp: Math.floor(me.expiresAt / 1000) });
 }
 
 export type LoginResult = "ok" | "2fa" | "setup" | "invalid" | "locked" | "unconfigured";
 
-async function setTicket(userId: string, sv: number, audience: string, minutes: number) {
-  const ticket = await new SignJWT({ sv })
+async function setTicket(userId: string, sv: number, audience: string, minutes: number, remember: boolean) {
+  // rm is signed into the short-lived ticket. The session cookie is created only after 2FA, from this value.
+  const ticket = await new SignJWT({ sv, rm: remember ? 1 : 0 })
     .setSubject(userId)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -243,7 +267,8 @@ async function setTicket(userId: string, sv: number, audience: string, minutes: 
   });
 }
 
-export async function login(email: string, password: string): Promise<LoginResult> {
+export async function login(email: string, password: string, remember = false): Promise<LoginResult> {
+  const stay = remember === true;
   if (!authConfigured()) return "unconfigured";
   await ensureTeam();
   const key = await clientKey();
@@ -267,24 +292,24 @@ export async function login(email: string, password: string): Promise<LoginResul
   // Password ok but no session yet: a signed ticket for the code step (5 min) or the mandatory founder setup (15 min).
   // Failures are kept until the second step passes.
   if (next === "code") {
-    await setTicket(String(row.id), Number(row.session_version), AUD_CODE, PENDING_MINUTES);
+    await setTicket(String(row.id), Number(row.session_version), AUD_CODE, PENDING_MINUTES, stay);
     return "2fa";
   }
   if (next === "setup") {
-    await setTicket(String(row.id), Number(row.session_version), AUD_SETUP, SETUP_MINUTES);
+    await setTicket(String(row.id), Number(row.session_version), AUD_SETUP, SETUP_MINUTES, stay);
     return "setup";
   }
-  await completeLogin(key, { id: String(row.id), name: String(row.name), email: String(row.email), sv: Number(row.session_version) });
+  await completeLogin(key, { id: String(row.id), name: String(row.name), email: String(row.email), sv: Number(row.session_version) }, undefined, stay);
   return "ok";
 }
 
-async function completeLogin(key: string, u: { id: string; name: string; email: string; sv: number }, extra?: Record<string, unknown>) {
+async function completeLogin(key: string, u: { id: string; name: string; email: string; sv: number }, extra?: Record<string, unknown>, remember = false) {
   await db().batch([
     { sql: "DELETE FROM login_attempts WHERE key IN (?, ?)", args: [key, accountKey(u.email)] },
     { sql: "UPDATE admin_users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [u.id] },
   ], "write");
-  await issueSession(u.id, u.sv);
-  await logAction("auth.login", { type: "user", id: u.id }, extra, { id: u.id, name: u.name, email: u.email });
+  await issueSession(u.id, u.sv, { hours: remember ? REMEMBER_HOURS : SESSION_HOURS });
+  await logAction("auth.login", { type: "user", id: u.id }, { ...extra, session_hours: remember ? REMEMBER_HOURS : SESSION_HOURS }, { id: u.id, name: u.name, email: u.email });
 }
 
 /** Who is waiting at the code step (valid, unexpired ticket for an active account with the same session_version), or null. */
@@ -296,7 +321,7 @@ async function pendingUser(audience: string = AUD_CODE) {
     if (!payload.sub) return null;
     const u = (await db().execute({ sql: `SELECT id, name, email, session_version FROM admin_users WHERE id = ? AND ${CAN_SIGN_IN_SQL}`, args: [payload.sub] })).rows[0];
     if (!u || Number(u.session_version) !== Number(payload.sv)) return null;
-    return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version), iat: Number(payload.iat ?? 0) * 1000 };
+    return { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version), iat: Number(payload.iat ?? 0) * 1000, remember: payload.rm === 1 };
   } catch {
     return null;
   }
@@ -325,7 +350,7 @@ export async function verifySecondStep(input: string): Promise<SecondStepResult>
   if (kind === "recovery") await logAction("auth.2fa_recovery_used", { type: "user", id: u.id }, undefined, actor);
   (await cookies()).delete({ name: PENDING_COOKIE, path: "/admin" });
   await db().execute({ sql: "DELETE FROM login_attempts WHERE key = ?", args: [`2fa:${u.id}`] });
-  await completeLogin(await clientKey(), u, { second_factor: kind });
+  await completeLogin(await clientKey(), u, { second_factor: kind }, u.remember);
   return "ok";
 }
 
@@ -362,7 +387,7 @@ export async function finishForcedSetup(): Promise<"ok" | "expired" | "incomplet
   (await cookies()).delete({ name: PENDING_COOKIE, path: "/admin" });
   await db().execute({ sql: "DELETE FROM login_attempts WHERE key = ?", args: [`2fa:${u.id}`] });
   await logAction("auth.2fa_forced_setup", { type: "user", id: u.id }, undefined, { id: u.id, name: u.name, email: u.email });
-  await completeLogin(await clientKey(), u, { second_factor: "setup" });
+  await completeLogin(await clientKey(), u, { second_factor: "setup" }, u.remember);
   return "ok";
 }
 
@@ -372,7 +397,7 @@ export async function finishForcedSetup(): Promise<"ok" | "expired" | "incomplet
  */
 export async function signInAfterInvite(u: { id: string; name: string; email: string; sv: number; roles: readonly string[] }): Promise<"setup" | "ok"> {
   if (loginNext(u.roles, await twoFactorEnabled(u.id)) === "setup") {
-    await setTicket(u.id, u.sv, AUD_SETUP, SETUP_MINUTES);
+    await setTicket(u.id, u.sv, AUD_SETUP, SETUP_MINUTES, false);
     return "setup";
   }
   await completeLogin(await clientKey(), u, { via: "invite" });
@@ -388,7 +413,7 @@ export async function logout() {
       .execute({ sql: "UPDATE admin_users SET session_version = session_version + 1 WHERE id = ?", args: [me.id] })
       .catch(() => {});
   }
-  (await cookies()).delete(SESSION_COOKIE);
+  (await cookies()).delete({ name: SESSION_COOKIE, path: "/" });
 }
 
 /**

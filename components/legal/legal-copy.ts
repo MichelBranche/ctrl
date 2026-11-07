@@ -121,7 +121,7 @@ export const cookies: Record<Locale, { title: string; lead: string; body: string
 
 | Nome | Tipo | Dove | Durata | Scopo |
 | --- | --- | --- | --- | --- |
-| ctrl_admin | Tecnico, strettamente necessario | Solo area riservata /admin | 12 ore | Mantiene l'accesso dell'amministratore. È httpOnly e non è leggibile da script. |
+| ctrl_admin | Tecnico, strettamente necessario | Solo area riservata /admin | 12 ore, oppure 3 giorni se all'accesso si sceglie «Resta collegato» | Mantiene l'accesso dell'amministratore. È httpOnly e non è leggibile da script. La scadenza è assoluta: non si rinnova da sola. |
 
 I visitatori del sito pubblico non ricevono alcun cookie. Anche nell'area riservata, il browser salva in memoria locale una sola preferenza di interfaccia (barra laterale compressa o aperta), che non viene inviata a nessuno.
 
@@ -148,7 +148,7 @@ Titolare: CTRL® di Michel Branche, [ctrlragency@gmail.com](mailto:ctrlragency@g
 
 | Name | Type | Where | Duration | Purpose |
 | --- | --- | --- | --- | --- |
-| ctrl_admin | Technical, strictly necessary | Private /admin area only | 12 hours | Keeps the administrator signed in. It is httpOnly and cannot be read by scripts. |
+| ctrl_admin | Technical, strictly necessary | Private /admin area only | 12 hours, or 3 days if “Stay signed in” is chosen at sign-in | Keeps the administrator signed in. It is httpOnly and cannot be read by scripts. The deadline is absolute and does not renew itself. |
 
 Visitors to the public site receive no cookies at all. In the private area the browser also keeps one interface preference in local storage (sidebar collapsed or open), which is never sent anywhere.
 
