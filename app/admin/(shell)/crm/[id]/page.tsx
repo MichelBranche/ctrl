@@ -4,7 +4,7 @@ import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { archiveAction, stageFormAction } from "@/app/admin/crm-actions";
 import { ContactForm } from "@/components/admin/crm/contact-form";
-import { CrmTabs, day, eur, MapsLink, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { composeHref, CrmTabs, day, eur, MapsLink, meetHref, romeToday, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
 import { DraftEditor } from "@/components/admin/crm/draft-editor";
 import { requireSection } from "@/lib/admin";
 import { crmOwners, getContact, listDrafts, listNotes } from "@/lib/crm";
@@ -34,8 +34,8 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
   const today = romeToday();
   const mail = canAccess(me, "email"), meetings = canAccess(me, "meetings");
   const mailSearch = c.email ?? websiteDomain(c.website);
-  const meet = `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
-  const href = c.website ? (/^https?:\/\//i.test(c.website) ? c.website : `https://${c.website}`) : null;
+  const meet = meetHref(c);
+  const href = siteHref(c.website);
   return (
     <>
       <header className="adm-top">
@@ -44,6 +44,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
           <MapsLink contact={c} />
           {meetings ? <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link> : null}
           {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
+          {mail && c.email ? <Link className="adm-btn adm-btn-sm" href={composeHref(c.email) as Route}>Scrivi email</Link> : null}
           {mail && mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
         </div>
       </header>
@@ -54,17 +55,17 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
           <dl className="crm-dl">
             {c.contactName ? <><dt>Referente</dt><dd>{c.contactName}</dd></> : null}
             {c.email ? <><dt>Email</dt><dd><a href={`mailto:${c.email}`}>{c.email}</a></dd></> : null}
-            {c.phone ? <><dt>Telefono</dt><dd><a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></dd></> : null}
+            {c.phone ? <><dt>Telefono</dt><dd><a href={telHref(c.phone)!}>{c.phone}</a></dd></> : null}
             {href ? <><dt>Sito</dt><dd><a href={href} target="_blank" rel="noopener noreferrer nofollow">{c.website}</a></dd></> : null}
             {c.city || c.address ? <><dt>Luogo</dt><dd>{[c.address, c.city, c.region].filter(Boolean).join(", ")}</dd></> : null}
             {c.valueEur !== null ? <><dt>Valore</dt><dd>{eur(c.valueEur)}</dd></> : null}
             <dt>Prossima azione</dt><dd className={c.nextActionAt && c.nextActionAt.slice(0, 10) < today ? "adm-error" : undefined}>{c.nextAction ?? "Da definire"}{c.nextActionAt ? ` · ${day(c.nextActionAt)}` : ""}</dd>
-            {c.ownerName ? <><dt>Responsabile</dt><dd>{c.ownerName}</dd></> : null}
+            {c.ownerUserId ? <><dt>Responsabile</dt><dd>{c.ownerName ?? "Account eliminato"}{c.ownerActive === false ? <span className="adm-badge crm-ex">ex membro</span> : null}</dd></> : null}
             <dt>Creato</dt><dd>{when(c.createdAt)}</dd>
           </dl>
           {c.scoreReasons.length ? <ul className="crm-reasons">{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul> : null}
           <form action={stageFormAction} className="crm-filters">
-            <input type="hidden" name="id" value={c.id} />
+            <input type="hidden" name="id" value={c.id} /><input type="hidden" name="version" value={c.version} />
             <select className="adm-input" name="stage" defaultValue={c.stage} aria-label="Fase">{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
             <button className="adm-btn adm-btn-sm">Cambia fase</button>
           </form>
@@ -87,7 +88,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
           {drafts.map((d) => <details key={d.id} open={d.status === "bozza"}><summary>{d.subject} <span className="adm-badge">{d.status}</span></summary><DraftEditor draft={d} to={c.email} canSend={mail} /></details>)}
         </section>
       ) : null}
-      <section className="adm-panel"><details><summary className="adm-h2">Modifica contatto</summary><ContactForm contact={c} owners={owners} /></details></section>
+      <section className="adm-panel"><details><summary className="adm-h2">Modifica contatto</summary><ContactForm key={`${c.id}:${c.version}`} contact={c} owners={owners} /></details></section>
     </>
   );
 }

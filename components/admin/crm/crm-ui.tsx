@@ -65,3 +65,12 @@ export function MapsLink({ contact, compact = false }: { contact: Place; compact
     ? <a className="crm-maps-icon" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer" aria-label={`Apri ${contact.businessName} su Google Maps`} title="Apri su Google Maps"><MapPin /></a>
     : <a className="adm-btn adm-btn-sm" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer"><MapPin /> Apri su Google Maps</a>;
 }
+
+/** Contact links shared by the full contact page and the contact panel. */
+export const siteHref = (website: string | null) => (website ? (/^https?:\/\//i.test(website) ? website : `https://${website}`) : null);
+export const telHref = (phone: string | null) => (phone ? `tel:${phone.replace(/[^\d+]/g, "")}` : null);
+/** New message in Comunicazioni with the recipient filled in: the existing editor, nothing is sent until the user does it. */
+export const composeHref = (email: string) => `/admin/email?${new URLSearchParams({ compose: "new", a: email })}`;
+export const meetHref = (c: { businessName: string; email: string | null }) =>
+  `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
+export const initials = (name: string) => name.split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";

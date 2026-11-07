@@ -1,6 +1,6 @@
 import "server-only";
 import type { InValue } from "@libsql/client";
-import { CAN_SIGN_IN_SQL } from "@/lib/admin";
+import { CAN_SIGN_IN_SQL, ROLES_SQL, rowRoles } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ensureAuditSchema, ensureCrmSchema } from "@/lib/migrate";
 import { dedupeKeys, hasKeys, isSource, isStage, STAGES, type DraftStatus, type IngestContact, type Source, type Stage } from "@/lib/crm-core";
@@ -11,6 +11,11 @@ export type Contact = {
   website: string | null; address: string | null; city: string | null; region: string | null; source: Source; score: number | null;
   scoreReasons: string[]; stage: Stage; valueEur: number | null; nextAction: string | null; nextActionAt: string | null;
   ownerUserId: string | null; ownerName: string | null; notes: string | null; createdAt: string; updatedAt: string; archived: boolean;
+  /** Optimistic-lock counter: every write bumps it, conditional writes compare it. */
+  version: number;
+  /** false when the responsible person left the team (account disabled, removed or deleted); null without owner. */
+  ownerActive: boolean | null;
+  stageChangedAt: string | null;
 };
 export type ContactInput = {
   businessName: string; type?: string | null; contactName?: string | null; email?: string | null; phone?: string | null; website?: string | null;
@@ -27,7 +32,8 @@ function reasons(v: unknown): string[] {
 }
 
 const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.source, c.score,
-  c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived`;
+  c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived,
+  c.version, c.stage_changed_at, CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
 const FROM = "FROM crm_contacts c LEFT JOIN admin_users u ON u.id = c.owner_user_id";
 
 function toContact(r: Record<string, unknown>): Contact {
@@ -37,6 +43,8 @@ function toContact(r: Record<string, unknown>): Contact {
     score: n(r.score), scoreReasons: reasons(r.score_reasons), stage: isStage(r.stage) ? r.stage : "nuovo", valueEur: n(r.value_eur),
     nextAction: s(r.next_action), nextActionAt: s(r.next_action_at), ownerUserId: s(r.owner_user_id), ownerName: s(r.owner_name), notes: s(r.notes),
     createdAt: String(r.created_at), updatedAt: String(r.updated_at), archived: Number(r.archived) === 1,
+    version: Number(r.version ?? 1), ownerActive: r.owner_active === null || r.owner_active === undefined ? null : Number(r.owner_active) === 1,
+    stageChangedAt: s(r.stage_changed_at),
   };
 }
 
@@ -75,36 +83,80 @@ export async function createContact(c: ContactInput, createdBy: string | null, e
   return { id, duplicate: false };
 }
 
-export async function updateContact(id: string, c: ContactInput): Promise<"ok" | "notfound" | { duplicate: string }> {
+export type WriteResult = "ok" | "notfound" | "conflict";
+const BUMP = "version = version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')";
+/** After a conditional UPDATE touched nothing: tell "someone changed it" from "it is gone". */
+async function missOrConflict(id: string): Promise<"notfound" | "conflict"> {
+  const r = await db().execute({ sql: "SELECT 1 FROM crm_contacts WHERE id = ?", args: [id] });
+  return r.rows.length ? "conflict" : "notfound";
+}
+
+/** Full edit. With `expectedVersion` the write only happens if nobody saved the contact since it was read. */
+export async function updateContact(id: string, c: ContactInput, expectedVersion?: number): Promise<WriteResult | { duplicate: string }> {
+  await ensureCrmSchema();
   const dup = await findDuplicate(c, id);
   if (dup) return { duplicate: dup };
+  const v = expectedVersion ?? null;
   const res = await db().execute({
     sql: `UPDATE crm_contacts SET business_name = ?, type = ?, contact_name = ?, email = ?, phone = ?, website = ?, address = ?, city = ?, region = ?,
       score = ?, score_reasons = ?, value_eur = ?, next_action = ?, next_action_at = ?, owner_user_id = ?, notes = ?, email_norm = ?, phone_norm = ?, domain = ?,
-      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`,
-    args: [...fieldArgs(c), id],
+      ${BUMP} WHERE id = ? AND (? IS NULL OR version = ?)`,
+    args: [...fieldArgs(c), id, v, v],
   });
-  return res.rowsAffected ? "ok" : "notfound";
+  return res.rowsAffected ? "ok" : v === null ? "notfound" : missOrConflict(id);
 }
 
-export async function setStage(id: string, stage: Stage): Promise<{ from: Stage } | null> {
+/** Responsible person only (panel and bulk "Assegna"). null clears it, explicitly. */
+export async function setOwner(id: string, ownerId: string | null, expectedVersion: number): Promise<WriteResult> {
   await ensureCrmSchema();
-  const cur = await db().execute({ sql: "SELECT stage FROM crm_contacts WHERE id = ? AND archived = 0", args: [id] });
+  const r = await db().execute({ sql: `UPDATE crm_contacts SET owner_user_id = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`, args: [ownerId, id, expectedVersion] });
+  return r.rowsAffected ? "ok" : missOrConflict(id);
+}
+
+/** The legacy follow-up (next_action / next_action_at), still the only follow-up source until the Attività phase. */
+export async function setFollowUp(id: string, text: string | null, at: string | null, expectedVersion: number): Promise<WriteResult> {
+  await ensureCrmSchema();
+  const r = await db().execute({ sql: `UPDATE crm_contacts SET next_action = ?, next_action_at = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`, args: [text, at, id, expectedVersion] });
+  return r.rowsAffected ? "ok" : missOrConflict(id);
+}
+
+/**
+ * Stage change. Without `expectedVersion` (kanban drag, automatic moves after a send or a Meet invite) it applies to the
+ * current row; with it, only if the contact is unchanged since it was read.
+ */
+export async function setStage(id: string, stage: Stage, expectedVersion?: number): Promise<{ from: Stage } | "conflict" | null> {
+  await ensureCrmSchema();
+  const cur = await db().execute({ sql: "SELECT stage, version FROM crm_contacts WHERE id = ? AND archived = 0", args: [id] });
   const from = cur.rows[0]?.stage;
   if (!isStage(from)) return null;
-  if (from !== stage) await db().execute({ sql: "UPDATE crm_contacts SET stage = ?, stage_changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [stage, id] });
+  if (expectedVersion !== undefined && Number(cur.rows[0].version) !== expectedVersion) return "conflict";
+  if (from === stage) return { from };
+  const r = await db().execute({
+    sql: `UPDATE crm_contacts SET stage = ?, stage_changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`,
+    args: [stage, id, Number(cur.rows[0].version)],
+  });
+  if (!r.rowsAffected) return expectedVersion === undefined ? setStage(id, stage) : "conflict";
   return { from };
 }
 
 export async function setArchived(id: string, archived: boolean) {
   await ensureCrmSchema();
-  const r = await db().execute({ sql: "UPDATE crm_contacts SET archived = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [archived ? 1 : 0, id] });
+  const r = await db().execute({ sql: `UPDATE crm_contacts SET archived = ?, ${BUMP} WHERE id = ?`, args: [archived ? 1 : 0, id] });
   return r.rowsAffected > 0;
 }
 
-export type ContactFilter = { q?: string; stage?: Stage; type?: string; city?: string; source?: Source; archived?: boolean; limit?: number };
-export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
-  await ensureCrmSchema();
+export type ContactSort = "aggiornato" | "nome" | "fase" | "citta" | "punteggio" | "azione";
+export type ContactFilter = {
+  q?: string; stage?: Stage; type?: string; city?: string; source?: Source; archived?: boolean; limit?: number; offset?: number;
+  /** "none" = without responsible person; otherwise a user id. */
+  owner?: string; sort?: ContactSort; dir?: "asc" | "desc";
+};
+const STAGE_ORDER = `CASE c.stage ${STAGES.map((st, i) => `WHEN '${st}' THEN ${i}`).join(" ")} END`;
+const SORT_SQL: Record<ContactSort, string> = {
+  aggiornato: "c.updated_at", nome: "c.business_name COLLATE NOCASE", fase: STAGE_ORDER, citta: "COALESCE(c.city, '') COLLATE NOCASE",
+  punteggio: "COALESCE(c.score, -1)", azione: "COALESCE(c.next_action_at, '9999')",
+};
+function contactWhere(f: ContactFilter): { where: string; args: InValue[] } {
   const where = ["c.archived = ?"];
   const args: InValue[] = [f.archived ? 1 : 0];
   if (f.stage) { where.push("c.stage = ?"); args.push(f.stage); }
@@ -116,8 +168,22 @@ export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
     where.push("(c.business_name LIKE ? ESCAPE '\\' OR c.contact_name LIKE ? ESCAPE '\\' OR c.email LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\' OR c.website LIKE ? ESCAPE '\\' OR c.city LIKE ? ESCAPE '\\')");
     args.push(like, like, like, like, like, like);
   }
-  const res = await db().execute({ sql: `SELECT ${COLS} ${FROM} WHERE ${where.join(" AND ")} ORDER BY c.updated_at DESC LIMIT ?`, args: [...args, f.limit ?? 500] });
+  if (f.owner === "none") where.push("c.owner_user_id IS NULL");
+  else if (f.owner) { where.push("c.owner_user_id = ?"); args.push(f.owner); }
+  return { where: where.join(" AND "), args };
+}
+export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
+  await ensureCrmSchema();
+  const { where, args } = contactWhere(f);
+  const order = `${SORT_SQL[f.sort ?? "aggiornato"]} ${f.dir === "asc" ? "ASC" : "DESC"}, c.id`;
+  const res = await db().execute({ sql: `SELECT ${COLS} ${FROM} WHERE ${where} ORDER BY ${order} LIMIT ? OFFSET ?`, args: [...args, f.limit ?? 500, f.offset ?? 0] });
   return res.rows.map((r) => toContact(r as Record<string, unknown>));
+}
+export async function countContacts(f: ContactFilter = {}): Promise<number> {
+  await ensureCrmSchema();
+  const { where, args } = contactWhere(f);
+  const r = await db().execute({ sql: `SELECT COUNT(*) AS n FROM crm_contacts c WHERE ${where}`, args });
+  return Number(r.rows[0]?.n ?? 0);
 }
 
 export async function getContact(id: string): Promise<Contact | null> {
@@ -257,7 +323,7 @@ export async function completeFollowUp(id: string, seenAt: string, userId: strin
   if (!cur.rows.length) return "changed";
   const text = s(cur.rows[0].next_action) ?? "Prossima azione";
   const r = await db().execute({
-    sql: "UPDATE crm_contacts SET next_action = NULL, next_action_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND archived = 0 AND next_action_at = ?",
+    sql: `UPDATE crm_contacts SET next_action = NULL, next_action_at = NULL, ${BUMP} WHERE id = ? AND archived = 0 AND next_action_at = ?`,
     args: [id, seenAt],
   });
   if (!r.rowsAffected) return "changed";
@@ -335,8 +401,42 @@ export async function inviteContacts(user: Perms): Promise<InviteContact[]> {
     .map((c) => ({ id: c.id, name: c.contactName || c.businessName, email: c.email!, label: `${c.businessName}${c.contactName ? ` (${c.contactName})` : ""} · ${c.email}` }));
 }
 
-/** Active team members for the owner select. */
+/** People who can be made responsible: active accounts that can open the CRM. */
 export async function crmOwners(): Promise<{ id: string; name: string }[]> {
-  const r = await db().execute(`SELECT id, name FROM admin_users WHERE ${CAN_SIGN_IN_SQL} ORDER BY name`);
-  return r.rows.map((x) => ({ id: String(x.id), name: String(x.name) }));
+  const r = await db().execute(`SELECT id, name, role, ${ROLES_SQL} FROM admin_users WHERE ${CAN_SIGN_IN_SQL} ORDER BY name`);
+  return r.rows.filter((x) => canAccess({ roles: rowRoles(x as Record<string, unknown>) }, "crm")).map((x) => ({ id: String(x.id), name: String(x.name) }));
+}
+
+export type RubricaStats = { total: number; contacted: number; inDeal: number; won: number; followUpDue: number };
+/** Rubrica KPIs over open (not archived) contacts. "followUpDue" = open contacts whose follow-up is due today or earlier. */
+export async function rubricaStats(today: string): Promise<RubricaStats> {
+  await ensureCrmSchema();
+  const r = await db().execute({
+    sql: `SELECT COUNT(*) AS total, SUM(CASE WHEN stage = 'contattato' THEN 1 ELSE 0 END) AS contacted,
+      SUM(CASE WHEN stage IN ('call','preventivo') THEN 1 ELSE 0 END) AS in_deal, SUM(CASE WHEN stage = 'vinto' THEN 1 ELSE 0 END) AS won,
+      SUM(CASE WHEN stage NOT IN ('vinto','perso') AND next_action_at IS NOT NULL AND substr(next_action_at, 1, 10) <= ? THEN 1 ELSE 0 END) AS due
+      FROM crm_contacts WHERE archived = 0`,
+    args: [today],
+  });
+  const x = r.rows[0] ?? {};
+  return { total: Number(x.total ?? 0), contacted: Number(x.contacted ?? 0), inDeal: Number(x.in_deal ?? 0), won: Number(x.won ?? 0), followUpDue: Number(x.due ?? 0) };
+}
+
+/**
+ * Audit entries about one contact (its own events and Radar sends that name it). The audit log is purged after
+ * 12 months, so this is the recent history, not a permanent one.
+ */
+export async function contactHistory(id: string, limit = 50): Promise<CrmEvent[]> {
+  await Promise.all([ensureCrmSchema(), ensureAuditSchema()]);
+  const res = await db().execute({
+    sql: `SELECT a.id, a.action, a.created_at, a.user_name, a.details FROM audit_log a
+      WHERE a.action LIKE 'crm.%' AND ((a.target_type = 'crm_contact' AND a.target_id = ?) OR (a.action = 'crm.draft_sent' AND json_extract(a.details, '$.contact') = ?))
+      ORDER BY a.id DESC LIMIT ?`,
+    args: [id, id, limit],
+  });
+  return res.rows.map((r) => {
+    let details: Record<string, unknown> = {};
+    try { const d = JSON.parse(String(r.details ?? "{}")); if (d && typeof d === "object") details = d; } catch { /* malformed details: keep the event */ }
+    return { id: Number(r.id), action: String(r.action), at: String(r.created_at), actor: s(r.user_name), contactId: id, contactName: null, details };
+  });
 }

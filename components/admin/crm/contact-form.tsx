@@ -11,12 +11,14 @@ export type OwnerOption = { id: string; name: string };
 export function ContactForm({ contact, owners }: { contact?: Contact; owners: OwnerOption[] }) {
   const [state, action, pending] = useActionState<CrmState, FormData>(saveContactAction, {});
   const c = contact;
+  // The current responsible person stays selected even after leaving the team: saving never clears it, only an explicit choice does.
+  const formerOwner = c?.ownerUserId && !owners.some((o) => o.id === c.ownerUserId) ? { id: c.ownerUserId, name: `${c.ownerName ?? "Account eliminato"} (${c.ownerActive === false ? "ex membro" : "senza accesso CRM"})` } : null;
   const f = (label: string, name: string, value: string | number | null | undefined, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="adm-field"><span>{label}</span><input className="adm-input" name={name} defaultValue={value ?? ""} {...extra} /></label>
   );
   return (
     <form action={action} className="adm-form">
-      {c ? <input type="hidden" name="id" value={c.id} /> : null}
+      {c ? <><input type="hidden" name="id" value={c.id} /><input type="hidden" name="version" value={c.version} /></> : null}
       <div className="adm-grid2">
         {f("Attività o persona", "business_name", c?.businessName, { required: true, maxLength: 200 })}
         {f("Categoria", "type", c?.type, { maxLength: 80, placeholder: "Es. ristorante, studio legale" })}
@@ -34,6 +36,7 @@ export function ContactForm({ contact, owners }: { contact?: Contact; owners: Ow
         <label className="adm-field"><span>Responsabile</span>
           <select className="adm-input" name="owner_user_id" defaultValue={c?.ownerUserId ?? ""}>
             <option value="">{c ? "Nessuno" : "Io"}</option>
+            {formerOwner ? <option value={formerOwner.id}>{formerOwner.name}</option> : null}
             {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </label>

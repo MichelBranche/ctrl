@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardSection } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
-import { addDraft, addNote, completeFollowUp, createContact, getContact, getDraft, setArchived, setStage, updateContact, type ContactInput } from "@/lib/crm";
+import { addDraft, addNote, completeFollowUp, createContact, crmOwners, getContact, getDraft, setArchived, setFollowUp, setOwner, setStage, updateContact, type ContactInput, type WriteResult } from "@/lib/crm";
 import { isSource, isStage, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 import { CRM_SECTIONS, RUBRICA } from "@/lib/crm-nav";
 import { db } from "@/lib/db";
@@ -18,6 +18,15 @@ export type CrmState = { ok?: string; error?: string; duplicateId?: string; id?:
 const ID = /^[0-9a-f-]{36}$/i;
 const txt = (f: FormData, k: string, max: number) => { const v = String(f.get(k) ?? "").trim().slice(0, max); return v || null; };
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const CONFLICT = "Qualcun altro ha modificato il contatto mentre lo guardavi: le tue modifiche non sono state salvate. Ricarico i dati aggiornati.";
+/** Version the form was rendered with; null when missing or malformed (the write is then refused, never applied blind). */
+const version = (f: FormData) => { const v = Number(f.get("version")); return Number.isInteger(v) && v > 0 ? v : null; };
+
+/** A new responsible person must be an active CRM member; keeping the current one (even a former member) is always allowed. */
+async function ownerAllowed(owner: string | null, current: string | null): Promise<boolean> {
+  if (!owner || owner === current) return true;
+  return (await crmOwners()).some((o) => o.id === owner);
+}
 
 /** "1.500,50" or "1500.5" -> 1500.5; empty -> null; invalid -> NaN. */
 function euros(v: string | null): number | null {
@@ -62,15 +71,20 @@ export async function saveContactAction(_: CrmState, f: FormData): Promise<CrmSt
   try {
     if (id) {
       if (!ID.test(id)) return { error: "Contatto non valido." };
+      const v = version(f);
+      if (v === null) return { error: "Modulo non aggiornato: ricarica la pagina e riprova." };
       const before = await getContact(id);
       if (!before) return { error: "Contatto non trovato." };
-      const r = await updateContact(id, { ...parsed, source: before.source, score: parsed.score ?? before.score, scoreReasons: before.scoreReasons });
+      if (!(await ownerAllowed(parsed.ownerUserId ?? null, before.ownerUserId))) return { error: "Il responsabile scelto non è un membro attivo con accesso al CRM." };
+      const r = await updateContact(id, { ...parsed, source: before.source, score: parsed.score ?? before.score, scoreReasons: before.scoreReasons }, v);
       if (r === "notfound") return { error: "Contatto non trovato." };
+      if (r === "conflict") { refresh(id); return { error: CONFLICT }; }
       if (typeof r === "object") return { error: "Esiste già un contatto con la stessa email, telefono o sito.", duplicateId: r.duplicate };
-      await logAction("crm.contact_update", { type: "crm_contact", id });
+      await logAction("crm.contact_update", { type: "crm_contact", id }, before.ownerUserId !== (parsed.ownerUserId ?? null) ? { ownerFrom: before.ownerUserId, ownerTo: parsed.ownerUserId ?? null } : undefined);
       refresh(id);
       return { ok: "Salvato.", id };
     }
+    if (!(await ownerAllowed(parsed.ownerUserId ?? null, null))) return { error: "Il responsabile scelto non è un membro attivo con accesso al CRM." };
     const r = await createContact({ ...parsed, source: "manuale", ownerUserId: parsed.ownerUserId ?? me.id }, me.id);
     if (r.duplicate) return { error: "Esiste già un contatto con la stessa email, telefono o sito.", duplicateId: r.id };
     await logAction("crm.contact_create", { type: "crm_contact", id: r.id }, { name: parsed.businessName });
@@ -81,13 +95,14 @@ export async function saveContactAction(_: CrmState, f: FormData): Promise<CrmSt
   }
 }
 
-/** Kanban drop: change stage, audit the move. */
-export async function moveStageAction(id: string, stage: string): Promise<CrmState> {
+/** Kanban drop (no version: a drag is always on the current card) or a stage form (with the version it was rendered at). */
+export async function moveStageAction(id: string, stage: string, expectedVersion?: number): Promise<CrmState> {
   await guardSection("crm");
   if (!ID.test(id) || !isStage(stage)) return { error: "Spostamento non valido." };
   try {
-    const r = await setStage(id, stage);
+    const r = await setStage(id, stage, expectedVersion);
     if (!r) return { error: "Contatto non trovato." };
+    if (r === "conflict") { refresh(id); return { error: CONFLICT }; }
     if (r.from !== stage) await logAction("crm.stage", { type: "crm_contact", id }, { from: r.from, to: stage });
     refresh(id);
     return { ok: `Spostato in ${STAGE_LABEL[stage as Stage]}.` };
@@ -97,7 +112,110 @@ export async function moveStageAction(id: string, stage: string): Promise<CrmSta
 }
 
 export async function stageFormAction(f: FormData): Promise<void> {
-  await moveStageAction(String(f.get("id") ?? ""), String(f.get("stage") ?? ""));
+  await moveStageAction(String(f.get("id") ?? ""), String(f.get("stage") ?? ""), version(f) ?? 0);
+}
+
+/** Contact panel: stage select. */
+export async function panelStageAction(_: CrmState, f: FormData): Promise<CrmState> {
+  const v = version(f);
+  if (v === null) return { error: "Modulo non aggiornato: ricarica la pagina." };
+  return moveStageAction(String(f.get("id") ?? ""), String(f.get("stage") ?? ""), v);
+}
+
+const writeError = (r: WriteResult, id: string): CrmState | null => {
+  if (r === "ok") return null;
+  refresh(id);
+  return { error: r === "conflict" ? CONFLICT : "Contatto non trovato o archiviato." };
+};
+
+/** Contact panel: legacy follow-up (text + date). Both empty clears it. */
+export async function panelFollowUpAction(_: CrmState, f: FormData): Promise<CrmState> {
+  await guardSection("crm");
+  const id = String(f.get("id") ?? "");
+  const v = version(f);
+  if (!ID.test(id) || v === null) return { error: "Modulo non aggiornato: ricarica la pagina." };
+  const clear = f.get("clear") === "1";
+  const at = clear ? null : txt(f, "next_action_at", 10);
+  if (at && !DATE.test(at)) return { error: "Data non valida." };
+  const text = clear ? null : txt(f, "next_action", 300) ?? (at ? "Ricontattare" : null);
+  try {
+    const r = await setFollowUp(id, text, at, v);
+    const bad = writeError(r, id);
+    if (bad) return bad;
+    await logAction("crm.followup_set", { type: "crm_contact", id }, { at });
+    refresh(id);
+    return { ok: at || text ? "Follow-up salvato." : "Follow-up rimosso." };
+  } catch {
+    return { error: "Non salvato. Riprova." };
+  }
+}
+
+/** Contact panel: responsible person. Empty = explicitly nobody. */
+export async function panelOwnerAction(_: CrmState, f: FormData): Promise<CrmState> {
+  await guardSection("crm");
+  const id = String(f.get("id") ?? "");
+  const v = version(f);
+  if (!ID.test(id) || v === null) return { error: "Modulo non aggiornato: ricarica la pagina." };
+  const owner = txt(f, "owner_user_id", 64);
+  try {
+    const before = await getContact(id);
+    if (!before) return { error: "Contatto non trovato." };
+    if (owner === before.ownerUserId) return { ok: "Nessuna modifica." };
+    if (!(await ownerAllowed(owner, before.ownerUserId))) return { error: "Il responsabile scelto non è un membro attivo con accesso al CRM." };
+    const bad = writeError(await setOwner(id, owner, v), id);
+    if (bad) return bad;
+    await logAction("crm.owner", { type: "crm_contact", id }, { from: before.ownerUserId, to: owner });
+    refresh(id);
+    return { ok: owner ? "Responsabile aggiornato." : "Responsabile rimosso." };
+  } catch {
+    return { error: "Non salvato. Riprova." };
+  }
+}
+
+export type BulkItem = { id: string; version: number };
+export type BulkChange = { kind: "owner"; owner: string | null } | { kind: "stage"; stage: string } | { kind: "followup"; text: string | null; at: string | null };
+export type BulkResult = { ok?: string; error?: string; updated: number; changed: number; missing: number };
+const BULK_MAX = 100;
+
+/**
+ * Same change on the selected contacts, each one only if unchanged since the list was rendered (version). Partial
+ * results are reported, never retried blindly. No email is ever sent from here.
+ */
+export async function bulkContactsAction(items: BulkItem[], change: BulkChange): Promise<BulkResult> {
+  await guardSection("crm");
+  const none = { updated: 0, changed: 0, missing: 0 };
+  if (!Array.isArray(items) || !items.length) return { ...none, error: "Seleziona almeno un contatto." };
+  if (items.length > BULK_MAX) return { ...none, error: `Massimo ${BULK_MAX} contatti alla volta.` };
+  if (!items.every((i) => i && typeof i.id === "string" && ID.test(i.id) && Number.isInteger(i.version) && i.version > 0)) return { ...none, error: "Selezione non valida: ricarica la pagina." };
+  if (change.kind === "stage" && !isStage(change.stage)) return { ...none, error: "Fase non valida." };
+  if (change.kind === "followup" && (change.at !== null && !DATE.test(change.at))) return { ...none, error: "Data non valida." };
+  if (change.kind === "owner" && change.owner !== null && !(await crmOwners()).some((o) => o.id === change.owner)) return { ...none, error: "Il responsabile scelto non è un membro attivo con accesso al CRM." };
+  const out = { ...none };
+  for (const { id, version: v } of new Map(items.map((i) => [i.id, i])).values()) {
+    try {
+      let r: WriteResult;
+      if (change.kind === "stage") {
+        const s = await setStage(id, change.stage as Stage, v);
+        r = s === "conflict" ? "conflict" : s ? "ok" : "notfound";
+        if (s && s !== "conflict" && s.from !== change.stage) await logAction("crm.stage", { type: "crm_contact", id }, { from: s.from, to: change.stage, bulk: true });
+      } else if (change.kind === "owner") {
+        r = await setOwner(id, change.owner, v);
+        if (r === "ok") await logAction("crm.owner", { type: "crm_contact", id }, { to: change.owner, bulk: true });
+      } else {
+        const text = change.text?.trim().slice(0, 300) || (change.at ? "Ricontattare" : null);
+        r = await setFollowUp(id, text, change.at, v);
+        if (r === "ok") await logAction("crm.followup_set", { type: "crm_contact", id }, { at: change.at, bulk: true });
+      }
+      if (r === "ok") out.updated++; else if (r === "conflict") out.changed++; else out.missing++;
+    } catch {
+      out.missing++;
+    }
+  }
+  refresh();
+  const parts = [`${out.updated} aggiornati`];
+  if (out.changed) parts.push(`${out.changed} modificati da altri nel frattempo e lasciati com'erano`);
+  if (out.missing) parts.push(`${out.missing} non trovati o archiviati`);
+  return out.updated ? { ...out, ok: `${parts.join(", ")}.` } : { ...out, error: `Nessun contatto aggiornato: ${parts.slice(1).join(", ") || "nessuna modifica"}.` };
 }
 
 export async function archiveAction(f: FormData): Promise<void> {
