@@ -10,6 +10,8 @@ import { requireSection } from "@/lib/admin";
 import { crmOwners, getContact, listDrafts, listNotes } from "@/lib/crm";
 import { SOURCE_LABEL, STAGES, STAGE_LABEL, websiteDomain } from "@/lib/crm-core";
 import { NoteForm } from "@/components/admin/crm/note-form";
+import { RUBRICA } from "@/lib/crm-nav";
+import { canAccess } from "@/lib/team-types";
 
 /** Build-time placeholder only (an invalid id renders notFound inside Suspense); real ids render on request. */
 export function generateStaticParams() {
@@ -17,34 +19,35 @@ export function generateStaticParams() {
 }
 
 export default function ContactPage({ params }: { params: Promise<{ id: string }> }) {
-  return <main className="adm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body params={params} /></Suspense></main>;
+  return <main className="adm-main crm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body params={params} /></Suspense></main>;
 }
 
 const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 async function Body({ params }: { params: Promise<{ id: string }> }) {
-  await requireSection("crm");
+  const me = await requireSection("crm");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const c = await getContact(id);
   if (!c) notFound();
   const [notes, drafts, owners] = await Promise.all([listNotes(id), listDrafts([id]), crmOwners()]);
   const today = romeToday();
+  const mail = canAccess(me, "email"), meetings = canAccess(me, "meetings");
   const mailSearch = c.email ?? websiteDomain(c.website);
   const meet = `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
   const href = c.website ? (/^https?:\/\//i.test(c.website) ? c.website : `https://${c.website}`) : null;
   return (
     <>
       <header className="adm-top">
-        <div><p className="adm-muted"><Link href={"/admin/crm" as Route}>CRM</Link> · {SOURCE_LABEL[c.source]}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} /></h1></div>
+        <div><p className="adm-muted"><Link href={RUBRICA as Route}>Rubrica</Link> · {SOURCE_LABEL[c.source]}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} /></h1></div>
         <div className="adm-row-actions">
           <MapsLink contact={c} />
-          <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link>
-          {c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
-          {mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
+          {meetings ? <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link> : null}
+          {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
+          {mail && mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
         </div>
       </header>
-      <CrmTabs current="/admin/crm" />
+      <CrmTabs current={RUBRICA} />
       <div className="adm-grid2">
         <section className="adm-panel">
           <div className="adm-panel-head"><h2 className="adm-h2">Riepilogo</h2><span className="adm-badge">{STAGE_LABEL[c.stage]}</span></div>
@@ -81,7 +84,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
       </div>
       {drafts.length ? (
         <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">Bozze email</h2></div>
-          {drafts.map((d) => <details key={d.id} open={d.status === "bozza"}><summary>{d.subject} <span className="adm-badge">{d.status}</span></summary><DraftEditor draft={d} to={c.email} /></details>)}
+          {drafts.map((d) => <details key={d.id} open={d.status === "bozza"}><summary>{d.subject} <span className="adm-badge">{d.status}</span></summary><DraftEditor draft={d} to={c.email} canSend={mail} /></details>)}
         </section>
       ) : null}
       <section className="adm-panel"><details><summary className="adm-h2">Modifica contatto</summary><ContactForm contact={c} owners={owners} /></details></section>

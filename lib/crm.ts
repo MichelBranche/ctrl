@@ -2,8 +2,9 @@ import "server-only";
 import type { InValue } from "@libsql/client";
 import { CAN_SIGN_IN_SQL } from "@/lib/admin";
 import { db } from "@/lib/db";
-import { ensureCrmSchema } from "@/lib/migrate";
-import { dedupeKeys, hasKeys, isSource, isStage, type DraftStatus, type IngestContact, type Source, type Stage } from "@/lib/crm-core";
+import { ensureAuditSchema, ensureCrmSchema } from "@/lib/migrate";
+import { dedupeKeys, hasKeys, isSource, isStage, STAGES, type DraftStatus, type IngestContact, type Source, type Stage } from "@/lib/crm-core";
+import { canAccess, type Perms } from "@/lib/team-types";
 
 export type Contact = {
   id: string; businessName: string; type: string | null; contactName: string | null; email: string | null; phone: string | null;
@@ -233,16 +234,105 @@ export async function crmStats(now = new Date()): Promise<CrmStats> {
 }
 
 export type DueAction = { id: string; businessName: string; nextAction: string | null; nextActionAt: string; stage: Stage; ownerName: string | null };
-/** Open contacts whose next action is due today or earlier (Rome date). ownerId null = everyone's. */
-export async function dueActions(ownerId: string | null, today: string): Promise<DueAction[]> {
+/** Open contacts whose next action is due by `until` (Rome date, default today), overdue included. ownerId null = everyone's. */
+export async function dueActions(ownerId: string | null, today: string, until = today): Promise<DueAction[]> {
   await ensureCrmSchema();
+  const end = until > today ? until : today;
   const res = await db().execute({
     sql: `SELECT c.id, c.business_name, c.next_action, c.next_action_at, c.stage, u.name AS owner_name ${FROM}
       WHERE c.archived = 0 AND c.stage NOT IN ('vinto','perso') AND c.next_action_at IS NOT NULL AND substr(c.next_action_at, 1, 10) <= ?
       ${ownerId ? "AND (c.owner_user_id = ? OR (c.owner_user_id IS NULL AND c.created_by = ?))" : ""} ORDER BY c.next_action_at LIMIT 50`,
-    args: ownerId ? [today, ownerId, ownerId] : [today],
+    args: ownerId ? [end, ownerId, ownerId] : [end],
   });
   return res.rows.map((r) => ({ id: String(r.id), businessName: String(r.business_name), nextAction: s(r.next_action), nextActionAt: String(r.next_action_at), stage: isStage(r.stage) ? r.stage : "nuovo", ownerName: s(r.owner_name) }));
+}
+
+/**
+ * Marks the legacy follow-up done: clears next_action/next_action_at and keeps the text as a note.
+ * `seenAt` is the date the person saw: if someone changed the follow-up meanwhile, nothing is cleared.
+ */
+export async function completeFollowUp(id: string, seenAt: string, userId: string): Promise<"ok" | "changed"> {
+  await ensureCrmSchema();
+  const cur = await db().execute({ sql: "SELECT next_action FROM crm_contacts WHERE id = ? AND archived = 0 AND next_action_at = ?", args: [id, seenAt] });
+  if (!cur.rows.length) return "changed";
+  const text = s(cur.rows[0].next_action) ?? "Prossima azione";
+  const r = await db().execute({
+    sql: "UPDATE crm_contacts SET next_action = NULL, next_action_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND archived = 0 AND next_action_at = ?",
+    args: [id, seenAt],
+  });
+  if (!r.rowsAffected) return "changed";
+  await addNote(id, userId, `Follow-up completato: ${text}`.slice(0, 5000));
+  return "ok";
+}
+
+export type CrmOverview = { total: number; newThisMonth: number; byStage: Record<Stage, number>; wonValue: number; radar: number; unassigned: number };
+const STAGES_SQL = STAGES.map((st) => `SUM(CASE WHEN stage = '${st}' THEN 1 ELSE 0 END) AS n_${st}`).join(", ");
+/** Counts for the Oggi page, all from crm_contacts as they are today (no opportunities table yet). */
+export async function crmOverview(now = new Date()): Promise<CrmOverview> {
+  await ensureCrmSchema();
+  const month = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit" }).format(now);
+  const r = await db().execute({
+    sql: `SELECT COUNT(*) AS total,
+      SUM(CASE WHEN substr(created_at, 1, 7) = ? THEN 1 ELSE 0 END) AS month_new,
+      ${STAGES_SQL},
+      SUM(CASE WHEN stage = 'vinto' THEN COALESCE(value_eur, 0) ELSE 0 END) AS won_value,
+      SUM(CASE WHEN source = 'radar' THEN 1 ELSE 0 END) AS radar,
+      SUM(CASE WHEN owner_user_id IS NULL AND stage NOT IN ('vinto','perso') THEN 1 ELSE 0 END) AS unassigned
+      FROM crm_contacts WHERE archived = 0`,
+    args: [month],
+  });
+  const x = r.rows[0] ?? {};
+  const byStage = Object.fromEntries(STAGES.map((st) => [st, Number(x[`n_${st}`] ?? 0)])) as Record<Stage, number>;
+  return {
+    total: Number(x.total ?? 0), newThisMonth: Number(x.month_new ?? 0), byStage, wonValue: Number(x.won_value ?? 0),
+    radar: Number(x.radar ?? 0), unassigned: Number(x.unassigned ?? 0),
+  };
+}
+
+/** Highest commercial score among open contacts. */
+export async function priorityContacts(limit = 3): Promise<Contact[]> {
+  await ensureCrmSchema();
+  const res = await db().execute({
+    sql: `SELECT ${COLS} ${FROM} WHERE c.archived = 0 AND c.stage NOT IN ('vinto','perso') AND c.score IS NOT NULL ORDER BY c.score DESC, c.updated_at DESC LIMIT ?`,
+    args: [limit],
+  });
+  return res.rows.map((r) => toContact(r as Record<string, unknown>));
+}
+
+/** Open contacts without a responsible person, newest first (site leads and Radar arrivals land here). */
+export async function unassignedContacts(limit = 5): Promise<Contact[]> {
+  await ensureCrmSchema();
+  const res = await db().execute({
+    sql: `SELECT ${COLS} ${FROM} WHERE c.archived = 0 AND c.owner_user_id IS NULL AND c.stage NOT IN ('vinto','perso') ORDER BY c.created_at DESC LIMIT ?`,
+    args: [limit],
+  });
+  return res.rows.map((r) => toContact(r as Record<string, unknown>));
+}
+
+export type CrmEvent = { id: number; action: string; at: string; actor: string | null; contactId: string | null; contactName: string | null; details: Record<string, unknown> };
+/** Latest CRM entries of the audit log (no IP or user agent). The log is purged after 12 months: this is a recent feed, not a history. */
+export async function recentCrmEvents(limit = 6): Promise<CrmEvent[]> {
+  await Promise.all([ensureCrmSchema(), ensureAuditSchema()]);
+  const res = await db().execute({
+    sql: `SELECT a.id, a.action, a.created_at, a.user_name, a.details, c.id AS contact_id, c.business_name
+      FROM audit_log a LEFT JOIN crm_contacts c ON a.target_type = 'crm_contact' AND c.id = a.target_id
+      WHERE a.action LIKE 'crm.%' ORDER BY a.id DESC LIMIT ?`,
+    args: [limit],
+  });
+  return res.rows.map((r) => {
+    let details: Record<string, unknown> = {};
+    try { const d = JSON.parse(String(r.details ?? "{}")); if (d && typeof d === "object") details = d; } catch { /* malformed details: show the event without them */ }
+    return { id: Number(r.id), action: String(r.action), at: String(r.created_at), actor: s(r.user_name), contactId: s(r.contact_id), contactName: s(r.business_name), details };
+  });
+}
+
+export type InviteContact = { id: string; name: string; email: string; label: string };
+/** Contacts offered by the Meet client invite. CRM data: empty for anyone without the crm permission. */
+export async function inviteContacts(user: Perms): Promise<InviteContact[]> {
+  if (!canAccess(user, "crm")) return [];
+  return (await listContacts({ limit: 300 }))
+    .filter((c) => c.email)
+    .map((c) => ({ id: c.id, name: c.contactName || c.businessName, email: c.email!, label: `${c.businessName}${c.contactName ? ` (${c.contactName})` : ""} · ${c.email}` }));
 }
 
 /** Active team members for the owner select. */

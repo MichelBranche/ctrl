@@ -6,11 +6,12 @@ import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { cancelEmail, type ClientMeeting, getClientMeeting, icsFile, inviteEmail, longWhen, markCancelled, MEET_URL_RE, saveClientMeeting } from "@/lib/client-meet";
 import { addNote, getContact, setStage } from "@/lib/crm";
+import { CRM_SECTIONS } from "@/lib/crm-nav";
 import { cancelMeeting, connection, createMeeting, disconnect, EMAIL_RE, getMeeting, googleConfigured, GoogleError, nowLocal, parseEmails } from "@/lib/google-meet";
 import { mailProvider } from "@/lib/mail";
 import { emailSender } from "@/lib/mail/sender";
 import { sendTransactional } from "@/lib/mail/transactional";
-import { isFounder } from "@/lib/team-types";
+import { canAccess, isFounder } from "@/lib/team-types";
 
 /* Every action re-checks the session and the "meetings" permission server-side. */
 
@@ -110,7 +111,8 @@ export async function inviteClientAction(_: MeetState, form: FormData): Promise<
   const start = `${date}T${time}`;
   if (start < nowLocal(new Date(Date.now() - 10 * 60_000))) return { error: "La riunione è nel passato." };
   if (![15, 30, 45, 60, 90, 120].includes(minutes)) return { error: "Durata non valida." };
-  const contact = ID.test(contactRaw) ? await getContact(contactRaw) : null;
+  // CRM data stays behind the crm permission: without it the invite still works, but no contact is read or updated.
+  const contact = canAccess(me, "crm") && ID.test(contactRaw) ? await getContact(contactRaw) : null;
   const provider = mailProvider();
   if (!provider && !process.env.RESEND_API_KEY) return { error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
 
@@ -142,7 +144,8 @@ export async function inviteClientAction(_: MeetState, form: FormData): Promise<
     await addNote(contact.id, me.id, `Invito Google Meet inviato a ${email}: "${title}", ${w.day} alle ${w.from} (${minutes} min). Link: ${meetUrl}`);
     await db().execute({ sql: "UPDATE crm_contacts SET next_action = ?, next_action_at = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [`Riunione Meet: ${title} alle ${w.from}`.slice(0, 300), date, contact.id] });
     if (contact.stage === "nuovo" || contact.stage === "contattato") await setStage(contact.id, "call");
-    revalidatePath(`/admin/crm/${contact.id}`); revalidatePath("/admin/crm");
+    revalidatePath(`/admin/crm/${contact.id}`);
+    for (const s of CRM_SECTIONS) revalidatePath(s.href);
   }
   await logAction("meet.client_invited", { type: "client_meeting", id: cm.id }, { to: email, contact: contact?.id ?? null, start, minutes, calendar: Boolean(eventId) });
   revalidatePath("/admin/riunioni");

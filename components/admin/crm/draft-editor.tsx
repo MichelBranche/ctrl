@@ -5,7 +5,7 @@ import { discardDraftAction, saveDraftAction, sendDraftAction, type CrmState } f
 export type DraftView = { id: string; contactId: string; subject: string; bodyText: string; bodyHtml: string | null; status: "bozza" | "inviata" | "scartata"; sentAt: string | null };
 
 /** View/edit one draft. Sending happens only on the explicit "Invia" click, after a confirm. */
-export function DraftEditor({ draft, to }: { draft: DraftView; to: string | null }) {
+export function DraftEditor({ draft, to, canSend }: { draft: DraftView; to: string | null; canSend: boolean }) {
   const [state, action, saving] = useActionState<CrmState, FormData>(saveDraftAction, {});
   const [result, setResult] = useState<CrmState>({});
   const [busy, start] = useTransition();
@@ -31,12 +31,13 @@ export function DraftEditor({ draft, to }: { draft: DraftView; to: string | null
         {editable ? (
           <div className="adm-row-actions">
             <button className="adm-btn adm-btn-sm" disabled={saving || busy}>{saving ? "Salvo…" : "Salva bozza"}</button>
-            <button type="button" className="adm-btn adm-btn-sm adm-btn-primary" disabled={!to || saving || busy}
-              title={to ? `Invia a ${to}` : "Il contatto non ha un indirizzo email"}
-              onClick={() => { if (to && window.confirm(`Inviare l'email a ${to}? Salva prima le modifiche.`)) run(() => sendDraftAction(draft.id)); }}>
+            <button type="button" className="adm-btn adm-btn-sm adm-btn-primary" disabled={!to || !canSend || saving || busy}
+              title={!canSend ? "Serve l'accesso alla casella Email" : to ? `Invia a ${to}` : "Il contatto non ha un indirizzo email"}
+              onClick={() => { if (to && canSend && window.confirm(`Inviare l'email a ${to}? Salva prima le modifiche.`)) run(() => sendDraftAction(draft.id)); }}>
               {busy ? "Invio…" : "Invia"}
             </button>
             <button type="button" className="adm-btn adm-btn-sm adm-btn-danger" disabled={saving || busy} onClick={() => { if (window.confirm("Scartare questa bozza?")) run(() => discardDraftAction(draft.id)); }}>Scarta</button>
+            {!canSend ? <span className="adm-muted">Per inviare serve l&apos;accesso alla casella Email dell&apos;agenzia.</span> : null}
           </div>
         ) : <p className="adm-muted">{draft.status === "inviata" ? `Inviata${draft.sentAt ? ` il ${new Date(draft.sentAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" })}` : ""}.` : "Bozza scartata."}</p>}
       </form>

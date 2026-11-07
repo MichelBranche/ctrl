@@ -3,10 +3,10 @@ import { ClientInviteForm, ClientMeetingActions, type ContactOption } from "@/co
 import { DisconnectGoogle, MEET_NEW, MeetingActions, NewMeetingForm } from "@/components/admin/meet/meet-forms";
 import { CAN_SIGN_IN_SQL, requireSection } from "@/lib/admin";
 import { upcomingClientMeetings } from "@/lib/client-meet";
-import { listContacts } from "@/lib/crm";
+import { inviteContacts } from "@/lib/crm";
 import { db } from "@/lib/db";
 import { connection, googleConfigured, GoogleError, MEET_TZ, nowLocal, redirectUri, upcomingMeetings, type Meeting } from "@/lib/google-meet";
-import { isFounder } from "@/lib/team-types";
+import { canAccess, isFounder } from "@/lib/team-types";
 
 export default function MeetingsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   return (
@@ -66,9 +66,8 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
     ? (await db().execute({ sql: `SELECT id, name, email FROM admin_users WHERE ${CAN_SIGN_IN_SQL} AND id <> ? ORDER BY name`, args: [me.id] })).rows.map((r) => ({ id: String(r.id), name: String(r.name), email: String(r.email) }))
     : [];
   const [today, time] = nextSlot().split("T");
-  const contacts: ContactOption[] = (await listContacts({ limit: 300 }).catch(() => []))
-    .filter((c) => c.email)
-    .map((c) => ({ id: c.id, name: c.contactName || c.businessName, email: c.email!, label: `${c.businessName}${c.contactName ? ` (${c.contactName})` : ""} · ${c.email}` }));
+  const crm = canAccess(me, "crm");
+  const contacts: ContactOption[] = await inviteContacts(me).catch(() => []);
   const preset = typeof sp.cliente === "string" ? contacts.find((c) => c.id === sp.cliente) ?? null : null;
   const clientMeetings = await upcomingClientMeetings(hourAgo()).catch(() => []);
 
@@ -156,7 +155,7 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
                 <li key={m.id} className="adm-meet-item">
                   <div>
                     <strong>{m.title}</strong>
-                    <span className="adm-muted">{m.clientName} · {m.clientEmail}{m.contactId ? <> · <a href={`/admin/crm/${m.contactId}`}>scheda CRM</a></> : null}</span>
+                    <span className="adm-muted">{m.clientName} · {m.clientEmail}{crm && m.contactId ? <> · <a href={`/admin/crm/${m.contactId}`}>scheda CRM</a></> : null}</span>
                     <span className="adm-muted">{fmtLocal(m.start)} · {m.minutes} min{m.eventId ? " · in Google Calendar" : ""}</span>
                   </div>
                   <ClientMeetingActions id={m.id} url={m.meetUrl} />

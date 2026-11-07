@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardSection } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
-import { addDraft, addNote, createContact, getContact, getDraft, setArchived, setStage, updateContact, type ContactInput } from "@/lib/crm";
+import { addDraft, addNote, completeFollowUp, createContact, getContact, getDraft, setArchived, setStage, updateContact, type ContactInput } from "@/lib/crm";
 import { isSource, isStage, STAGE_LABEL, type Stage } from "@/lib/crm-core";
+import { CRM_SECTIONS, RUBRICA } from "@/lib/crm-nav";
 import { db } from "@/lib/db";
 import { mailProvider } from "@/lib/mail";
-import { finishSend, logSend } from "@/lib/mail/collab";
+import { finishSend, logSend, sendAllowed } from "@/lib/mail/collab";
 import { ensureCrmSchema } from "@/lib/migrate";
+import { canAccess } from "@/lib/team-types";
 
 export type CrmState = { ok?: string; error?: string; duplicateId?: string; id?: string };
 
@@ -26,9 +28,7 @@ function euros(v: string | null): number | null {
 }
 
 function refresh(id?: string) {
-  revalidatePath("/admin/crm");
-  revalidatePath("/admin/crm/pipeline");
-  revalidatePath("/admin/crm/radar");
+  for (const s of CRM_SECTIONS) revalidatePath(s.href);
   revalidatePath("/admin/desk");
   if (id) revalidatePath(`/admin/crm/${id}`);
 }
@@ -107,7 +107,22 @@ export async function archiveAction(f: FormData): Promise<void> {
   if (!ID.test(id)) return;
   if (await setArchived(id, archived)) await logAction(archived ? "crm.contact_archive" : "crm.contact_restore", { type: "crm_contact", id });
   refresh(id);
-  if (archived) redirect("/admin/crm?archiviato=1");
+  if (archived) redirect(`${RUBRICA}?archiviato=1`);
+}
+
+/** "Fatto" on a follow-up: clears the contact's next action (still the only follow-up source) and keeps it as a note. */
+export async function completeFollowUpAction(id: string, seenAt: string): Promise<CrmState> {
+  const me = await guardSection("crm");
+  if (!ID.test(id) || !DATE.test(seenAt.slice(0, 10)) || seenAt.length > 40) return { error: "Follow-up non valido." };
+  try {
+    const r = await completeFollowUp(id, seenAt, me.id);
+    if (r === "changed") { refresh(id); return { error: "Il follow-up è stato modificato da qualcun altro: ricarico la lista." }; }
+    await logAction("crm.followup_done", { type: "crm_contact", id });
+    refresh(id);
+    return { ok: "Follow-up completato." };
+  } catch {
+    return { error: "Non riuscito. Riprova." };
+  }
 }
 
 export async function addNoteAction(_: CrmState, f: FormData): Promise<CrmState> {
@@ -166,11 +181,15 @@ export async function discardDraftAction(id: string): Promise<CrmState> {
 
 /**
  * Sends a draft only on explicit click, through the agency send path (MAIL_FROM via Resend SMTP, Gmail fallback, copy in Inviati).
+ * Same rules as the inbox: the shared mailbox permission and the per-person/team send limits.
  * The draft is claimed first (sent_by) so a double click cannot send twice.
  */
 export async function sendDraftAction(id: string): Promise<CrmState> {
   const me = await guardSection("crm");
+  if (!canAccess(me, "email")) return { error: "Per inviare serve l'accesso alla casella Email dell'agenzia. Chiedilo al founder." };
   if (!ID.test(id)) return { error: "Bozza non valida." };
+  const limited = await sendAllowed(me.id);
+  if (limited) return { error: limited };
   const draft = await getDraft(id);
   if (!draft || draft.status !== "bozza") return { error: "Bozza già inviata o scartata." };
   const contact = await getContact(draft.contactId);

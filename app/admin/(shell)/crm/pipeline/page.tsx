@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import { CrmTabs, day, eur, romeToday } from "@/components/admin/crm/crm-ui";
+import { CrmHeader, CrmTabs, day, eur, romeToday } from "@/components/admin/crm/crm-ui";
 import { Kanban, type Card } from "@/components/admin/crm/kanban";
 import { requireSection } from "@/lib/admin";
 import { listContacts } from "@/lib/crm";
 
 export default function PipelinePage() {
-  return <main className="adm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body /></Suspense></main>;
+  return <main className="adm-main crm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body /></Suspense></main>;
 }
 
 async function Body() {
@@ -18,8 +18,9 @@ async function Body() {
   }));
   return (
     <>
-      <header className="adm-top"><div><p className="adm-muted">Trascina una scheda per cambiare fase</p><h1 className="adm-h1">Pipeline</h1></div></header>
+      <CrmHeader title="Pipeline" intro="Trascina una scheda per cambiare fase, oppure usa il menu Fase della scheda." />
       <CrmTabs current="/admin/crm/pipeline" />
+      <p className="crm-notice" role="note">Per ora la pipeline mostra tutti i contatti per fase. Le opportunità separate dai contatti, create solo con «Crea opportunità», arriveranno con la fase Pipeline.</p>
       <Kanban cards={cards} />
     </>
   );
