@@ -1271,3 +1271,14 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-col-iris { display: none; }
   .crm-radar .crm-col-score { display: table-cell; }
 }
+
+/* CRM outreach warning (in-app dialog before writing to a contact followed by someone else). */
+.crm-outreach { max-width: min(34rem, calc(100vw - 2rem)); width: 100%; border: 1px solid var(--adm-rule); border-radius: 0.6rem; padding: 1.25rem 1.25rem 1rem; background: var(--adm-panel); color: var(--adm-fg); box-shadow: 0 24px 60px rgba(0, 0, 0, .28); }
+.crm-outreach::backdrop { background: rgba(16, 16, 16, .55); }
+.crm-outreach .adm-h2 { margin: 0 0 .5rem; font-size: 1.05rem; line-height: 1.35; }
+.crm-outreach-updated { margin: 0 0 .5rem; font-size: .8rem; font-weight: 600; color: var(--adm-accent); }
+.crm-outreach-list { list-style: none; margin: .25rem 0 0; padding: 0; display: grid; gap: .55rem; }
+.crm-outreach-list li { display: grid; gap: .15rem; }
+.crm-outreach-actions { margin-top: 1rem; flex-wrap: wrap; }
+.adm-mail-compose-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: contents; }
+@media (max-width: 40rem) { .crm-outreach-actions > * { flex: 1 1 100%; text-align: center; } }

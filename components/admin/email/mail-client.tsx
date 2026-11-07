@@ -7,6 +7,8 @@ import { useActionState, useDeferredValue, useEffect, useRef, useState, useTrans
 import { emailDocument } from "@/lib/mail/document";
 import { brandedEmail, type EmailSender } from "@/lib/mail/template";
 import { markOpened, markUnread, sendMail, saveMailDraft, toggleClaim, type SendState } from "@/app/admin/email-actions";
+import { OutreachDialog } from "@/components/admin/crm/outreach-dialog";
+import type { OutreachWarning } from "@/lib/crm-outreach-types";
 
 const POLL_MS = 30_000;
 
@@ -156,10 +158,27 @@ export function UnreadButton({ folder, uid, href }: { folder: string; uid: numbe
 
 type Draft = { to: string; cc: string; subject: string; body: string };
 
-/** `sentHref`: where to go after a successful send (Posta: Inviati; the CRM contact view: back to the contact's mail). */
-export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender, sentHref = "/admin/email?f=sent" }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string; sentHref?: string }) {
+/**
+ * `sentHref`: where to go after a successful send (Posta: Inviati; the CRM contact view: back to the contact's mail).
+ * `outreach`: CRM warning computed on the server when the composer opens; writing stays locked until "Continua comunque".
+ * The server re-checks at send time (lib/crm-outreach.ts) and may answer with an updated warning instead of sending.
+ */
+export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender, sentHref = "/admin/email?f=sent", outreach = null }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string; sentHref?: string; outreach?: OutreachWarning | null }) {
   const router = useRouter();
-  const [state, action, pending] = useActionState<SendState, FormData>(sendMail, {});
+  /** Idempotency key of the attempt in flight; a new one only after an attempt that certainly sent nothing new. */
+  const sendKey = useRef<string | null>(null);
+  const [consent, setConsent] = useState("");
+  const [locked, setLocked] = useState(Boolean(outreach));
+  const [dialog, setDialog] = useState<{ warning: OutreachWarning; atOpen: boolean } | null>(outreach ? { warning: outreach, atOpen: true } : null);
+  const [state, action, pending] = useActionState<SendState, FormData>(async (previous, data) => {
+    sendKey.current ??= crypto.randomUUID();
+    data.set("sendKey", sendKey.current);
+    const result = await sendMail(previous, data);
+    // Keep the key after an unknown outcome: a blind resubmit is refused; only an informed "Continua comunque" renews it.
+    if (!result.ok && !result.uncertain) sendKey.current = null;
+    if (result.warning) { setConsent(""); setDialog({ warning: result.warning, atOpen: false }); }
+    return result;
+  }, {});
   const [saved, saveAction, saving] = useActionState<SendState, FormData>(async (previous, data) => {
     const result = await saveMailDraft(previous, data);
     return { ...result, draftUid: result.draftUid ?? previous.draftUid };
@@ -189,6 +208,16 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
   }, [state, router, sentHref]);
   return (
     <form ref={form} action={action} className="adm-form adm-mail-compose adm-rise">
+      {dialog ? (
+        <OutreachDialog
+          key={dialog.warning.ack}
+          warning={dialog.warning}
+          onContinue={() => { sendKey.current = null; setConsent(dialog.warning.ack); setLocked(false); setDialog(null); }}
+          onCancel={() => { setDialog(null); if (dialog.atOpen) router.push(cancelHref as Route); }}
+        />
+      ) : null}
+      <input type="hidden" name="crmAck" value={consent} />
+      <fieldset className="adm-mail-compose-fields" disabled={locked}>
       {reply ? (
         <>
           <input type="hidden" name="replyFolder" value={reply.folder} />
@@ -235,8 +264,9 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
         <button type="submit" formAction={saveAction} formNoValidate className="adm-btn" disabled={pending || saving}>{saving ? "Salvataggio…" : "Salva bozza"}</button>
         {saved.draftUid ? <Link className="adm-link" href={`/admin/email?f=drafts&m=${saved.draftUid}` as Route}>Apri bozza salvata</Link> : null}
         <Link className="adm-btn" href={cancelHref as Route}>Chiudi</Link>
-        <p role="status" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? saved.error ?? saved.ok ?? ""}</p>
+        <p role="status" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? (state.warning && !consent ? "Non inviata: leggi l'avviso sul contatto." : null) ?? state.ok ?? saved.error ?? saved.ok ?? ""}</p>
       </div>
+      </fieldset>
     </form>
   );
 }

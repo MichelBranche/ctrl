@@ -8,6 +8,7 @@ import { ComposeForm, MailFrame, MailLive, MailOpening, MarkOpened, UnreadButton
 import { requireSection, type AdminUser } from "@/lib/admin";
 import { agencyAddress, isAgencyAddress, mailProvider } from "@/lib/mail";
 import { collabFor } from "@/lib/mail/collab";
+import { composeOutreach } from "@/lib/crm-outreach";
 import { MailError, PAGE_SIZE, type MailboxView } from "@/lib/mail/provider";
 import { emailDocument, sanitizeEmailHtml, textDocumentBody } from "@/lib/mail/sanitize";
 import { stripSignature } from "@/lib/mail/template";
@@ -167,7 +168,8 @@ async function Mailbox({ me, q, address }: { me: AdminUser; q: Q; address: strin
                 <h2 className="adm-h2">Nuova email</h2>
                 <Link className="adm-btn adm-btn-sm adm-mail-back" href={href({ f: q.f, p: q.p }) as Route}>Chiudi</Link>
               </div>
-              <ComposeForm key={`new:${q.to ?? ""}`} draft={{ to: q.to ?? "", cc: "", subject: "", body: "" }} reply={null} sender={emailSender(me)} from={address} cancelHref={href({ f: q.f, p: q.p })} />
+              <ComposeForm key={`new:${q.to ?? ""}`} draft={{ to: q.to ?? "", cc: "", subject: "", body: "" }} reply={null} sender={emailSender(me)} from={address} cancelHref={href({ f: q.f, p: q.p })}
+                outreach={q.to ? await composeOutreach(me, q.to, "") : null} />
             </>
           ) : view.open ? (
             <Detail q={q} msg={view.open} thread={view.thread} collab={collab} me={me} address={address} labels={view.labels ?? []} />
@@ -280,9 +282,14 @@ function Pager({ q, total }: { q: Q; total: number }) {
   );
 }
 
-function Detail({ q, msg, thread, collab, me, address, labels }: { labels: import("@/lib/mail/types").MailLabel[]; q: Q; msg: MailMessage; thread: MailSummary[]; collab: Map<string, Collab>; me: AdminUser; address: string }) {
+async function Detail({ q, msg, thread, collab, me, address, labels }: { labels: import("@/lib/mail/types").MailLabel[]; q: Q; msg: MailMessage; thread: MailSummary[]; collab: Map<string, Collab>; me: AdminUser; address: string }) {
   const c = collab.get(msg.key);
   const att = (i: number) => `/admin/email/attachment?f=${encodeURIComponent(msg.folder)}&m=${msg.uid}&i=${i}`;
+  const composeDraft = q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) }
+    : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` }
+    : q.compose === "reply" || q.compose === "all" ? replyDraft(msg, q.compose === "all") : null;
+  // CRM check when the composer opens with recipients (reply, reply all, saved draft); forward starts empty.
+  const outreach = composeDraft && (composeDraft.to || composeDraft.cc) ? await composeOutreach(me, composeDraft.to, composeDraft.cc) : null;
   let body: React.ReactNode;
   let blocked = 0;
   if (msg.html) {
@@ -348,12 +355,13 @@ function Detail({ q, msg, thread, collab, me, address, labels }: { labels: impor
         </ul>
       ) : null}
 
-      {q.compose === "reply" || q.compose === "all" || q.compose === "forward" || q.compose === "draft" ? (
+      {composeDraft ? (
         <section className="adm-mail-reply" aria-label="Risposta">
           <ComposeForm
             sender={emailSender(me)}
             key={`${msg.folder}:${msg.uid}:${q.compose}`}
-            draft={q.compose === "draft" ? { to: msg.to.map(fmtAddr).join(", "), cc: msg.cc.map(fmtAddr).join(", "), subject: msg.subject, body: stripSignature(msg.text) } : q.compose === "forward" ? { to: "", cc: "", subject: /^fwd:/i.test(msg.subject) ? msg.subject : `Fwd: ${msg.subject}`, body: `\n\n---------- Messaggio inoltrato ----------\nDa: ${msg.from ? fmtAddr(msg.from) : ""}\nData: ${longDate(msg.date)}\nOggetto: ${msg.subject}\n\n${msg.text}` } : replyDraft(msg, q.compose === "all")}
+            draft={composeDraft}
+            outreach={outreach}
             reply={q.compose === "reply" || q.compose === "all" ? { folder: msg.folder, uid: msg.uid } : null}
             original={(q.compose === "draft" || q.compose === "forward") && msg.attachments.length ? { folder: msg.folder, uid: msg.uid, files: msg.attachments.length } : undefined}
             draftUid={q.compose === "draft" ? msg.uid : undefined}

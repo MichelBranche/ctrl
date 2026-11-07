@@ -122,7 +122,7 @@ export function replyContextOf(parsed: ParsedMail): ReplyContext {
 
 /** Error shown to people: never includes credentials or raw server responses. */
 export class MailError extends Error {
-  constructor(public kind: "auth" | "network" | "notfound" | "toolarge" | "unknown", message: string) {
+  constructor(public kind: "auth" | "network" | "notfound" | "toolarge" | "unknown" | "uncertain", message: string) {
     super(message);
   }
 }

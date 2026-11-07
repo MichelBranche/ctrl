@@ -11,9 +11,11 @@ import { db } from "@/lib/db";
 import { mailProvider } from "@/lib/mail";
 import { finishSend, logSend, sendAllowed } from "@/lib/mail/collab";
 import { ensureCrmSchema } from "@/lib/migrate";
+import { beginOutreach, finishOutreach, sendOutcome, UNCERTAIN_MESSAGE } from "@/lib/crm-outreach";
+import type { OutreachWarning } from "@/lib/crm-outreach-types";
 import { canAccess } from "@/lib/team-types";
 
-export type CrmState = { ok?: string; error?: string; duplicateId?: string; id?: string };
+export type CrmState = { ok?: string; error?: string; duplicateId?: string; id?: string; warning?: OutreachWarning };
 
 const ID = /^[0-9a-f-]{36}$/i;
 const txt = (f: FormData, k: string, max: number) => { const v = String(f.get(k) ?? "").trim().slice(0, max); return v || null; };
@@ -302,7 +304,7 @@ export async function discardDraftAction(id: string): Promise<CrmState> {
  * Same rules as the inbox: the shared mailbox permission and the per-person/team send limits.
  * The draft is claimed first (sent_by) so a double click cannot send twice.
  */
-export async function sendDraftAction(id: string): Promise<CrmState> {
+export async function sendDraftAction(id: string, ack?: string | null): Promise<CrmState> {
   const me = await guardSection("crm");
   if (!canAccess(me, "email")) return { error: "Per inviare serve l'accesso alla casella Email dell'agenzia. Chiedilo al founder." };
   if (!ID.test(id)) return { error: "Bozza non valida." };
@@ -314,19 +316,30 @@ export async function sendDraftAction(id: string): Promise<CrmState> {
   if (!contact?.email) return { error: "Il contatto non ha un indirizzo email." };
   const provider = mailProvider();
   if (!provider) return { error: "Email dell'agenzia non collegata." };
+  // Same CRM outreach guard as the composer (lib/crm-outreach.ts): lease + consent bound to the contact's current state.
+  let gate;
+  try { gate = await beginOutreach(me, [contact.email], typeof ack === "string" ? ack.slice(0, 64) : null); }
+  catch { return { error: "Controllo del contatto non disponibile: niente è stato inviato. Riprova tra poco." }; }
+  if (gate.kind === "warn") return { warning: gate.warning };
+  if (gate.kind === "busy") return { error: gate.message };
   const claim = await db().execute({ sql: "UPDATE crm_drafts SET sent_by = ? WHERE id = ? AND status = 'bozza' AND sent_by IS NULL", args: [me.id, id] });
-  if (!claim.rowsAffected) return { error: "Invio già in corso." };
+  if (!claim.rowsAffected) { await finishOutreach(gate.lease, "failed").catch(() => {}); return { error: "Invio già in corso." }; }
   const logId = crypto.randomUUID();
   try {
     await logSend({ id: logId, userId: me.id, recipients: [contact.email], subject: draft.subject, inReplyTo: null });
     const { messageId } = await provider.send({ to: [contact.email], cc: [], subject: draft.subject, text: draft.bodyText, sender: emailSender(me) });
     await finishSend(logId, messageId);
-  } catch {
+  } catch (error) {
+    const outcome = sendOutcome(error);
     await finishSend(logId, null).catch(() => {});
+    await finishOutreach(gate.lease, outcome).catch(() => {});
+    await logAction("crm.draft_send_failed", { type: "crm_draft", id }, { to: contact.email, uncertain: outcome === "uncertain" });
     await db().execute({ sql: "UPDATE crm_drafts SET sent_by = NULL WHERE id = ? AND status = 'bozza'", args: [id] });
-    await logAction("crm.draft_send_failed", { type: "crm_draft", id }, { to: contact.email });
+    // Unknown outcome: the contact is flagged, so the next attempt (anyone's) needs a new informed "Continua comunque".
+    if (outcome === "uncertain") return { error: UNCERTAIN_MESSAGE };
     return { error: "Invio non riuscito, la bozza è ancora disponibile. Riprova tra poco." };
   }
+  await finishOutreach(gate.lease, "sent").catch(() => {});
   await db().execute({ sql: "UPDATE crm_drafts SET status = 'inviata', sent_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [id] });
   await addNote(contact.id, me.id, `Email inviata: ${draft.subject}`);
   if (contact.stage === "nuovo") await setStage(contact.id, "contattato");

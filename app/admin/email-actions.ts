@@ -7,6 +7,9 @@ import { logAction } from "@/lib/audit";
 import { mailProvider } from "@/lib/mail";
 import { MailError, type OutgoingFile } from "@/lib/mail/provider";
 import { isFolder, type FolderId, type MailMutation } from "@/lib/mail/types";
+import { beginOutreach, finishOutreach, sendOutcome, UNCERTAIN_MESSAGE } from "@/lib/crm-outreach";
+import type { OutreachWarning } from "@/lib/crm-outreach-types";
+import { EMAIL_ADDRESS as EMAIL, parseRecipients as parseList } from "@/lib/mail/recipients";
 
 /* Every action re-checks the session and the "email" permission server-side (guardSection throws otherwise). */
 
@@ -45,15 +48,11 @@ export async function toggleClaim(key: string, claim: boolean): Promise<{ ok: bo
   return { ok: true };
 }
 
-export type SendState = { draftUid?: number; ok?: string; error?: string; at?: number };
+/** `warning`: CRM outreach notice (nothing was sent); resend with its `ack` only after an explicit "Continua comunque". */
+export type SendState = { draftUid?: number; ok?: string; error?: string; at?: number; warning?: OutreachWarning; uncertain?: boolean };
 
-const EMAIL = /^[^\s@<>(),;:"]+@[^\s@<>(),;:"]+\.[^\s@<>(),;:"]+$/;
-const parseList = (v: FormDataEntryValue | null) =>
-  String(v ?? "")
-    .split(/[,;\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => s.match(/<([^>]+)>$/)?.[1]?.trim() ?? s);
+/** Per-form idempotency key (the send log id): a resubmitted or replayed form cannot send twice. */
+const SEND_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 async function uploadedFiles(form: FormData): Promise<OutgoingFile[]> {
@@ -106,19 +105,41 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
   let attachments: OutgoingFile[];
   try { attachments = await uploadedFiles(form); }
   catch (error) { return { error: (error as Error).message }; }
-  const id = crypto.randomUUID();
-  await logSend({ id, userId: me.id, recipients: [...to, ...cc], subject, inReplyTo });
+  const key = String(form.get("sendKey") ?? "");
+  const id = SEND_KEY.test(key) ? key.toLowerCase() : crypto.randomUUID();
+  const ack = String(form.get("crmAck") ?? "").slice(0, 64) || null;
+
+  // CRM contacts among the recipients: atomic lease + consent bound to their current state, re-checked right now.
+  let gate;
+  try { gate = await beginOutreach(me, [...to, ...cc], ack); }
+  catch { return { error: "Controllo dei contatti CRM non disponibile: niente è stato inviato. Riprova tra poco.", at: Date.now() }; }
+  if (gate.kind === "warn") return { warning: gate.warning, at: Date.now() };
+  if (gate.kind === "busy") return { error: gate.message, at: Date.now() };
+  const lease = gate.lease;
+
   try {
-    const { messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form), sender: emailSender(me) });
-    await finishSend(id, messageId);
-    await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length }, me);
-    const draftUid = Number(form.get("draftUid"));
-    if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
-    return { ok: `Inviata a ${to.join(", ")}.`, at: Date.now() };
+    await logSend({ id, userId: me.id, recipients: [...to, ...cc], subject, inReplyTo });
   } catch (error) {
-    await finishSend(id, null).catch(() => {});
-    return { error: error instanceof MailError ? error.message : "Invio non riuscito, riprova tra poco." };
+    await finishOutreach(lease, "failed").catch(() => {});
+    const duplicate = /UNIQUE|PRIMARY KEY/i.test(String((error as Error)?.message ?? ""));
+    return { error: duplicate ? "Questa email risulta già inviata o in invio: controlla in Posta › Inviati." : "Invio non riuscito, riprova tra poco.", at: Date.now() };
   }
+  let messageId: string;
+  try {
+    ({ messageId } = await p.send({ to, cc, subject, text, inReplyTo, references, attachments, attachmentsFrom: attachmentOrigin(form), sender: emailSender(me) }));
+  } catch (error) {
+    const outcome = sendOutcome(error);
+    await finishSend(id, null).catch(() => {});
+    await finishOutreach(lease, outcome).catch(() => {});
+    if (outcome === "uncertain") return { error: UNCERTAIN_MESSAGE, uncertain: true, at: Date.now() };
+    return { error: error instanceof MailError ? error.message : "Invio non riuscito, riprova tra poco.", at: Date.now() };
+  }
+  await finishSend(id, messageId);
+  const { assigned } = await finishOutreach(lease, "sent").catch(() => ({ assigned: [] as string[] }));
+  await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length, crmAssigned: assigned.length }, me);
+  const draftUid = Number(form.get("draftUid"));
+  if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
+  return { ok: `Inviata a ${to.join(", ")}.${assigned.length ? ` ${assigned.length === 1 ? "Il contatto ora è seguito" : "I contatti ora sono seguiti"} da te.` : ""}`, at: Date.now() };
 }
 
 export async function organizeMail(folder: string, uids: number[], operation: MailMutation, label?: string): Promise<{ error?: string; ok?: boolean }> {
