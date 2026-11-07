@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { CopyButton, FollowUpQuick, OwnerQuick, PanelShell, StageQuick } from "@/components/admin/crm/contact-panel-client";
@@ -27,12 +28,17 @@ const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: 
 
 /** `email`: the contact email view with this list as its "back" (list, and the composer already open). */
 export type PanelLinks = { close: string; tabs: Record<PanelTab, string>; email?: { list: string; compose: string } };
+/** Extra first tab a list can mount (Radar: the Iris analysis), rendered by that list. */
+export type PanelAnalysis = { href: string; render: (c: Contact) => ReactNode | Promise<ReactNode> };
 
 /**
  * Contact side panel, shared by the CRM lists (Rubrica today; Pipeline and Radar can mount it with their own links).
  * Server-rendered from the URL, so the list behind it keeps its filters, sort and page.
  */
-export async function ContactPanel({ id, tab, me, links }: { id: string; tab: PanelTab; me: AdminUser; links: PanelLinks }) {
+export async function ContactPanel({ id, tab: asked, me, links, analysis }: {
+  id: string; tab: PanelTab | "analisi"; me: AdminUser; links: PanelLinks; analysis?: PanelAnalysis;
+}) {
+  const tab = asked === "analisi" && !analysis ? "dettagli" : asked;
   const labelId = `crm-panel-${id}`;
   const c = await getContact(id);
   if (!c) {
@@ -56,6 +62,7 @@ export async function ContactPanel({ id, tab, me, links }: { id: string; tab: Pa
   const mailView = links.email ?? { list: contactEmailPath(c.id), compose: `${contactEmailPath(c.id)}?compose=new` };
   const place = [c.address, c.city, c.region].filter(Boolean).join(", ");
   const versioned = { id: c.id, version: c.version };
+  const extra = tab === "analisi" && analysis ? await analysis.render(c) : null;
   return (
     <PanelShell contactId={c.id} closeHref={links.close} labelId={labelId}>
       <header className="crm-panel-head">
@@ -87,12 +94,13 @@ export async function ContactPanel({ id, tab, me, links }: { id: string; tab: Pa
       </div>
 
       <nav className="crm-panel-tabs" aria-label="Sezioni della scheda">
+        {analysis ? <Link href={analysis.href as Route} scroll={false} replace aria-current={tab === "analisi" ? "page" : undefined}>Analisi Iris</Link> : null}
         {PANEL_TABS.map((t) => <Link key={t} href={links.tabs[t] as Route} scroll={false} replace aria-current={t === tab ? "page" : undefined}>{TAB_LABEL[t]}</Link>)}
       </nav>
 
       <div className="crm-panel-body">
         {c.archived ? <p className="crm-notice">Contatto archiviato: ripristinalo dalla scheda completa per modificarlo.</p> : null}
-        {tab === "dettagli" ? (
+        {tab === "analisi" ? extra : tab === "dettagli" ? (
           <>
             {c.archived ? null : (
               <div className="crm-quick-row">

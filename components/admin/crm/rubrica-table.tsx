@@ -11,14 +11,28 @@ import type { RubricaSort } from "@/lib/crm-nav";
 export type RubricaRow = {
   id: string; version: number; name: string; type: string | null; stage: Stage; city: string | null; address: string | null; region: string | null;
   source: string; score: number | null; nextAction: string | null; nextActionAt: string | null; href: string;
+  /** Radar only: Iris reasons as received, and how many of its drafts wait for review / were sent. */
+  reasons?: string[]; drafts?: { ready: number; sent: number };
 };
 export type SortHead = { href: string; dir: "asc" | "desc" | null };
 export type Pager = { from: number; to: number; total: number; prev: string | null; next: string | null };
 
-const COLS: { key: RubricaSort | null; label: string; cls?: string }[] = [
-  { key: "nome", label: "Nome" }, { key: "fase", label: "Fase" }, { key: "citta", label: "Città", cls: "crm-col-city" }, { key: null, label: "Fonte", cls: "crm-col-src" },
-  { key: "punteggio", label: "Punteggio", cls: "crm-col-score" }, { key: "azione", label: "Prossima azione", cls: "crm-col-next" },
-];
+export type TableVariant = "rubrica" | "radar";
+type Cell = "nome" | "fase" | "citta" | "fonte" | "punteggio" | "azione" | "iris" | "stato";
+type Col = { cell: Cell; sort: RubricaSort | null; label: string; cls?: string };
+const COLS: Record<TableVariant, Col[]> = {
+  rubrica: [
+    { cell: "nome", sort: "nome", label: "Nome" }, { cell: "fase", sort: "fase", label: "Fase" }, { cell: "citta", sort: "citta", label: "Città", cls: "crm-col-city" },
+    { cell: "fonte", sort: null, label: "Fonte", cls: "crm-col-src" }, { cell: "punteggio", sort: "punteggio", label: "Punteggio", cls: "crm-col-score" },
+    { cell: "azione", sort: "azione", label: "Prossima azione", cls: "crm-col-next" },
+  ],
+  radar: [
+    { cell: "nome", sort: "nome", label: "Azienda" }, { cell: "citta", sort: "citta", label: "Località", cls: "crm-col-city" },
+    { cell: "iris", sort: null, label: "Analisi Iris", cls: "crm-col-iris" }, { cell: "punteggio", sort: "punteggio", label: "Punteggio", cls: "crm-col-score" },
+    { cell: "stato", sort: "fase", label: "Stato", cls: "crm-col-state" },
+  ],
+};
+const IRIS_CHIPS = 2;
 const CAL = "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4";
 const BULK_MAX = 100;
 
@@ -40,8 +54,8 @@ function NextCell({ row, today }: { row: RubricaRow; today: string }) {
  * Rubrica list. Selection lives only here and resets when the query changes (the page keys this component by query).
  * Bulk changes go through the server with each contact's version; no email is ever sent from a selection.
  */
-export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
-  rows: RubricaRow[]; activeId: string; sort: Record<RubricaSort, SortHead>; pager: Pager; owners: { id: string; name: string }[]; today: string;
+export function RubricaTable({ rows, activeId, sort, pager, owners, today, variant = "rubrica" }: {
+  rows: RubricaRow[]; activeId: string; sort: Record<RubricaSort, SortHead>; pager: Pager; owners: { id: string; name: string }[]; today: string; variant?: TableVariant;
 }) {
   const router = useRouter();
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -67,8 +81,8 @@ export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
             <tr>
               <th className="crm-col-check"><input type="checkbox" className="crm-cb" aria-label="Seleziona tutti i contatti della pagina" checked={all} disabled={!rows.length}
                 onChange={() => setPicked(all ? new Set() : new Set(rows.slice(0, BULK_MAX).map((r) => r.id)))} /></th>
-              {COLS.map((c) => {
-                const s = c.key ? sort[c.key] : null;
+              {COLS[variant].map((c) => {
+                const s = c.sort ? sort[c.sort] : null;
                 return (
                   <th key={c.label} className={c.cls} aria-sort={s?.dir ? (s.dir === "asc" ? "ascending" : "descending") : undefined}>
                     {s ? <Link className="crm-sort" href={s.href as Route} scroll={false}>{c.label}<span aria-hidden="true">{s.dir === "asc" ? " ↑" : s.dir === "desc" ? " ↓" : ""}</span></Link> : c.label}
@@ -82,15 +96,7 @@ export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
             {rows.map((r) => (
               <tr key={r.id} data-active={r.id === activeId ? "" : undefined} data-picked={picked.has(r.id) ? "" : undefined}>
                 <td className="crm-col-check"><input type="checkbox" className="crm-cb" aria-label={`Seleziona ${r.name}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} /></td>
-                <td className="crm-col-name">
-                  <Link href={r.href as Route} scroll={false} data-row-link={r.id} aria-current={r.id === activeId ? "true" : undefined}>{r.name}<Opening /></Link>
-                  {r.type ? <span className="crm-sub">{r.type}</span> : null}
-                </td>
-                <td><span className="crm-stage" data-stage={r.stage}>{STAGE_LABEL[r.stage]}</span></td>
-                <td className="crm-col-city">{r.city || r.address ? <a className="crm-city" href={mapsUrl({ businessName: r.name, address: r.address, city: r.city, region: r.region })} target="_blank" rel="noopener noreferrer" title="Apri su Google Maps"><MapPin />{r.city ?? r.address}</a> : <span className="adm-muted">—</span>}</td>
-                <td className="crm-col-src">{r.source}</td>
-                <td className="crm-col-score">{r.score === null ? <span className="adm-muted">—</span> : <ScoreBadge score={r.score} />}</td>
-                <td className="crm-col-next"><NextCell row={r} today={today} /></td>
+                {COLS[variant].map((c) => <td key={c.cell} className={c.cls ?? (c.cell === "nome" ? "crm-col-name" : undefined)}><RowCell cell={c.cell} row={r} activeId={activeId} today={today} variant={variant} /></td>)}
                 <td className="crm-col-more"><Link className="crm-icon-btn" href={`/admin/crm/${r.id}` as Route} aria-label={`Apri la scheda completa di ${r.name}`} title="Scheda completa"><CrmIcon d="M5 12h.01M12 12h.01M19 12h.01" /></Link></td>
               </tr>
             ))}
@@ -139,6 +145,53 @@ export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
       </div>
     </div>
   );
+}
+
+function RowCell({ cell, row: r, activeId, today, variant }: { cell: Cell; row: RubricaRow; activeId: string; today: string; variant: TableVariant }) {
+  switch (cell) {
+    case "nome":
+      return (
+        <>
+          <Link href={r.href as Route} scroll={false} data-row-link={r.id} aria-current={r.id === activeId ? "true" : undefined}>{r.name}<Opening /></Link>
+          {r.type ? <span className="crm-sub">{r.type}</span> : null}
+        </>
+      );
+    case "fase":
+      return <span className="crm-stage" data-stage={r.stage}>{STAGE_LABEL[r.stage]}</span>;
+    case "citta":
+      return r.city || r.address
+        ? <a className="crm-city" href={mapsUrl({ businessName: r.name, address: r.address, city: r.city, region: r.region })} target="_blank" rel="noopener noreferrer" title="Apri su Google Maps"><MapPin />{r.city ?? r.address}{variant === "radar" && r.city && r.region ? ` (${r.region})` : ""}</a>
+        : <span className="adm-muted">—</span>;
+    case "fonte":
+      return <>{r.source}</>;
+    case "punteggio":
+      return r.score === null ? <span className="adm-muted">—</span> : <ScoreBadge score={r.score} />;
+    case "azione":
+      return <NextCell row={r} today={today} />;
+    case "iris": {
+      const reasons = r.reasons ?? [];
+      if (!reasons.length) return <span className="adm-muted">Nessun motivo inviato</span>;
+      const more = reasons.length - IRIS_CHIPS;
+      return (
+        <span className="crm-iris-chips" title={reasons.join(" · ")}>
+          {reasons.slice(0, IRIS_CHIPS).map((x, i) => <span key={i} className="crm-iris-chip">{x}</span>)}
+          {more > 0 ? <span className="crm-iris-chip is-more">+{more}</span> : null}
+        </span>
+      );
+    }
+    case "stato":
+      return (
+        <span className="crm-state-cell">
+          <span className="crm-stage" data-stage={r.stage}>{STAGE_LABEL[r.stage]}</span>
+          {r.drafts?.ready ? <span className="crm-draft-flag">{r.drafts.ready === 1 ? "Bozza da rivedere" : `${r.drafts.ready} bozze da rivedere`}</span>
+            : r.drafts?.sent ? <span className="crm-draft-flag is-sent">Email inviata</span> : null}
+        </span>
+      );
+    default: {
+      const never: never = cell;
+      return never;
+    }
+  }
 }
 
 /** Inline hint while the panel of a just-clicked row loads (the list stays usable meanwhile). */

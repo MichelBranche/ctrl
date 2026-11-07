@@ -156,3 +156,38 @@ export const rubricaReturn = (id: string, back: RubricaQuery, tab: PanelTab = "d
 
 export const defaultContactMail = (back: RubricaQuery): ContactMailQuery =>
   ({ back: { ...back, c: "", tab: "dettagli" }, vista: "tutte", m: null, k: "", compose: null, img: false });
+
+/*
+ * Radar URL state: the Rubrica keys (search, filters, sort, page, open contact) plus the Iris score band `prio`.
+ * Defaults differ from the Rubrica: best Iris score first, and the panel opens on the Iris analysis.
+ */
+export const RADAR = `${CRM_HOME}/radar`;
+export const RADAR_PRIOS = ["alta", "media", "bassa", "senza"] as const;
+export type RadarPrio = (typeof RADAR_PRIOS)[number];
+export type RadarTab = PanelTab | "analisi";
+export type RadarQuery = Omit<RubricaQuery, "tab"> & { prio: RadarPrio | ""; tab: RadarTab };
+/** Same bands as the score badge: alta 70+, media 40-69, bassa under 40, senza = no score from Iris. */
+export const PRIO_RANGE: Record<Exclude<RadarPrio, "senza">, [number, number]> = { alta: [70, 100], media: [40, 69], bassa: [0, 39] };
+
+export function parseRadarQuery(sp: Raw): RadarQuery {
+  const base = parseRubricaQuery(sp);
+  const prio = read(sp, "prio"), tab = read(sp, "tab");
+  const sorted = (RUBRICA_SORTS as readonly string[]).includes(read(sp, "ordina"));
+  return {
+    ...base,
+    ...(sorted ? {} : { ordina: "punteggio" as const, dir: "desc" as const }),
+    prio: (RADAR_PRIOS as readonly string[]).includes(prio) ? (prio as RadarPrio) : "",
+    tab: (PANEL_TABS as readonly string[]).includes(tab) ? (tab as PanelTab) : "analisi",
+  };
+}
+
+export function radarSearch(q: RadarQuery, patch: Partial<RadarQuery> = {}): string {
+  const v = { ...q, ...patch };
+  const out = new URLSearchParams(rubricaSearch({ ...v, tab: "dettagli" }).slice(1));
+  if (v.ordina === "punteggio" && v.dir === "desc") { out.delete("ordina"); out.delete("dir"); }
+  else if (!out.has("ordina")) { out.set("ordina", v.ordina); out.set("dir", v.dir); }
+  if (v.prio) out.set("prio", v.prio);
+  if (v.c && v.tab !== "analisi") out.set("tab", v.tab);
+  const s = out.toString();
+  return s ? `?${s}` : "";
+}

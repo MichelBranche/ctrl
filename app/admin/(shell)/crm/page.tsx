@@ -223,14 +223,14 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <div className="crm-quick-item is-off" aria-disabled="true" aria-describedby="crm-quick-note" title="In arrivo con la nuova Pipeline">
                 <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><small>Presto</small>
               </div>
-              <div className="crm-quick-item is-off" aria-disabled="true" aria-describedby="crm-quick-note" title="In arrivo con la nuova Rubrica">
-                <CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span><small>Presto</small>
-              </div>
+              <Link href={`${RUBRICA}?importa=1` as Route} className="crm-quick-item">
+                <CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span>
+              </Link>
               <Link href={"/admin/crm/radar" as Route} className="crm-quick-item" title="I prospect arrivano dalle ricerche di Iris">
                 <CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span>
               </Link>
             </div>
-            <p id="crm-quick-note" className="adm-muted crm-foot">Opportunità e import arrivano con le prossime fasi del CRM.</p>
+            <p id="crm-quick-note" className="adm-muted crm-foot">Le opportunità arrivano con la prossima fase. L&apos;import CSV chiede un&apos;anteprima e non modifica i contatti già presenti.</p>
           </section>
 
           <section className="crm-card-panel">

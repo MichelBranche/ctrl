@@ -4,7 +4,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { CrmIcon } from "@/components/admin/crm/crm-ui";
 import { SOURCES, SOURCE_LABEL, STAGES, STAGE_LABEL } from "@/lib/crm-core";
-import { RUBRICA, savedViewParams, savedViewsKey, type RubricaQuery } from "@/lib/crm-nav";
+import { RADAR, RUBRICA, savedViewParams, savedViewsKey, type RadarPrio, type RubricaQuery } from "@/lib/crm-nav";
 
 const SEARCH = "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3";
 const FUNNEL = "M3 4h18l-7 8.5V19l-4 2v-8.5z";
@@ -14,37 +14,52 @@ const BOOKMARK = "M6 3h12v18l-6-4-6 4z";
  * Search and filters as a GET form: works without JavaScript, and with it every change navigates at once (empty
  * fields dropped). The open contact and its tab stay open; the page goes back to 1.
  */
-export function RubricaToolbar({ query, types, cities, owners, userId }: {
-  query: RubricaQuery; types: string[]; cities: string[]; owners: { id: string; name: string }[]; userId: string;
+type ToolbarQuery = Omit<RubricaQuery, "tab"> & { tab: string; prio?: RadarPrio | "" };
+/** Radar layout: categoria, priorità and stato inline (as in the mockup), città/responsabile/archivio under Filtri. */
+type Layout = { basePath: string; defaultTab: string; defaultSort: string; radar: boolean; label: string; placeholder: string };
+const RUBRICA_LAYOUT: Layout = { basePath: RUBRICA, defaultTab: "dettagli", defaultSort: "aggiornato", radar: false, label: "Cerca e filtra la rubrica", placeholder: "Cerca nome, email, telefono, sito…" };
+const PRIO_LABEL: Record<RadarPrio, string> = { alta: "Alta (70+)", media: "Media (40–69)", bassa: "Bassa (sotto 40)", senza: "Senza punteggio" };
+
+export const RADAR_LAYOUT: Layout = { basePath: RADAR, defaultTab: "analisi", defaultSort: "punteggio", radar: true, label: "Cerca e filtra i prospect del Radar", placeholder: "Cerca azienda, settore, località…" };
+
+export function RubricaToolbar({ query, types, cities, owners, userId, layout = RUBRICA_LAYOUT }: {
+  query: ToolbarQuery; types: string[]; cities: string[]; owners: { id: string; name: string }[]; userId: string; layout?: Layout;
 }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
-  const extra = [query.categoria, query.fonte, query.resp, query.archivio ? "1" : ""].filter(Boolean).length;
+  const { basePath, radar } = layout;
+  const extra = (radar ? [query.citta, query.resp, query.archivio ? "1" : ""] : [query.categoria, query.fonte, query.resp, query.archivio ? "1" : ""]).filter(Boolean).length;
   const go = (e?: FormEvent) => {
     e?.preventDefault();
     if (!form.current) return;
     const out = new URLSearchParams();
     for (const [k, v] of new FormData(form.current)) if (typeof v === "string" && v.trim()) out.set(k, v.trim());
     const s = out.toString();
-    router.push(`${RUBRICA}${s ? `?${s}` : ""}` as Route, { scroll: false });
+    router.push(`${basePath}${s ? `?${s}` : ""}` as Route, { scroll: false });
   };
   const change = () => go();
-  const key = [query.q, query.fase, query.citta, query.categoria, query.fonte, query.resp, query.archivio].join("|");
+  const key = [query.q, query.fase, query.citta, query.categoria, query.fonte, query.resp, query.archivio, query.prio].join("|");
+  const categoria = <select className={`adm-input${radar ? " crm-toolbar-select" : ""}`} name="categoria" defaultValue={query.categoria} onChange={change} aria-label={radar ? "Categoria" : undefined}><option value="">{radar ? "Tutte le categorie" : "Tutte"}</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select>;
+  const citta = (inline: boolean) => <select className={`adm-input${inline ? " crm-toolbar-select" : ""}`} name="citta" defaultValue={query.citta} onChange={change} aria-label={inline ? "Città" : undefined}><option value="">{inline ? "Tutte le città" : "Tutte"}</option>{cities.map((c) => <option key={c} value={c}>{c}</option>)}</select>;
   return (
     <div className="crm-toolbar">
-      <form ref={form} key={key} className="crm-toolbar-form" method="get" action={RUBRICA} onSubmit={go} role="search" aria-label="Cerca e filtra la rubrica">
+      <form ref={form} key={key} className="crm-toolbar-form" method="get" action={basePath} onSubmit={go} role="search" aria-label={layout.label}>
         <label className="crm-search">
           <CrmIcon d={SEARCH} /><span className="adm-sr">Cerca</span>
-          <input className="adm-input" type="search" name="q" defaultValue={query.q} maxLength={120} placeholder="Cerca nome, email, telefono, sito…" />
+          <input className="adm-input" type="search" name="q" defaultValue={query.q} maxLength={120} placeholder={layout.placeholder} />
         </label>
-        {query.ordina !== "aggiornato" || query.dir !== "desc" ? <><input type="hidden" name="ordina" value={query.ordina} /><input type="hidden" name="dir" value={query.dir} /></> : null}
+        {query.ordina !== layout.defaultSort || query.dir !== "desc" ? <><input type="hidden" name="ordina" value={query.ordina} /><input type="hidden" name="dir" value={query.dir} /></> : null}
         {query.c ? <input type="hidden" name="c" value={query.c} /> : null}
-        {query.c && query.tab !== "dettagli" ? <input type="hidden" name="tab" value={query.tab} /> : null}
+        {query.c && query.tab !== layout.defaultTab ? <input type="hidden" name="tab" value={query.tab} /> : null}
         <details className="crm-menu">
           <summary className="adm-btn adm-btn-sm crm-toolbar-btn"><CrmIcon d={FUNNEL} />Filtri{extra ? <span className="crm-count">{extra}</span> : null}</summary>
           <div className="crm-menu-list crm-menu-form">
-            <label className="adm-field"><span>Categoria</span><select className="adm-input" name="categoria" defaultValue={query.categoria} onChange={change}><option value="">Tutte</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
-            <label className="adm-field"><span>Fonte</span><select className="adm-input" name="fonte" defaultValue={query.fonte} onChange={change}><option value="">Tutte</option>{SOURCES.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s]}</option>)}</select></label>
+            {radar
+              ? <label className="adm-field"><span>Città</span>{citta(false)}</label>
+              : <>
+                <label className="adm-field"><span>Categoria</span>{categoria}</label>
+                <label className="adm-field"><span>Fonte</span><select className="adm-input" name="fonte" defaultValue={query.fonte} onChange={change}><option value="">Tutte</option>{SOURCES.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s]}</option>)}</select></label>
+              </>}
             <label className="adm-field"><span>Responsabile</span>
               <select className="adm-input" name="resp" defaultValue={query.resp} onChange={change}>
                 <option value="">Tutti</option><option value="me">I miei</option><option value="none">Non assegnati</option>
@@ -54,11 +69,21 @@ export function RubricaToolbar({ query, types, cities, owners, userId }: {
             <label className="adm-chip"><input type="checkbox" name="archivio" value="1" defaultChecked={query.archivio} onChange={change} /> Solo archiviati</label>
           </div>
         </details>
-        <select className="adm-input crm-toolbar-select" name="fase" defaultValue={query.fase} onChange={change} aria-label="Fase"><option value="">Tutte le fasi</option>{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
-        <select className="adm-input crm-toolbar-select" name="citta" defaultValue={query.citta} onChange={change} aria-label="Città"><option value="">Tutte le città</option>{cities.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+        {radar ? (
+          <>
+            {categoria}
+            <select className="adm-input crm-toolbar-select" name="prio" defaultValue={query.prio ?? ""} onChange={change} aria-label="Priorità (punteggio Iris)"><option value="">Tutte le priorità</option>{(Object.keys(PRIO_LABEL) as RadarPrio[]).map((p) => <option key={p} value={p}>{PRIO_LABEL[p]}</option>)}</select>
+            <select className="adm-input crm-toolbar-select" name="fase" defaultValue={query.fase} onChange={change} aria-label="Stato"><option value="">Tutti gli stati</option>{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
+          </>
+        ) : (
+          <>
+            <select className="adm-input crm-toolbar-select" name="fase" defaultValue={query.fase} onChange={change} aria-label="Fase"><option value="">Tutte le fasi</option>{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
+            {citta(true)}
+          </>
+        )}
         <noscript><button className="adm-btn adm-btn-sm">Filtra</button></noscript>
       </form>
-      <SavedViews userId={userId} query={query} />
+      {radar ? null : <SavedViews userId={userId} query={query} />}
     </div>
   );
 }
@@ -79,7 +104,7 @@ function readViews(userId: string): View[] {
  * Per-user views in this browser. Only filter and sort keys are stored (see savedViewParams): no search text, contact,
  * name or email ever reaches localStorage.
  */
-function SavedViews({ userId, query }: { userId: string; query: RubricaQuery }) {
+function SavedViews({ userId, query }: { userId: string; query: ToolbarQuery }) {
   const router = useRouter();
   const [views, setViews] = useState<View[]>([]);
   const [name, setName] = useState("");

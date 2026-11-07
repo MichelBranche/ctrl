@@ -119,6 +119,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "crm.draft_send_failed": "Invio bozza Radar fallito",
   "crm.draft_discard": "Bozza Radar scartata",
   "crm.ingest": "Contatti Radar importati",
+  "crm.import": "Contatti importati da CSV",
 };
 
 /** Deletes audit entries older than 12 months (daily cron). */
