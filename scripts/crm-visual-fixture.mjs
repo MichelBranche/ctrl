@@ -87,7 +87,7 @@ if (who !== "empty" && !(await run("SELECT 1 FROM crm_contacts LIMIT 1")).rows.l
     await run("INSERT INTO audit_log (user_id, user_name, user_email, action, target_type, target_id, details, created_at) VALUES ('qa-michel', 'Michel Branche', 'qa-michel@example.test', ?, ?, ?, ?, ?)",
       [action, type, id, JSON.stringify(details), ago(h)]);
   }
-  await run("INSERT INTO crm_drafts (id, contact_id, subject, body_text) VALUES ('d-hotel', '00000000-0000-4000-8000-000000000004', 'Il sito di Hotel Belvedere', 'Buongiorno, abbiamo notato che...')");
+  await run("INSERT INTO crm_drafts (id, contact_id, subject, body_text) VALUES ('00000000-0000-4000-8000-0000000000d1', '00000000-0000-4000-8000-000000000004', 'Il sito di Hotel Belvedere', 'Buongiorno, abbiamo notato che...')");
 
   // Rubrica: Langhe wineries from the Radar (fictional), enough for two pages.
   const towns = [["Diano d'Alba", "Piemonte"], ["Barbaresco", "Piemonte"], ["Treiso", "Piemonte"], ["Neive", "Piemonte"], ["La Morra", "Piemonte"], ["Barolo", "Piemonte"]];
@@ -115,7 +115,7 @@ if (who !== "empty" && !(await run("SELECT 1 FROM crm_contacts LIMIT 1")).rows.l
   await run(`INSERT INTO crm_contacts (id, business_name, type, email, city, source, stage, created_at, updated_at)
     VALUES ('00000000-0000-4000-8000-000000000201', 'Cantina senza email (QA)', 'Cantina', NULL, 'Neive', 'manuale', 'nuovo', ?, ?)`, [ago(90), ago(2)]);
   // Radar QA: Iris drafts to review (one already sent) and a prospect Iris sent without score or reasons.
-  for (const [did, cid, subject, status] of [["d-qa-1", "106", "Il sito di Rosanna Sandri (QA)", "bozza"], ["d-qa-2", "107", "Cascina Luisin online (QA)", "bozza"], ["d-qa-3", "103", "Giordano Pajè: proposta (QA)", "inviata"]]) {
+  for (const [did, cid, subject, status] of [["00000000-0000-4000-8000-0000000000d2", "106", "Il sito di Rosanna Sandri (QA)", "bozza"], ["00000000-0000-4000-8000-0000000000d3", "107", "Cascina Luisin online (QA)", "bozza"], ["00000000-0000-4000-8000-0000000000d4", "103", "Giordano Pajè: proposta (QA)", "inviata"]]) {
     await run("INSERT INTO crm_drafts (id, contact_id, subject, body_text, status, sent_at) VALUES (?, ?, ?, ?, ?, ?)",
       [did, `00000000-0000-4000-8000-000000000${cid}`, subject, "Buongiorno, abbiamo visto il vostro sito e avremmo qualche idea. (bozza fixture QA)", status, status === "inviata" ? ago(30) : null]);
   }
