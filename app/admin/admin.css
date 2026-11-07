@@ -1091,6 +1091,9 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 .crm-panel-close { align-self: flex-start; }
 .crm-panel-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .crm-panel-actions > .adm-btn, .crm-panel-actions summary.adm-btn { height: 2.1rem; }
+.crm-panel-actions > .crm-copy-prompt { height: auto; min-height: 2.1rem; white-space: normal; text-align: center; }
+.crm-copy-prompt-copied { color: var(--adm-ok); }
+.crm-copy-prompt-error { color: var(--adm-accent); }
 .crm-panel-actions > .adm-btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 .crm-panel-actions svg { width: 0.95rem; height: 0.95rem; }
 .crm-panel-tabs { display: flex; gap: 1.1rem; border-bottom: 1px solid var(--adm-rule); overflow-x: auto; scrollbar-width: none; }

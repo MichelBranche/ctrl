@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { CopyPromptButton } from "@/components/admin/crm/copy-prompt";
 import { CopyButton, FollowUpQuick, OwnerQuick, PanelShell, StageQuick } from "@/components/admin/crm/contact-panel-client";
 import { DealControls } from "@/components/admin/crm/deal-controls";
 import { CrmIcon, day, eur, initials, MapsLink, meetHref, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
@@ -10,6 +11,7 @@ import { AUDIT_LABEL } from "@/lib/audit";
 import { listActivities, type Activity } from "@/lib/crm-activity";
 import { contactHistory, crmOwners, getContact, listNotes, type Contact, type CrmEvent } from "@/lib/crm";
 import { isStage, SOURCE_LABEL, STAGE_LABEL, type DealPriority, type Stage, websiteDomain } from "@/lib/crm-core";
+import { contactEmailPrompt } from "@/lib/crm-prompt";
 import { ATTIVITA, contactEmailPath, CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
 import { canAccess, isFounder } from "@/lib/team-types";
 
@@ -63,7 +65,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal }
   const founder = isFounder(me);
   const [owners, notes, history, activities] = await Promise.all([
     crmOwners(),
-    tab === "note" ? listNotes(id) : Promise.resolve([]),
+    listNotes(id),
     tab === "cronologia" ? contactHistory(id) : Promise.resolve([]),
     tab === "attivita" ? listActivities({ contactId: id, stato: "tutte", scope: founder ? "team" : "mine" }, { id: me.id, founder }) : Promise.resolve([] as Activity[]),
   ]);
@@ -90,6 +92,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal }
           : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessuna email registrata"><CrmIcon d={I.mail} />Email</span>) : null}
         {tel ? <a className="adm-btn adm-btn-sm" href={tel}><CrmIcon d={I.phone} />Chiama</a> : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessun telefono registrato"><CrmIcon d={I.phone} />Chiama</span>}
         {site ? <a className="adm-btn adm-btn-sm" href={site} target="_blank" rel="noopener noreferrer nofollow"><CrmIcon d={I.ext} />Sito</a> : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessun sito registrato"><CrmIcon d={I.ext} />Sito</span>}
+        <CopyPromptButton text={contactEmailPrompt(c, notes)} />
         <details className="crm-menu">
           <summary className="adm-btn adm-btn-sm" aria-label="Altre azioni"><CrmIcon d={I.more} /></summary>
           <div className="crm-menu-list">
