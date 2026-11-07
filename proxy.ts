@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { legacyRubricaPath } from "@/lib/crm-nav";
 import { LANG_COOKIE, localeFromAcceptLanguage, localeFromPath, switchPath, type Locale } from "@/lib/i18n";
 
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|lighthouse/i;
@@ -15,7 +16,8 @@ export function proxy(req: NextRequest) {
 
   // Admin only: keep the area out of search engines and out of shared caches. Auth is checked server-side in every page and action.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    const response = NextResponse.next();
+    const legacy = legacyRubricaPath(pathname, req.nextUrl.searchParams);
+    const response = legacy ? NextResponse.redirect(new URL(legacy, req.url), 307) : NextResponse.next();
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Cache-Control", "private, no-store");
     // The invite link carries a single-use token in the path: never leak it in a Referer header.

@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { signOut } from "@/app/admin/actions";
 import { adminSearch, type SearchHit } from "@/app/admin/dashboard-actions";
+import { CRM_HOME, crmCrumb, RUBRICA } from "@/lib/crm-nav";
 
 type Nav = { href: string; label: string; icon: ReactNode; badge?: "requests" | "email" };
 
@@ -40,6 +41,7 @@ const NAV: Nav[] = [
 const ACTIONS: (SearchHit & { needs?: string })[] = [
   { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new", needs: "/admin/journal" },
   { label: "Nuova email", hint: "Azione", href: "/admin/email?compose=new", needs: "/admin/email" },
+  { label: "Nuovo contatto CRM", hint: "Azione", href: `${RUBRICA}?nuovo=1#nuovo`, needs: CRM_HOME },
   { label: "Registra un lavoro", hint: "Azione", href: "/admin/introiti#nuovo" },
   { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export", needs: "/admin/newsletter" },
   { label: "Apri il sito", hint: "Azione", href: "/" },
@@ -131,6 +133,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, ch
   };
 
   const current = nav.find((n) => isActive(path, n.href));
+  const crmTail = current?.href === CRM_HOME ? crmCrumb(path) : null;
 
   return (
     <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined}>
@@ -173,7 +176,8 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, ch
             {current && current.href !== "/admin" ? (
               <>
                 <span aria-hidden="true">/</span>
-                <span aria-current="page">{current.label}</span>
+                {crmTail ? <Link href={CRM_HOME}>{current.label}</Link> : <span aria-current="page">{current.label}</span>}
+                {crmTail ? <><span aria-hidden="true">/</span><span aria-current="page">{crmTail}</span></> : null}
               </>
             ) : null}
           </nav>
@@ -295,7 +299,7 @@ function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; 
         <input
           ref={input}
           className="adm-palette-input"
-          placeholder="Cerca articoli, richieste, iscritti o sezioni"
+          placeholder="Cerca articoli, richieste, contatti o sezioni"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
