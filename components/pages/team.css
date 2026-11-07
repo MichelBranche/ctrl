@@ -74,14 +74,16 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--t-gap);
-  margin: 0;
+  width: min(100%, calc(320px * 2 + var(--t-gap) + 2 * var(--gutter) + 2px));
+  margin: 0 auto;
   padding: 0 var(--gutter) 6rem;
   list-style: none;
   scroll-margin-top: var(--header);
 }
 
+/* Two founders fill the first row. The inner width is two cards, so the next person wraps below. */
 .t-card {
-  flex: 0 0 min(320px, calc((100% - 2 * var(--t-gap)) / 3));
+  flex: 0 0 min(320px, calc((100% - var(--t-gap)) / 2));
   aspect-ratio: 1;
 }
 
