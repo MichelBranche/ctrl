@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { confirmOwnPassword, getAdmin, recordSecondFactorFailure, secondFactorLocked } from "@/lib/admin";
+import { confirmOwnPassword, getAdmin, recordSecondFactorFailure, reissueAfterRevocation, secondFactorLocked } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
 import { canDisableTwoFactor } from "@/lib/two-factor-policy";
 import { beginSetup, checkSecondFactor, confirmSetup, removeTwoFactor, twoFactorEnabled } from "@/lib/two-factor";
@@ -51,6 +51,7 @@ export async function disableTwoFactor(_: TwoFactorState, form: FormData): Promi
   }
   if (kind === "recovery") await logAction("auth.2fa_recovery_used", { type: "user", id: me.id }, { step: "disable" }, me);
   await removeTwoFactor(me.id);
+  await reissueAfterRevocation();
   await logAction("auth.2fa_disabled", { type: "user", id: me.id }, undefined, me);
   revalidatePath("/admin/settings");
   return { ok: "Verifica in due passaggi disattivata." };

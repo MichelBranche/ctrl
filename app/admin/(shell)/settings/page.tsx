@@ -8,6 +8,7 @@ import { TwoFactorPanel } from "@/components/admin/two-factor";
 import { twoFactorStatus } from "@/lib/two-factor";
 import { canDisableTwoFactor, twoFactorRequired } from "@/lib/two-factor-policy";
 import { requireSection } from "@/lib/admin";
+import { SESSION_HOURS } from "@/lib/session-lifetime";
 import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
 
 export default function SettingsPage() {
@@ -52,7 +53,7 @@ async function Body() {
               <dt>Scade</dt>
               <dd className="adm-num">{fmt(admin.expiresAt)}</dd>
               <dt>Cookie</dt>
-              <dd>httpOnly, SameSite strict, 12 ore</dd>
+              <dd>httpOnly, SameSite strict, {admin.expiresAt - admin.issuedAt > SESSION_HOURS * 3_600_000 ? "3 giorni su questo dispositivo" : "12 ore"}</dd>
             </dl>
           ) : null}
         </section>

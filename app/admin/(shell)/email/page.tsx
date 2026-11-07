@@ -14,6 +14,7 @@ import { stripSignature } from "@/lib/mail/template";
 import { CATEGORIES, folderLabel, isFolder, type MailCategory, type Address, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
 
 import { MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, MailSelection, MailSelectionBar, MailStar } from "@/components/admin/email/mailbox-ui";
+import { MailCatchUp, MailPending, RememberList } from "@/components/admin/email/mail-speed";
 
 import { MailPeople, MailPeopleProvider, MailTeamStatus } from "@/components/admin/email/mail-people";
 
@@ -24,22 +25,10 @@ type SP = Record<string, string | string[] | undefined>;
 export default function EmailPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
     <main className="adm-main adm-mail-main">
-      <Suspense fallback={<MailSkeleton />}>
+      <Suspense fallback={<MailPending />}>
         <Body searchParams={searchParams} />
       </Suspense>
     </main>
-  );
-}
-
-function MailSkeleton() {
-  return (
-    <div aria-busy="true">
-      <div className="adm-skel" style={{ height: "3rem", width: "40%" }} />
-      <div className="adm-mail">
-        <div className="adm-panel"><div className="adm-skel" style={{ height: "24rem" }} /></div>
-        <div className="adm-panel"><div className="adm-skel" style={{ height: "24rem" }} /></div>
-      </div>
-    </div>
   );
 }
 
@@ -93,20 +82,24 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
   if (!provider || !address) return <NotConnected founder={isFounder(me)} />;
 
+  return (
+    <>
+      <Header address={address} q={q} />
+      <Suspense fallback={<MailPending userId={me.id} folder={q.f} page={q.p} search={q.search ?? ""} category={q.category ?? ""} />}>
+        <Mailbox me={me} q={q} address={address} />
+      </Suspense>
+    </>
+  );
+}
+
+async function Mailbox({ me, q, address }: { me: AdminUser; q: Q; address: string }) {
+  const provider = mailProvider();
+  if (!provider) return <MailPending userId={me.id} folder={q.f} warning="Casella non collegata." />;
   let view: MailboxView;
   try {
     view = await provider.view({ folder: q.f, page: q.p, open: q.m, search: q.search, category: q.category });
   } catch (error) {
-    return (
-      <>
-        <Header address={address} q={q} />
-        <section className="adm-panel adm-mail-error">
-          <h2 className="adm-h2">Casella non raggiungibile</h2>
-          <p className="adm-muted">{error instanceof MailError ? error.message : "Errore durante la lettura della casella. Riprova tra poco."}</p>
-          <Link className="adm-btn" href={href({ f: q.f }) as Route}>Riprova</Link>
-        </section>
-      </>
-    );
+    return <MailPending userId={me.id} folder={q.f} page={q.p} search={q.search ?? ""} category={q.category ?? ""} warning={error instanceof MailError ? error.message : "Errore durante la lettura della casella. Riprova tra poco."} />;
   }
   const keys = [...view.list.map((m) => m.key), ...(view.open ? [view.open.key] : []), ...view.thread.map((t) => t.key)];
   // Independent DB round trips: run them together.
@@ -116,9 +109,12 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   ]);
 
   const detailOpen = Boolean(view.open || q.compose === "new");
+  const snap = { list: view.list, total: view.total, folders: view.folders, labels: view.labels ?? [] };
   return (
     <>
-      <Header address={address} q={q} />
+      <RememberList userId={me.id} folder={q.f} page={q.p} search={q.search ?? ""} category={q.category ?? ""} snap={snap} />
+      <MailCatchUp freshness={view.freshness} />
+      {view.warning || view.freshness === "stale" ? <p className="adm-mail-images" role="status"><span>{view.warning ?? "Lista recente. Aggiornamento in background…"}</span></p> : null}
       <MailPeopleProvider initial={[...collab]}>
       <div className="mail-workspace">
         <aside className="mail-sidebar" aria-label="Navigazione email">

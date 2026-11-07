@@ -32,6 +32,10 @@ export type MailboxView = {
   total: number;
   open: MailMessage | null;
   thread: MailSummary[];
+  /** live: just fetched. fresh: memory, still inside the short window. stale: shown at once while a refresh runs. */
+  freshness?: "live" | "fresh" | "stale";
+  /** Set when the refresh failed and the list on screen is the previous snapshot. */
+  warning?: string;
 };
 export type AttachmentFile = { filename: string; contentType: string; content: Buffer };
 export type ReplyContext = { messageId: string | null; references: string[]; subject: string; replyTo: Address[]; from: Address | null; to: Address[]; cc: Address[] };

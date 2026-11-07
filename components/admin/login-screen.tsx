@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useAnimationControls, useReducedMotion, type V
 import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { signIn, type FormState } from "@/app/admin/actions";
+import { REMEMBER_HOURS, SESSION_HOURS } from "@/lib/session-lifetime";
 import { AuthBackdrop, AuthCursor, ChromeMark, MagneticButton } from "@/components/admin/auth-fx";
 import { RequiredSetup } from "@/components/admin/required-setup";
 import { SecondStepForm } from "@/components/admin/two-factor";
@@ -18,7 +19,7 @@ export const item: Variants = {
 
 /**
  * Admin sign-in: password, 2FA code and the mandatory founder setup, all in one glass card switched with Motion.
- * Security lives server-side and is unchanged: server actions (Next origin check), lockout, signed short-lived tickets.
+ * Security stays server-side: the checkbox only requests a 72-hour cookie, and only after the password and 2FA.
  */
 export function LoginScreen({ initialStep = "password", notice }: { initialStep?: Step; notice?: string }) {
   const [step, setStep] = useState<Step>(initialStep);
@@ -61,6 +62,7 @@ export function LoginScreen({ initialStep = "password", notice }: { initialStep?
                 <p className="adm-auth-kicker">Passo 2 di 2</p>
                 <h1 className="adm-auth-title">Verifica in due passaggi</h1>
                 <p className="adm-auth-sub">Apri l’app di autenticazione e inserisci il codice a 6 cifre.</p>
+                <p className="adm-auth-remember-note">Se hai scelto «Resta collegato», i {REMEMBER_HOURS / 24} giorni partono solo dopo questo codice.</p>
                 <SecondStepForm />
                 {back}
               </motion.div>
@@ -132,6 +134,15 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
             </AnimatePresence>
           </button>
         </FloatField>
+      </motion.div>
+      <motion.div variants={item}>
+        <label className="adm-auth-remember">
+          <input id={`${id}-remember`} name="remember" type="checkbox" value="1" aria-describedby={`${id}-remember-note`} />
+          <span>Resta collegato per {REMEMBER_HOURS / 24} giorni su questo dispositivo</span>
+        </label>
+        <p className="adm-auth-remember-note" id={`${id}-remember-note`}>
+          Se non la spunti, l’accesso dura {SESSION_HOURS} ore. Su un computer condiviso lasciala deselezionata.
+        </p>
       </motion.div>
       <AnimatePresence>
         {state.error ? (

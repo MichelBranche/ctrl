@@ -8,6 +8,7 @@ import {
   MAX_SOURCE_BYTES, MailError, PAGE_SIZE, messageKey, parseSource, pickAttachment, replyContextOf, toMessage,
   type ViewQuery, type MailProvider, type MailboxView, type OutgoingMail,
 } from "@/lib/mail/provider";
+import { LIST_FRESH_MS, LIST_STALE_MS, SnapshotCache } from "@/lib/mail/snapshot";
 import type { FolderId, MailSummary, MailLabel, MailMutation } from "@/lib/mail/types";
 
 /** user/pass authenticate IMAP+SMTP; fromAddress is the visible sender (MAIL_FROM alias, else user). */
@@ -49,19 +50,15 @@ function summary(folder: FolderId, m: FetchMessageObject): MailSummary {
 }
 
 const LIST_QUERY = { uid: true, flags: true, envelope: true, bodyStructure: true, internalDate: true, threadId: true, labels: true } as const;
+type ListSnap = { labels: MailLabel[]; folders: MailboxView["folders"]; list: MailSummary[]; total: number };
 
 export class ImapProvider implements MailProvider {
   private clients = new Set<{ client: ImapFlow; busy: boolean; expiresAt: number; timer?: ReturnType<typeof setTimeout> }>();
   private catalog: { expiresAt: number; labels: MailLabel[]; folders: MailboxView["folders"] } | null = null;
   private paths: Partial<Record<FolderId, string>> | null = null;
-  // Metadata only: never retain message bodies or attachments here. Bounded per account,
-  // expires after 15 seconds, and is bypassed for a fresh folder/manual refresh.
-  private overview = new Map<string, {
-    expiresAt: number;
-    folders: MailboxView["folders"];
-    list: MailSummary[];
-    total: number;
-  }>();
+  /** List metadata only (no message bodies). One cache per mailbox connection, not shared across accounts. */
+  private lists = new SnapshotCache<ListSnap>(LIST_FRESH_MS, LIST_STALE_MS);
+  private opening = new Map<string, Promise<{ open: MailboxView["open"]; thread: MailSummary[] }>>();
 
   constructor(private creds: Creds) {}
 
@@ -121,7 +118,7 @@ export class ImapProvider implements MailProvider {
     });
     const labels: MailLabel[] = boxes.filter((box) => !box.specialUse && box.path !== "INBOX" && !box.flags.has("\\Noselect"))
       .map((box) => ({ id: `label:${box.path}`, name: box.path, unread: box.status?.unseen ?? 0, total: box.status?.messages ?? 0 }));
-    this.catalog = { expiresAt: Date.now() + 15_000, folders, labels };
+    this.catalog = { expiresAt: Date.now() + 30_000, folders, labels };
     return this.catalog;
   }
 
@@ -132,31 +129,25 @@ export class ImapProvider implements MailProvider {
     return this.paths?.[folder === "starred" ? "all" : folder] ?? null;
   }
 
-  async view({ folder, page, open, search = "", category }: ViewQuery): Promise<MailboxView> {
+  private dropCache() {
+    this.lists.invalidate();
+    this.catalog = null;
+    this.opening.clear();
+  }
+
+  /** One page of headers. The catalog is reused; a list view does not throw it away. */
+  private async fetchList({ folder, page, search = "", category }: ViewQuery): Promise<ListSnap> {
     return this.withClient(async (client) => {
-      const cacheKey = JSON.stringify([folder, page, search, category]);
-      for (const [key, entry] of this.overview) {
-        if (entry.expiresAt <= Date.now()) this.overview.delete(key);
-      }
-      if (!open) this.catalog = null;
       const catalog = await this.loadCatalog(client);
-      const cached = open ? this.overview.get(cacheKey) : undefined;
-      const folders = catalog.folders;
       const path = await this.path(client, folder);
       if (!path) throw new MailError("notfound", "Cartella non disponibile.");
-
       let list: MailSummary[] = [];
       let total = 0;
-      let opened: MailboxView["open"] = null;
-      let threadId: string | null = null;
       const lock = await client.getMailboxLock(path, { readOnly: true });
       try {
         total = client.mailbox ? client.mailbox.exists : 0;
         const raw = [search ? `(${search})` : "", category && folder === "inbox" ? `category:${category}` : "", folder === "starred" ? "is:starred" : ""].filter(Boolean).join(" ");
-        if (cached) {
-          list = cached.list;
-          total = cached.total;
-        } else if (raw) {
+        if (raw) {
           const matches = await client.search({ gmraw: raw }, { uid: true });
           const uids = (matches || []).sort((a, b) => b - a);
           total = uids.length;
@@ -166,24 +157,37 @@ export class ImapProvider implements MailProvider {
           const end = total - (page - 1) * PAGE_SIZE;
           if (end >= 1) list = (await client.fetchAll(`${Math.max(1, end - PAGE_SIZE + 1)}:${end}`, LIST_QUERY)).map((m) => summary(folder, m)).reverse();
         }
-        if (!cached) {
-          if (this.overview.size >= 12) this.overview.delete(this.overview.keys().next().value!);
-          this.overview.set(cacheKey, { expiresAt: Date.now() + 15_000, folders, list, total });
-        }
-        if (open) {
-          const head = await client.fetchOne(String(open), { ...LIST_QUERY, size: true }, { uid: true });
-          if (head) {
-            if ((head.size ?? 0) > MAX_SOURCE_BYTES) throw new MailError("toolarge", "Messaggio troppo grande da aprire qui: aprilo in Gmail.");
-            const full = await client.fetchOne(String(open), { uid: true, source: true }, { uid: true });
-            const base = summary(folder, head);
-            threadId = base.threadId;
-            if (full && full.source) opened = toMessage(await parseSource(full.source), base);
-          }
+      } finally {
+        lock.release();
+      }
+      return { labels: catalog.labels, folders: catalog.folders, list, total };
+    });
+  }
+
+  /** Body of one message. Concurrent opens of the same uid share one download. Bodies are not cached. */
+  private fetchOpen(folder: FolderId, open: number): Promise<{ open: MailboxView["open"]; thread: MailSummary[] }> {
+    const key = `${folder}:${open}`;
+    const existing = this.opening.get(key);
+    if (existing) return existing;
+    const flight = this.withClient(async (client) => {
+      const path = await this.path(client, folder);
+      if (!path) return { open: null, thread: [] as MailSummary[] };
+      let opened: MailboxView["open"] = null;
+      let threadId: string | null = null;
+      const lock = await client.getMailboxLock(path, { readOnly: true });
+      try {
+        const head = await client.fetchOne(String(open), { ...LIST_QUERY, size: true }, { uid: true });
+        if (head) {
+          if ((head.size ?? 0) > MAX_SOURCE_BYTES) throw new MailError("toolarge", "Messaggio troppo grande da aprire qui: aprilo in Gmail.");
+          const full = await client.fetchOne(String(open), { uid: true, source: true }, { uid: true });
+          const base = summary(folder, head);
+          threadId = base.threadId;
+          // fetchOne resolves to false when the uid is gone. `false` is not null, so ?. would still read .source.
+          if (full && full.source) opened = toMessage(await parseSource(full.source), base);
         }
       } finally {
         lock.release();
       }
-
       let thread: MailSummary[] = [];
       const allPath = threadId ? await this.path(client, "all") : null;
       if (threadId && allPath) {
@@ -198,14 +202,36 @@ export class ImapProvider implements MailProvider {
           tl.release();
         }
       }
-      return { labels: catalog.labels, folders, list, total, open: opened, thread };
+      return { open: opened, thread };
     });
+    this.opening.set(key, flight);
+    void flight.finally(() => {
+      if (this.opening.get(key) === flight) this.opening.delete(key);
+    });
+    return flight;
+  }
+
+  async view(query: ViewQuery): Promise<MailboxView> {
+    const key = JSON.stringify([query.folder, query.page, query.search ?? "", query.category ?? ""]);
+    const snap = await this.lists.read(key, () => this.fetchList(query));
+    let opened: MailboxView["open"] = null;
+    let thread: MailSummary[] = [];
+    if (query.open) {
+      try {
+        const detail = await this.fetchOpen(query.folder, query.open);
+        opened = detail.open;
+        thread = detail.thread;
+      } catch (error) {
+        if (error instanceof MailError && error.kind === "toolarge") throw error;
+        return { ...snap.value, open: null, thread: [], freshness: snap.age, warning: snap.warning ?? "Il messaggio non si è aperto. La lista resta disponibile." };
+      }
+    }
+    return { ...snap.value, open: opened, thread, freshness: snap.age, warning: snap.warning };
   }
 
   async createLabel(name: string) {
     await this.withClient(async (client) => { await client.mailboxCreate(name); });
-    this.catalog = null;
-    this.overview.clear();
+    this.dropCache();
   }
 
   async mutate(folder: FolderId, uids: number[], operation: MailMutation, label?: string) {
@@ -233,8 +259,7 @@ export class ImapProvider implements MailProvider {
         if (!ok) throw new MailError("network", "Operazione non riuscita. Aggiorna la casella e riprova.");
       } finally { lock.release(); }
     });
-    this.overview.clear();
-    this.catalog = null;
+    this.dropCache();
   }
 
   async unread(): Promise<number> {
@@ -258,10 +283,10 @@ export class ImapProvider implements MailProvider {
       // Several cached searches may reference the same message/catalog.
       // Update each list, but adjust each shared counter just once.
       const counters = new Set<MailboxView["folders"]>();
-      for (const entry of this.overview.values()) {
+      this.lists.touch((entry) => {
         const item = entry.list.find((m) => m.folder === folder && m.uid === uid);
         if (item && item.seen !== seen) { item.seen = seen; counters.add(entry.folders); }
-      }
+      });
       for (const folders of counters) {
         const box = folders.find((f) => f.id === folder);
         if (box) box.unread = Math.max(0, box.unread + (seen ? -1 : 1));
@@ -319,7 +344,7 @@ export class ImapProvider implements MailProvider {
           finally { lock.release(); }
         }
       }
-      this.overview.clear(); this.catalog = null;
+      this.dropCache();
       return result.uid;
     });
   }
@@ -364,7 +389,7 @@ export class ImapProvider implements MailProvider {
         const path = await this.path(client, "sent");
         if (path) await client.append(path, raw, ["\\Seen"]);
       });
-      this.overview.clear(); this.catalog = null;
+      this.dropCache();
     } catch {
       console.warn("[mail] copia in Inviati non salvata");
     }
@@ -397,6 +422,7 @@ export class ImapProvider implements MailProvider {
         inReplyTo: mail.inReplyTo ?? undefined,
         references: mail.references?.length ? mail.references : undefined,
       });
+      this.dropCache();
       return { messageId: info.messageId };
     } catch (error) {
       const code = (error as { code?: string })?.code;

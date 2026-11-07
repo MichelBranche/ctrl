@@ -18,7 +18,8 @@ export async function signIn(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").slice(0, 200);
   const password = String(form.get("password") ?? "").slice(0, 500);
   if (!email || !password) return { error: "Inserisci email e password." };
-  const result = await login(email, password);
+  // Absent checkbox (the default) is not a remembered device. Only the explicit value "1" opts in.
+  const result = await login(email, password, form.get("remember") === "1");
   if (result === "unconfigured") return { error: "Accesso non configurato sul server." };
   if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
   if (result === "invalid") return { error: "Credenziali non valide." };
