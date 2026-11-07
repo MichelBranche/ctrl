@@ -11,7 +11,8 @@ import { collabFor } from "@/lib/mail/collab";
 import { MailError, PAGE_SIZE, type MailboxView } from "@/lib/mail/provider";
 import { emailDocument, sanitizeEmailHtml, textDocumentBody } from "@/lib/mail/sanitize";
 import { stripSignature } from "@/lib/mail/template";
-import { CATEGORIES, folderLabel, isFolder, type MailCategory, type Address, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
+import { fmtAddr, longDate, replyDraft, who } from "@/lib/mail/reply";
+import { CATEGORIES, folderLabel, isFolder, type MailCategory, type Collab, type FolderId, type MailMessage, type MailSummary } from "@/lib/mail/types";
 
 import { MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, MailSelection, MailSelectionBar, MailStar } from "@/components/admin/email/mailbox-ui";
 import { MailCatchUp, MailPending, RememberList } from "@/components/admin/email/mail-speed";
@@ -58,9 +59,6 @@ const shortDate = (iso: string) => {
     ? d.toLocaleTimeString("it-IT", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })
     : d.toLocaleDateString("it-IT", { timeZone: TZ, day: "numeric", month: "short" });
 };
-const longDate = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: TZ, dateStyle: "full", timeStyle: "short" });
-const who = (a: Address | null | undefined) => (a ? a.name || a.address : "—");
-const fmtAddr = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address);
 const size = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 
 
@@ -280,22 +278,6 @@ function Pager({ q, total }: { q: Q; total: number }) {
       {q.p < pages ? <Link className="adm-btn adm-btn-sm" href={href({ ...q, p: q.p + 1, m: null, compose: null }) as Route}>Meno recenti →</Link> : <span />}
     </nav>
   );
-}
-
-function quote(msg: MailMessage) {
-  const lines = msg.text.trim().split("\n").slice(0, 200).map((l) => `> ${l}`);
-  return `\n\n\nIl ${longDate(msg.date)}, ${who(msg.from)} ha scritto:\n${lines.join("\n")}`;
-}
-
-function replyDraft(msg: MailMessage, all: boolean) {
-  const target = msg.folder === "sent" ? msg.to : msg.replyTo.length ? msg.replyTo : msg.from ? [msg.from] : [];
-  const cc = all ? [...(msg.folder === "sent" ? [] : msg.to), ...msg.cc].filter((a) => !isAgencyAddress(a.address) && !target.some((t) => t.address === a.address)) : [];
-  return {
-    to: target.map(fmtAddr).join(", "),
-    cc: cc.map(fmtAddr).join(", "),
-    subject: /^re:/i.test(msg.subject) ? msg.subject : `Re: ${msg.subject}`,
-    body: quote(msg),
-  };
 }
 
 function Detail({ q, msg, thread, collab, me, address, labels }: { labels: import("@/lib/mail/types").MailLabel[]; q: Q; msg: MailMessage; thread: MailSummary[]; collab: Map<string, Collab>; me: AdminUser; address: string }) {

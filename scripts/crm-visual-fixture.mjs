@@ -1,8 +1,11 @@
 /*
  * Seeds a throwaway SQLite DB for visual QA of the CRM (no network, no real accounts or credentials):
- *   TURSO_DATABASE_URL=file:/tmp/crm-qa/qa.db SESSION_SECRET=<32+ random chars> node scripts/crm-visual-fixture.mjs [founder|commerciale|pm|empty]
+ *   TURSO_DATABASE_URL=file:/tmp/crm-qa/qa.db SESSION_SECRET=<32+ random chars> node scripts/crm-visual-fixture.mjs [founder|commerciale|pm|posta|vendite|empty]
  * Prints a ctrl_admin cookie value for a fake founder (with a placeholder 2FA row), a fake commerciale without the
- * Email permission, a project manager without crm (Riunioni only), or a founder on an empty CRM. Refuses any URL that is not a local file under the temp dir.
+ * Email permission, a project manager without crm (Riunioni only), a designer with Email but without crm ("posta"), a commerciale with
+ * both CRM and Email ("vendite"), or a founder on an empty CRM. Refuses any URL that is not a local file under the temp dir.
+ * Contact email QA (with AGENCY_MAIL_MOCK=1): "Fratelli Savigliano (QA)" matches the mock mailbox by exact address only
+ * (its stored email has mixed case and spaces), "Cantina senza email (QA)" has none.
  * Rubrica QA: 30+ contacts (pager), Iris reasons, and a former team member ("Marco Ex", removed) still owning a contact.
  * Every contact is fictional (example.test addresses, 0000 phone numbers).
  */
@@ -47,6 +50,8 @@ await run("INSERT OR IGNORE INTO admin_2fa (user_id, secret_enc, last_step, enab
 await addUser("qa-giulia", "Giulia Rossi", ["commerciale"], false);
 await addUser("qa-pm", "Paolo Riunioni", ["project_manager"], false);
 await addUser("qa-ex", "Marco Ex", ["commerciale"], false);
+await addUser("qa-posta", "Dario Posta", ["designer"], true);
+await addUser("qa-vendite", "Vera Vendite", ["commerciale"], true);
 await run("UPDATE admin_users SET active = 0, removed_at = '2026-10-01T09:00:00Z' WHERE id = 'qa-ex'");
 
 const rome = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
@@ -105,10 +110,14 @@ if (who !== "empty" && !(await run("SELECT 1 FROM crm_contacts LIMIT 1")).rows.l
     await run("INSERT INTO audit_log (user_id, user_name, user_email, action, target_type, target_id, details, created_at) VALUES ('qa-michel', 'Michel Branche', 'qa-michel@example.test', ?, 'crm_contact', '00000000-0000-4000-8000-000000000100', ?, ?)",
       [action, JSON.stringify(details), ago(h)]);
   }
+  await run(`INSERT INTO crm_contacts (id, business_name, type, email, city, region, source, score, stage, owner_user_id, created_at, updated_at)
+    VALUES ('00000000-0000-4000-8000-000000000200', 'Fratelli Savigliano (QA)', 'Cantina', '  Info@FratelliSavigliano.example ', 'Diano d''Alba', 'CN', 'radar', 45, 'contattato', 'qa-michel', ?, ?)`, [ago(700), ago(1)]);
+  await run(`INSERT INTO crm_contacts (id, business_name, type, email, city, source, stage, created_at, updated_at)
+    VALUES ('00000000-0000-4000-8000-000000000201', 'Cantina senza email (QA)', 'Cantina', NULL, 'Neive', 'manuale', 'nuovo', ?, ?)`, [ago(90), ago(2)]);
   await run("INSERT INTO crm_notes (id, contact_id, user_id, body, created_at) VALUES ('n-qa-1', '00000000-0000-4000-8000-000000000100', 'qa-michel', 'Prima chiamata: interessati a rifare il sito prima della vendemmia. (dato fixture QA)', ?)", [ago(28)]);
 }
 
-const id = who === "commerciale" ? "qa-giulia" : who === "pm" ? "qa-pm" : "qa-michel";
+const id = { commerciale: "qa-giulia", pm: "qa-pm", posta: "qa-posta", vendite: "qa-vendite" }[who] ?? "qa-michel";
 const token = await new SignJWT({ sv: 1 }).setSubject(id).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("2h")
   .setAudience("ctrl-admin").sign(new TextEncoder().encode(process.env.SESSION_SECRET));
 process.stdout.write(token + "\n");

@@ -10,7 +10,7 @@ import { RubricaToolbar } from "@/components/admin/crm/rubrica-toolbar";
 import { requireSection } from "@/lib/admin";
 import { backfillRequests, countContacts, crmOwners, facets, listContacts, rubricaStats, type ContactFilter } from "@/lib/crm";
 import { isSource, isStage, SOURCE_LABEL } from "@/lib/crm-core";
-import { CRM_HOME, PANEL_TABS, parseRubricaQuery, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS, rubricaSearch, type PanelTab, type RubricaQuery, type RubricaSort } from "@/lib/crm-nav";
+import { contactEmailPath, contactMailSearch, CRM_HOME, defaultContactMail, PANEL_TABS, parseRubricaQuery, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS, rubricaSearch, type PanelTab, type RubricaQuery, type RubricaSort } from "@/lib/crm-nav";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -84,7 +84,11 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const from = total ? (page - 1) * RUBRICA_PAGE_SIZE + 1 : 0;
   const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.source || filter.owner || filter.archived);
   const listKey = rubricaSearch(view, { c: "", tab: "dettagli" });
-  const panelLinks = { close: href({ c: "" }), tabs: Object.fromEntries(PANEL_TABS.map((t) => [t, href({ tab: t })])) as Record<PanelTab, string> };
+  const mailBase = defaultContactMail(view);
+  const panelLinks = {
+    close: href({ c: "" }), tabs: Object.fromEntries(PANEL_TABS.map((t) => [t, href({ tab: t })])) as Record<PanelTab, string>,
+    email: view.c ? { list: `${contactEmailPath(view.c)}${contactMailSearch(mailBase)}`, compose: `${contactEmailPath(view.c)}${contactMailSearch(mailBase, { compose: "new" })}` } : undefined,
+  };
 
   return (
     <div className="crm-rubrica" data-panel={view.c ? "open" : undefined}>
