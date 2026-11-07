@@ -32,7 +32,7 @@ export default function EmailPage({ searchParams }: { searchParams: Promise<SP> 
   );
 }
 
-type Q = { search?: string; category?: MailCategory; f: FolderId; p: number; m: number | null; img: boolean; compose: "new" | "reply" | "all" | "forward" | "draft" | null };
+type Q = { search?: string; category?: MailCategory; f: FolderId; p: number; m: number | null; img: boolean; compose: "new" | "reply" | "all" | "forward" | "draft" | null; to?: string };
 
 function href(q: Partial<Q> & { f: FolderId }): string {
   const s = new URLSearchParams();
@@ -77,6 +77,9 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     img: one(sp.img) === "1",
     compose: compose === "new" || compose === "reply" || compose === "all" || compose === "forward" || compose === "draft" ? compose : null,
   };
+  // Recipient prefill from a CRM contact ("Email" in the contact panel): one plain address, new message only, never sent by itself.
+  const to = one(sp.a)?.trim();
+  if (q.compose === "new" && to && to.length <= 200 && /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/.test(to)) q.to = to;
   const address = agencyAddress();
   const provider = mailProvider();
 
@@ -166,7 +169,7 @@ async function Mailbox({ me, q, address }: { me: AdminUser; q: Q; address: strin
                 <h2 className="adm-h2">Nuova email</h2>
                 <Link className="adm-btn adm-btn-sm adm-mail-back" href={href({ f: q.f, p: q.p }) as Route}>Chiudi</Link>
               </div>
-              <ComposeForm draft={{ to: "", cc: "", subject: "", body: "" }} reply={null} sender={emailSender(me)} from={address} cancelHref={href({ f: q.f, p: q.p })} />
+              <ComposeForm key={`new:${q.to ?? ""}`} draft={{ to: q.to ?? "", cc: "", subject: "", body: "" }} reply={null} sender={emailSender(me)} from={address} cancelHref={href({ f: q.f, p: q.p })} />
             </>
           ) : view.open ? (
             <Detail q={q} msg={view.open} thread={view.thread} collab={collab} me={me} address={address} labels={view.labels ?? []} />

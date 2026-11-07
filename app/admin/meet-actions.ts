@@ -142,7 +142,7 @@ export async function inviteClientAction(_: MeetState, form: FormData): Promise<
   if (contact) {
     const w = longWhen(start, minutes);
     await addNote(contact.id, me.id, `Invito Google Meet inviato a ${email}: "${title}", ${w.day} alle ${w.from} (${minutes} min). Link: ${meetUrl}`);
-    await db().execute({ sql: "UPDATE crm_contacts SET next_action = ?, next_action_at = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [`Riunione Meet: ${title} alle ${w.from}`.slice(0, 300), date, contact.id] });
+    await db().execute({ sql: "UPDATE crm_contacts SET next_action = ?, next_action_at = ?, version = version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?", args: [`Riunione Meet: ${title} alle ${w.from}`.slice(0, 300), date, contact.id] });
     if (contact.stage === "nuovo" || contact.stage === "contattato") await setStage(contact.id, "call");
     revalidatePath(`/admin/crm/${contact.id}`);
     for (const s of CRM_SECTIONS) revalidatePath(s.href);

@@ -271,8 +271,14 @@ export async function backfillRoles(): Promise<void> {
 let crmReady: Promise<void> | null = null;
 /** CRM tables (mirrors db/012_crm.sql, inline so the serverless bundle needs no file reads). Idempotent, once per instance. */
 export function ensureCrmSchema(): Promise<void> {
-  crmReady ??= retryBusy(async () => { await db().batch(CRM_DDL.map((sql) => ({ sql })), "write"); })
-    .catch((error) => { crmReady = null; throw error; });
+  crmReady ??= retryBusy(async () => {
+    // Contacts are read joined to admin_users (owner name and whether they are still on the team).
+    await ensureTeamSchema();
+    await db().batch(CRM_DDL.map((sql) => ({ sql })), "write");
+    // Additive only: optimistic-lock counter for contacts (every write bumps it), then the owner index for "Responsabile" filters.
+    await addColumn("crm_contacts", "version", "INTEGER NOT NULL DEFAULT 1");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_owner ON crm_contacts (archived, owner_user_id)");
+  }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }
 

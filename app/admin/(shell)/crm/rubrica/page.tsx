@@ -2,77 +2,134 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ContactForm } from "@/components/admin/crm/contact-form";
-import { CrmHeader, CrmTabs, day, eur, MapsLink, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { ContactPanel } from "@/components/admin/crm/contact-panel";
+import { NewContactShortcut } from "@/components/admin/crm/follow-up-client";
+import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, romeToday } from "@/components/admin/crm/crm-ui";
+import { RubricaTable, type RubricaRow, type SortHead } from "@/components/admin/crm/rubrica-table";
+import { RubricaToolbar } from "@/components/admin/crm/rubrica-toolbar";
 import { requireSection } from "@/lib/admin";
-import { backfillRequests, crmOwners, crmStats, facets, listContacts } from "@/lib/crm";
-import { conversionRate, isSource, isStage, SOURCES, SOURCE_LABEL, STAGES, STAGE_LABEL } from "@/lib/crm-core";
-import { RUBRICA } from "@/lib/crm-nav";
+import { backfillRequests, countContacts, crmOwners, facets, listContacts, rubricaStats, type ContactFilter } from "@/lib/crm";
+import { isSource, isStage, SOURCE_LABEL } from "@/lib/crm-core";
+import { CRM_HOME, PANEL_TABS, parseRubricaQuery, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS, rubricaSearch, type PanelTab, type RubricaQuery, type RubricaSort } from "@/lib/crm-nav";
 
 type SP = Record<string, string | string[] | undefined>;
+
 export default function RubricaPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
-    <main className="adm-main">
-      <Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body searchParams={searchParams} /></Suspense>
+    <main className="adm-main crm-main crm-main-rubrica">
+      <Suspense fallback={<RubricaSkeleton />}><Body searchParams={searchParams} /></Suspense>
     </main>
   );
 }
 
-const one = (v: string | string[] | undefined) => (typeof v === "string" ? v.trim().slice(0, 120) : "");
+function RubricaSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Caricamento della rubrica">
+      <div className="adm-skel" style={{ height: "4.5rem", width: "min(28rem, 80%)", borderRadius: ".6rem" }} />
+      <div className="crm-kpis crm-kpis-5" style={{ marginTop: "2rem" }}>{[0, 1, 2, 3, 4].map((i) => <div key={i} className="adm-skel crm-kpi" style={{ height: "5.5rem" }} />)}</div>
+      <div className="adm-skel" style={{ height: "2.6rem", borderRadius: ".6rem", marginBottom: "1rem" }} />
+      <div className="adm-skel" style={{ height: "24rem", borderRadius: ".9rem" }} />
+    </div>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <aside className="crm-panel crm-panel-loading" aria-busy="true" aria-label="Caricamento della scheda">
+      <div className="adm-skel" style={{ height: "3.5rem", borderRadius: ".6rem" }} />
+      <div className="adm-skel" style={{ height: "2.2rem", borderRadius: ".6rem" }} />
+      <div className="adm-skel" style={{ height: "16rem", borderRadius: ".6rem" }} />
+    </aside>
+  );
+}
+
+const NEW_CONTACT = `${RUBRICA}?nuovo=1#nuovo`;
+const ASC_FIRST: RubricaSort[] = ["nome", "citta", "azione"];
+const KPI = {
+  check: "M20 6L9 17l-5-5",
+  funnel: CRM_ICON["/admin/crm/pipeline"],
+  trophy: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3",
+  clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  upload: "M12 16V4M7 9l5-5 5 5M4 16v4h16v-4",
+};
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
-  await requireSection("crm");
+  const me = await requireSection("crm");
   const sp = await searchParams;
+  const query = parseRubricaQuery(sp);
   // Lazy backfill of site requests into leads: once per instance, never blocks the page on failure.
   await backfillRequests().catch(() => {});
-  const q = one(sp.q), stage = one(sp.fase), type = one(sp.categoria), city = one(sp.citta), source = one(sp.fonte), archived = sp.archivio === "1";
-  const [contacts, f, stats, owners] = await Promise.all([
-    listContacts({ q: q || undefined, stage: isStage(stage) ? stage : undefined, type: type || undefined, city: city || undefined, source: isSource(source) ? source : undefined, archived }),
-    facets(), crmStats(), crmOwners(),
-  ]);
-  const rate = conversionRate(stats.won, stats.lost);
   const today = romeToday();
+  const filter: ContactFilter = {
+    q: query.q || undefined, stage: isStage(query.fase) ? query.fase : undefined, type: query.categoria || undefined, city: query.citta || undefined,
+    source: isSource(query.fonte) ? query.fonte : undefined, archived: query.archivio, owner: query.resp === "me" ? me.id : query.resp || undefined,
+  };
+  const pageOf = (p: number) => listContacts({ ...filter, sort: query.ordina, dir: query.dir, limit: RUBRICA_PAGE_SIZE, offset: (p - 1) * RUBRICA_PAGE_SIZE });
+  const [total, firstTry, stats, f, owners] = await Promise.all([countContacts(filter), pageOf(query.p), rubricaStats(today), facets(), crmOwners()]);
+  const pages = Math.max(1, Math.ceil(total / RUBRICA_PAGE_SIZE));
+  const page = Math.min(query.p, pages);
+  const contacts = page === query.p ? firstTry : await pageOf(page);
+  const view: RubricaQuery = { ...query, p: page };
+  const href = (patch: Partial<RubricaQuery>) => `${RUBRICA}${rubricaSearch(view, patch)}`;
+
+  const sort = Object.fromEntries(RUBRICA_SORTS.map((k) => {
+    const active = view.ordina === k;
+    const next = active ? (view.dir === "asc" ? "desc" : "asc") : ASC_FIRST.includes(k) ? "asc" : "desc";
+    return [k, { href: href({ ordina: k, dir: next, p: 1 }), dir: active ? view.dir : null } satisfies SortHead];
+  })) as Record<RubricaSort, SortHead>;
+  const rows: RubricaRow[] = contacts.map((c) => ({
+    id: c.id, version: c.version, name: c.businessName, type: c.type, stage: c.stage, city: c.city, address: c.address, region: c.region,
+    source: SOURCE_LABEL[c.source], score: c.score, nextAction: c.nextAction, nextActionAt: c.nextActionAt, href: href({ c: c.id }),
+  }));
+  const from = total ? (page - 1) * RUBRICA_PAGE_SIZE + 1 : 0;
+  const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.source || filter.owner || filter.archived);
+  const listKey = rubricaSearch(view, { c: "", tab: "dettagli" });
+  const panelLinks = { close: href({ c: "" }), tabs: Object.fromEntries(PANEL_TABS.map((t) => [t, href({ tab: t })])) as Record<PanelTab, string> };
+
   return (
-    <>
-      <CrmHeader title="Rubrica" intro="Tutti i tuoi contatti: filtrali, gestiscili e passa all'azione.">
-        <Link className="adm-btn adm-btn-primary" href={`${RUBRICA}?nuovo=1#nuovo` as Route}>+ Nuovo contatto</Link>
-      </CrmHeader>
-      <CrmTabs current={RUBRICA} />
-      {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
-      <section className="adm-stats" aria-label="Numeri">
-        <div className="adm-stat"><span className="adm-stat-num">{stats.leadsMonth}</span><span className="adm-muted">Lead questo mese</span></div>
-        <div className="adm-stat"><span className="adm-stat-num">{rate === null ? "n.d." : `${Math.round(rate * 100)}%`}</span><span className="adm-muted">Conversione ({stats.won} vinti, {stats.lost} persi)</span></div>
-        <div className="adm-stat"><span className="adm-stat-num">{eur(stats.openValue) || "0 €"}</span><span className="adm-muted">Pipeline aperta</span></div>
-        <div className="adm-stat"><span className="adm-stat-num">{eur(stats.wonValue) || "0 €"}</span><span className="adm-muted">Valore vinto</span></div>
-      </section>
-      <section className="adm-panel">
-        <div className="adm-panel-head"><h2 className="adm-h2">Rubrica</h2><span className="adm-muted">{contacts.length} contatti</span></div>
-        <form className="crm-filters" method="get">
-          <input className="adm-input" type="search" name="q" defaultValue={q} placeholder="Cerca nome, email, telefono, sito" aria-label="Cerca" />
-          <select className="adm-input" name="fase" defaultValue={stage} aria-label="Fase"><option value="">Tutte le fasi</option>{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
-          <select className="adm-input" name="categoria" defaultValue={type} aria-label="Categoria"><option value="">Tutte le categorie</option>{f.types.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-          <select className="adm-input" name="citta" defaultValue={city} aria-label="Città"><option value="">Tutte le città</option>{f.cities.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-          <select className="adm-input" name="fonte" defaultValue={source} aria-label="Fonte"><option value="">Tutte le fonti</option>{SOURCES.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s]}</option>)}</select>
-          <label className="adm-chip"><input type="checkbox" name="archivio" value="1" defaultChecked={archived} /> Archiviati</label>
-          <button className="adm-btn adm-btn-sm">Filtra</button>
-        </form>
-        {contacts.length ? (
-          <div className="crm-table-wrap"><table className="adm-table">
-            <thead><tr><th>Nome</th><th>Fase</th><th>Città</th><th>Fonte</th><th>Valore</th><th>Prossima azione</th><th>Punteggio</th></tr></thead>
-            <tbody>{contacts.map((c) => (
-              <tr key={c.id}>
-                <td><Link href={`/admin/crm/${c.id}` as Route}>{c.businessName}</Link>{c.type ? <div className="adm-muted">{c.type}</div> : null}</td>
-                <td><span className="adm-badge">{STAGE_LABEL[c.stage]}</span></td>
-                <td>{c.city ?? ""}{c.city || c.address ? <MapsLink contact={c} compact /> : null}</td><td>{SOURCE_LABEL[c.source]}</td><td>{eur(c.valueEur)}</td>
-                <td className={c.nextActionAt && c.nextActionAt.slice(0, 10) < today && !["vinto", "perso"].includes(c.stage) ? "adm-error" : undefined}>{c.nextAction ?? ""}{c.nextActionAt ? <div className="adm-muted">{day(c.nextActionAt)}</div> : null}</td>
-                <td><ScoreBadge score={c.score} /></td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-        ) : <p className="adm-muted">Nessun contatto con questi filtri.</p>}
-      </section>
-      <section className="adm-panel" id="nuovo">
-        <details open={sp.nuovo === "1"}><summary className="adm-h2">+ Nuovo contatto</summary><ContactForm owners={owners} /></details>
-      </section>
-    </>
+    <div className="crm-rubrica" data-panel={view.c ? "open" : undefined}>
+      <div className="crm-rubrica-main">
+        <CrmHeader title="Rubrica" intro="Tutti i tuoi contatti: filtrali, gestiscili e passa all'azione.">
+          <span className="crm-import">
+            <button type="button" className="adm-btn" disabled aria-describedby="crm-import-note"><CrmIcon d={KPI.upload} />Importa</button>
+            <span id="crm-import-note" className="adm-sr">Import da CSV non ancora disponibile: arriverà con anteprima e controllo dei duplicati prima di salvare.</span>
+          </span>
+          <Link className="adm-btn adm-btn-primary" href={NEW_CONTACT as Route}>+ Nuovo contatto</Link>
+        </CrmHeader>
+        <NewContactShortcut href={NEW_CONTACT} />
+        <CrmTabs current={RUBRICA} />
+        {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
+
+        <section className="crm-kpis crm-kpis-5" aria-label="Numeri della rubrica">
+          <Link href={RUBRICA as Route} className="crm-kpi is-hero"><CrmIcon d={CRM_ICON[RUBRICA]} /><span className="crm-kpi-num">{stats.total}</span><span className="crm-kpi-label">Contatti totali</span></Link>
+          <Link href={`${RUBRICA}?fase=contattato` as Route} className="crm-kpi"><CrmIcon d={KPI.check} /><span className="crm-kpi-num">{stats.contacted}</span><span className="crm-kpi-label">Contattati</span></Link>
+          <Link href={`${CRM_HOME}/pipeline` as Route} className="crm-kpi" title="Contatti in fase Call o Preventivo"><CrmIcon d={KPI.funnel} /><span className="crm-kpi-num">{stats.inDeal}</span><span className="crm-kpi-label">In trattativa</span></Link>
+          <Link href={`${RUBRICA}?fase=vinto` as Route} className="crm-kpi"><CrmIcon d={KPI.trophy} /><span className="crm-kpi-num">{stats.won}</span><span className="crm-kpi-label">Vinti</span></Link>
+          <Link href={`${CRM_HOME}/attivita` as Route} className="crm-kpi" data-tone={stats.followUpDue ? "late" : undefined} title="Follow-up di oggi o scaduti"><CrmIcon d={KPI.clock} /><span className="crm-kpi-num">{stats.followUpDue}</span><span className="crm-kpi-label">Da ricontattare</span></Link>
+        </section>
+
+        <RubricaToolbar query={view} types={f.types} cities={f.cities} owners={owners} userId={me.id} />
+
+        {rows.length ? (
+          <RubricaTable key={listKey} rows={rows} activeId={view.c} sort={sort} owners={owners} today={today}
+            pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
+        ) : (
+          <div className="crm-card-panel crm-empty-state">
+            {filtered
+              ? <><p>Nessun contatto con questi filtri.</p><Link className="adm-btn adm-btn-sm" href={(view.c ? `${RUBRICA}?c=${view.c}` : RUBRICA) as Route}>Azzera i filtri</Link></>
+              : <><p>Ancora nessun contatto in rubrica.</p><p className="adm-muted">Aggiungine uno a mano o importa i lead dal Radar.</p><Link className="adm-btn adm-btn-sm adm-btn-primary" href={NEW_CONTACT as Route}>+ Nuovo contatto</Link></>}
+          </div>
+        )}
+
+        <section className="crm-card-panel" id="nuovo">
+          <details open={sp.nuovo === "1"}><summary className="adm-h2">+ Nuovo contatto</summary><ContactForm owners={owners} /></details>
+        </section>
+      </div>
+      {view.c ? (
+        <Suspense key={`${view.c}:${view.tab}`} fallback={<PanelSkeleton />}>
+          <ContactPanel id={view.c} tab={view.tab} me={me} links={panelLinks} />
+        </Suspense>
+      ) : null}
+    </div>
   );
 }

@@ -5,6 +5,8 @@
  * and /api/crm/ingest auth (503 unconfigured, 401 wrong bearer, 400 bad payload, 200 + dedupe).
  * Phase 1: Radar sends need the Email permission and the send limits, Meet never touches CRM data without crm,
  * follow-up scope and "done", Oggi counts, palette search, CRM sections, old rubrica links through the proxy.
+ * Phase 2: optimistic version on every contact writer, former members kept as owners, rubrica URL state and saved
+ * views, panel quick actions and bulk changes (partial results, permissions, never email).
  * Mail goes to an in-memory fake provider: nothing leaves the machine.
  */
 import assert from "node:assert/strict";
@@ -67,10 +69,15 @@ try {
 
   // 3. DB dedupe + site leads.
   const { db } = await import("../lib/db.ts");
-  for (const f of readdirSync("db").filter((f) => f.endsWith(".sql")).sort()) await db().executeMultiple(readFileSync(join("db", f), "utf8"));
+  // crm_contacts as production has it today (no version column): the runtime ensure must add it.
+  const legacy = (f, sql) => (f === "012_crm.sql" ? sql.replace(/,\s*\n\s*version INTEGER[^\n]*/, "") : sql);
+  for (const f of readdirSync("db").filter((f) => f.endsWith(".sql")).sort()) await db().executeMultiple(legacy(f, readFileSync(join("db", f), "utf8")));
+  assert.ok(!(await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "version"), "test starts from a pre-phase-2 table");
   const M = await import("../lib/migrate.ts");
   await M.ensureCrmSchema();
   await M.ensureCrmSchema();
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "version" && Number(r.notnull) === 1 && String(r.dflt_value) === "1"), "version added by ensureCrmSchema");
+  assert.ok((await db().execute("SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'crm_contacts_owner'")).rows.length, "owner index");
   const K = await import("../lib/crm.ts");
   const a = await K.createContact({ businessName: "Pizzeria Mario", email: "info@mario.it", phone: "333 1234567", source: "manuale" }, null);
   assert.equal(a.duplicate, false);
@@ -264,6 +271,156 @@ try {
   assert.equal(old.headers.get("x-robots-tag"), "noindex, nofollow");
   assert.equal(proxy(new NextRequest("https://ctrl.test/admin/crm")).headers.get("location"), null, "Oggi itself is not redirected");
   console.log("ok sections + old links");
+
+  // 7. Phase 2: optimistic version on every writer.
+  const base = { businessName: "Concorrenza", email: "conc@vers.it", source: "manuale" };
+  const cc = (await K.createContact(base, "u-sales")).id;
+  const v1 = (await K.getContact(cc)).version;
+  assert.equal(v1, 1, "new contacts start at version 1");
+  assert.equal(await K.updateContact(cc, { ...base, businessName: "Prima" }, v1), "ok");
+  assert.equal(await K.updateContact(cc, { ...base, businessName: "Seconda" }, v1), "conflict", "stale editor never overwrites");
+  assert.equal((await K.getContact(cc)).businessName, "Prima");
+  assert.equal(await K.updateContact("00000000-0000-0000-0000-000000000000", { ...base, email: "nessuno.test@gmail.com" }, 1), "notfound");
+  assert.equal(await K.setStage(cc, "call", v1), "conflict", "stale stage form refused");
+  assert.equal((await K.getContact(cc)).stage, "nuovo");
+  let v = (await K.getContact(cc)).version;
+  assert.deepEqual(await K.setStage(cc, "call"), { from: "nuovo" }, "kanban drag (no version) still moves");
+  assert.equal((await K.getContact(cc)).version, v + 1, "stage change bumps the version");
+  v = (await K.getContact(cc)).version;
+  assert.equal(await K.setFollowUp(cc, "Richiamare", tmw, v - 1), "conflict");
+  assert.equal(await K.setFollowUp(cc, "Richiamare", tmw, v), "ok");
+  assert.equal(await K.setOwner(cc, "u-mail", v), "conflict", "owner write with stale version refused");
+  v = (await K.getContact(cc)).version;
+  assert.equal(await K.completeFollowUp(cc, tmw, "u-sales"), "ok");
+  assert.equal((await K.getContact(cc)).version, v + 1, "follow-up done bumps the version");
+  v = (await K.getContact(cc)).version;
+  await K.setArchived(cc, true); await K.setArchived(cc, false);
+  assert.equal((await K.getContact(cc)).version, v + 2, "archive/restore bump the version");
+  v = (await K.getContact(cc)).version;
+  await K.addNote(cc, "u-sales", "Nota");
+  assert.equal((await K.getContact(cc)).version, v, "a note does not invalidate open forms");
+  const va = (await K.getContact(a.id)).version;
+  await signIn("u-mail");
+  const again = await Meet.inviteClientAction({}, form({ ...invite, time: "11:00" }));
+  assert.ok(again.ok, JSON.stringify(again));
+  assert.ok((await K.getContact(a.id)).version > va, "Meet invite bumps the version (open forms see the change)");
+  await signIn("u-sales");
+  v = (await K.getContact(cc)).version;
+  const edit = (o) => form({ id: cc, business_name: "Dal form", email: "conc@vers.it", ...o });
+  assert.match((await A.saveContactAction({}, edit({}))).error ?? "", /ricarica/, "edit without version refused");
+  assert.match((await A.saveContactAction({}, edit({ version: String(v - 1) }))).error ?? "", /modificato/, "stale edit refused with a conflict message");
+  assert.equal((await K.getContact(cc)).businessName, "Prima");
+  assert.ok((await A.saveContactAction({}, edit({ version: String(v) }))).ok);
+  assert.equal((await K.getContact(cc)).businessName, "Dal form");
+  console.log("ok optimistic version");
+
+  // 8. Offboarding: a former member stays responsible until someone explicitly reassigns.
+  await addUser("u-ex", ["commerciale"], false);
+  const ex = (await K.createContact({ businessName: "Cliente di un ex", email: "ex@offb.it", source: "manuale", ownerUserId: "u-ex" }, "u-ex")).id;
+  assert.ok((await K.crmOwners()).some((o) => o.id === "u-ex"));
+  await db().execute("UPDATE admin_users SET active = 0, removed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 'u-ex'");
+  const owners = await K.crmOwners();
+  assert.ok(!owners.some((o) => o.id === "u-ex"), "former member not offered as a new owner");
+  assert.ok(!owners.some((o) => o.id === "u-pm"), "people without crm are not offered");
+  assert.ok(owners.some((o) => o.id === "u-sales"));
+  let exc = await K.getContact(ex);
+  assert.equal(exc.ownerUserId, "u-ex"); assert.equal(exc.ownerActive, false, "flagged as former member"); assert.equal(exc.ownerName, "Utente u-ex");
+  assert.equal((await K.getContact(cc)).ownerActive, null, "no owner, no flag");
+  assert.equal((await K.getContact(f1.id)).ownerActive, true, "active owner");
+  const exEdit = (o) => form({ id: ex, business_name: "Cliente di un ex (modificato)", email: "ex@offb.it", version: String(exc.version), ...o });
+  assert.ok((await A.saveContactAction({}, exEdit({ owner_user_id: "u-ex" }))).ok, "saving with the former owner selected keeps it");
+  exc = await K.getContact(ex);
+  assert.equal(exc.ownerUserId, "u-ex", "historical owner preserved on save");
+  assert.match((await A.saveContactAction({}, exEdit({ version: String(exc.version), owner_user_id: "u-pm" }))).error ?? "", /responsabile/i, "owner without crm refused");
+  assert.match((await A.saveContactAction({}, form({ id: cc, business_name: "Dal form", email: "conc@vers.it", version: String((await K.getContact(cc)).version), owner_user_id: "u-ex" }))).error ?? "", /responsabile/i, "a former member cannot be newly assigned");
+  assert.match((await A.panelOwnerAction({}, form({ id: ex, version: String(exc.version - 1), owner_user_id: "u-mail" }))).error ?? "", /modificato/);
+  assert.ok((await A.panelOwnerAction({}, form({ id: ex, version: String(exc.version), owner_user_id: "u-mail" }))).ok, "explicit reassignment works");
+  exc = await K.getContact(ex);
+  assert.equal(exc.ownerUserId, "u-mail");
+  assert.match((await A.panelOwnerAction({}, form({ id: ex, version: String(exc.version), owner_user_id: "u-ex" }))).error ?? "", /responsabile/i, "no way back to a former member");
+  console.log("ok offboarding owner");
+
+  // 9. Panel quick actions: permissions, versions, legacy follow-up only.
+  v = (await K.getContact(cc)).version;
+  assert.match((await A.panelStageAction({}, form({ id: cc, stage: "preventivo", version: String(v + 3) }))).error ?? "", /modificato/);
+  assert.ok((await A.panelStageAction({}, form({ id: cc, stage: "preventivo", version: String(v) }))).ok);
+  v = (await K.getContact(cc)).version;
+  assert.match((await A.panelFollowUpAction({}, form({ id: cc, version: String(v), next_action_at: "domani" }))).error ?? "", /Data/);
+  assert.ok((await A.panelFollowUpAction({}, form({ id: cc, version: String(v), next_action_at: tmw }))).ok);
+  let ccRow = await K.getContact(cc);
+  assert.equal(ccRow.nextActionAt, tmw); assert.equal(ccRow.nextAction, "Ricontattare", "date alone gets a default text");
+  assert.ok((await A.panelFollowUpAction({}, form({ id: cc, version: String(ccRow.version), clear: "1", next_action: "x", next_action_at: tmw }))).ok);
+  ccRow = await K.getContact(cc);
+  assert.equal(ccRow.nextActionAt, null); assert.equal(ccRow.nextAction, null, "clear removes the follow-up");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE '%task%' OR name LIKE '%activit%' OR name LIKE '%opportun%'")).rows[0].n), 0, "no new follow-up, activity or opportunity tables");
+  await signIn("u-pm");
+  for (const fn of [A.panelStageAction, A.panelFollowUpAction, A.panelOwnerAction]) await assert.rejects(() => fn({}, form({ id: cc, version: "1" })), /unauthorized/);
+  console.log("ok panel actions");
+
+  // 10. Bulk changes: version per contact, partial results reported, permissions, no email.
+  await signIn("u-sales");
+  const mk = async (n) => (await K.createContact({ businessName: `Massa ${n}`, email: `massa.test${n}@gmail.com`, source: "manuale" }, null)).id;
+  const [b1, b2] = [await mk(1), await mk(2)];
+  const stale = { id: b2, version: (await K.getContact(b2)).version };
+  await K.setStage(b2, "contattato");
+  const sentBefore = sent.length;
+  const res1 = await A.bulkContactsAction([{ id: b1, version: (await K.getContact(b1)).version }, stale, { id: "00000000-0000-0000-0000-000000000000", version: 1 }], { kind: "owner", owner: "u-mail" });
+  assert.deepEqual({ updated: res1.updated, changed: res1.changed, missing: res1.missing }, { updated: 1, changed: 1, missing: 1 }, JSON.stringify(res1));
+  assert.match(res1.ok ?? "", /1 aggiornati.*1 modificati da altri.*1 non trovati/);
+  assert.equal((await K.getContact(b1)).ownerUserId, "u-mail");
+  assert.equal((await K.getContact(b2)).ownerUserId, null, "changed-meanwhile contact left alone");
+  const res2 = await A.bulkContactsAction([{ id: b1, version: (await K.getContact(b1)).version }, { id: b2, version: (await K.getContact(b2)).version }], { kind: "stage", stage: "call" });
+  assert.equal(res2.updated, 2);
+  assert.ok(["call"].includes((await K.getContact(b1)).stage) && (await K.getContact(b2)).stage === "call");
+  const res3 = await A.bulkContactsAction([{ id: b1, version: (await K.getContact(b1)).version }], { kind: "followup", at: tmw, text: null });
+  assert.equal(res3.updated, 1); assert.equal((await K.getContact(b1)).nextActionAt, tmw);
+  assert.equal(sent.length, sentBefore, "bulk actions never send email");
+  assert.match((await A.bulkContactsAction([], { kind: "stage", stage: "call" })).error ?? "", /Seleziona/);
+  assert.match((await A.bulkContactsAction(Array.from({ length: 101 }, () => ({ id: b1, version: 1 })), { kind: "stage", stage: "call" })).error ?? "", /Massimo 100/);
+  assert.match((await A.bulkContactsAction([{ id: b1, version: 1 }], { kind: "stage", stage: "boh" })).error ?? "", /Fase/);
+  assert.match((await A.bulkContactsAction([{ id: b1, version: 1 }], { kind: "owner", owner: "u-pm" })).error ?? "", /responsabile/i);
+  assert.match((await A.bulkContactsAction([{ id: b1, version: 1 }], { kind: "owner", owner: "u-ex" })).error ?? "", /responsabile/i, "bulk cannot assign a former member");
+  assert.match((await A.bulkContactsAction([{ id: "not-an-id", version: 1 }], { kind: "stage", stage: "call" })).error ?? "", /non valida/);
+  assert.match((await A.bulkContactsAction([{ id: b1, version: 1 }], { kind: "followup", at: "2026-13-45x", text: null })).error ?? "", /Data/);
+  const audit = (await db().execute({ sql: "SELECT action, details FROM audit_log WHERE target_id = ? ORDER BY id", args: [b1] })).rows;
+  assert.ok(audit.some((r) => r.action === "crm.owner" && JSON.parse(String(r.details)).bulk === true), "one audit entry per contact");
+  const hist = await K.contactHistory(b1);
+  assert.deepEqual(hist.map((e) => e.action).sort(), ["crm.followup_set", "crm.owner", "crm.stage"], "contact history from the audit log");
+  await signIn("u-pm");
+  await assert.rejects(() => A.bulkContactsAction([{ id: b1, version: 1 }], { kind: "stage", stage: "perso" }), /unauthorized/);
+  globalThis.__jar.clear();
+  console.log("ok bulk actions");
+
+  // 11. Rubrica list on the server: count, owner filter, sort, pages, KPIs.
+  const all = await K.listContacts({ limit: 1000 });
+  assert.equal(await K.countContacts({}), all.length);
+  assert.equal(await K.countContacts({ owner: "none" }), all.filter((c) => !c.ownerUserId).length);
+  assert.ok((await K.listContacts({ owner: "u-mail" })).every((c) => c.ownerUserId === "u-mail"));
+  const byName = await K.listContacts({ sort: "nome", dir: "asc", limit: 1000 });
+  assert.deepEqual(byName.map((c) => c.businessName), [...byName.map((c) => c.businessName)].sort((x, y) => x.localeCompare(y, "en", { sensitivity: "base" })), "sort by name");
+  const p1 = await K.listContacts({ sort: "nome", dir: "asc", limit: 3, offset: 0 }), p2 = await K.listContacts({ sort: "nome", dir: "asc", limit: 3, offset: 3 });
+  assert.equal(p1.length, 3); assert.ok(!p1.some((c) => p2.some((d) => d.id === c.id)), "pages do not overlap");
+  const byScore = await K.listContacts({ sort: "punteggio", dir: "desc", limit: 1000 });
+  assert.ok(byScore.every((c, i) => i === 0 || (byScore[i - 1].score ?? -1) >= (c.score ?? -1)));
+  const rs = await K.rubricaStats(today);
+  assert.equal(rs.total, Number((await db().execute("SELECT COUNT(*) AS n FROM crm_contacts WHERE archived = 0")).rows[0].n));
+  assert.equal(rs.inDeal, all.filter((c) => c.stage === "call" || c.stage === "preventivo").length);
+  console.log("ok rubrica list");
+
+  // 12. URL state of the rubrica and saved views (metadata only).
+  const uuid = "123e4567-e89b-42d3-a456-426614174000";
+  const q = N.parseRubricaQuery(new URLSearchParams(`fase=call&q=Mario&p=3&c=${uuid}&tab=note&ordina=nome`));
+  assert.equal(q.dir, "asc", "name sorts A-Z by default"); assert.equal(q.p, 3); assert.equal(q.c, uuid); assert.equal(q.tab, "note");
+  const bad = N.parseRubricaQuery({ c: "../x", tab: "admin", resp: "a b", ordina: "password", p: "-4", dir: "sideways" });
+  assert.deepEqual([bad.c, bad.tab, bad.resp, bad.ordina, bad.p, bad.dir], ["", "dettagli", "", "aggiornato", 1, "desc"], "invalid params fall back to defaults");
+  assert.equal(N.rubricaSearch(q, { c: "" }), "?q=Mario&fase=call&ordina=nome&dir=asc&p=3", "closing the panel keeps filters, sort and page");
+  assert.equal(N.rubricaSearch(q, { c: uuid, tab: "dettagli" }), `?q=Mario&fase=call&ordina=nome&dir=asc&p=3&c=${uuid}`);
+  assert.equal(N.rubricaSearch(N.parseRubricaQuery({})), "", "defaults give a clean URL");
+  assert.equal(N.rubricaSearch(N.parseRubricaQuery({ tab: "note" })), "", "no tab without an open contact");
+  assert.equal(N.savedViewParams(`q=mario%40rossi.it&c=${uuid}&p=4&fase=call&citta=Alba&resp=me&ordina=punteggio&dir=desc`), "fase=call&citta=Alba&resp=me&ordina=punteggio&dir=desc", "saved views drop search text, contact and page");
+  assert.notEqual(N.savedViewsKey("u-sales"), N.savedViewsKey("u-mail"), "views are per user");
+  console.log("ok rubrica url state");
+
   console.log("crm: all checks passed");
 } finally {
   rmSync(dir, { recursive: true, force: true });
