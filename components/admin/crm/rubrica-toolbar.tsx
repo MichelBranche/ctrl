@@ -35,7 +35,7 @@ export function RubricaToolbar({ query, types, cities, owners, userId }: {
       <form ref={form} key={key} className="crm-toolbar-form" method="get" action={RUBRICA} onSubmit={go} role="search" aria-label="Cerca e filtra la rubrica">
         <label className="crm-search">
           <CrmIcon d={SEARCH} /><span className="adm-sr">Cerca</span>
-          <input className="adm-input" type="search" name="q" defaultValue={query.q} maxLength={120} placeholder="Cerca per nome, email, telefono, sito…" />
+          <input className="adm-input" type="search" name="q" defaultValue={query.q} maxLength={120} placeholder="Cerca nome, email, telefono, sito…" />
         </label>
         {query.ordina !== "aggiornato" || query.dir !== "desc" ? <><input type="hidden" name="ordina" value={query.ordina} /><input type="hidden" name="dir" value={query.dir} /></> : null}
         {query.c ? <input type="hidden" name="c" value={query.c} /> : null}

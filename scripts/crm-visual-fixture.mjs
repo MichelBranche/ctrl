@@ -3,6 +3,8 @@
  *   TURSO_DATABASE_URL=file:/tmp/crm-qa/qa.db SESSION_SECRET=<32+ random chars> node scripts/crm-visual-fixture.mjs [founder|commerciale|pm|empty]
  * Prints a ctrl_admin cookie value for a fake founder (with a placeholder 2FA row), a fake commerciale without the
  * Email permission, a project manager without crm (Riunioni only), or a founder on an empty CRM. Refuses any URL that is not a local file under the temp dir.
+ * Rubrica QA: 30+ contacts (pager), Iris reasons, and a former team member ("Marco Ex", removed) still owning a contact.
+ * Every contact is fictional (example.test addresses, 0000 phone numbers).
  */
 import { registerHooks } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
@@ -44,6 +46,8 @@ await addUser("qa-michel", "Michel Branche", ["founder"], true);
 await run("INSERT OR IGNORE INTO admin_2fa (user_id, secret_enc, last_step, enabled_at) VALUES ('qa-michel', 'fixture-not-a-secret', 0, '2026-01-01T00:00:00Z')");
 await addUser("qa-giulia", "Giulia Rossi", ["commerciale"], false);
 await addUser("qa-pm", "Paolo Riunioni", ["project_manager"], false);
+await addUser("qa-ex", "Marco Ex", ["commerciale"], false);
+await run("UPDATE admin_users SET active = 0, removed_at = '2026-10-01T09:00:00Z' WHERE id = 'qa-ex'");
 
 const rome = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 const day = (n) => rome(new Date(Date.now() + n * 86_400_000));
@@ -79,6 +83,29 @@ if (who !== "empty" && !(await run("SELECT 1 FROM crm_contacts LIMIT 1")).rows.l
       [action, type, id, JSON.stringify(details), ago(h)]);
   }
   await run("INSERT INTO crm_drafts (id, contact_id, subject, body_text) VALUES ('d-hotel', '00000000-0000-4000-8000-000000000004', 'Il sito di Hotel Belvedere', 'Buongiorno, abbiamo notato che...')");
+
+  // Rubrica: Langhe wineries from the Radar (fictional), enough for two pages.
+  const towns = [["Diano d'Alba", "Piemonte"], ["Barbaresco", "Piemonte"], ["Treiso", "Piemonte"], ["Neive", "Piemonte"], ["La Morra", "Piemonte"], ["Barolo", "Piemonte"]];
+  const names = ["Cantina Valmora", "La Ca' Nova (QA)", "Cascina Morassino (QA)", "Giordano Pajè (QA)", "Cascina Roccalini (QA)", "Le Rocche dei Barbari (QA)", "Rosanna Sandri (QA)",
+    "Cascina Luisin (QA)", "Cantina del Pino (QA)", "Tenuta Belcolle (QA)", "Poderi Aldo (QA)", "Cascina Fontana (QA)", "Vigna Rionda (QA)", "Cantina Bricco (QA)", "Ca' del Baio (QA)",
+    "Tenuta Montanello (QA)", "Cascina Adelaide (QA)", "Borgogno Fratelli (QA)", "Cantina Gigi (QA)", "Bricco Maiolica (QA)", "Cascina Chicco (QA)", "Poderi Colla (QA)"];
+  const reasons = [["Funzionale ma grezzo/datato."], ["Sito lento su mobile", "Nessun modulo contatti"], ["Ottime recensioni, sito assente"], ["Sito non sicuro (http)"]];
+  for (const [i, name] of names.entries()) {
+    const [city, region] = towns[i % towns.length];
+    const id = `00000000-0000-4000-8000-0000000001${String(i).padStart(2, "0")}`;
+    const slug = name.toLowerCase().replace(/\(qa\)/, "").replace(/[^a-z]+/g, "");
+    await run(`INSERT INTO crm_contacts (id, business_name, type, email, phone, website, address, city, region, source, score, score_reasons, stage, next_action, next_action_at, owner_user_id, created_at, updated_at)
+      VALUES (?, ?, 'Cantina', ?, ?, ?, ?, ?, ?, 'radar', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, name, `${slug}@example.test`, i % 3 === 2 ? null : `+39 0173 0000${String(i).padStart(2, "0")}`, i % 4 === 3 ? null : `https://www.${slug}.example.test/`, i === 0 ? "Via Fixture 1" : null,
+        city, region, [45, 60, 60, 60, 60, 65, 20, 20, 20][i] ?? 30 + ((i * 7) % 50), JSON.stringify(reasons[i % reasons.length]), i < 6 ? "contattato" : "nuovo",
+        i === 0 ? "Ricontattare" : i === 1 ? "In attesa di risposta" : i === 4 ? "Richiamare" : null, i === 0 ? day(0) : i === 1 ? day(-4) : i === 4 ? day(1) : i === 7 ? day(3) : null,
+        i === 2 ? "qa-ex" : i % 5 === 1 ? "qa-giulia" : null, ago(20 + i), ago(10 + i)]);
+  }
+  for (const [action, details, h] of [["crm.contact_create", {}, 72], ["crm.stage", { from: "nuovo", to: "contattato" }, 30], ["crm.followup_set", { at: day(0) }, 6]]) {
+    await run("INSERT INTO audit_log (user_id, user_name, user_email, action, target_type, target_id, details, created_at) VALUES ('qa-michel', 'Michel Branche', 'qa-michel@example.test', ?, 'crm_contact', '00000000-0000-4000-8000-000000000100', ?, ?)",
+      [action, JSON.stringify(details), ago(h)]);
+  }
+  await run("INSERT INTO crm_notes (id, contact_id, user_id, body, created_at) VALUES ('n-qa-1', '00000000-0000-4000-8000-000000000100', 'qa-michel', 'Prima chiamata: interessati a rifare il sito prima della vendemmia. (dato fixture QA)', ?)", [ago(28)]);
 }
 
 const id = who === "commerciale" ? "qa-giulia" : who === "pm" ? "qa-pm" : "qa-michel";

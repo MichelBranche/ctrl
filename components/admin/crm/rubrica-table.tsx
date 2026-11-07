@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, useTransition, type RefObject } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { bulkContactsAction, type BulkChange } from "@/app/admin/crm-actions";
@@ -83,7 +83,7 @@ export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
               <tr key={r.id} data-active={r.id === activeId ? "" : undefined} data-picked={picked.has(r.id) ? "" : undefined}>
                 <td className="crm-col-check"><input type="checkbox" className="crm-cb" aria-label={`Seleziona ${r.name}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} /></td>
                 <td className="crm-col-name">
-                  <Link href={r.href as Route} scroll={false} data-row-link={r.id} aria-current={r.id === activeId ? "true" : undefined}>{r.name}</Link>
+                  <Link href={r.href as Route} scroll={false} data-row-link={r.id} aria-current={r.id === activeId ? "true" : undefined}>{r.name}<Opening /></Link>
                   {r.type ? <span className="crm-sub">{r.type}</span> : null}
                 </td>
                 <td><span className="crm-stage" data-stage={r.stage}>{STAGE_LABEL[r.stage]}</span></td>
@@ -139,6 +139,12 @@ export function RubricaTable({ rows, activeId, sort, pager, owners, today }: {
       </div>
     </div>
   );
+}
+
+/** Inline hint while the panel of a just-clicked row loads (the list stays usable meanwhile). */
+function Opening() {
+  const { pending } = useLinkStatus();
+  return pending ? <span className="crm-opening" role="status"><span className="adm-sr">Apro la scheda…</span></span> : null;
 }
 
 function BulkMenu({ label, icon, disabled, children }: { label: string; icon: string; disabled: boolean; children: (menu: RefObject<HTMLDetailsElement | null>) => React.ReactNode }) {

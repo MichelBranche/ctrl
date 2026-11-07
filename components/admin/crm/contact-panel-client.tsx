@@ -1,11 +1,13 @@
 "use client";
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { panelFollowUpAction, panelOwnerAction, panelStageAction, type CrmState } from "@/app/admin/crm-actions";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
 const MOBILE = "(max-width: 960px)";
+/** Quick forms remount when the contact's version changes (fresh values after a save or a conflict): their result lives here. */
+const Flash = createContext<(s: CrmState) => void>(() => {});
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -16,6 +18,13 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   const router = useRouter();
   const ref = useRef<HTMLElement>(null);
   const [modal, setModal] = useState(false);
+  const [flash, setFlash] = useState<CrmState>({});
+
+  useEffect(() => {
+    if (!flash.ok) return;
+    const t = setTimeout(() => setFlash({}), 4000);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   useEffect(() => {
     const mq = window.matchMedia(MOBILE);
@@ -64,7 +73,12 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   return (
     <>
       {modal ? <div className="crm-sheet-backdrop" aria-hidden="true" onClick={() => router.push(closeHref as Route, { scroll: false })} /> : null}
-      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}>{children}</section>
+      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}>
+        <Flash.Provider value={setFlash}>{children}</Flash.Provider>
+        <div className="crm-panel-flash" aria-live="polite">
+          {flash.error ? <p className="adm-error" role="alert">{flash.error}</p> : flash.ok ? <p className="adm-ok">{flash.ok}</p> : null}
+        </div>
+      </section>
     </>
   );
 }
@@ -90,24 +104,21 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
 /** Server action result shown next to a quick form; on error the form goes back to the saved values. */
 function useQuickAction(fn: (s: CrmState, f: FormData) => Promise<CrmState>) {
   const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useActionState<CrmState, FormData>(async (prev, f) => {
+  const flash = useContext(Flash);
+  const [, action, pending] = useActionState<CrmState, FormData>(async (prev, f) => {
+    flash({});
     const r = await fn(prev, f);
     if (r.error) form.current?.reset();
+    flash(r);
     return r;
   }, {});
-  return { form, state, action, pending };
-}
-
-function Feedback({ state }: { state: CrmState }) {
-  if (state.error) return <p className="adm-error crm-quick-msg" role="alert">{state.error}</p>;
-  if (state.ok) return <p className="adm-ok crm-quick-msg" role="status">{state.ok}</p>;
-  return null;
+  return { form, action, pending };
 }
 
 type Versioned = { id: string; version: number };
 
 export function StageQuick({ contact, stage }: { contact: Versioned; stage: Stage }) {
-  const { form, state, action, pending } = useQuickAction(panelStageAction);
+  const { form, action, pending } = useQuickAction(panelStageAction);
   return (
     <form ref={form} action={action} className="crm-quick-field">
       <input type="hidden" name="id" value={contact.id} /><input type="hidden" name="version" value={contact.version} />
@@ -117,7 +128,6 @@ export function StageQuick({ contact, stage }: { contact: Versioned; stage: Stag
           {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
         </select>
       </span>
-      <Feedback state={state} />
     </form>
   );
 }
@@ -130,7 +140,7 @@ const PRESETS = [["oggi", "Oggi", 0], ["domani", "Domani", 1], ["3g", "Tra 3 gio
 
 /** Legacy follow-up (the only follow-up source until the Attività phase): a date preset or a custom date, optional text. */
 export function FollowUpQuick({ contact, text, at, compact = false }: { contact: Versioned; text: string | null; at: string | null; compact?: boolean }) {
-  const { form, state, action, pending } = useQuickAction(panelFollowUpAction);
+  const { form, action, pending } = useQuickAction(panelFollowUpAction);
   const current = at?.slice(0, 10) ?? "";
   const preset = PRESETS.find(([, , n]) => romeDay(n) === current)?.[0] ?? (current ? "data" : "");
   const [choice, setChoice] = useState<string>(preset);
@@ -157,13 +167,12 @@ export function FollowUpQuick({ contact, text, at, compact = false }: { contact:
       {choice !== preset || date !== current || !compact
         ? <button className="adm-btn adm-btn-sm" disabled={pending}>{pending ? "Salvo…" : choice ? "Salva follow-up" : "Rimuovi follow-up"}</button>
         : null}
-      <Feedback state={state} />
     </form>
   );
 }
 
 export function OwnerQuick({ contact, ownerId, owners, former }: { contact: Versioned; ownerId: string | null; owners: { id: string; name: string }[]; former: string | null }) {
-  const { form, state, action, pending } = useQuickAction(panelOwnerAction);
+  const { form, action, pending } = useQuickAction(panelOwnerAction);
   return (
     <form ref={form} action={action} className="crm-quick-field">
       <input type="hidden" name="id" value={contact.id} /><input type="hidden" name="version" value={contact.version} />
@@ -173,7 +182,6 @@ export function OwnerQuick({ contact, ownerId, owners, former }: { contact: Vers
         {former && ownerId ? <option value={ownerId}>{former}</option> : null}
         {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
-      <Feedback state={state} />
     </form>
   );
 }
