@@ -65,6 +65,9 @@ export class SnapshotCache<T> {
     const existing = this.flights.get(key);
     if (existing) return existing;
     const epoch = this.epoch;
+    // The finally block must see the promise, but the const is not assigned until the
+    // async function returns its promise. The holder is written before any await resumes.
+    const holder: { current?: Promise<T> } = {};
     const flight = (async () => {
       try {
         const value = await run();
@@ -74,9 +77,10 @@ export class SnapshotCache<T> {
         if (epoch === this.epoch && this.entries.has(key)) this.failed.add(key);
         throw error;
       } finally {
-        if (this.flights.get(key) === flight) this.flights.delete(key);
+        if (holder.current && this.flights.get(key) === holder.current) this.flights.delete(key);
       }
     })();
+    holder.current = flight;
     this.flights.set(key, flight);
     return flight;
   }

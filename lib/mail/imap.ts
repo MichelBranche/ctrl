@@ -182,7 +182,8 @@ export class ImapProvider implements MailProvider {
           const full = await client.fetchOne(String(open), { uid: true, source: true }, { uid: true });
           const base = summary(folder, head);
           threadId = base.threadId;
-          if (full?.source) opened = toMessage(await parseSource(full.source), base);
+          // fetchOne resolves to false when the uid is gone. `false` is not null, so ?. would still read .source.
+          if (full && full.source) opened = toMessage(await parseSource(full.source), base);
         }
       } finally {
         lock.release();
