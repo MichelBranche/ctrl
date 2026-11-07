@@ -23,7 +23,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
     // Badge is optional; the Richieste page shows the error state itself.
   }
   return (
-    <AdminShell email={me.email} name={me.name} avatarUrl={me.avatarUrl} allowed={allowed} badges={{ requests: newRequests }}>
+    <AdminShell userId={me.id} email={me.email} name={me.name} avatarUrl={me.avatarUrl} allowed={allowed} badges={{ requests: newRequests }}>
       {children}
     </AdminShell>
   );

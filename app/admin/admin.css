@@ -425,6 +425,7 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-mail-main { max-width: none; padding: 1.5rem 1.5rem 3rem; }
 .adm-mail-main > .adm-top { margin-bottom: 1.25rem; align-items: center; }
 .mail-workspace { display: grid; grid-template-columns: 12rem minmax(0,1fr); gap: 1.25rem; align-items: start; }
+.mail-pending { opacity: .72; }
 .mail-sidebar { position: sticky; top: 1rem; display: grid; gap: .75rem; min-width: 0; }
 .mail-sidebar nav { display: grid; gap: .15rem; }
 .mail-compose-button { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.25rem; margin-bottom: .5rem; background: var(--adm-accent); color: var(--adm-ink); border-radius: .75rem; text-decoration: none; font-weight: 650; }

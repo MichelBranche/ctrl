@@ -134,7 +134,8 @@ async function summarize(b: Stored, folder: FolderId): Promise<MailSummary> {
 
 export class MockProvider implements MailProvider {
   async view({ folder, page, open, search, category }: ViewQuery): Promise<MailboxView> {
-    await new Promise((r) => setTimeout(r, 120)); // a little latency, like a real IMAP round trip
+    const delay = Number(process.env.AGENCY_MAIL_MOCK_DELAY_MS ?? "120");
+    await new Promise((r) => setTimeout(r, Number.isFinite(delay) && delay >= 0 ? delay : 120));
     const st = await state();
     const folders = (["inbox", "sent", "drafts", "all", "spam", "trash"] as const).map((id) => {
       const msgs = inFolder(st, id);

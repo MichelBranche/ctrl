@@ -2,6 +2,8 @@
 
 import { UserAvatar } from "@/components/admin/user-avatar";
 import Link from "next/link";
+import { NavPending } from "@/components/admin/email/mail-speed";
+import { clearMailMemory, noteMailOwner } from "@/lib/mail/list-memory";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { signOut } from "@/app/admin/actions";
@@ -88,7 +90,7 @@ function useEmailUnread(enabled: boolean) {
 const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
-export function AdminShell({ email, name, avatarUrl, allowed, badges, children }: { email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
+export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, children }: { userId: string; email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
   const path = usePathname();
   const nav = NAV.filter((n) => allowed.includes(n.href));
   const emailUnread = useEmailUnread(allowed.includes("/admin/email"));
@@ -105,6 +107,10 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
     setDrawer(false);
     setMenu(false);
   }
+  useEffect(() => {
+    noteMailOwner(userId);
+    return () => clearMailMemory();
+  }, [userId]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -193,7 +199,7 @@ export function AdminShell({ email, name, avatarUrl, allowed, badges, children }
                 <a href="/" target="_blank" rel="noopener noreferrer" role="menuitem" className="adm-menu-item">
                   Apri il sito
                 </a>
-                <form action={signOut}>
+                <form action={signOut} onSubmit={() => clearMailMemory()}>
                   <button role="menuitem" className="adm-menu-item">
                     Esci
                   </button>
@@ -213,7 +219,7 @@ type NavCounts = { requests: number; email: number };
 function NavItem({ item, path, collapsed, counts }: { item: Nav; path: string; collapsed: boolean; counts: NavCounts }) {
   const count = item.badge ? counts[item.badge] : 0;
   return <li><Link href={item.href} className="adm-nav-link" aria-current={isActive(path,item.href) ? "page" : undefined} title={collapsed ? item.label : undefined} aria-label={collapsed ? `${item.label}${count ? `, ${count} nuove` : ""}` : undefined}>
-    {item.icon}<span className="adm-side-text">{item.label}</span>{count ? <span className="adm-count" aria-label={`${count} nuove`}>{count}</span> : null}
+    {item.icon}<NavPending label={item.label} />{count ? <span className="adm-count" aria-label={`${count} nuove`}>{count}</span> : null}
   </Link></li>;
 }
 
@@ -229,7 +235,9 @@ function NavGroup({ id, label, icon, items, path, collapsed, counts }: { id: str
   const [override,setOverride] = useState<boolean | null>(null);
   if (!items.length) return null;
   const active = items.some(item => isActive(path,item.href));
-  const open = override ?? (active || groupPreferences(saved)[id] === true);
+  const stored = groupPreferences(saved)[id];
+  // Comunicazioni (Email) stays open unless the person closed it, so the first click is the link.
+  const open = override ?? (active || (id === "communications" ? stored !== false : stored === true));
   const count = items.reduce((sum,item)=>sum+(item.badge ? counts[item.badge] : 0),0);
   return <li className="adm-nav-group" data-open={open || undefined} data-active={active || undefined}>
     <button type="button" className="adm-nav-link adm-nav-group-toggle" aria-expanded={open} aria-controls={`adm-group-${id}`} onClick={()=>{
