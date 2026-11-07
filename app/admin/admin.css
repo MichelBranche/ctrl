@@ -1237,3 +1237,37 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-mail-top .crm-avatar { width: 2.5rem; height: 2.5rem; font-size: 0.85rem; }
 }
 @media (prefers-reduced-motion: reduce) { .crm-mail-item { transition: none; } }
+
+/* CRM Radar: Rubrica list/panel layout plus the Iris evidence (chips in the list, analysis tab in the panel). */
+.crm-col-iris { min-width: 14rem; }
+.crm-iris-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; max-width: 26rem; }
+.crm-iris-chip { max-width: 14rem; padding: 0.14rem 0.5rem; overflow: hidden; border: 1px solid color-mix(in srgb, var(--adm-accent) 28%, var(--adm-rule)); border-radius: 0.4rem; background: color-mix(in srgb, var(--adm-accent) 8%, transparent); color: #ffc2a8; font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+.crm-iris-chip.is-more { border-color: var(--adm-rule); background: var(--adm-raise); color: var(--adm-dim); }
+.crm-state-cell { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+.crm-draft-flag { color: var(--adm-accent); font-size: 0.72rem; white-space: nowrap; }
+.crm-draft-flag.is-sent { color: var(--adm-ok); }
+.crm-radar-note { margin: 0.75rem 0 0; font-size: 0.8rem; }
+.crm-radar-note a { color: var(--adm-fg); }
+.crm-iris-analysis { display: flex; flex-direction: column; gap: 0.55rem; }
+.crm-iris-analysis h3 { margin: 0; }
+.crm-iris-analysis h4, .crm-radar-drafts h4 { margin: 0.2rem 0 0; font-size: 0.82rem; font-weight: 600; }
+.crm-iris-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.3rem 0.6rem; font-size: 0.78rem; }
+.crm-iris-score { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; font-size: 0.86rem; }
+.crm-iris-score .crm-score { min-width: 2.3rem; justify-content: center; border-radius: 999px; }
+.crm-iris-score .adm-muted { font-size: 0.78rem; }
+.crm-iris ul.crm-iris-points { display: flex; flex-direction: column; gap: 0.35rem; padding: 0; list-style: none; color: var(--adm-fg); }
+.crm-iris-points li { position: relative; padding: 0.45rem 0.6rem 0.45rem 1.6rem; border: 1px solid var(--adm-rule); border-radius: 0.5rem; background: var(--adm-panel); }
+.crm-iris-points li::before { content: ""; position: absolute; top: 0.85rem; left: 0.65rem; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--adm-accent); }
+.crm-iris-analysis .crm-hint { margin: 0; font-size: 0.76rem; }
+.crm-radar-drafts { display: flex; flex-direction: column; gap: 0.5rem; }
+.crm-radar-drafts details { padding: 0.55rem 0.7rem; border: 1px solid var(--adm-rule); border-radius: 0.6rem; }
+.crm-radar-drafts summary { cursor: pointer; font-size: 0.86rem; }
+.crm-radar-drafts .crm-draft { margin-top: 0.5rem; }
+.crm-radar-drafts .adm-row-actions { flex-wrap: wrap; }
+@media (max-width: 80rem) {
+  .crm-radar[data-panel] .crm-col-iris { display: none; }
+}
+@media (max-width: 40rem) {
+  .crm-col-iris { display: none; }
+  .crm-radar .crm-col-score { display: table-cell; }
+}

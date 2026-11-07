@@ -421,6 +421,64 @@ try {
   assert.notEqual(N.savedViewsKey("u-sales"), N.savedViewsKey("u-mail"), "views are per user");
   console.log("ok rubrica url state");
 
+  // 13. Radar reads the ingest's own rows: no new tables, nothing rewritten, no automatic opportunity.
+  const tables = async () => (await db().execute("SELECT name FROM sqlite_master WHERE type IN ('table','view') ORDER BY name")).rows.map((r) => String(r.name));
+  const snapshot = async () => JSON.stringify([(await db().execute("SELECT * FROM crm_contacts ORDER BY id")).rows, (await db().execute("SELECT * FROM crm_drafts ORDER BY id")).rows]);
+  const tablesBefore = await tables();
+  assert.ok(!tablesBefore.some((t) => /prospect|opportun/i.test(t)), "no separate prospect or opportunity table");
+  const iris = { contacts: [
+    { business_name: "Cantina Alta (test)", email: "alta.test@gmail.com", city: "Alba", region: "CN", type: "Cantina", score: 95, score_reasons: ["Sito non responsive", "Nessun e-commerce"], draft: { subject: "Proposta", body_text: "Ciao" } },
+    { business_name: "Cantina Media (test)", email: "media.test@gmail.com", city: "Bra", score: 50, score_reasons: ["Sito datato"] },
+    { business_name: "Agriturismo Zero (test)", email: "zero.test@gmail.com", city: "Alba" },
+  ] };
+  const r13 = await (await call(`Bearer ${secret}`, iris)).json();
+  assert.deepEqual([r13.inserted, r13.duplicates, Object.keys(r13).sort()], [3, 0, ["duplicates", "ids", "inserted"]], "same ingest contract");
+  const [alta, media, zero] = r13.ids;
+  assert.deepEqual(await tables(), tablesBefore, "ingest and Radar create no tables");
+  const seen = await snapshot();
+  const RS = await K.radarStats();
+  const radarAll = await K.listContacts({ source: "radar", limit: 1000 });
+  const radarDrafts = await K.listDrafts(radarAll.map((c) => c.id));
+  assert.deepEqual(RS, {
+    total: radarAll.length, toReview: radarAll.filter((c) => c.stage === "nuovo").length,
+    priority: radarAll.filter((c) => c.stage === "nuovo" && (c.score ?? 0) >= 70).length,
+    draftsReady: radarDrafts.filter((d) => d.status === "bozza").length, inDeal: radarAll.filter((c) => c.stage === "call" || c.stage === "preventivo").length,
+  }, "radar KPIs match the rows");
+  const band = async (f) => (await K.listContacts({ source: "radar", limit: 1000, ...f })).map((c) => c.id);
+  assert.ok((await band({ scoreMin: 70, scoreMax: 100 })).includes(alta) && !(await band({ scoreMin: 70, scoreMax: 100 })).includes(media), "alta band");
+  assert.ok((await band({ scoreMin: 40, scoreMax: 69 })).includes(media), "media band");
+  assert.deepEqual((await band({ noScore: true })).filter((id) => id === zero), [zero], "no-score band");
+  assert.equal(await K.countContacts({ source: "radar", noScore: true }), radarAll.filter((c) => c.score === null).length);
+  const rf = await K.facets("radar");
+  assert.ok(rf.cities.includes("Bra") && rf.cities.every((x) => radarAll.some((c) => c.city === x)), "facets scoped to the Radar");
+  await K.facets(); await K.countContacts({ source: "radar", scoreMin: 0, scoreMax: 100 });
+  assert.equal(await snapshot(), seen, "Radar reads never rewrite prospects or drafts");
+  const hot = radarAll.find((c) => c.id === alta);
+  assert.equal(hot.stage, "nuovo", "a high score moves nothing by itself"); assert.equal(hot.valueEur, null, "no deal value from the score");
+  assert.equal((await K.listDrafts([alta]))[0].status, "bozza", "ingest drafts wait for a human");
+  assert.deepEqual(await K.setStage(alta, "contattato"), { from: "nuovo" });
+  const resent = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Cantina Alta rinominata", email: "ALTA.test@gmail.com", score: 10, score_reasons: ["altro"] }] })).json();
+  assert.deepEqual([resent.inserted, resent.duplicates, resent.ids[0]], [0, 1, alta], "re-sent prospect dedupes onto the saved one");
+  const kept = await K.getContact(alta);
+  assert.deepEqual([kept.businessName, kept.score, kept.stage, kept.scoreReasons], ["Cantina Alta (test)", 95, "contattato", ["Sito non responsive", "Nessun e-commerce"]], "saved prospects are not changed by a later ingest");
+  assert.equal((await K.listContacts({ q: "Cantina Alta" })).length, 1, "and stay a single Rubrica contact");
+  const radarPage = readFileSync("app/admin/(shell)/crm/radar/page.tsx", "utf8");
+  assert.match(radarPage, /requireSection\("crm"\)/, "Radar page needs the crm section");
+  assert.ok(!/crm-actions|sendDraftAction|sendAllowed/.test(radarPage), "Radar sends only through the shared draft editor");
+  console.log("ok radar ingest compat");
+
+  // 14. Radar URL state.
+  const rq = N.parseRadarQuery(new URLSearchParams(`prio=alta&fase=nuovo&c=${uuid}`));
+  assert.deepEqual([rq.prio, rq.ordina, rq.dir, rq.tab], ["alta", "punteggio", "desc", "analisi"], "best score first, panel on the Iris analysis");
+  assert.equal(N.radarSearch(rq), `?fase=nuovo&c=${uuid}&prio=alta`);
+  assert.equal(N.radarSearch(rq, { tab: "note" }), `?fase=nuovo&c=${uuid}&prio=alta&tab=note`);
+  assert.equal(N.radarSearch(rq, { c: "" }), "?fase=nuovo&prio=alta", "closing the panel keeps the filters");
+  assert.equal(N.radarSearch(N.parseRadarQuery({})), "", "defaults give a clean URL");
+  assert.equal(N.radarSearch(N.parseRadarQuery({ ordina: "aggiornato" })), "?ordina=aggiornato&dir=desc", "the Rubrica default is explicit here");
+  const rbad = N.parseRadarQuery({ prio: "urgente", tab: "admin", c: "../x" });
+  assert.deepEqual([rbad.prio, rbad.tab, rbad.c], ["", "analisi", ""], "invalid Radar params fall back");
+  console.log("ok radar url state");
+
   console.log("crm: all checks passed");
 } finally {
   rmSync(dir, { recursive: true, force: true });

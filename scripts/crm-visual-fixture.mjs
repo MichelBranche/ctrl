@@ -114,6 +114,13 @@ if (who !== "empty" && !(await run("SELECT 1 FROM crm_contacts LIMIT 1")).rows.l
     VALUES ('00000000-0000-4000-8000-000000000200', 'Fratelli Savigliano (QA)', 'Cantina', '  Info@FratelliSavigliano.example ', 'Diano d''Alba', 'CN', 'radar', 45, 'contattato', 'qa-michel', ?, ?)`, [ago(700), ago(1)]);
   await run(`INSERT INTO crm_contacts (id, business_name, type, email, city, source, stage, created_at, updated_at)
     VALUES ('00000000-0000-4000-8000-000000000201', 'Cantina senza email (QA)', 'Cantina', NULL, 'Neive', 'manuale', 'nuovo', ?, ?)`, [ago(90), ago(2)]);
+  // Radar QA: Iris drafts to review (one already sent) and a prospect Iris sent without score or reasons.
+  for (const [did, cid, subject, status] of [["d-qa-1", "106", "Il sito di Rosanna Sandri (QA)", "bozza"], ["d-qa-2", "107", "Cascina Luisin online (QA)", "bozza"], ["d-qa-3", "103", "Giordano Pajè: proposta (QA)", "inviata"]]) {
+    await run("INSERT INTO crm_drafts (id, contact_id, subject, body_text, status, sent_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [did, `00000000-0000-4000-8000-000000000${cid}`, subject, "Buongiorno, abbiamo visto il vostro sito e avremmo qualche idea. (bozza fixture QA)", status, status === "inviata" ? ago(30) : null]);
+  }
+  await run(`INSERT INTO crm_contacts (id, business_name, type, city, region, source, stage, created_at, updated_at)
+    VALUES ('00000000-0000-4000-8000-000000000202', 'Agriturismo senza punteggio (QA)', 'Agriturismo', 'Treiso', 'CN', 'radar', 'nuovo', ?, ?)`, [ago(3), ago(3)]);
   await run("INSERT INTO crm_notes (id, contact_id, user_id, body, created_at) VALUES ('n-qa-1', '00000000-0000-4000-8000-000000000100', 'qa-michel', 'Prima chiamata: interessati a rifare il sito prima della vendemmia. (dato fixture QA)', ?)", [ago(28)]);
 }
 

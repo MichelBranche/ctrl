@@ -150,6 +150,8 @@ export type ContactFilter = {
   q?: string; stage?: Stage; type?: string; city?: string; source?: Source; archived?: boolean; limit?: number; offset?: number;
   /** "none" = without responsible person; otherwise a user id. */
   owner?: string; sort?: ContactSort; dir?: "asc" | "desc";
+  /** Score band (inclusive); `noScore` = contacts Iris sent without a score. */
+  scoreMin?: number; scoreMax?: number; noScore?: boolean;
 };
 const STAGE_ORDER = `CASE c.stage ${STAGES.map((st, i) => `WHEN '${st}' THEN ${i}`).join(" ")} END`;
 const SORT_SQL: Record<ContactSort, string> = {
@@ -168,6 +170,8 @@ function contactWhere(f: ContactFilter): { where: string; args: InValue[] } {
     where.push("(c.business_name LIKE ? ESCAPE '\\' OR c.contact_name LIKE ? ESCAPE '\\' OR c.email LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\' OR c.website LIKE ? ESCAPE '\\' OR c.city LIKE ? ESCAPE '\\')");
     args.push(like, like, like, like, like, like);
   }
+  if (f.noScore) where.push("c.score IS NULL");
+  else if (f.scoreMin !== undefined || f.scoreMax !== undefined) { where.push("c.score BETWEEN ? AND ?"); args.push(f.scoreMin ?? 0, f.scoreMax ?? 100); }
   if (f.owner === "none") where.push("c.owner_user_id IS NULL");
   else if (f.owner) { where.push("c.owner_user_id = ?"); args.push(f.owner); }
   return { where: where.join(" AND "), args };
@@ -193,11 +197,12 @@ export async function getContact(id: string): Promise<Contact | null> {
 }
 
 /** Distinct categories and cities for the filter menus. */
-export async function facets(): Promise<{ types: string[]; cities: string[] }> {
+export async function facets(source?: Source): Promise<{ types: string[]; cities: string[] }> {
   await ensureCrmSchema();
+  const only = source ? " AND source = ?" : "", args = source ? [source] : [];
   const [t, c] = await Promise.all([
-    db().execute("SELECT DISTINCT type FROM crm_contacts WHERE archived = 0 AND type IS NOT NULL AND type <> '' ORDER BY type LIMIT 200"),
-    db().execute("SELECT DISTINCT city FROM crm_contacts WHERE archived = 0 AND city IS NOT NULL AND city <> '' ORDER BY city COLLATE NOCASE LIMIT 300"),
+    db().execute({ sql: `SELECT DISTINCT type FROM crm_contacts WHERE archived = 0 AND type IS NOT NULL AND type <> ''${only} ORDER BY type LIMIT 200`, args }),
+    db().execute({ sql: `SELECT DISTINCT city FROM crm_contacts WHERE archived = 0 AND city IS NOT NULL AND city <> ''${only} ORDER BY city COLLATE NOCASE LIMIT 300`, args }),
   ]);
   return { types: t.rows.map((r) => String(r.type)), cities: c.rows.map((r) => String(r.city)) };
 }
@@ -405,6 +410,23 @@ export async function inviteContacts(user: Perms): Promise<InviteContact[]> {
 export async function crmOwners(): Promise<{ id: string; name: string }[]> {
   const r = await db().execute(`SELECT id, name, role, ${ROLES_SQL} FROM admin_users WHERE ${CAN_SIGN_IN_SQL} ORDER BY name`);
   return r.rows.filter((x) => canAccess({ roles: rowRoles(x as Record<string, unknown>) }, "crm")).map((x) => ({ id: String(x.id), name: String(x.name) }));
+}
+
+export type RadarStats = { total: number; toReview: number; priority: number; draftsReady: number; inDeal: number };
+/**
+ * Radar KPIs, read-only over what the ingest already writes (source 'radar' contacts and their drafts). "priority" =
+ * still new with a score of 70+; "draftsReady" = Iris drafts waiting for someone to review and send.
+ */
+export async function radarStats(): Promise<RadarStats> {
+  await ensureCrmSchema();
+  const [c, d] = await Promise.all([
+    db().execute(`SELECT COUNT(*) AS total, SUM(CASE WHEN stage = 'nuovo' THEN 1 ELSE 0 END) AS to_review,
+      SUM(CASE WHEN stage = 'nuovo' AND score >= 70 THEN 1 ELSE 0 END) AS priority, SUM(CASE WHEN stage IN ('call','preventivo') THEN 1 ELSE 0 END) AS in_deal
+      FROM crm_contacts WHERE archived = 0 AND source = 'radar'`),
+    db().execute("SELECT COUNT(*) AS n FROM crm_drafts d JOIN crm_contacts c ON c.id = d.contact_id WHERE d.status = 'bozza' AND c.archived = 0 AND c.source = 'radar'"),
+  ]);
+  const x = c.rows[0] ?? {};
+  return { total: Number(x.total ?? 0), toReview: Number(x.to_review ?? 0), priority: Number(x.priority ?? 0), draftsReady: Number(d.rows[0]?.n ?? 0), inDeal: Number(x.in_deal ?? 0) };
 }
 
 export type RubricaStats = { total: number; contacted: number; inDeal: number; won: number; followUpDue: number };
