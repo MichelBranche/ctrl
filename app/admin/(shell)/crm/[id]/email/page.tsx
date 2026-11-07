@@ -7,7 +7,7 @@ import { CrmIcon, initials, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { requireSection } from "@/lib/admin";
 import { getContact } from "@/lib/crm";
 import { SOURCE_LABEL } from "@/lib/crm-core";
-import { CONTACT_MAIL_VIEWS, contactEmailPath, contactMailSearch, PANEL_TABS, parseContactMailQuery, rubricaReturn, type ContactMailQuery, type ContactMailView, type PanelTab } from "@/lib/crm-nav";
+import { CONTACT_MAIL_VIEWS, contactEmailPath, contactMailSearch, MAIL_RETURN_LABEL, mailReturn, PANEL_TABS, parseContactMailQuery, type ContactMailQuery, type ContactMailView, type PanelTab } from "@/lib/crm-nav";
 import { agencyAddress, mailProvider } from "@/lib/mail";
 import { contactAddress } from "@/lib/mail/contact";
 import { canAccess } from "@/lib/team-types";
@@ -57,28 +57,29 @@ async function Body({ params, searchParams }: { params: Promise<{ id: string }>;
   const c = await getContact(id);
   if (!c) notFound();
   const q = parseContactMailQuery(sp);
-  const back = rubricaReturn(c.id, q.back);
+  const back = mailReturn(c.id, q);
+  const backLabel = MAIL_RETURN_LABEL[q.origin];
   const here = (patch: Partial<ContactMailQuery>) => `${contactEmailPath(c.id)}${contactMailSearch(q, patch)}`;
 
   const head = (
     <header className="crm-mail-top">
-      <Link className="crm-icon-btn crm-mail-return" href={back as Route} aria-label="Torna alla rubrica"><CrmIcon d="M15 6l-6 6 6 6" /></Link>
+      <Link className="crm-icon-btn crm-mail-return" href={back as Route} aria-label={backLabel}><CrmIcon d="M15 6l-6 6 6 6" /></Link>
       <span className="crm-avatar" aria-hidden="true">{initials(c.businessName)}</span>
       <div className="crm-mail-who-head">
         <h1 className="adm-h2">{c.businessName} <ScoreBadge score={c.score} /></h1>
         <p className="adm-muted">{[c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
       </div>
       <nav className="crm-mail-tabs" aria-label="Sezioni del contatto">
-        {PANEL_TABS.slice(0, 3).map((t) => <Link key={t} href={rubricaReturn(c.id, q.back, t) as Route}><CrmIcon d={TAB_ICON[t]} />{TAB_LABEL[t]}</Link>)}
+        {PANEL_TABS.slice(0, 3).map((t) => <Link key={t} href={mailReturn(c.id, q, t) as Route}><CrmIcon d={TAB_ICON[t]} />{TAB_LABEL[t]}</Link>)}
         <Link href={here({ m: null, k: "", compose: null, img: false }) as Route} aria-current="page"><CrmIcon d={TAB_ICON.email} />Email</Link>
-        <Link href={rubricaReturn(c.id, q.back, "cronologia") as Route}><CrmIcon d={TAB_ICON.cronologia} />{TAB_LABEL.cronologia}</Link>
+        <Link href={mailReturn(c.id, q, "cronologia") as Route}><CrmIcon d={TAB_ICON.cronologia} />{TAB_LABEL.cronologia}</Link>
       </nav>
     </header>
   );
 
   // Both permissions: CRM (above) and Email. Without Email nothing below touches the mailbox.
   if (!canAccess(me, "email")) {
-    return <>{head}<section className="crm-card-panel crm-mail-off"><p>Non hai accesso alla posta dell&apos;agenzia: chiedi al founder di abilitare la sezione Email.</p><Link className="adm-btn adm-btn-sm" href={back as Route}>← Torna alla rubrica</Link></section></>;
+    return <>{head}<section className="crm-card-panel crm-mail-off"><p>Non hai accesso alla posta dell&apos;agenzia: chiedi al founder di abilitare la sezione Email.</p><Link className="adm-btn adm-btn-sm" href={back as Route}>← {backLabel}</Link></section></>;
   }
   const address = contactAddress(c.email);
   if (!address) {
@@ -90,7 +91,7 @@ async function Body({ params, searchParams }: { params: Promise<{ id: string }>;
   }
   const from = agencyAddress();
   if (!mailProvider() || !from) {
-    return <>{head}<section className="crm-card-panel crm-mail-off"><p>Casella non collegata: la posta del contatto non è disponibile.</p><Link className="adm-btn adm-btn-sm" href={back as Route}>← Torna alla rubrica</Link></section></>;
+    return <>{head}<section className="crm-card-panel crm-mail-off"><p>Casella non collegata: la posta del contatto non è disponibile.</p><Link className="adm-btn adm-btn-sm" href={back as Route}>← {backLabel}</Link></section></>;
   }
   const ctx: ContactMailCtx = { id: c.id, name: c.businessName, address, q, me, from };
   const detailKey = `${q.m ?? ""}:${q.k}:${q.compose ?? ""}:${q.img}`;

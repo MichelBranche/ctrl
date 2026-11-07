@@ -67,7 +67,7 @@ export function OpportunityDialog({ query, stage, owners, me, preset }: {
       return;
     }
     close();
-    const next = pipelineSearch(query, { nuova: false, apri: "", contatto: "", c: contact.id, o: result.id, tab: "dettagli" });
+    const next = pipelineSearch(query, { nuova: false, apri: "", contatto: "", c: contact.id, o: result.id, tab: "dettagli", tipo: "opportunita" });
     router.push(`${PIPELINE}${next}` as Route);
     router.refresh();
   };

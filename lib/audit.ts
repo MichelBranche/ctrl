@@ -123,6 +123,10 @@ export const AUDIT_LABEL: Record<string, string> = {
   "crm.opportunity_create": "Opportunità aperta",
   "crm.opportunity_stage": "Fase opportunità",
   "crm.opportunity_update": "Opportunità aggiornata",
+  "crm.activity_create": "Attività creata",
+  "crm.activity_update": "Attività aggiornata",
+  "crm.activity_done": "Attività completata",
+  "crm.activity_reopen": "Attività riaperta",
 };
 
 /** Deletes audit entries older than 12 months (daily cron). */

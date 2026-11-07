@@ -7,10 +7,11 @@ import { CrmIcon, day, eur, initials, MapsLink, meetHref, ScoreBadge, siteHref, 
 import { NoteForm } from "@/components/admin/crm/note-form";
 import type { AdminUser } from "@/lib/admin";
 import { AUDIT_LABEL } from "@/lib/audit";
+import { listActivities, type Activity } from "@/lib/crm-activity";
 import { contactHistory, crmOwners, getContact, listNotes, type Contact, type CrmEvent } from "@/lib/crm";
 import { isStage, SOURCE_LABEL, STAGE_LABEL, type DealPriority, type Stage, websiteDomain } from "@/lib/crm-core";
-import { contactEmailPath, CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
-import { canAccess } from "@/lib/team-types";
+import { ATTIVITA, contactEmailPath, CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
+import { canAccess, isFounder } from "@/lib/team-types";
 
 const TAB_LABEL: Record<PanelTab, string> = { dettagli: "Dettagli", note: "Note", attivita: "Attività", cronologia: "Cronologia" };
 const I = {
@@ -59,10 +60,12 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal }
     );
   }
   const mail = canAccess(me, "email"), meetings = canAccess(me, "meetings");
-  const [owners, notes, history] = await Promise.all([
+  const founder = isFounder(me);
+  const [owners, notes, history, activities] = await Promise.all([
     crmOwners(),
     tab === "note" ? listNotes(id) : Promise.resolve([]),
     tab === "cronologia" ? contactHistory(id) : Promise.resolve([]),
+    tab === "attivita" ? listActivities({ contactId: id, stato: "tutte", scope: founder ? "team" : "mine" }, { id: me.id, founder }) : Promise.resolve([] as Activity[]),
   ]);
   const site = siteHref(c.website), tel = telHref(c.phone), mailSearch = c.email ? null : websiteDomain(c.website);
   const mailView = links.email ?? { list: contactEmailPath(c.id), compose: `${contactEmailPath(c.id)}?compose=new` };
@@ -151,8 +154,19 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal }
           </>
         ) : tab === "attivita" ? (
           <>
-            <p className="crm-hint adm-muted">Per ora l&apos;unica attività di un contatto è il suo follow-up. Chiamate e task arriveranno con la sezione <Link href={`${CRM_HOME}/attivita` as Route}>Attività</Link>.</p>
-            {c.nextActionAt || c.nextAction ? <p className="crm-current">Attuale: <strong>{c.nextAction ?? "Follow-up"}</strong>{c.nextActionAt ? ` · ${day(c.nextActionAt)}` : ""}</p> : <p className="crm-empty adm-muted">Nessun follow-up pianificato.</p>}
+            <p className="crm-hint adm-muted">Il follow-up resta sulla scheda. Le attività sotto sono solo quelle create nella sezione Attività{founder ? "" : ", e solo le tue"}.</p>
+            <Link className="adm-btn adm-btn-sm" href={`${ATTIVITA}?nuova=1&contatto=${c.id}` as Route}>Nuova attività su questo contatto</Link>
+            {activities.length ? (
+              <ul className="crm-act-upcoming">
+                {activities.map((a) => (
+                  <li key={a.id}>
+                    <Link href={`${ATTIVITA}?a=${a.id}` as Route}>{a.title}</Link>
+                    <span className="adm-muted">{a.doneAt ? "Completata" : a.dueDate}{a.dueTime ? ` · ${a.dueTime}` : ""}{founder && a.assigneeName ? ` · ${a.assigneeName}` : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="crm-empty adm-muted">Nessuna attività collegata.</p>}
+            {c.nextActionAt || c.nextAction ? <p className="crm-current">Follow-up del contatto: <strong>{c.nextAction ?? "Follow-up"}</strong>{c.nextActionAt ? ` · ${day(c.nextActionAt)}` : ""}</p> : <p className="crm-empty adm-muted">Nessun follow-up pianificato.</p>}
             {c.archived ? null : <FollowUpQuick key={`a${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} />}
           </>
         ) : (

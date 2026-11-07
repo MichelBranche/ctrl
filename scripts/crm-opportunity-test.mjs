@@ -79,7 +79,10 @@ try {
 
   const beforeImplicit = await count();
   await K.ingestContact({ business_name: "Iris QA", email: "iris.qa@iris-qa.test", score: 88, score_reasons: ["Lento"], city: "Torino" });
-  await K.setStage((await K.listContacts({ q: "Iris QA" }))[0].id, "contattato");
+  const iris = (await K.listContacts({ q: "Iris QA" }))[0];
+  assert.equal(iris.stage, "nuovo", "a new Iris contact lands in Nuovo");
+  assert.equal(await count(), beforeImplicit, "Iris does not open a deal");
+  await K.setStage(iris.id, "contattato");
   const imported = await I.confirmImport([{ businessName: "Csv Deal QA", email: "csv.deal@csv-deal.test", score: 99, stage: "vinto" }], "u-sales");
   assert.equal(imported.inserted, 1);
   const csv = (await K.listContacts({ q: "Csv Deal QA" }))[0];
@@ -92,6 +95,20 @@ try {
     title: "Call", agenda: null, start: "2026-12-01T10:00", minutes: 30, meetUrl: "https://meet.google.com/abc-defg-hij", eventId: null, createdBy: "u-sales",
   });
   assert.equal(await count(), beforeImplicit, "ingest, import, stage and a Meet row create no deal");
+  const createdTouch = await K.createContact({ businessName: "Gia Contattato", email: "gia.contattato@gia-contattato.test", source: "manuale", stage: "contattato", ownerUserId: "u-sales" }, "u-sales");
+  const touched = await K.getContact(createdTouch.id);
+  assert.equal(touched.stage, "contattato", "an existing stage is not reset");
+  assert.equal((await K.contactTouches([touched.id, csv.id])).size, 0, "owner and stage are not a send");
+  await db().execute({ sql: "INSERT INTO crm_outreach (contact_id, last_sent_at, last_sent_by) VALUES (?, '2026-11-01T10:00:00.000Z', 'u-sales')", args: [touched.id] });
+  const who = await K.contactTouches([touched.id]);
+  assert.equal(who.get(touched.id)?.name, "u-sales");
+  assert.equal(JSON.stringify([...who.values()]).includes("@"), false, "a touch has no email address");
+  assert.equal((await K.contactTouches([csv.id])).size, 0, "a contact without a send stays without an author");
+  const dealsAfterTouch = await count();
+  await K.setStage(touched.id, "call", touched.version);
+  assert.equal((await K.getContact(touched.id)).stage, "call");
+  assert.equal(await count(), dealsAfterTouch, "moving a contact opens no deal");
+  console.log("ok contact board facts");
   assert.equal((await contact(csv.id)).stage, "call");
   console.log("ok no implicit deal");
 

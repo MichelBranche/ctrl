@@ -286,6 +286,8 @@ export function ensureCrmSchema(): Promise<void> {
     )`);
     // Additive only: a deal is its own row. Contact stage is not rewritten. Rollback: DROP TABLE crm_opportunities.
     await db().batch(OPPORTUNITY_DDL.map((sql) => ({ sql })), "write");
+    // Additive only: an activity is its own row. Follow-ups on the contact are not copied. Rollback: DROP TABLE crm_activities.
+    await db().batch(ACTIVITY_DDL.map((sql) => ({ sql })), "write");
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }
@@ -321,6 +323,22 @@ const CRM_DDL = [
  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), sent_at TEXT, sent_by TEXT
 )`,
   "CREATE INDEX IF NOT EXISTS crm_drafts_contact ON crm_drafts (contact_id, created_at)",
+];
+
+const ACTIVITY_DDL = [
+  `CREATE TABLE IF NOT EXISTS crm_activities (
+ id TEXT PRIMARY KEY, contact_id TEXT, opportunity_id TEXT, title TEXT NOT NULL,
+ kind TEXT NOT NULL CHECK (kind IN ('followup','email','call','meeting','radar','altro')),
+ due_date TEXT NOT NULL, due_time TEXT,
+ priority TEXT CHECK (priority IN ('alta','media','bassa')),
+ assignee_user_id TEXT, done_at TEXT, done_by TEXT,
+ version INTEGER NOT NULL DEFAULT 1, idempotency_key TEXT, created_by TEXT,
+ created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+ updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+)`,
+  "CREATE INDEX IF NOT EXISTS crm_activities_assignee ON crm_activities (assignee_user_id, done_at, due_date)",
+  "CREATE INDEX IF NOT EXISTS crm_activities_contact ON crm_activities (contact_id, done_at)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS crm_activities_key ON crm_activities (idempotency_key) WHERE idempotency_key IS NOT NULL",
 ];
 
 const OPPORTUNITY_DDL = [
