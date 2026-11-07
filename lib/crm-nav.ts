@@ -191,3 +191,80 @@ export function radarSearch(q: RadarQuery, patch: Partial<RadarQuery> = {}): str
   const s = out.toString();
   return s ? `?${s}` : "";
 }
+
+/*
+ * Pipeline URL state. `c` opens the shared contact panel, `o` is the deal inside it.
+ * `periodo` filters closed deals and the footer; open deals stay on the board.
+ */
+export const PIPELINE = `${CRM_HOME}/pipeline`;
+export const PIPELINE_PERIODS = ["mese", "trimestre", "tutto"] as const;
+export const PIPELINE_VIEWS = ["kanban", "lista"] as const;
+export type PipelinePeriod = (typeof PIPELINE_PERIODS)[number];
+export type PipelineView = (typeof PIPELINE_VIEWS)[number];
+export type PipelineQuery = {
+  q: string; resp: string; fonte: string; prio: string; periodo: PipelinePeriod; vista: PipelineView;
+  c: string; o: string; tab: PanelTab; perso: boolean; nuova: boolean; contatto: string; apri: string;
+};
+
+export function parsePipelineQuery(sp: Raw): PipelineQuery {
+  const periodo = read(sp, "periodo");
+  const vista = read(sp, "vista");
+  const tab = read(sp, "tab");
+  const prio = read(sp, "prio");
+  const resp = read(sp, "resp");
+  return {
+    q: read(sp, "q"),
+    resp: RESP_RE.test(resp) ? resp : "",
+    fonte: read(sp, "fonte"),
+    prio: prio === "alta" || prio === "media" || prio === "bassa" || prio === "nessuna" ? prio : "",
+    periodo: (PIPELINE_PERIODS as readonly string[]).includes(periodo) ? (periodo as PipelinePeriod) : "mese",
+    vista: vista === "lista" ? "lista" : "kanban",
+    c: ID_RE.test(read(sp, "c")) ? read(sp, "c") : "",
+    o: ID_RE.test(read(sp, "o")) ? read(sp, "o") : "",
+    tab: (PANEL_TABS as readonly string[]).includes(tab) ? (tab as PanelTab) : "dettagli",
+    perso: read(sp, "perso") === "1",
+    nuova: read(sp, "nuova") === "1",
+    contatto: ID_RE.test(read(sp, "contatto")) ? read(sp, "contatto") : "",
+    apri: read(sp, "apri"),
+  };
+}
+
+export function pipelineSearch(q: PipelineQuery, patch: Partial<PipelineQuery> = {}): string {
+  const v = { ...q, ...patch };
+  const out = new URLSearchParams();
+  if (v.q) out.set("q", v.q);
+  if (v.resp) out.set("resp", v.resp);
+  if (v.fonte) out.set("fonte", v.fonte);
+  if (v.prio) out.set("prio", v.prio);
+  if (v.periodo !== "mese") out.set("periodo", v.periodo);
+  if (v.vista === "lista") out.set("vista", "lista");
+  if (v.perso) out.set("perso", "1");
+  if (v.nuova) out.set("nuova", "1");
+  if (v.contatto) out.set("contatto", v.contatto);
+  if (v.apri) out.set("apri", v.apri);
+  if (v.c) out.set("c", v.c);
+  if (v.o) out.set("o", v.o);
+  if (v.c && v.tab !== "dettagli") out.set("tab", v.tab);
+  const s = out.toString();
+  return s ? `?${s}` : "";
+}
+
+/** UTC instant of midnight in Europe/Rome on the first day of the period. Null means no lower bound. */
+export function pipelinePeriodStart(period: PipelinePeriod, now = new Date()): string | null {
+  if (period === "tutto") return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now).map((p) => [p.type, p.value]));
+  const year = Number(parts.year);
+  const month = Number(parts.month);
+  const startMonth = period === "mese" ? month : Math.floor((month - 1) / 3) * 3 + 1;
+  const want = { year, month: startMonth, day: 1 };
+  for (const shift of [0, 1, 2]) {
+    const t = new Date(Date.UTC(want.year, want.month - 1, want.day) - shift * 3_600_000);
+    const got = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Rome", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    }).formatToParts(t).map((p) => [p.type, p.value]));
+    if (Number(got.year) === want.year && Number(got.month) === want.month && Number(got.day) === want.day && got.hour === "00") return t.toISOString();
+  }
+  return new Date(Date.UTC(want.year, want.month - 1, want.day) - 3_600_000).toISOString();
+}

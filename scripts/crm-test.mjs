@@ -352,7 +352,8 @@ try {
   assert.ok((await A.panelFollowUpAction({}, form({ id: cc, version: String(ccRow.version), clear: "1", next_action: "x", next_action_at: tmw }))).ok);
   ccRow = await K.getContact(cc);
   assert.equal(ccRow.nextActionAt, null); assert.equal(ccRow.nextAction, null, "clear removes the follow-up");
-  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE '%task%' OR name LIKE '%activit%' OR name LIKE '%opportun%'")).rows[0].n), 0, "no new follow-up, activity or opportunity tables");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE '%task%' OR name LIKE '%activit%'")).rows[0].n), 0, "no activity tables");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), 0, "ingest, stage, meet and follow-up create no deal");
   await signIn("u-pm");
   for (const fn of [A.panelStageAction, A.panelFollowUpAction, A.panelOwnerAction]) await assert.rejects(() => fn({}, form({ id: cc, version: "1" })), /unauthorized/);
   console.log("ok panel actions");
@@ -425,7 +426,8 @@ try {
   const tables = async () => (await db().execute("SELECT name FROM sqlite_master WHERE type IN ('table','view') ORDER BY name")).rows.map((r) => String(r.name));
   const snapshot = async () => JSON.stringify([(await db().execute("SELECT * FROM crm_contacts ORDER BY id")).rows, (await db().execute("SELECT * FROM crm_drafts ORDER BY id")).rows]);
   const tablesBefore = await tables();
-  assert.ok(!tablesBefore.some((t) => /prospect|opportun/i.test(t)), "no separate prospect or opportunity table");
+  assert.ok(!tablesBefore.some((t) => /prospect/i.test(t)), "no separate prospect table");
+  const dealsBefore = Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n);
   const iris = { contacts: [
     { business_name: "Cantina Alta (test)", email: "alta.test@gmail.com", city: "Alba", region: "CN", type: "Cantina", score: 95, score_reasons: ["Sito non responsive", "Nessun e-commerce"], draft: { subject: "Proposta", body_text: "Ciao" } },
     { business_name: "Cantina Media (test)", email: "media.test@gmail.com", city: "Bra", score: 50, score_reasons: ["Sito datato"] },
@@ -435,6 +437,7 @@ try {
   assert.deepEqual([r13.inserted, r13.duplicates, Object.keys(r13).sort()], [3, 0, ["duplicates", "ids", "inserted"]], "same ingest contract");
   const [alta, media, zero] = r13.ids;
   assert.deepEqual(await tables(), tablesBefore, "ingest and Radar create no tables");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), dealsBefore, "ingest creates no deal");
   const seen = await snapshot();
   const RS = await K.radarStats();
   const radarAll = await K.listContacts({ source: "radar", limit: 1000 });

@@ -139,7 +139,7 @@ const romeDay = (offset: number) => {
 const PRESETS = [["oggi", "Oggi", 0], ["domani", "Domani", 1], ["3g", "Tra 3 giorni", 3], ["7g", "Tra una settimana", 7]] as const;
 
 /** Legacy follow-up (the only follow-up source until the Attività phase): a date preset or a custom date, optional text. */
-export function FollowUpQuick({ contact, text, at, compact = false }: { contact: Versioned; text: string | null; at: string | null; compact?: boolean }) {
+export function FollowUpQuick({ contact, text, at, compact = false, label = "Prossima azione" }: { contact: Versioned; text: string | null; at: string | null; compact?: boolean; label?: string }) {
   const { form, action, pending } = useQuickAction(panelFollowUpAction);
   const current = at?.slice(0, 10) ?? "";
   const preset = PRESETS.find(([, , n]) => romeDay(n) === current)?.[0] ?? (current ? "data" : "");
@@ -154,7 +154,7 @@ export function FollowUpQuick({ contact, text, at, compact = false }: { contact:
   return (
     <form ref={form} action={action} className="crm-quick-field" onReset={() => { setChoice(preset); setDate(current); }}>
       <input type="hidden" name="id" value={contact.id} /><input type="hidden" name="version" value={contact.version} />
-      <label htmlFor={`crm-fu-${compact ? "c" : "f"}`}>Prossima azione</label>
+      <label htmlFor={`crm-fu-${compact ? "c" : "f"}`}>{label}</label>
       <select id={`crm-fu-${compact ? "c" : "f"}`} className="adm-input" value={choice} disabled={pending} onChange={(e) => pick(e.currentTarget.value)}>
         <option value="">Nessuna</option>
         {PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}

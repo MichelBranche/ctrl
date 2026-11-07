@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { CopyButton, FollowUpQuick, OwnerQuick, PanelShell, StageQuick } from "@/components/admin/crm/contact-panel-client";
+import { DealControls } from "@/components/admin/crm/deal-controls";
 import { CrmIcon, day, eur, initials, MapsLink, meetHref, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
 import { NoteForm } from "@/components/admin/crm/note-form";
 import type { AdminUser } from "@/lib/admin";
 import { AUDIT_LABEL } from "@/lib/audit";
 import { contactHistory, crmOwners, getContact, listNotes, type Contact, type CrmEvent } from "@/lib/crm";
-import { isStage, SOURCE_LABEL, STAGE_LABEL, websiteDomain } from "@/lib/crm-core";
+import { isStage, SOURCE_LABEL, STAGE_LABEL, type DealPriority, type Stage, websiteDomain } from "@/lib/crm-core";
 import { contactEmailPath, CRM_HOME, PANEL_TABS, type PanelTab } from "@/lib/crm-nav";
 import { canAccess } from "@/lib/team-types";
 
@@ -30,13 +31,18 @@ const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: 
 export type PanelLinks = { close: string; tabs: Record<PanelTab, string>; email?: { list: string; compose: string } };
 /** Extra first tab a list can mount (Radar: the Iris analysis), rendered by that list. */
 export type PanelAnalysis = { href: string; render: (c: Contact) => ReactNode | Promise<ReactNode> };
+/** The open deal, when the panel is mounted from the pipeline. Its phase is not the contact's stage. */
+export type PanelDeal = {
+  id: string; version: number; stage: Stage; title: string; valueEur: number | null;
+  ownerUserId: string | null; priority: DealPriority | null; former: string | null;
+};
 
 /**
  * Contact side panel, shared by the CRM lists (Rubrica today; Pipeline and Radar can mount it with their own links).
  * Server-rendered from the URL, so the list behind it keeps its filters, sort and page.
  */
-export async function ContactPanel({ id, tab: asked, me, links, analysis }: {
-  id: string; tab: PanelTab | "analisi"; me: AdminUser; links: PanelLinks; analysis?: PanelAnalysis;
+export async function ContactPanel({ id, tab: asked, me, links, analysis, deal }: {
+  id: string; tab: PanelTab | "analisi"; me: AdminUser; links: PanelLinks; analysis?: PanelAnalysis; deal?: PanelDeal;
 }) {
   const tab = asked === "analisi" && !analysis ? "dettagli" : asked;
   const labelId = `crm-panel-${id}`;
@@ -102,7 +108,13 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis }: {
         {c.archived ? <p className="crm-notice">Contatto archiviato: ripristinalo dalla scheda completa per modificarlo.</p> : null}
         {tab === "analisi" ? extra : tab === "dettagli" ? (
           <>
-            {c.archived ? null : (
+            {c.archived ? null : deal ? (
+              <>
+                <p className="crm-hint">Stato del contatto: <strong>{STAGE_LABEL[c.stage]}</strong>. La fase qui sotto è solo della trattativa «{deal.title}».</p>
+                <DealControls key={`${deal.id}:${deal.version}`} deal={deal} owners={owners} former={deal.former} />
+                <FollowUpQuick key={`f${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} compact label="Follow-up del contatto" />
+              </>
+            ) : (
               <div className="crm-quick-row">
                 <StageQuick key={`s${c.version}`} contact={versioned} stage={c.stage} />
                 <FollowUpQuick key={`f${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} compact />
@@ -113,7 +125,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis }: {
               <li><CrmIcon d={I.link} />{site ? <><a href={site} target="_blank" rel="noopener noreferrer nofollow">{c.website}</a><a className="crm-icon-btn" href={site} target="_blank" rel="noopener noreferrer nofollow" aria-label="Apri il sito in una nuova scheda"><CrmIcon d={I.ext} /></a></> : <span className="adm-muted">—</span>}</li>
               <li><CrmIcon d={I.phone} />{tel ? <a href={tel}>{c.phone}</a> : <span className="adm-muted">—</span>}</li>
               <li><CrmIcon d={I.pin} />{place ? <><span>{place}</span><MapsLink contact={c} compact /></> : <span className="adm-muted">—</span>}</li>
-              <li><CrmIcon d={I.tag} /><span className="crm-tags">{c.type ? <span className="crm-tag">{c.type}</span> : null}<span className="crm-tag">{SOURCE_LABEL[c.source]}</span>{c.valueEur !== null ? <span className="crm-tag">{eur(c.valueEur)}</span> : null}</span></li>
+              <li><CrmIcon d={I.tag} /><span className="crm-tags">{c.type ? <span className="crm-tag">{c.type}</span> : null}<span className="crm-tag">{SOURCE_LABEL[c.source]}</span>{!deal && c.valueEur !== null ? <span className="crm-tag">{eur(c.valueEur)}</span> : null}</span></li>
               {c.contactName ? <li><CrmIcon d={I.user} /><span>Referente: {c.contactName}</span></li> : null}
             </ul>
             {c.scoreReasons.length ? (
@@ -122,7 +134,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis }: {
                 <ul>{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
               </section>
             ) : null}
-            {c.archived ? null : (
+            {c.archived || deal ? null : (
               <OwnerQuick key={`o${c.version}`} contact={versioned} ownerId={c.ownerUserId} owners={owners}
                 former={c.ownerUserId && !owners.some((o) => o.id === c.ownerUserId) ? `${c.ownerName ?? "Account eliminato"} (${c.ownerActive === false ? "ex membro" : "senza accesso CRM"})` : null} />
             )}
