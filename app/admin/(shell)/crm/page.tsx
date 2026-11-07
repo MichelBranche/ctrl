@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { ActivityCheck } from "@/components/admin/crm/activity-check";
 import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, eur, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
 import { addDays, FollowUpRows, ScopeSwitch } from "@/components/admin/crm/follow-ups";
@@ -8,6 +9,7 @@ import { requireSection } from "@/lib/admin";
 import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, unassignedContacts, type CrmEvent } from "@/lib/crm";
 import { conversionRate, SOURCE_LABEL, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 import { CRM_HOME, followUpScope, PIPELINE, RUBRICA } from "@/lib/crm-nav";
+import { listActivities } from "@/lib/crm-activity";
 import { opportunityTotals } from "@/lib/crm-opportunity";
 import { isFounder } from "@/lib/team-types";
 
@@ -72,6 +74,10 @@ function describe(e: CrmEvent): { icon: string; title: string; sub: string; tone
       const to = typeof e.details.to === "string" && e.details.to in STAGE_LABEL ? STAGE_LABEL[e.details.to as Stage] : null;
       return { icon: EVENT_ICON.stage, title: "Fase della trattativa", sub: to ? `${who} → ${to}` : who, tone: "accent" };
     }
+    case "crm.activity_create": return { icon: EVENT_ICON.add, title: "Attività creata", sub: e.contactId ? who : "Senza contatto" };
+    case "crm.activity_update": return { icon: EVENT_ICON.edit, title: "Attività aggiornata", sub: e.contactId ? who : "Senza contatto" };
+    case "crm.activity_done": return { icon: EVENT_ICON.done, title: "Attività completata", sub: e.contactId ? who : "Senza contatto", tone: "ok" };
+    case "crm.activity_reopen": return { icon: EVENT_ICON.edit, title: "Attività riaperta", sub: e.contactId ? who : "Senza contatto" };
     case "crm.ingest": {
       const n = Number(e.details.inserted ?? 0), d = Number(e.details.duplicates ?? 0);
       return { icon: EVENT_ICON.radar, title: "Prospect da Iris", sub: `${n} nuovi${d ? `, ${d} già presenti` : ""}`, tone: "violet" };
@@ -91,11 +97,13 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const scope = followUpScope(typeof sp.ambito === "string" ? sp.ambito : undefined, founder);
   const today = romeToday();
   const tomorrow = addDays(today, 1);
-  const [ov, due, events, priority, unassigned, deals] = await Promise.all([
+  const viewer = { id: me.id, founder };
+  const [ov, due, events, priority, unassigned, deals, openActs] = await Promise.all([
     crmOverview(), dueActions(scope === "team" ? null : me.id, today, tomorrow), recentCrmEvents(5).catch(() => []), priorityContacts(3), unassignedContacts(4), opportunityTotals(),
+    listActivities({ scope, stato: "aperte", until: tomorrow }, viewer),
   ]);
   const rate = conversionRate(deals.won, deals.lost);
-  const pipelineStages: Stage[] = ["nuovo", "contattato", "call", "preventivo", "vinto"];
+  const pipelineStages: Stage[] = ["nuovo", "contattato", "call", "preventivo", "vinto", "perso"];
   const feed = events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
   const shown = due.slice(0, 6);
   const first = me.name.trim().split(/\s+/)[0] || me.name;
@@ -138,16 +146,29 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <div className="crm-oggi">
             <section className="crm-card-panel" aria-labelledby="crm-todo-h">
               <div className="crm-panel-head">
-                <h2 id="crm-todo-h" className="adm-h2"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi <span className="crm-count">{due.length}</span></h2>
+                <h2 id="crm-todo-h" className="adm-h2"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi <span className="crm-count">{due.length + openActs.length}</span></h2>
                 <div className="adm-row-actions">
                   {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} /> : null}
                   <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Vedi tutte →</Link>
                 </div>
               </div>
-              {shown.length
-                ? <FollowUpRows items={shown} today={today} showOwner={scope === "team"} />
-                : <p className="adm-muted crm-empty">Niente in scadenza {scope === "team" ? "per il team" : "per te"} oggi e domani. I follow-up si pianificano dalla scheda di ogni contatto.</p>}
-              {due.length > shown.length ? <p className="adm-muted crm-foot">Altri {due.length - shown.length} nella vista Attività.</p> : null}
+              {shown.length ? <FollowUpRows items={shown} today={today} showOwner={scope === "team"} /> : null}
+              {openActs.length ? (
+                <ul className="crm-todo">
+                  {openActs.slice(0, 4).map((a) => (
+                    <li key={a.id} className="crm-todo-row">
+                      <ActivityCheck id={a.id} version={a.version} done={false} label={`Completa ${a.title}`} />
+                      <div className="crm-todo-text">
+                        <Link href={`/admin/crm/attivita?a=${a.id}${scope === "team" ? "&ambito=team" : ""}` as Route} className="crm-todo-title">{a.title}</Link>
+                        <span className="adm-muted">{a.contactName ?? "Senza contatto"} · attività</span>
+                      </div>
+                      <span className="crm-due" data-tone={a.dueDate < today ? "late" : "today"}>{a.dueTime ?? a.dueDate.slice(8)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {!shown.length && !openActs.length ? <p className="adm-muted crm-empty">Niente in scadenza {scope === "team" ? "per il team" : "per te"} oggi e domani. I follow-up si pianificano dalla scheda. Le attività si creano nella sezione Attività.</p> : null}
+              {due.length > shown.length || openActs.length > 4 ? <p className="adm-muted crm-foot">Il resto è nella vista Attività.</p> : null}
             </section>
 
             <section className="crm-card-panel" aria-labelledby="crm-feed-h">
@@ -240,21 +261,21 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
           <section className="crm-card-panel">
             <h2 className="adm-h2"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Pipeline</h2>
-            <p className="adm-muted crm-hint">{deals.open ? `${deals.open} opportunità aperte` : "Nessuna opportunità aperta"}</p>
-            <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${deals.byStage[s]}`).join(", ")}>
-              {pipelineStages.map((s) => (deals.open ? <span key={s} data-stage={s} style={{ flexGrow: deals.byStage[s] }} /> : null))}
+            <p className="adm-muted crm-hint">{ov.total} contatti, nella fase attuale. {deals.open ? `${deals.open} opportunità esplicite a parte.` : "Nessuna opportunità esplicita."}</p>
+            <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}`).join(", ")}>
+              {pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))}
             </div>
             <ul className="crm-legend">
-              {pipelineStages.map((s) => <li key={s}><span className="crm-dot" data-stage={s} />{STAGE_LABEL[s]}<strong>{deals.byStage[s]}</strong></li>)}
+              {pipelineStages.map((s) => <li key={s}><span className="crm-dot" data-stage={s} />{STAGE_LABEL[s]}<strong>{ov.byStage[s]}</strong></li>)}
             </ul>
-            <p className="adm-muted crm-foot">Conta le trattative aperte, non i contatti. Lo storico non è stato convertito.</p>
+            <p className="adm-muted crm-foot">Conta i contatti, non le trattative. La fase non viene azzerata e non apre un&apos;opportunità.</p>
           </section>
 
           <section className="crm-card-panel">
             <h2 className="adm-h2"><CrmIcon d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" /> Accesso rapido</h2>
             <ul className="crm-jump">
               <li><Link href={RUBRICA as Route}><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /><span>Rubrica<small>{ov.total} contatti</small></span>→</Link></li>
-              <li><Link href={"/admin/crm/pipeline" as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Pipeline<small>{deals.open} aperte</small></span>→</Link></li>
+              <li><Link href={"/admin/crm/pipeline" as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Pipeline<small>{ov.total} contatti</small></span>→</Link></li>
               <li><Link href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Radar<small>{ov.radar} da Radar</small></span>→</Link></li>
             </ul>
           </section>

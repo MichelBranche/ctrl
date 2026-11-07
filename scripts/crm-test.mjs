@@ -352,7 +352,22 @@ try {
   assert.ok((await A.panelFollowUpAction({}, form({ id: cc, version: String(ccRow.version), clear: "1", next_action: "x", next_action_at: tmw }))).ok);
   ccRow = await K.getContact(cc);
   assert.equal(ccRow.nextActionAt, null); assert.equal(ccRow.nextAction, null, "clear removes the follow-up");
-  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE '%task%' OR name LIKE '%activit%'")).rows[0].n), 0, "no activity tables");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE '%task%'")).rows[0].n), 0, "no task tables");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_activities")).rows[0].n), 0, "stage, meet and follow-up create no activity");
+  const owned = await K.createContact({ businessName: "Solo responsabile", email: "solo.resp@solo-resp.test", source: "manuale", stage: "contattato", ownerUserId: "u-sales" }, "u-sales");
+  const ownedRow = await K.getContact(owned.id);
+  assert.equal(ownedRow.stage, "contattato");
+  assert.equal((await K.contactTouches([owned.id])).size, 0, "the owner is not the author of a send");
+  await db().execute({ sql: "INSERT INTO crm_outreach (contact_id, last_sent_at, last_sent_by) VALUES (?, '2026-11-02T09:00:00.000Z', 'u-sales')", args: [owned.id] });
+  const touch = (await K.contactTouches([owned.id])).get(owned.id);
+  assert.equal(touch.name, "Utente u-sales");
+  assert.equal(JSON.stringify(touch).includes("@"), false);
+  const beforeDeals = Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n);
+  await signIn("u-sales");
+  const movedContact = await A.moveStageAction(owned.id, "call", ownedRow.version);
+  assert.match(movedContact.ok ?? "", /Call/);
+  assert.equal((await K.getContact(owned.id)).stage, "call");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), beforeDeals, "the contact board move creates no opportunity");
   assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), 0, "ingest, stage, meet and follow-up create no deal");
   await signIn("u-pm");
   for (const fn of [A.panelStageAction, A.panelFollowUpAction, A.panelOwnerAction]) await assert.rejects(() => fn({}, form({ id: cc, version: "1" })), /unauthorized/);
@@ -428,6 +443,7 @@ try {
   const tablesBefore = await tables();
   assert.ok(!tablesBefore.some((t) => /prospect/i.test(t)), "no separate prospect table");
   const dealsBefore = Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n);
+  const activitiesBefore = Number((await db().execute("SELECT COUNT(*) AS n FROM crm_activities")).rows[0].n);
   const iris = { contacts: [
     { business_name: "Cantina Alta (test)", email: "alta.test@gmail.com", city: "Alba", region: "CN", type: "Cantina", score: 95, score_reasons: ["Sito non responsive", "Nessun e-commerce"], draft: { subject: "Proposta", body_text: "Ciao" } },
     { business_name: "Cantina Media (test)", email: "media.test@gmail.com", city: "Bra", score: 50, score_reasons: ["Sito datato"] },
@@ -438,6 +454,7 @@ try {
   const [alta, media, zero] = r13.ids;
   assert.deepEqual(await tables(), tablesBefore, "ingest and Radar create no tables");
   assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), dealsBefore, "ingest creates no deal");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_activities")).rows[0].n), activitiesBefore, "ingest creates no activity");
   const seen = await snapshot();
   const RS = await K.radarStats();
   const radarAll = await K.listContacts({ source: "radar", limit: 1000 });

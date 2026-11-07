@@ -22,6 +22,14 @@ export type DealPriority = (typeof DEAL_PRIORITIES)[number];
 export const DEAL_PRIORITY_LABEL: Record<DealPriority, string> = { alta: "Alta", media: "Media", bassa: "Bassa" };
 export const isDealPriority = (v: unknown): v is DealPriority => (DEAL_PRIORITIES as readonly string[]).includes(String(v));
 
+/** Kind of a CRM activity. A follow-up already stored on the contact is not one of these rows. */
+export const ACTIVITY_KINDS = ["followup", "email", "call", "meeting", "radar", "altro"] as const;
+export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
+export const ACTIVITY_KIND_LABEL: Record<ActivityKind, string> = {
+  followup: "Follow-up", email: "Email", call: "Chiamata", meeting: "Riunione", radar: "Radar", altro: "Attività",
+};
+export const isActivityKind = (v: unknown): v is ActivityKind => (ACTIVITY_KINDS as readonly string[]).includes(String(v));
+
 export const SOURCES = ["sito", "manuale", "radar"] as const;
 export type Source = (typeof SOURCES)[number];
 export const SOURCE_LABEL: Record<Source, string> = { sito: "Sito", manuale: "Manuale", radar: "Radar" };

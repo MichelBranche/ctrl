@@ -11,7 +11,7 @@ import { requireSection } from "@/lib/admin";
 import { countContacts, crmOwners, facets, listContacts, listDrafts, radarStats, type Contact, type ContactFilter } from "@/lib/crm";
 import { isStage, SOURCE_LABEL } from "@/lib/crm-core";
 import {
-  contactEmailPath, CRM_HOME, PANEL_TABS, parseRadarQuery, PRIO_RANGE, RADAR, radarSearch, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS,
+  contactMailHref, CRM_HOME, PANEL_TABS, parseRadarQuery, PRIO_RANGE, RADAR, radarSearch, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS,
   type PanelTab, type RadarQuery, type RubricaSort,
 } from "@/lib/crm-nav";
 import { canAccess } from "@/lib/team-types";
@@ -107,7 +107,10 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const canSend = canAccess(me, "email");
   const panelLinks = {
     close: href({ c: "" }), tabs: Object.fromEntries(PANEL_TABS.map((t) => [t, href({ tab: t })])) as Record<PanelTab, string>,
-    email: view.c ? { list: contactEmailPath(view.c), compose: `${contactEmailPath(view.c)}?compose=new` } : undefined,
+    email: view.c ? {
+      list: contactMailHref(view.c, "radar", radarSearch(view, { c: "", tab: "analisi" }).slice(1)),
+      compose: contactMailHref(view.c, "radar", radarSearch(view, { c: "", tab: "analisi" }).slice(1), true),
+    } : undefined,
   };
   const analysis: PanelAnalysis = { href: href({ tab: "analisi" }), render: (c) => <IrisAnalysis contact={c} canSend={canSend} /> };
 

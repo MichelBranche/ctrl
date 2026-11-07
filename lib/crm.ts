@@ -212,6 +212,53 @@ export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
   const res = await db().execute({ sql: `SELECT ${COLS} ${FROM} WHERE ${where} ORDER BY ${order} LIMIT ? OFFSET ?`, args: [...args, f.limit ?? 500, f.offset ?? 0] });
   return res.rows.map((r) => toContact(r as Record<string, unknown>));
 }
+export type ContactTouch = { at: string; name: string | null };
+
+/**
+ * Latest documented send for each contact: a successful outreach send, a Radar draft marked sent, or the audit row of
+ * that send. The owner and the stage are not evidence. The result is a name and a time, never an email address.
+ * No row means the author cannot be reconstructed.
+ */
+export async function contactTouches(ids: string[]): Promise<Map<string, ContactTouch>> {
+  const out = new Map<string, ContactTouch>();
+  const unique = [...new Set(ids.filter((id) => id))];
+  if (!unique.length) return out;
+  await ensureCrmSchema();
+  await ensureAuditSchema();
+  const consider = (id: unknown, at: unknown, name: unknown) => {
+    if (!id || !at) return;
+    const key = String(id);
+    const when = String(at);
+    const who = name ? String(name) : null;
+    const prev = out.get(key);
+    if (!prev || when > prev.at) out.set(key, { at: when, name: who });
+    else if (when === prev.at && !prev.name && who) out.set(key, { at: when, name: who });
+  };
+  for (let i = 0; i < unique.length; i += 100) {
+    const chunk = unique.slice(i, i + 100);
+    const marks = chunk.map(() => "?").join(",");
+    const [outreach, drafts, audits] = await Promise.all([
+      db().execute({
+        sql: `SELECT o.contact_id AS id, o.last_sent_at AS at, u.name AS name FROM crm_outreach o
+          LEFT JOIN admin_users u ON u.id = o.last_sent_by WHERE o.last_sent_at IS NOT NULL AND o.contact_id IN (${marks})`,
+        args: chunk,
+      }),
+      db().execute({
+        sql: `SELECT d.contact_id AS id, d.sent_at AS at, u.name AS name FROM crm_drafts d
+          LEFT JOIN admin_users u ON u.id = d.sent_by WHERE d.status = 'inviata' AND d.sent_at IS NOT NULL AND d.contact_id IN (${marks})`,
+        args: chunk,
+      }),
+      db().execute({
+        sql: `SELECT json_extract(details, '$.contact') AS id, created_at AS at, user_name AS name FROM audit_log
+          WHERE action = 'crm.draft_sent' AND json_extract(details, '$.contact') IN (${marks})`,
+        args: chunk,
+      }),
+    ]);
+    for (const row of [...outreach.rows, ...drafts.rows, ...audits.rows]) consider(row.id, row.at, row.name);
+  }
+  return out;
+}
+
 export async function countContacts(f: ContactFilter = {}): Promise<number> {
   await ensureCrmSchema();
   const { where, args } = contactWhere(f);
@@ -333,18 +380,18 @@ export async function crmStats(now = new Date()): Promise<CrmStats> {
   return { leadsMonth: Number(x.leads ?? 0), won: Number(x.won ?? 0), lost: Number(x.lost ?? 0), openValue: Number(x.open_value ?? 0), wonValue: Number(x.won_value ?? 0) };
 }
 
-export type DueAction = { id: string; businessName: string; nextAction: string | null; nextActionAt: string; stage: Stage; ownerName: string | null };
+export type DueAction = { id: string; businessName: string; nextAction: string | null; nextActionAt: string; stage: Stage; ownerUserId: string | null; ownerName: string | null };
 /** Open contacts whose next action is due by `until` (Rome date, default today), overdue included. ownerId null = everyone's. */
 export async function dueActions(ownerId: string | null, today: string, until = today): Promise<DueAction[]> {
   await ensureCrmSchema();
   const end = until > today ? until : today;
   const res = await db().execute({
-    sql: `SELECT c.id, c.business_name, c.next_action, c.next_action_at, c.stage, u.name AS owner_name ${FROM}
+    sql: `SELECT c.id, c.business_name, c.next_action, c.next_action_at, c.stage, c.owner_user_id, u.name AS owner_name ${FROM}
       WHERE c.archived = 0 AND c.stage NOT IN ('vinto','perso') AND c.next_action_at IS NOT NULL AND substr(c.next_action_at, 1, 10) <= ?
       ${ownerId ? "AND (c.owner_user_id = ? OR (c.owner_user_id IS NULL AND c.created_by = ?))" : ""} ORDER BY c.next_action_at LIMIT 50`,
     args: ownerId ? [end, ownerId, ownerId] : [end],
   });
-  return res.rows.map((r) => ({ id: String(r.id), businessName: String(r.business_name), nextAction: s(r.next_action), nextActionAt: String(r.next_action_at), stage: isStage(r.stage) ? r.stage : "nuovo", ownerName: s(r.owner_name) }));
+  return res.rows.map((r) => ({ id: String(r.id), businessName: String(r.business_name), nextAction: s(r.next_action), nextActionAt: String(r.next_action_at), stage: isStage(r.stage) ? r.stage : "nuovo", ownerUserId: r.owner_user_id ? String(r.owner_user_id) : null, ownerName: s(r.owner_name) }));
 }
 
 /**
