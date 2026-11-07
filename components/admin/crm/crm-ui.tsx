@@ -1,16 +1,47 @@
 import Link from "next/link";
 import type { Route } from "next";
+import type { ReactNode } from "react";
+import { CRM_SECTIONS, type CrmSectionHref } from "@/lib/crm-nav";
 
 export const eur = (v: number | null) => (v === null ? "" : new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v));
 export const day = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric" }) : "");
 export const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
-const TABS = [["/admin/crm", "Rubrica"], ["/admin/crm/pipeline", "Pipeline"], ["/admin/crm/radar", "Radar"]] as const;
-export function CrmTabs({ current }: { current: (typeof TABS)[number][0] }) {
+export function CrmIcon({ d }: { d: string }) {
+  return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+}
+export const CRM_ICON: Record<CrmSectionHref, string> = {
+  "/admin/crm": "M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10",
+  "/admin/crm/rubrica": "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 19v-1a4 4 0 0 0-3-3.9M15.5 4.1a3 3 0 0 1 0 5.8",
+  "/admin/crm/pipeline": "M3 4h18l-7 8.5V19l-4 2v-8.5z",
+  "/admin/crm/radar": "M12 12l5-5M21 12a9 9 0 1 1-9-9M17 12a5 5 0 1 1-5-5M12 12h.01",
+  "/admin/crm/attivita": "M4 4h16v16H4zM8 12l3 3 5-6",
+};
+
+/** The five CRM sections. Email is not a section: it opens from a contact. */
+export function CrmTabs({ current }: { current: CrmSectionHref }) {
   return (
-    <nav className="adm-tabs" aria-label="Sezioni CRM">
-      {TABS.map(([href, label]) => <Link key={href} href={href as Route} className="adm-tab" aria-current={href === current ? "page" : undefined}>{label}</Link>)}
+    <nav className="crm-tabs" aria-label="Sezioni CRM">
+      {CRM_SECTIONS.map(({ href, label }) => (
+        <Link key={href} href={href as Route} className="crm-tab" aria-current={href === current ? "page" : undefined}>
+          <CrmIcon d={CRM_ICON[href]} />{label}
+        </Link>
+      ))}
     </nav>
+  );
+}
+
+/** Page title block shared by the CRM sections: "CRM" eyebrow, title, one-line purpose, optional actions on the right. */
+export function CrmHeader({ title, intro, children }: { title: ReactNode; intro: string; children?: ReactNode }) {
+  return (
+    <header className="crm-head">
+      <div>
+        <p className="crm-eyebrow">CRM</p>
+        <h1 className="adm-h1">{title}</h1>
+        <p className="adm-muted crm-intro">{intro}</p>
+      </div>
+      {children ? <div className="adm-row-actions">{children}</div> : null}
+    </header>
   );
 }
 

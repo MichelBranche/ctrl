@@ -112,6 +112,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "crm.contact_restore": "Contatto CRM ripristinato",
   "crm.stage": "Fase pipeline",
   "crm.note": "Nota CRM",
+  "crm.followup_done": "Follow-up CRM completato",
   "crm.draft_sent": "Bozza Radar inviata",
   "crm.draft_send_failed": "Invio bozza Radar fallito",
   "crm.draft_discard": "Bozza Radar scartata",

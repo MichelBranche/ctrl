@@ -3,7 +3,8 @@
 import { del } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
 import { changePassword, getAdmin, guardSection } from "@/lib/admin";
-import { canAccess } from "@/lib/team-types";
+import { canAccess, type Perms } from "@/lib/team-types";
+import { ensureCrmSchema } from "@/lib/migrate";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { SETTINGS_TAG, SOCIAL_HOSTS, SOCIAL_KEYS, writeSettings } from "@/lib/settings";
@@ -129,6 +130,17 @@ export async function updatePassword(_: ActionState, form: FormData): Promise<Ac
 export type SearchHit = { label: string; hint: string; href: string };
 
 /** Cmd-K server search across posts, requests and subscribers. */
+/** CRM contacts for the palette: queried only for people with the crm permission. */
+async function crmHits(me: Perms, like: string): Promise<SearchHit[]> {
+  if (!canAccess(me, "crm")) return [];
+  await ensureCrmSchema();
+  const r = await db().execute({
+    sql: "SELECT id, business_name, city FROM crm_contacts WHERE archived = 0 AND (business_name LIKE ? ESCAPE '\\' OR contact_name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\' OR city LIKE ? ESCAPE '\\') ORDER BY updated_at DESC LIMIT 5",
+    args: [like, like, like, like],
+  });
+  return r.rows.map((x) => ({ label: String(x.business_name), hint: `Contatto CRM${x.city ? ` · ${x.city}` : ""}`, href: `/admin/crm/${x.id}` }));
+}
+
 export async function adminSearch(q: string): Promise<SearchHit[]> {
   const me = await getAdmin();
   if (!me) throw new Error("unauthorized");
@@ -147,5 +159,6 @@ export async function adminSearch(q: string): Promise<SearchHit[]> {
     ...(canAccess(me, "journal") ? posts.rows : []).map((r) => ({ label: String(r.title), hint: `Articolo ${String(r.lang).toUpperCase()}`, href: `/admin/edit?id=${r.id}` })),
     ...(canAccess(me, "requests") ? reqs.rows : []).map((r) => ({ label: String(r.name), hint: `Richiesta · ${r.email}`, href: `/admin/requests?open=${r.id}` })),
     ...(canAccess(me, "newsletter") ? subs.rows : []).map((r) => ({ label: String(r.email), hint: "Iscritto newsletter", href: `/admin/newsletter?q=${encodeURIComponent(String(r.email))}` })),
+    ...(await crmHits(me, like)),
   ];
 }
