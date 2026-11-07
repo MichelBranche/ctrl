@@ -902,12 +902,12 @@ a.adm-stat:hover::after { opacity: 1; }
 
 .crm-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem; }
 .crm-kpis.is-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.crm-kpi { position: relative; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "icon icon" "num num" "label chip"; align-items: end; gap: 0.3rem 0.5rem; min-height: 6.6rem; padding: 0.95rem 1.05rem; overflow: hidden; border: 1px solid var(--adm-rule); border-radius: 0.9rem; background: var(--adm-panel); color: var(--adm-fg); text-decoration: none; transition: border-color 0.15s ease; }
+.crm-kpi { position: relative; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "icon chip" "num num" "label label"; align-items: end; gap: 0.3rem 0.5rem; min-height: 6.6rem; padding: 0.95rem 1.05rem; overflow: hidden; border: 1px solid var(--adm-rule); border-radius: 0.9rem; background: var(--adm-panel); color: var(--adm-fg); text-decoration: none; transition: border-color 0.15s ease; }
 a.crm-kpi:hover { border-color: var(--adm-dim); }
 .crm-kpi > svg { grid-area: icon; width: 1.15rem; height: 1.15rem; color: var(--adm-dim); }
 .crm-kpi-num { grid-area: num; font-family: var(--font-display); font-size: 1.95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .crm-kpi-label { grid-area: label; color: var(--adm-dim); font-size: 0.85rem; }
-.crm-kpi-chip { grid-area: chip; padding: 0.15rem 0.5rem; border-radius: 999px; background: color-mix(in srgb, var(--adm-ok) 16%, transparent); color: var(--adm-ok); font-size: 0.72rem; white-space: nowrap; }
+.crm-kpi-chip { grid-area: chip; align-self: start; justify-self: end; padding: 0.15rem 0.5rem; border-radius: 999px; background: color-mix(in srgb, var(--adm-ok) 16%, transparent); color: var(--adm-ok); font-size: 0.72rem; white-space: nowrap; }
 .crm-kpi-chip.is-quiet { background: var(--adm-raise); color: var(--adm-dim); }
 .crm-kpi.is-hero { border-color: color-mix(in srgb, var(--adm-accent) 55%, var(--adm-rule)); background: radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--adm-accent) 42%, transparent) 0%, color-mix(in srgb, var(--adm-accent) 12%, transparent) 45%, transparent 70%), var(--adm-panel); }
 .crm-kpi.is-hero > svg { color: var(--adm-fg); }
