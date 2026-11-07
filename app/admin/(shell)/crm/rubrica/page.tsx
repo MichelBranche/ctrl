@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ContactForm } from "@/components/admin/crm/contact-form";
+import { ImportDialog } from "@/components/admin/crm/import-dialog";
 import { ContactPanel } from "@/components/admin/crm/contact-panel";
 import { NewContactShortcut } from "@/components/admin/crm/follow-up-client";
 import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, romeToday } from "@/components/admin/crm/crm-ui";
@@ -50,7 +51,6 @@ const KPI = {
   funnel: CRM_ICON["/admin/crm/pipeline"],
   trophy: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
-  upload: "M12 16V4M7 9l5-5 5 5M4 16v4h16v-4",
 };
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
@@ -94,10 +94,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     <div className="crm-rubrica" data-panel={view.c ? "open" : undefined}>
       <div className="crm-rubrica-main">
         <CrmHeader title="Rubrica" intro="Tutti i tuoi contatti: filtrali, gestiscili e passa all'azione.">
-          <span className="crm-import">
-            <button type="button" className="adm-btn" disabled aria-describedby="crm-import-note"><CrmIcon d={KPI.upload} />Importa</button>
-            <span id="crm-import-note" className="adm-sr">Import da CSV non ancora disponibile: arriverà con anteprima e controllo dei duplicati prima di salvare.</span>
-          </span>
+          <span className="crm-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
           <Link className="adm-btn adm-btn-primary" href={NEW_CONTACT as Route}>+ Nuovo contatto</Link>
         </CrmHeader>
         <NewContactShortcut href={NEW_CONTACT} />

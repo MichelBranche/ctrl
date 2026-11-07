@@ -69,18 +69,47 @@ const fieldArgs = (c: ContactInput): InValue[] => {
   ];
 };
 
-/** Inserts unless a duplicate exists. Returns the new id, or the duplicate's id with duplicate = true. */
+const INSERT_CONTACT = `INSERT INTO crm_contacts (business_name, type, contact_name, email, phone, website, address, city, region, score, score_reasons, value_eur,
+  next_action, next_action_at, owner_user_id, notes, email_norm, phone_norm, domain, id, source, stage, created_by, request_id, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
+
+/**
+ * Inserts unless a duplicate exists. The check and the insert share one write transaction, so two concurrent
+ * creates of the same contact cannot both pass the check. Returns the new id, or the duplicate's id with
+ * duplicate = true. Never updates the existing row.
+ */
 export async function createContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string } = {}): Promise<{ id: string; duplicate: boolean }> {
-  const dup = await findDuplicate(c);
-  if (dup) return { id: dup, duplicate: true };
-  const id = crypto.randomUUID();
-  await db().execute({
-    sql: `INSERT INTO crm_contacts (business_name, type, contact_name, email, phone, website, address, city, region, score, score_reasons, value_eur,
-      next_action, next_action_at, owner_user_id, notes, email_norm, phone_norm, domain, id, source, stage, created_by, request_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`,
-    args: [...fieldArgs(c), id, c.source, c.stage ?? "nuovo", createdBy, extra.requestId ?? null, extra.createdAt ?? null],
-  });
-  return { id, duplicate: false };
+  await ensureCrmSchema();
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await insertContact(c, createdBy, extra);
+    } catch (error) {
+      const busy = /SQLITE_BUSY|database is locked/i.test(String((error as Error)?.message ?? error));
+      if (!busy || attempt >= 5) throw error;
+      await new Promise((r) => setTimeout(r, 25 * attempt));
+    }
+  }
+}
+
+async function insertContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string }): Promise<{ id: string; duplicate: boolean }> {
+  const tx = await db().transaction("write");
+  try {
+    const k = dedupeKeys(c);
+    if (hasKeys(k)) {
+      const res = await tx.execute({
+        sql: `SELECT id FROM crm_contacts WHERE (? <> '' AND email_norm = ?) OR (? <> '' AND phone_norm = ?) OR (? <> '' AND domain = ?) ORDER BY archived, created_at LIMIT 1`,
+        args: [k.email, k.email, k.phone, k.phone, k.domain, k.domain],
+      });
+      const dup = res.rows[0] ? String(res.rows[0].id) : null;
+      if (dup) return { id: dup, duplicate: true };
+    }
+    const id = crypto.randomUUID();
+    await tx.execute({ sql: INSERT_CONTACT, args: [...fieldArgs(c), id, c.source, c.stage ?? "nuovo", createdBy, extra.requestId ?? null, extra.createdAt ?? null] });
+    await tx.commit();
+    return { id, duplicate: false };
+  } finally {
+    tx.close();
+  }
 }
 
 export type WriteResult = "ok" | "notfound" | "conflict";

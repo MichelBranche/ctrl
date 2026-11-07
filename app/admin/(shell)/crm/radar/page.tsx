@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ContactPanel, type PanelAnalysis } from "@/components/admin/crm/contact-panel";
+import { ImportDialog } from "@/components/admin/crm/import-dialog";
 import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, day, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { DraftEditor } from "@/components/admin/crm/draft-editor";
 import { RubricaTable, type RubricaRow, type SortHead } from "@/components/admin/crm/rubrica-table";
@@ -49,7 +50,6 @@ function PanelSkeleton() {
 const ASC_FIRST: RubricaSort[] = ["nome", "citta", "azione"];
 const I = {
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
-  upload: "M12 16V4M7 9l5-5 5 5M4 16v4h16v-4",
   eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
   star: "M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z",
   mail: "M4 6h16v12H4zM4 7l8 6 8-6",
@@ -119,10 +119,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             <button type="button" className="adm-btn" disabled aria-describedby="crm-radar-search-note"><CrmIcon d={I.search} />Nuova ricerca</button>
             <span id="crm-radar-search-note" className="adm-sr">Le ricerche partono da Iris, fuori dal CRM: i prospect trovati arrivano qui da soli.</span>
           </span>
-          <span className="crm-import">
-            <button type="button" className="adm-btn" disabled aria-describedby="crm-radar-import-note"><CrmIcon d={I.upload} />Importa</button>
-            <span id="crm-radar-import-note" className="adm-sr">Import da CSV non ancora disponibile: arriverà con anteprima e controllo dei duplicati prima di salvare.</span>
-          </span>
+          <span className="crm-import"><ImportDialog /></span>
         </CrmHeader>
         <CrmTabs current={RADAR} />
 
