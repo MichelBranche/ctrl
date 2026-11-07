@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { emailSender } from "@/lib/mail/sender";
 import { guardSection } from "@/lib/admin";
 import { KEY, finishSend, logSend, markReadBy, sendAllowed, setClaim } from "@/lib/mail/collab";
@@ -9,7 +10,9 @@ import { MailError, type OutgoingFile } from "@/lib/mail/provider";
 import { isFolder, type FolderId, type MailMutation } from "@/lib/mail/types";
 import { beginOutreach, finishOutreach, sendOutcome, UNCERTAIN_MESSAGE } from "@/lib/crm-outreach";
 import type { OutreachWarning } from "@/lib/crm-outreach-types";
+import { CRM_SECTIONS } from "@/lib/crm-nav";
 import { EMAIL_ADDRESS as EMAIL, parseRecipients as parseList } from "@/lib/mail/recipients";
+import { canAccess } from "@/lib/team-types";
 
 /* Every action re-checks the session and the "email" permission server-side (guardSection throws otherwise). */
 
@@ -135,11 +138,19 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
     return { error: error instanceof MailError ? error.message : "Invio non riuscito, riprova tra poco.", at: Date.now() };
   }
   await finishSend(id, messageId);
-  const { assigned } = await finishOutreach(lease, "sent").catch(() => ({ assigned: [] as string[] }));
-  await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length, crmAssigned: assigned.length }, me);
+  const { assigned, advanced } = await finishOutreach(lease, "sent").catch(() => ({ assigned: [] as string[], advanced: [] as string[] }));
+  if (assigned.length || advanced.length) {
+    for (const section of CRM_SECTIONS) revalidatePath(section.href);
+    for (const contactId of new Set([...assigned, ...advanced])) {
+      revalidatePath(`/admin/crm/${contactId}`);
+      revalidatePath(`/admin/crm/${contactId}/email`);
+    }
+  }
+  await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length, crmAssigned: assigned.length, crmAdvanced: advanced.length }, me);
+  const moved = canAccess(me, "crm") && advanced.length ? ` ${advanced.length === 1 ? "Il contatto è passato a Contattato." : `${advanced.length} contatti sono passati a Contattato.`}` : "";
   const draftUid = Number(form.get("draftUid"));
   if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
-  return { ok: `Inviata a ${to.join(", ")}.${assigned.length ? ` ${assigned.length === 1 ? "Il contatto ora è seguito" : "I contatti ora sono seguiti"} da te.` : ""}`, at: Date.now() };
+  return { ok: `Inviata a ${to.join(", ")}.${assigned.length ? ` ${assigned.length === 1 ? "Il contatto ora è seguito" : "I contatti ora sono seguiti"} da te.` : ""}${moved}`, at: Date.now() };
 }
 
 export async function organizeMail(folder: string, uids: number[], operation: MailMutation, label?: string): Promise<{ error?: string; ok?: boolean }> {

@@ -93,6 +93,10 @@ try {
   await contact(C(16), "keep@x.test");
   await contact(C(17), "mid@x.test");
   await db().execute({ sql: "INSERT INTO crm_contacts (id, business_name, email, owner_user_id, stage, source) VALUES (?, 'Importato senza email_norm', '  Legacy@X.test ', 'u-ana', 'nuovo', 'manuale')", args: [C(18)] });
+  await contact(C(19), "callstage@x.test", { stage: "call" });
+  await contact(C(20), "prevstage@x.test", { stage: "preventivo", owner: "u-bea" });
+  await contact(C(21), "loststage@x.test", { stage: "perso" });
+  await contact(C(22), "midstage@x.test");
 
   const sent = [];
   let behaviour = async () => {};
@@ -120,17 +124,23 @@ try {
   let r = await mail("u-bea", "free@x.test");
   assert.ok(r.ok, r.error); assert.match(r.ok, /seguito da te/);
   let x = await row(C(1));
-  assert.equal(x.owner_user_id, "u-bea"); assert.equal(Number(x.version), v0 + 1, "assignment bumps the PR14 version");
-  assert.equal(x.stage, "nuovo"); assert.equal(x.last_sent_by, "u-bea"); assert.equal(x.lease_token, null, "lease released");
+  assert.equal(x.owner_user_id, "u-bea"); assert.equal(Number(x.version), v0 + 2, "assignment and Nuovo to Contattato each bump the version");
+  assert.equal(x.stage, "contattato"); assert.match(r.ok, /passato a Contattato/); assert.equal(x.last_sent_by, "u-bea"); assert.equal(x.lease_token, null, "lease released");
   const audit = (await db().execute({ sql: "SELECT details FROM audit_log WHERE action = 'crm.owner' AND target_id = ?", args: [C(1)] })).rows;
   assert.equal(audit.length, 1); assert.equal(JSON.parse(String(audit[0].details)).auto, "email");
+  const stageAudit = (await db().execute({ sql: "SELECT details FROM audit_log WHERE action = 'crm.stage' AND target_id = ?", args: [C(1)] })).rows;
+  assert.equal(stageAudit.length, 1);
+  assert.deepEqual(JSON.parse(String(stageAudit[0].details)), { from: "nuovo", to: "contattato", auto: "email" });
+  assert.equal(JSON.stringify(stageAudit).includes("@"), false, "the stage audit carries no address");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), 0, "a send does not open an opportunity");
   const crm = await import("../lib/crm.ts");
   assert.equal(await crm.setOwner(C(1), "u-ana", v0), "conflict", "a panel opened before the send cannot overwrite it blindly");
-  console.log("ok success assigns (no owner -> sender), version bump, no stage change");
+  console.log("ok success assigns (no owner -> sender) and moves only Nuovo to Contattato");
 
   // 2. Colleague owner: warning with real name, nothing sent; consent then sends without changing the owner.
   r = await mail("u-bea", "Ana <ana@x.test>");
   assert.ok(r.warning && !r.ok); assert.equal(sentTo("ana@x.test"), 0);
+  assert.equal((await row(C(2))).stage, "nuovo", "a warning sends nothing and leaves the stage");
   assert.equal(r.warning.contacts.length, 1);
   assert.deepEqual([r.warning.contacts[0].reason, r.warning.contacts[0].ownerName, r.warning.contacts[0].ownerActive, r.warning.contacts[0].mailHref], ["owner_other", "Utente u-ana", true, `/admin/crm/${C(2)}/email`]);
   assert.equal(r.warning.generic, false); assert.equal(r.warning.updated, false);
@@ -139,8 +149,9 @@ try {
   const anaAck = (await as("u-ana", () => O.outreachWarning({ id: "u-ana", name: "Utente u-ana", email: "u-ana@t.test", roles: ["commerciale"], emailAccess: true }, ["ana@x.test"])));
   assert.equal(anaAck, null, "owner herself, nothing recent: no alarm");
   r = await mail("u-bea", "ana@x.test", { crmAck: r.warning.ack });
-  assert.ok(r.ok, r.error); assert.doesNotMatch(r.ok, /seguito da te/);
+  assert.ok(r.ok, r.error); assert.doesNotMatch(r.ok, /seguito da te/); assert.match(r.ok, /passato a Contattato/);
   assert.equal(sentTo("ana@x.test"), 1); assert.equal((await row(C(2))).owner_user_id, "u-ana", "never overwritten");
+  assert.equal((await row(C(2))).stage, "contattato", "Nuovo with another owner still advances, owner kept");
   console.log("ok colleague owner: in-app warning, consent bound, owner kept");
 
   // 3. Owner is me but a colleague just wrote / I wrote minutes ago: managed, not silent.
@@ -191,10 +202,11 @@ try {
   behaviour = async (m) => { if (m.to.includes("fail@x.test")) throw new MailError("network", "Invio non riuscito, riprova tra poco."); };
   r = await mail("u-bea", "fail@x.test");
   assert.match(r.error, /non riuscito/); x = await row(C(9));
-  assert.equal(x.owner_user_id, null); assert.equal(x.last_sent_by, null); assert.equal(x.lease_token, null);
+  assert.equal(x.owner_user_id, null); assert.equal(x.stage, "nuovo", "a definite failure does not advance"); assert.equal(x.last_sent_by, null); assert.equal(x.lease_token, null);
   behaviour = async () => {};
   r = await mail("u-bea", "fail@x.test");
   assert.ok(r.ok, "retry after a definite failure is not blocked"); assert.equal((await row(C(9))).owner_user_id, "u-bea");
+  assert.equal((await row(C(9))).stage, "contattato", "the successful retry is what moves Nuovo");
   // Someone takes the contact while our SMTP call is in flight: the success never overwrites them.
   behaviour = async (m) => { if (m.to.includes("mid@x.test")) await crm.setOwner(C(17), "u-ana", Number((await row(C(17))).version)); };
   r = await mail("u-bea", "mid@x.test");
@@ -207,7 +219,7 @@ try {
   const unsureKey = crypto.randomUUID();
   r = await mail("u-bea", "unsure@x.test", { sendKey: unsureKey });
   assert.ok(r.uncertain); assert.match(r.error, /incerto/); x = await row(C(10));
-  assert.equal(x.owner_user_id, null); assert.ok(x.uncertain_at);
+  assert.equal(x.owner_user_id, null); assert.equal(x.stage, "nuovo", "an uncertain outcome does not advance"); assert.ok(x.uncertain_at);
   behaviour = async () => {};
   r = await mail("u-bea", "unsure@x.test", { sendKey: unsureKey });
   assert.equal(r.warning?.contacts[0].reason, "uncertain", "blind resubmit stops at the warning");
@@ -218,6 +230,7 @@ try {
   assert.equal(r.warning?.contacts[0].reason, "uncertain", "colleagues see it too");
   r = await mail("u-ana", "unsure@x.test", { crmAck: r.warning.ack });
   assert.ok(r.ok); x = await row(C(10)); assert.equal(x.uncertain_at, null); assert.equal(x.owner_user_id, "u-ana");
+  assert.equal(x.stage, "contattato", "only the confirmed retry moves Nuovo");
   behaviour = async () => { throw new Error("socket hang up"); };
   r = await mail("u-bea", "free2@x.test");
   assert.ok(r.uncertain, "unknown non-MailError errors are uncertain, not failures");
@@ -262,7 +275,8 @@ try {
   r = await mail("u-posta", "ana@x.test", { crmAck: r.warning.ack });
   assert.ok(r.ok);
   r = await mail("u-posta", "keep@x.test");
-  assert.ok(r.ok); assert.equal((await row(C(16))).owner_user_id, null, "no CRM access: never made responsible");
+  assert.ok(r.ok); assert.doesNotMatch(r.ok, /Contattato|Contatto/); assert.equal((await row(C(16))).owner_user_id, null, "no CRM access: never made responsible");
+  assert.equal((await row(C(16))).stage, "contattato", "the contact still leaves Nuovo, without telling the email-only sender");
   assert.match((await mail("u-nomail", "free2@x.test")).error, /non autorizzata/, "no Email permission, no send");
   assert.match((await as("u-nomail", () => A.sendDraftAction(C(14)))).error, /accesso alla casella/);
   assert.equal(await as("u-posta", async () => { try { await A.sendDraftAction(C(14)); return "sent"; } catch { return "refused"; } }), "refused", "Radar drafts need CRM");
@@ -291,7 +305,28 @@ try {
   assert.ok(r.ok, r.error); assert.equal((await row(C(2))).owner_user_id, "u-ana");
   r = await as("u-bea", () => A.sendDraftAction(C(902)));
   assert.ok(r.ok, r.error); x = await row(C(14)); assert.equal(x.owner_user_id, "u-bea"); assert.equal(x.stage, "contattato", "existing Radar nuovo -> contattato kept");
+  assert.equal(Number((await db().execute("SELECT COUNT(*) AS n FROM crm_opportunities")).rows[0].n), 0, "a Radar send does not open an opportunity");
   console.log("ok Radar drafts share the guard");
+
+  // 14. Later stages stay put, including when the stage changes while SMTP is in flight.
+  await clearLog();
+  r = await mail("u-bea", "callstage@x.test");
+  assert.equal(r.warning?.contacts[0].reason, "contacted_unassigned");
+  r = await mail("u-bea", "callstage@x.test", { crmAck: r.warning.ack });
+  assert.ok(r.ok, r.error); assert.equal((await row(C(19))).stage, "call");
+  r = await mail("u-bea", "prevstage@x.test");
+  assert.ok(r.ok, r.error); assert.equal((await row(C(20))).stage, "preventivo"); assert.equal((await row(C(20))).owner_user_id, "u-bea");
+  r = await mail("u-bea", "loststage@x.test");
+  assert.equal(r.warning?.contacts[0].reason, "contacted_unassigned");
+  assert.equal((await row(C(21))).stage, "perso", "the warning itself does not move Perso");
+  r = await mail("u-bea", "loststage@x.test", { crmAck: r.warning.ack });
+  assert.ok(r.ok); assert.equal((await row(C(21))).stage, "perso");
+  behaviour = async (m) => { if (m.to.includes("midstage@x.test")) await crm.setStage(C(22), "call"); };
+  r = await mail("u-bea", "midstage@x.test");
+  assert.ok(r.ok, r.error); assert.equal((await row(C(22))).stage, "call", "a stage moved during the send is not pulled back");
+  behaviour = async () => {};
+  await clearLog();
+  console.log("ok later stages are never pulled back to Contattato");
 
   // 13. Composer opening (server) mirrors the send check and fails open only for display.
   const bea = { id: "u-bea", name: "Utente u-bea", email: "u-bea@t.test", roles: ["commerciale"], emailAccess: true };
