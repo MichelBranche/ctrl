@@ -2,7 +2,7 @@
 import { createContext, useActionState, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { panelFollowUpAction, panelOwnerAction, panelStageAction, setKindAction, type CrmState } from "@/app/admin/crm-actions";
+import { panelFollowUpAction, panelOwnerAction, panelStageAction, setEstimateAction, setKindAction, type CrmState } from "@/app/admin/crm-actions";
 import type { ContactKind } from "@/lib/crm-kind";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
@@ -62,7 +62,7 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   const leave = (href: string) => {
     const node = ref.current;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!node || reduce || !node.closest(".crm-rubrica-page")) { router.push(href as Route, { scroll: false }); return; }
+    if (!node || reduce || !node.closest(".crm-rubrica-page, .crm-pipeline-page")) { router.push(href as Route, { scroll: false }); return; }
     node.classList.add("is-closing");
     window.setTimeout(() => router.push(href as Route, { scroll: false }), 180);
   };
@@ -94,7 +94,7 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
       <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}
         onClick={(e) => {
           const link = (e.target as HTMLElement).closest("a.crm-panel-close");
-          if (!link || !ref.current?.closest(".crm-rubrica-page")) return;
+          if (!link || !ref.current?.closest(".crm-rubrica-page, .crm-pipeline-page")) return;
           e.preventDefault();
           leave(link.getAttribute("href") || closeHref);
         }}>
@@ -237,6 +237,48 @@ export function OwnerQuick({ contact, ownerId, owners, former }: { contact: Vers
         {former && ownerId ? <option value={ownerId}>{former}</option> : null}
         {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
+    </form>
+  );
+}
+
+/** Proposed value in whole euros. Empty clears it. Anyone who can open the CRM can change it. */
+export function EstimateField({ contact, cents, note }: { contact: Versioned; cents: number | null; note: string | null }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [euros, setEuros] = useState(cents === null ? "" : String(Math.round(cents / 100)));
+  const [text, setText] = useState(note ?? "");
+  const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(false);
+  const shown = cents === null ? "Nessuna stima" : `€ ${Math.round(cents / 100).toLocaleString("it-IT")}`;
+  if (!editing) {
+    return (
+      <button type="button" className="crm-panel-amount" onClick={() => setEditing(true)}>
+        {shown}
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+        <span className="adm-sr">Modifica la stima</span>
+      </button>
+    );
+  }
+  return (
+    <form className="crm-quick-field crm-estimate" onSubmit={(e) => {
+      e.preventDefault();
+      setMsg("");
+      start(async () => {
+        const r = await setEstimateAction(contact.id, euros, text, contact.version);
+        setMsg(r.error ?? r.ok ?? "");
+        if (r.ok) router.refresh();
+      });
+    }}>
+      <span>Valore stimato</span>
+      <label className="adm-sr" htmlFor={`crm-estimate-${contact.id}`}>Valore stimato in euro</label>
+      <input id={`crm-estimate-${contact.id}`} className="adm-input" inputMode="numeric" value={euros} disabled={pending} placeholder="Euro, vuoto se non c'è"
+        onChange={(e) => setEuros(e.target.value)} />
+      <label className="adm-sr" htmlFor={`crm-estimate-note-${contact.id}`}>Nota sul valore stimato</label>
+      <input id={`crm-estimate-note-${contact.id}`} className="adm-input" value={text} disabled={pending} maxLength={200} placeholder="Nota breve, facoltativa"
+        onChange={(e) => setText(e.target.value)} />
+      <button className="adm-btn adm-btn-sm" type="submit" disabled={pending}>Salva stima</button>
+      <button className="crm-textbtn" type="button" onClick={() => setEditing(false)}>Chiudi</button>
+      {msg ? <span className="adm-muted">{msg}</span> : null}
     </form>
   );
 }

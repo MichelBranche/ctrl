@@ -19,6 +19,9 @@ export type Contact = {
   stageChangedAt: string | null;
   /** Stored azienda/persona. Null means the list deduces it. */
   kind: ContactKind | null;
+  /** Proposed value in euro cents. Null means nobody estimated it. Visible to the whole CRM team. */
+  estimatedValueCents: number | null;
+  estimatedValueNote: string | null;
 };
 export type ContactInput = {
   businessName: string; type?: string | null; contactName?: string | null; email?: string | null; phone?: string | null; website?: string | null;
@@ -36,7 +39,8 @@ function reasons(v: unknown): string[] {
 
 const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.source, c.score,
   c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived,
-  c.version, c.stage_changed_at, c.kind, CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
+  c.version, c.stage_changed_at, c.kind, c.estimated_value_cents, c.estimated_value_note,
+  CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
 const FROM = "FROM crm_contacts c LEFT JOIN admin_users u ON u.id = c.owner_user_id";
 
 function toContact(r: Record<string, unknown>): Contact {
@@ -49,6 +53,8 @@ function toContact(r: Record<string, unknown>): Contact {
     version: Number(r.version ?? 1), ownerActive: r.owner_active === null || r.owner_active === undefined ? null : Number(r.owner_active) === 1,
     stageChangedAt: s(r.stage_changed_at),
     kind: r.kind === "azienda" || r.kind === "persona" ? r.kind : null,
+    estimatedValueCents: r.estimated_value_cents === null || r.estimated_value_cents === undefined || r.estimated_value_cents === "" ? null : Number(r.estimated_value_cents),
+    estimatedValueNote: s(r.estimated_value_note),
   };
 }
 
@@ -170,6 +176,16 @@ export async function setStage(id: string, stage: Stage, expectedVersion?: numbe
   });
   if (!r.rowsAffected) return expectedVersion === undefined ? setStage(id, stage) : "conflict";
   return { from };
+}
+
+/** Proposed value in euro cents. Null clears it. The note is optional and independent. */
+export async function setEstimate(id: string, cents: number | null, note: string | null, expectedVersion: number): Promise<WriteResult> {
+  await ensureCrmSchema();
+  const r = await db().execute({
+    sql: `UPDATE crm_contacts SET estimated_value_cents = ?, estimated_value_note = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`,
+    args: [cents, note, id, expectedVersion],
+  });
+  return r.rowsAffected ? "ok" : missOrConflict(id);
 }
 
 /** Explicit azienda or persona. Null returns the contact to the deduced value. */
@@ -430,6 +446,13 @@ export async function ingestContact(c: IngestContact): Promise<{ id: string; dup
     address: c.address, city: c.city, region: c.region, source: "radar", score: c.score ?? null, scoreReasons: c.score_reasons ?? null, notes: c.notes,
   }, null);
   if (!r.duplicate && c.draft) await addDraft(r.id, { subject: c.draft.subject, bodyText: c.draft.body_text, bodyHtml: c.draft.body_html });
+  // Creation only. A duplicate keeps the value already stored.
+  if (!r.duplicate && (c.estimatedValue != null || c.estimatedValueNote)) {
+    await db().execute({
+      sql: "UPDATE crm_contacts SET estimated_value_cents = ?, estimated_value_note = ? WHERE id = ?",
+      args: [c.estimatedValue == null ? null : c.estimatedValue * 100, c.estimatedValueNote?.trim() || null, r.id],
+    });
+  }
   return r;
 }
 

@@ -305,6 +305,12 @@ export function ensureCrmSchema(): Promise<void> {
     )`);
     await db().execute("CREATE INDEX IF NOT EXISTS crm_saved_views_owner ON crm_saved_views (owner_id, name)");
     await db().execute("CREATE INDEX IF NOT EXISTS crm_saved_views_shared ON crm_saved_views (shared)");
+    // Additive only: Iris or a person can store a proposed value. Null means "no estimate". Rollback: the app ignores the columns.
+    await addColumn("crm_contacts", "estimated_value_cents", "INTEGER");
+    await addColumn("crm_contacts", "estimated_value_note", "TEXT");
+    // Additive only: contacted count and contacted potential, null on days that cannot be rebuilt. Rollback: the app ignores the columns.
+    await addColumn("crm_kpi_daily", "contacts_contacted", "INTEGER");
+    await addColumn("crm_kpi_daily", "potential_value_cents", "INTEGER");
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }
