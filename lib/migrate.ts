@@ -293,6 +293,18 @@ export function ensureCrmSchema(): Promise<void> {
       day TEXT PRIMARY KEY, contacts_total INTEGER, assigned INTEGER, opportunities_active INTEGER,
       todo_due INTEGER, overdue INTEGER, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )`);
+    // Additive only: a founder asks Iris for leads. Rollback: DROP TABLE crm_iris_requests.
+    await db().execute(`CREATE TABLE IF NOT EXISTS crm_iris_requests (
+      id TEXT PRIMARY KEY, requested_by TEXT NOT NULL, day_rome TEXT NOT NULL, params TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('queued','working','ready','error')),
+      inserted INTEGER, duplicates INTEGER, error_message TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`);
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_iris_requests_day ON crm_iris_requests (requested_by, day_rome)");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_iris_requests_status ON crm_iris_requests (status, created_at)");
+    await addColumn("crm_contacts", "iris_request_id", "TEXT");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_iris_request ON crm_contacts (iris_request_id)");
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }
