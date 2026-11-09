@@ -293,7 +293,19 @@ export function ensureCrmSchema(): Promise<void> {
       day TEXT PRIMARY KEY, contacts_total INTEGER, assigned INTEGER, opportunities_active INTEGER,
       todo_due INTEGER, overdue INTEGER, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )`);
-    // Additive only: azienda or persona. Null means "deduce on read". Rollback: the app ignores the column.
+    // Additive only: a founder asks Iris for leads (db/017). Rollback: DROP TABLE crm_iris_requests.
+    await db().execute(`CREATE TABLE IF NOT EXISTS crm_iris_requests (
+      id TEXT PRIMARY KEY, requested_by TEXT NOT NULL, day_rome TEXT NOT NULL, params TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('queued','working','ready','error')),
+      inserted INTEGER, duplicates INTEGER, error_message TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`);
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_iris_requests_day ON crm_iris_requests (requested_by, day_rome)");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_iris_requests_status ON crm_iris_requests (status, created_at)");
+    await addColumn("crm_contacts", "iris_request_id", "TEXT");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_iris_request ON crm_contacts (iris_request_id)");
+    // Additive only: azienda or persona (db/018). Null means "deduce on read". Rollback: the app ignores the column.
     await addColumn("crm_contacts", "kind", "TEXT");
     await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_kind ON crm_contacts (archived, kind)");
     // Additive only: a named rubrica view, per user, optionally shared by a founder. Rollback: DROP TABLE crm_saved_views.
