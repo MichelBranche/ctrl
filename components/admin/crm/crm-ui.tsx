@@ -32,16 +32,27 @@ export function CrmTabs({ current }: { current: CrmSectionHref }) {
 }
 
 /** Page title block shared by the CRM sections: "CRM" eyebrow, title, one-line purpose, optional actions on the right. */
-export function CrmHeader({ title, intro, children }: { title: ReactNode; intro: string; children?: ReactNode }) {
+export function CrmHeader({ title, intro, note, children, className }: { title: ReactNode; intro: string; note?: ReactNode; children?: ReactNode; className?: string }) {
   return (
-    <header className="crm-head">
+    <header className={className ? `crm-head ${className}` : "crm-head"}>
       <div>
         <p className="crm-eyebrow">CRM</p>
         <h1 className="adm-h1">{title}</h1>
-        <p className="adm-muted crm-intro">{intro}</p>
+        {note}
+        {intro ? <p className="adm-muted crm-intro">{intro}</p> : null}
       </div>
       {children ? <div className="adm-row-actions">{children}</div> : null}
     </header>
+  );
+}
+
+/** Keyboard-reachable note. The name is the sentence; the bubble repeats it for sighted focus. */
+export function CrmTip({ text }: { text: string }) {
+  return (
+    <button type="button" className="crm-tip" aria-label={text} title={text}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5h.01" /></svg>
+      <span className="crm-tip-bubble" aria-hidden="true">{text}</span>
+    </button>
   );
 }
 
