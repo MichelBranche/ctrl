@@ -1768,28 +1768,53 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 
 /* Pipeline. Motion stays under .crm-pipeline-page so Rubrica and Radar keep their own timing. */
 .crm-pipeline-page { --pipe-ease: cubic-bezier(0.22, 1, 0.36, 1); min-width: 0; }
-.crm-pipeline-page .crm-pipeline-glow { position: relative; }
-.crm-pipeline-page .crm-pipeline-glow::before { content: ""; position: absolute; z-index: 0; left: 8%; right: -4%; top: -2.4rem; height: 8.5rem; pointer-events: none; background: radial-gradient(62% 100% at 74% 0%, color-mix(in srgb, var(--adm-accent) 46%, transparent), transparent 68%); }
+.crm-pipeline-page .crm-pipeline-glow { position: relative; overflow: hidden; }
+.crm-pipeline-page .crm-pipeline-glow::before { content: ""; position: absolute; z-index: 0; left: 22%; width: min(44rem, 76%); height: min(44rem, 76%); top: 0.15rem; border-radius: 50%; pointer-events: none; border: 1.5px solid color-mix(in srgb, var(--adm-accent) 80%, #fff); box-shadow: 0 0 12px 1px color-mix(in srgb, var(--adm-accent) 60%, transparent), 0 0 36px 4px color-mix(in srgb, var(--adm-accent) 24%, transparent); mask-image: linear-gradient(#000 0 1.3rem, transparent 2.4rem); }
 .crm-pipeline-page .crm-pipeline-glow > * { position: relative; z-index: 1; }
 .crm-pipe-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; margin: 0.15rem 0 0.85rem; }
-.crm-pipe-kpis { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-left: auto; }
-.crm-pipe-kpis p { display: flex; align-items: baseline; gap: 0.4rem; margin: 0; padding: 0.4rem 0.75rem; border: 1px solid var(--adm-rule); border-radius: 999px; background: color-mix(in srgb, var(--adm-panel) 88%, transparent); }
-.crm-pipe-kpis strong { font-size: 0.95rem; }
-.crm-pipe-kpis span { color: var(--adm-dim); font-size: 0.78rem; }
-.crm-pipe-kpis em { color: var(--adm-ok); font-style: normal; font-size: 0.75rem; }
+.crm-pipeline-page .adm-row-actions { align-items: flex-start; }
+.crm-pipe-kpis { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.crm-pipe-kpis p { display: grid; grid-template-columns: auto auto; grid-template-areas: "icon num" "icon label"; align-items: center; gap: 0.05rem 0.55rem; margin: 0; min-width: 9.5rem; padding: 0.55rem 0.75rem; border: 1px solid var(--adm-rule); border-radius: 0.85rem; background: color-mix(in srgb, var(--adm-panel) 88%, transparent); }
+.crm-pipe-kpis svg { grid-area: icon; width: 1.05rem; height: 1.05rem; color: var(--adm-accent); }
+.crm-pipe-kpis strong { grid-area: num; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.crm-pipe-kpis span { grid-area: label; color: var(--adm-dim); font-size: 0.75rem; }
+.crm-pipe-kpis em { color: var(--adm-ok); font-style: normal; font-size: 0.72rem; }
 .crm-pipeline-page .crm-switch a span { margin-left: 0.35rem; color: var(--adm-dim); font-variant-numeric: tabular-nums; }
+.crm-pipeline-page .crm-switch a[aria-current="page"] span { color: inherit; }
 .crm-pipeline-page .crm-toolbar { flex-wrap: wrap; }
 .crm-pipeline-page .crm-board { grid-auto-columns: minmax(16.5rem, 1fr); }
 .crm-pipeline-page .crm-col { background: color-mix(in srgb, var(--adm-panel) 72%, transparent); }
 .crm-pipeline-page .crm-col[data-over] { outline: 1px solid var(--adm-accent); outline-offset: -1px; }
-.crm-pipeline-page .crm-col-sum { font-size: 0.78rem; color: var(--adm-dim); font-variant-numeric: tabular-nums; }
-.crm-pipe-count { margin-left: 0.35rem; color: var(--adm-dim); font-size: 0.75rem; font-weight: 550; }
-.crm-pipeline-page .crm-card { position: relative; padding: 0.7rem 0.75rem 0.55rem; background: var(--adm-bg); transition: border-color 120ms var(--pipe-ease), background-color 120ms var(--pipe-ease); }
-.crm-pipeline-page .crm-card:hover { border-color: color-mix(in srgb, var(--adm-fg) 22%, var(--adm-rule)); background: color-mix(in srgb, var(--adm-fg) 4%, var(--adm-bg)); }
-.crm-pipeline-page .crm-card[data-active] { border-color: color-mix(in srgb, var(--adm-accent) 80%, var(--adm-rule)); }
-.crm-pipeline-page .crm-card[data-dragging] { opacity: 0.35; }
-.crm-pipeline-page .crm-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.45rem; }
-.crm-pipeline-page .crm-card .crm-avatar { width: 1.7rem; height: 1.7rem; border-radius: 0.45rem; font-size: 0.68rem; }
+.crm-pipeline-page .crm-col-head { display: block; }
+.crm-pipeline-page .crm-col-head h2 { display: flex; align-items: center; gap: 0.4rem; }
+.crm-stage-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #8a8680; }
+.crm-stage-dot[data-stage="nuovo"] { background: #a78bfa; }
+.crm-stage-dot[data-stage="contattato"] { background: #6ea8fe; }
+.crm-stage-dot[data-stage="call"] { background: #f5b942; }
+.crm-stage-dot[data-stage="preventivo"] { background: var(--adm-accent); }
+.crm-stage-dot[data-stage="vinto"] { background: #3ddc97; }
+.crm-pipeline-page .crm-col-sum { display: block; margin-top: 0.2rem; font-size: 0.78rem; color: var(--adm-dim); font-variant-numeric: tabular-nums; }
+.crm-pipe-count { display: inline-grid; place-items: center; min-width: 1.25rem; margin-left: auto; padding: 0 0.35rem; border-radius: 999px; background: var(--adm-raise); color: var(--adm-dim); font-size: 0.72rem; font-weight: 600; }
+.crm-col-empty { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin: 0.35rem 0 0; padding: 1.5rem 0.6rem; border: 1px dashed color-mix(in srgb, var(--adm-fg) 22%, var(--adm-rule)); border-radius: 0.75rem; color: var(--adm-dim); text-align: center; font-size: 0.8rem; }
+.crm-col-empty svg { width: 1.1rem; height: 1.1rem; }
+.crm-pipeline-page .crm-card { position: relative; padding: 0.75rem 0.8rem 0.65rem; background: var(--adm-bg); transition: border-color 120ms var(--pipe-ease), background-color 120ms var(--pipe-ease); }
+.crm-pipeline-page .crm-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.75); opacity: 0; pointer-events: none; transition: opacity 120ms var(--pipe-ease); }
+.crm-pipeline-page .crm-card:hover { border-color: color-mix(in srgb, var(--adm-fg) 22%, var(--adm-rule)); }
+.crm-pipeline-page .crm-card:hover::after { opacity: 1; }
+.crm-pipeline-page .crm-card[data-active] { border-color: color-mix(in srgb, var(--adm-accent) 80%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--adm-accent) 28%, transparent), 0 0 22px -10px color-mix(in srgb, var(--adm-accent) 80%, transparent); }
+.crm-pipeline-page .crm-card[data-dragging] { opacity: 0.35; will-change: transform; }
+.crm-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.45rem; }
+.crm-card-top a { min-width: 0; font-weight: 700; }
+.crm-card-sub { margin: 0.2rem 0 0.45rem; color: var(--adm-dim); font-size: 0.75rem; }
+.crm-pipeline-page .crm-card .crm-avatar { width: 1.7rem; height: 1.7rem; border-radius: 0.45rem; font-size: 0.62rem; }
+.crm-avatar-mini { width: 1.15rem; height: 1.15rem; border-radius: 999px; font-size: 0.55rem; }
+.crm-pipeline-page .crm-card-who { flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 0.35rem; min-width: 0; margin: 0.45rem 0; font-size: 0.75rem; }
+.crm-pipeline-page .crm-card-who span { color: var(--adm-dim); }
+.crm-pipeline-page .crm-card-who strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; font-weight: 600; }
+.crm-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.22rem 0.5rem; border: 1px solid var(--adm-rule); border-radius: 999px; color: var(--adm-fg); text-decoration: none; font-size: 0.72rem; }
+.crm-chip svg { width: 0.75rem; height: 0.75rem; }
+.crm-panel-amount { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 1.15rem; font-weight: 700; cursor: pointer; }
+.crm-panel-amount svg { color: var(--adm-dim); }
 .crm-pipeline-page .crm-avatar[data-hue="0"] { background: #2c2824; color: #f2f0ea; }
 .crm-pipeline-page .crm-avatar[data-hue="1"] { background: #24302c; color: #f2f0ea; }
 .crm-pipeline-page .crm-avatar[data-hue="2"] { background: #2a2833; color: #f2f0ea; }
@@ -1797,14 +1822,15 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 .crm-pipeline-page .crm-avatar[data-hue="4"] { background: #1f2c33; color: #f2f0ea; }
 .crm-pipeline-page .crm-avatar[data-hue="5"] { background: #332428; color: #f2f0ea; }
 .crm-pipeline-page .crm-card-head a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.crm-pipe-money { display: flex; align-items: baseline; gap: 0.35rem; }
+.crm-pipe-money { display: flex; align-items: baseline; gap: 0.35rem; margin: 0; }
+.crm-pipe-money strong { font-size: 1.2rem; }
 .crm-pipe-est { color: var(--adm-dim); font-size: 0.72rem; font-weight: 550; letter-spacing: 0.01em; }
 .crm-pipe-bit { display: inline-block; animation: crm-pipe-fade 180ms var(--pipe-ease); }
 .crm-grip { position: absolute; top: 0.4rem; right: 0.35rem; width: 1.1rem; height: 1.1rem; padding: 0; border: 0; border-radius: 0.3rem; background: transparent; color: transparent; cursor: grab; }
 .crm-grip:focus-visible { color: var(--adm-fg); outline: 1px solid var(--adm-accent); }
 .crm-pipeline-page .crm-move { display: none; }
 .crm-pipe-more { align-self: flex-start; margin-top: 0.45rem; padding: 0; border: 0; background: transparent; color: var(--adm-dim); cursor: pointer; font: inherit; font-size: 0.78rem; }
-.crm-card-face.is-lifted { transform: translateY(-4px); padding: 0.7rem 0.75rem; border: 1px solid color-mix(in srgb, var(--adm-accent) 55%, var(--adm-rule)); border-radius: 0.6rem; background: var(--adm-panel); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.85); }
+.crm-card-face.is-lifted { transform: translateY(-4px); padding: 0.75rem 0.8rem; border: 1px solid color-mix(in srgb, var(--adm-accent) 55%, var(--adm-rule)); border-radius: 0.6rem; background: var(--adm-panel); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.85); will-change: transform; }
 .crm-pipe-results { animation: crm-pipe-fade 200ms var(--pipe-ease); }
 .crm-pipeline-page .crm-panel { animation: crm-pipe-in 260ms var(--pipe-ease); }
 .crm-pipeline-page .crm-panel.is-closing { animation: crm-pipe-out 180ms var(--pipe-ease) forwards; }
@@ -1825,6 +1851,8 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 @media (max-width: 960px) {
   .crm-pipeline-page .crm-move { display: block; }
   .crm-pipeline-page .crm-grip { display: none; }
+}
+@media (max-width: 1279px) {
   .crm-pipeline-page .crm-panel { animation-name: crm-pipe-sheet-in; }
   .crm-pipeline-page .crm-panel.is-closing { animation-name: crm-pipe-sheet-out; }
 }

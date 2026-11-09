@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { moveStageAction } from "@/app/admin/crm-actions";
-import { avatarHue, eur, initials } from "@/components/admin/crm/crm-ui";
+import { avatarHue, CrmIcon, eur, initials } from "@/components/admin/crm/crm-ui";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
 export type ContactCard = {
@@ -27,9 +27,30 @@ const HINT: Record<Stage, string> = {
   perso: "Chiuso perso",
 };
 const PAGE = 12;
+const CLOCK = "M12 8v5l3 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z";
+const CHAT = "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z";
+const TRAY = "M4 8h16v10H4zM4 8l8 6 8-6";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-const level = (s: number) => (s >= 70 ? "alto" : s >= 40 ? "medio" : "basso");
 const money = (cents: number | null) => (cents === null ? "" : eur(cents / 100));
+
+/** Search submits the same form, about 200 ms after the last keystroke. */
+export function PipelineSearch({ action, children }: { action: string; children: ReactNode }) {
+  const timer = useRef<number | null>(null);
+  useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
+  const onInput = (e: FormEvent<HTMLFormElement>) => {
+    const field = e.target as HTMLInputElement;
+    if (field.name !== "q") return;
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => field.form?.requestSubmit(), 200);
+  };
+  return <form className="crm-toolbar" action={action} method="get" role="search" onInput={onInput}>{children}</form>;
+}
+
+function whoOf(card: ContactCard) {
+  const name = card.touch.startsWith("Autore non disponibile") ? "" : (card.touch.split(" · ")[0] ?? "");
+  if (name) return { label: "Chi ha scritto", name };
+  return { label: "Responsabile", name: card.owner };
+}
 
 const columnJump = (event: KeyboardEvent, { currentCoordinates }: { currentCoordinates: { x: number; y: number } }) => {
   const step = 280;
@@ -106,10 +127,12 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
     return () => window.clearTimeout(t);
   }, [message]);
 
-  function commit(card: ContactCard, stage: Stage) {
+  const cardsRef = useRef(cards);
+  cardsRef.current = cards;
+  const commit = useCallback((card: ContactCard, stage: Stage) => {
     if (card.stage === stage) return;
     const previous = card;
-    const ids = cards.filter((c) => c.stage === card.stage || c.stage === stage).map((c) => c.id);
+    const ids = cardsRef.current.filter((c) => c.stage === card.stage || c.stage === stage).map((c) => c.id);
     flip(ids);
     flushSync(() => setCards((cs) => cs.map((c) => c.id === card.id ? { ...c, stage, version: c.version + 1 } : c)));
     start(async () => {
@@ -123,18 +146,24 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
         router.refresh();
       }
     });
-  }
+  }, [router]);
 
-  function request(card: ContactCard, stage: Stage) {
+  const request = useCallback((card: ContactCard, stage: Stage) => {
     if (card.stage === stage) return;
     if (stage === "vinto" || stage === "perso") setAsk({ card, stage });
     else commit(card, stage);
-  }
+  }, [commit]);
 
-  const shift = (card: ContactCard, dir: -1 | 1) => {
+  const shift = useCallback((card: ContactCard, dir: -1 | 1) => {
     const next = STAGES[STAGES.indexOf(card.stage) + dir];
     if (next) request(card, next);
-  };
+  }, [request]);
+  const bump = useCallback((stage: Stage) => setMore((m) => ({ ...m, [stage]: (m[stage] ?? PAGE) + PAGE })), []);
+  const grouped = useMemo(() => {
+    const map = Object.fromEntries(STAGES.map((stage) => [stage, [] as ContactCard[]])) as Record<Stage, ContactCard[]>;
+    for (const card of cards) map[card.stage].push(card);
+    return map;
+  }, [cards]);
 
   const onDragStart = (event: DragStartEvent) => setActiveId(String(event.active.id));
   const onDragEnd = (event: DragEndEvent) => {
@@ -145,6 +174,11 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
     if (card) request(card, stage as Stage);
   };
   const active = cards.find((c) => c.id === activeId) ?? null;
+  const openId = cards.find((c) => c.active)?.id ?? "";
+  useEffect(() => {
+    if (!openId) return;
+    document.querySelector(`[data-row-link="${CSS.escape(openId)}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [openId]);
 
   const confirm = ask ? (
     <div className="crm-pipe-confirm" role="alertdialog" aria-labelledby="crm-pipe-confirm-title" aria-describedby="crm-pipe-confirm-text">
@@ -197,9 +231,8 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
         <div className="crm-board" ref={boardRef}>
           {STAGES.map((stage) => (
-            <Column key={stage} stage={stage} cards={cards.filter((c) => c.stage === stage)} shown={(more[stage] ?? PAGE)} hand={hand}
-              onMore={() => setMore((m) => ({ ...m, [stage]: (m[stage] ?? PAGE) + PAGE }))}
-              onMove={request} onShift={shift} />
+            <Column key={stage} stage={stage} cards={grouped[stage]} shown={more[stage] ?? PAGE} hand={hand}
+              onMore={bump} onMove={request} onShift={shift} />
           ))}
         </div>
         <DragOverlay dropAnimation={null}>
@@ -210,9 +243,9 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
   );
 }
 
-function Column({ stage, cards, shown, hand, onMore, onMove, onShift }: {
+const Column = memo(function Column({ stage, cards, shown, hand, onMore, onMove, onShift }: {
   stage: Stage; cards: ContactCard[]; shown: number; hand: boolean;
-  onMore: () => void; onMove: (card: ContactCard, stage: Stage) => void; onShift: (card: ContactCard, dir: -1 | 1) => void;
+  onMore: (stage: Stage) => void; onMove: (card: ContactCard, stage: Stage) => void; onShift: (card: ContactCard, dir: -1 | 1) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const visible = cards.slice(0, shown);
@@ -226,16 +259,20 @@ function Column({ stage, cards, shown, hand, onMore, onMove, onShift }: {
   return (
     <section ref={setNodeRef} className="crm-col" data-stage={stage} data-over={isOver || undefined} aria-label={`${STAGE_LABEL[stage]}, ${HINT[stage]}`}>
       <header className="crm-col-head">
-        <h2>{STAGE_LABEL[stage]} <span className="crm-pipe-count">{cards.length}</span></h2>
+        <h2><span className="crm-stage-dot" data-stage={stage} />{STAGE_LABEL[stage]} <span className="crm-pipe-count">{cards.length}</span></h2>
         <span className="crm-col-sum" title={tip}>{money(real + estimated) || "0 €"}</span>
       </header>
-      <ul className="crm-cards">
-        {visible.map((c) => <Card key={c.id} card={c} hand={hand} onMove={onMove} onShift={onShift} />)}
-      </ul>
-      {cards.length > visible.length ? <button type="button" className="crm-pipe-more" onClick={onMore}>Mostra altri {Math.min(PAGE, cards.length - visible.length)}</button> : null}
+      {cards.length ? (
+        <ul className="crm-cards">
+          {visible.map((c) => <Card key={c.id} card={c} hand={hand} onMove={onMove} onShift={onShift} />)}
+        </ul>
+      ) : (
+        <p className="crm-col-empty"><CrmIcon d={TRAY} />Trascina qui…</p>
+      )}
+      {cards.length > visible.length ? <button type="button" className="crm-pipe-more" onClick={() => onMore(stage)}>Mostra altri {Math.min(PAGE, cards.length - visible.length)}</button> : null}
     </section>
   );
-}
+});
 
 function Card({ card, hand, onMove, onShift }: {
   card: ContactCard; hand: boolean; onMove: (card: ContactCard, stage: Stage) => void; onShift: (card: ContactCard, dir: -1 | 1) => void;
@@ -260,27 +297,30 @@ function Card({ card, hand, onMove, onShift }: {
   );
 }
 
-function CardView({ card, lifted = false }: { card: ContactCard; lifted?: boolean }) {
+const CardView = memo(function CardView({ card, lifted = false }: { card: ContactCard; lifted?: boolean }) {
+  const who = whoOf(card);
   return (
     <div className={lifted ? "crm-card-face is-lifted" : "crm-card-face"}>
-      <div className="crm-card-head">
-        <span className="crm-avatar" data-hue={avatarHue(card.name)} aria-hidden="true">{initials(card.name)}</span>
+      <div className="crm-card-top">
         <Link href={card.href as Route} data-row-link={card.id}>{card.name}</Link>
-        {card.score !== null ? <span className="adm-badge crm-score" data-level={level(card.score)} title={`Punteggio ${card.score} su 100`}>{card.score}</span> : null}
+        <span className="crm-avatar" data-hue={avatarHue(card.name)} aria-hidden="true">{initials(card.name)}</span>
       </div>
-      <p className="adm-muted">{[card.city, card.source].filter(Boolean).join(" · ") || "\u00a0"}</p>
-      {card.valueCents !== null ? (
+      <p className="crm-card-sub">{[card.city, card.source].filter(Boolean).join(" · ") || "Senza città"}</p>
+      {card.valueCents === null ? null : (
         <p className="crm-pipe-money" key={`${card.valueKind}:${card.valueCents}`}>
           <strong>{money(card.valueCents)}</strong>
           {card.valueKind === "stimato" ? <span className="crm-pipe-est">stimato</span> : null}
         </p>
-      ) : null}
-      <p className="crm-card-who"><span>Responsabile</span><strong key={card.owner} className="crm-pipe-bit">{card.owner}</strong></p>
-      <p className="crm-card-who"><span>Chi ha scritto</span><strong key={card.touch} className="crm-pipe-bit">{card.touch}</strong></p>
+      )}
+      <p className="crm-card-who">
+        <span className="crm-avatar crm-avatar-mini" aria-hidden="true">{initials(who.name)}</span>
+        <span>{who.label}</span>
+        <strong key={`${who.label}:${who.name}`} className="crm-pipe-bit">{who.name}</strong>
+      </p>
       <p className="crm-card-links">
-        <Link href={card.historyHref as Route}>Storico</Link>
-        {card.emailHref ? <Link href={card.emailHref as Route}>Conversazione</Link> : null}
+        <Link className="crm-chip" href={card.historyHref as Route}><CrmIcon d={CLOCK} />Storico</Link>
+        {card.emailHref ? <Link className="crm-chip" href={card.emailHref as Route}><CrmIcon d={CHAT} />Conversazione</Link> : null}
       </p>
     </div>
   );
-}
+});

@@ -131,7 +131,7 @@ export function OpportunityBoard({ cards: initial, showLost, expandLost, addHref
               <section key={stage} className="crm-col is-collapsed" data-stage={stage} data-over={over === stage || undefined} aria-label={STAGE_LABEL[stage]}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (over !== stage) setOver(stage); }}
                 onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); const card = cards.find((c) => c.id === id); if (card) request(card, stage); }}>
-                <header className="crm-col-head"><h2>{STAGE_LABEL[stage]} <span className="crm-pipe-count">{list.length}</span></h2></header>
+                <header className="crm-col-head"><h2><span className="crm-stage-dot" data-stage={stage} />{STAGE_LABEL[stage]} <span className="crm-pipe-count">{list.length}</span></h2></header>
                 <p className="adm-muted crm-col-sub">{STAGE_HINT[stage]}</p>
                 <Link className="adm-btn adm-btn-sm" href={expandLost as Route}>Mostra</Link>
               </section>
@@ -142,7 +142,7 @@ export function OpportunityBoard({ cards: initial, showLost, expandLost, addHref
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (over !== stage) setOver(stage); }}
               onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null); }}
               onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); const card = cards.find((c) => c.id === id); if (card) request(card, stage); }}>
-              <header className="crm-col-head"><h2>{STAGE_LABEL[stage]} <span className="crm-pipe-count">{list.length}</span></h2><span className="crm-col-sum" title="Somma dei valori delle trattative in colonna">{eurSum(list)}</span></header>
+              <header className="crm-col-head"><h2><span className="crm-stage-dot" data-stage={stage} />{STAGE_LABEL[stage]} <span className="crm-pipe-count">{list.length}</span></h2><span className="crm-col-sum" title="Somma dei valori delle trattative in colonna">{eurSum(list)}</span></header>
               <p className="adm-muted crm-col-sub">{STAGE_HINT[stage]}</p>
               <ul className="crm-cards">
                 {list.map((c) => (

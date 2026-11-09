@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { ContactBoard, type ContactCard } from "@/components/admin/crm/contact-board";
+import { ContactBoard, PipelineSearch, type ContactCard } from "@/components/admin/crm/contact-board";
 import { ContactPanel } from "@/components/admin/crm/contact-panel";
 import { CrmHeader, CrmIcon, CrmTabs, eur } from "@/components/admin/crm/crm-ui";
 import { KeyShortcut } from "@/components/admin/crm/follow-up-client";
@@ -128,6 +128,19 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
         <CrmHeader className="crm-pipeline-glow" title="Pipeline" intro={contactsMode
           ? "I contatti, nella fase in cui sono oggi. Iris li aggiunge da solo. Un'opportunità è una trattativa a parte."
           : "Trattative aperte a mano. I contatti restano nella vista Contatti e non diventano opportunità da soli."}>
+          <div className="crm-pipe-kpis">
+            <p>
+              <CrmIcon d="M4 16l5-5 3 3 7-8" />
+              <strong>{snap.opportunitiesActive}</strong>
+              <span>Opportunità attive</span>
+            </p>
+            <p>
+              <CrmIcon d="M12 3v18M16 7.5c0-1.5-1.8-2.5-4-2.5S8 6 8 7.5 9.8 10 12 10s4 1 4 2.5-1.8 2.5-4 2.5-4-1-4-2.5" />
+              <strong>{eur(snap.potentialValueCents / 100) || "0 €"}</strong>
+              <span>Valore pipeline</span>
+              {potentialPct !== null ? <em>{potentialPct > 0 ? `+${potentialPct}%` : `${potentialPct}%`}</em> : null}
+            </p>
+          </div>
           <OpportunityDialog query={view} stage={stage} owners={owners} me={me.id} preset={presetContact && !presetContact.archived ? { id: presetContact.id, name: presetContact.businessName, city: presetContact.city } : null} />
         </CrmHeader>
         <div className="crm-pipe-bar">
@@ -139,18 +152,10 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             <Link href={href({ vista: "kanban" }) as Route} aria-current={view.vista === "kanban" ? "page" : undefined}>Kanban</Link>
             <Link href={href({ vista: "lista" }) as Route} aria-current={view.vista === "lista" ? "page" : undefined}>Lista</Link>
           </div>
-          <div className="crm-pipe-kpis">
-            <p><strong>{snap.opportunitiesActive}</strong><span>Opportunità attive</span></p>
-            <p>
-              <strong>{eur(snap.potentialValueCents / 100) || "0 €"}</strong>
-              <span>Potenziale contattati</span>
-              {potentialPct !== null ? <em>{potentialPct > 0 ? `+${potentialPct}%` : `${potentialPct}%`}</em> : null}
-            </p>
-          </div>
         </div>
         <CrmTabs current={PIPELINE} />
 
-        <form className="crm-toolbar" action={PIPELINE} method="get" role="search">
+        <PipelineSearch action={PIPELINE}>
           <label className="crm-search">
             <CrmIcon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" />
             <input className="adm-input" name="q" defaultValue={query.q} placeholder={contactsMode ? "Cerca un contatto…" : "Cerca un'opportunità…"} aria-label={contactsMode ? "Cerca un contatto" : "Cerca un'opportunità"} />
@@ -175,7 +180,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             ]} href={(prio) => href({ prio })} />
           ) : null}
           {!contactsMode ? <SavedDealViews query={view} /> : null}
-        </form>
+        </PipelineSearch>
 
         {contactsMode ? (
           <>
