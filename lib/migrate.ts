@@ -288,6 +288,11 @@ export function ensureCrmSchema(): Promise<void> {
     await db().batch(OPPORTUNITY_DDL.map((sql) => ({ sql })), "write");
     // Additive only: an activity is its own row. Follow-ups on the contact are not copied. Rollback: DROP TABLE crm_activities.
     await db().batch(ACTIVITY_DDL.map((sql) => ({ sql })), "write");
+    // Additive only: one Oggi snapshot per Rome day. Past cells stay null when they cannot be derived. Rollback: DROP TABLE crm_kpi_daily.
+    await db().execute(`CREATE TABLE IF NOT EXISTS crm_kpi_daily (
+      day TEXT PRIMARY KEY, contacts_total INTEGER, assigned INTEGER, opportunities_active INTEGER,
+      todo_due INTEGER, overdue INTEGER, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`);
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }

@@ -2,16 +2,16 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ActivityCheck } from "@/components/admin/crm/activity-check";
-import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, CrmTip, eur, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
-import { KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
-import { addDays, dueLabel, FollowUpRows, ScopeSwitch } from "@/components/admin/crm/follow-ups";
+import { CrmIcon, CRM_ICON, CrmTabs, CrmTip, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { FollowUpDone, KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
+import { addDays, dueLabel, ScopeSwitch } from "@/components/admin/crm/follow-ups";
 import { LeavingRow, RollValue } from "@/components/admin/crm/oggi-motion";
 import { requireSection } from "@/lib/admin";
-import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, unassignedContacts, type CrmEvent } from "@/lib/crm";
-import { conversionRate, SOURCE_LABEL, STAGE_LABEL, type Stage } from "@/lib/crm-core";
+import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, scoredOpenCount, unassignedContacts, type CrmEvent } from "@/lib/crm";
+import { SOURCE_LABEL, STAGE_LABEL, type Stage } from "@/lib/crm-core";
+import { kpiSeries, liveKpiCounts, recordOggiKpis, type SparkPoint } from "@/lib/crm-kpi";
 import { CRM_HOME, followUpScope, PIPELINE, RUBRICA } from "@/lib/crm-nav";
 import { listActivities } from "@/lib/crm-activity";
-import { opportunityTotals } from "@/lib/crm-opportunity";
 import { isFounder } from "@/lib/team-types";
 
 type SP = Record<string, string | string[] | undefined>;
@@ -27,51 +27,30 @@ export default function OggiPage({ searchParams }: { searchParams: Promise<SP> }
 function OggiSkeleton() {
   return (
     <div className="crm-oggi-page" aria-busy="true" aria-label="Caricamento del CRM">
-      <div className="crm-oggi-lead">
-        <div className="crm-skel-head">
-          <div className="adm-skel crm-skel-kicker" />
-          <div className="adm-skel crm-skel-title" />
-          <div className="adm-skel crm-skel-date" />
-          <div className="adm-skel crm-skel-status" />
-        </div>
+      <div className="crm-oggi-top">
+        <div className="adm-skel crm-skel-kicker" />
+        <div className="adm-skel crm-skel-title" />
+        <div className="adm-skel crm-skel-status" />
         <div className="adm-skel crm-skel-tabs" />
       </div>
-      <div className="crm-meter">{[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel crm-meter-skel" />)}</div>
-      <div className="crm-oggi-grid">{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="adm-skel crm-skel-panel" />)}</div>
+      <div className="crm-oggi-kpis">{[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel crm-kpi-skel" />)}</div>
+      <div className="crm-oggi-split"><div className="adm-skel crm-skel-panel" /><div className="adm-skel crm-skel-panel is-side" /></div>
+      <div className="adm-skel crm-skel-wide" />
+      <div className="adm-skel crm-skel-wide is-short" />
     </div>
   );
 }
 
 const NEW_CONTACT = `${RUBRICA}?nuovo=1#nuovo`;
-function greeting(now = new Date()) {
-  const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hourCycle: "h23" }).format(now));
-  return h >= 5 && h < 13 ? "Buongiorno" : h >= 13 && h < 18 ? "Buon pomeriggio" : "Buonasera";
-}
+const LIST = 4;
 
 function romeDateLabel(now = new Date()) {
-  return new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long" }).format(now);
-}
-
-function countPhrase(n: number, one: string, many: string, zero: string) {
-  if (n === 0) return zero;
-  if (n === 1) return `1 ${one}`;
-  return `${n} ${many}`;
-}
-
-/** Status under the greeting, from counts already loaded for this view. */
-function oggiStatus(todo: number, free: number) {
-  const tasks = countPhrase(todo, "cosa da fare", "cose da fare", "Niente da fare");
-  const owners = countPhrase(free, "non assegnato", "non assegnati", "nessuno senza responsabile");
-  return `${tasks} · ${owners}`;
+  const label = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long" }).format(now);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function EmptyNote({ icon, text }: { icon: string; text: string }) {
   return <p className="crm-empty"><CrmIcon d={icon} /><span>{text}</span></p>;
-}
-
-/** Share of contacts in a stage. Zero when the book is empty, so the legend never invents a ratio. */
-function stagePct(count: number, total: number) {
-  return total > 0 ? Math.round((count / total) * 100) : 0;
 }
 
 function ScoreRing({ score }: { score: number | null }) {
@@ -82,6 +61,16 @@ function ScoreRing({ score }: { score: number | null }) {
       <ScoreBadge score={score} />
     </span>
   );
+}
+
+/** A clock time only when the stored value actually has one. A date alone stays blank. */
+function clockOf(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const bare = trimmed.match(/^([01]\d|2[0-3]):([0-5]\d)/);
+  if (bare && trimmed.length <= 8) return `${bare[1]}:${bare[2]}`;
+  const stamp = trimmed.match(/[T ]([01]\d|2[0-3]):([0-5]\d)/);
+  return stamp ? `${stamp[1]}:${stamp[2]}` : null;
 }
 
 function ago(iso: string, now = Date.now()) {
@@ -131,240 +120,268 @@ function describe(e: CrmEvent): { icon: string; title: string; sub: string; tone
   }
 }
 
-const initials = (name: string) => name.split(/\s+/).filter((w) => /\p{L}/u.test(w[0] ?? "")).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "·";
+function Sparkline({ points, tone }: { points: SparkPoint[]; tone: "quiet" | "accent" }) {
+  const runs: SparkPoint[][] = [];
+  for (const point of points) {
+    const last = runs[runs.length - 1];
+    if (last && point.i === last[last.length - 1]!.i + 1) last.push(point);
+    else runs.push([point]);
+  }
+  const drawn = runs.filter((run) => run.length >= 2);
+  if (!drawn.length) return <span className="crm-spark is-idle" data-tone={tone} aria-hidden="true" />;
+  const values = points.map((p) => p.v);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const x = (i: number) => (i / 29) * 112;
+  const y = (v: number) => 4 + (1 - (v - min) / span) * 26;
+  return (
+    <svg className="crm-spark" data-tone={tone} viewBox="0 0 112 36" aria-hidden="true">
+      {drawn.map((run) => {
+        const line = run.map((p, i) => `${i ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+        const area = `${line} L${x(run[run.length - 1]!.i).toFixed(1)},36 L${x(run[0]!.i).toFixed(1)},36 Z`;
+        return (
+          <g key={run[0]!.i}>
+            <path className="crm-spark-area" d={area} />
+            <path className="crm-spark-line" d={line} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const me = await requireSection("crm");
   const sp = await searchParams;
-  // Site requests become leads once per instance; Oggi is now the CRM entry, so it runs here too.
   await backfillRequests().catch(() => {});
   const founder = isFounder(me);
   const scope = followUpScope(typeof sp.ambito === "string" ? sp.ambito : undefined, founder);
   const today = romeToday();
   const tomorrow = addDays(today, 1);
   const viewer = { id: me.id, founder };
-  const [ov, due, events, priority, unassigned, deals, openActs] = await Promise.all([
-    crmOverview(), dueActions(scope === "team" ? null : me.id, today, tomorrow), recentCrmEvents(5).catch(() => []), priorityContacts(3), unassignedContacts(4), opportunityTotals(),
-    listActivities({ scope, stato: "aperte", until: tomorrow }, viewer),
+  const kpi = await recordOggiKpis().catch(() => liveKpiCounts(today));
+  const [ov, due, events, priority, unassigned, openActs, scored, series] = await Promise.all([
+    crmOverview(), dueActions(scope === "team" ? null : me.id, today, tomorrow), recentCrmEvents(6).catch(() => []), priorityContacts(6), unassignedContacts(6),
+    listActivities({ scope, stato: "aperte", until: tomorrow }, viewer), scoredOpenCount(),
+    Promise.all([
+      kpiSeries("contacts_total", today), kpiSeries("assigned", today), kpiSeries("opportunities_active", today), kpiSeries("todo_due", today),
+    ]),
   ]);
-  const rate = conversionRate(deals.won, deals.lost);
+  const [contactsLine, assignedLine, dealsLine, todoLine] = series;
   const pipelineStages: Stage[] = ["nuovo", "contattato", "call", "preventivo", "vinto", "perso"];
   const feed = events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
-  const listCap = 4;
-  const followShown = due.slice(0, listCap);
-  const actShown = openActs.slice(0, listCap - followShown.length);
-  const todoHidden = due.length + openActs.length - followShown.length - actShown.length;
-  const feedShown = feed.slice(0, listCap);
-  const first = me.name.trim().split(/\s+/)[0] || me.name;
-
-  const todoCount = due.length + openActs.length;
+  const followShown = due.slice(0, LIST);
+  const actShown = openActs.slice(0, LIST - followShown.length);
+  const month = ov.newThisMonth > 0
+    ? { text: `+${ov.newThisMonth} questo mese`, tone: "ok" as const }
+    : { text: "Nessuno questo mese", tone: "quiet" as const };
+  const freeLine = ov.unassigned === 0
+    ? { text: "Nessuno da assegnare", tone: "quiet" as const }
+    : { text: ov.unassigned === 1 ? "1 da assegnare" : `${ov.unassigned} da assegnare`, tone: "warn" as const };
+  const dealStatus = kpi.opportunitiesActive === 0
+    ? "Nessuna attiva"
+    : kpi.opportunitiesActive === 1 ? "1 attiva" : `${kpi.opportunitiesActive} attive`;
+  const urgent = kpi.overdue === 0
+    ? { text: "Nessuna urgente", tone: "quiet" as const }
+    : { text: kpi.overdue === 1 ? "1 urgente" : `${kpi.overdue} urgenti`, tone: "late" as const };
 
   return (
     <>
       <NewContactShortcut href={NEW_CONTACT} />
       <KeyShortcut href={`${PIPELINE}?nuova=1`} keyName="o" />
       <div className="crm-oggi-page">
-          <div className="crm-oggi-lead">
-            <CrmHeader
-              title={`${greeting()}, ${first}`}
-              note={<p className="crm-date">{romeDateLabel()}</p>}
-              intro={oggiStatus(todoCount, ov.unassigned)}
-            />
-            <CrmTabs current={CRM_HOME} />
+        <header className="crm-oggi-top">
+          <p className="crm-oggi-eye">CRM / Overview</p>
+          <div className="crm-oggi-title">
+            <h1 className="adm-h1">Oggi</h1>
+            <p className="crm-oggi-sub">{romeDateLabel()} · Panoramica operativa</p>
           </div>
+          <div className="crm-oggi-actions">
+            <Link href={NEW_CONTACT as Route} className="crm-oggi-new"><CrmIcon d={EVENT_ICON.add} /><span>Nuovo contatto</span><kbd>N</kbd></Link>
+            <details className="crm-oggi-menu">
+              <summary aria-label="Altre azioni"><CrmIcon d="M6 9l6 6 6-6" /></summary>
+              <div className="crm-oggi-menu-list">
+                <Link href={`${PIPELINE}?nuova=1` as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><kbd>O</kbd></Link>
+                <Link href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span></Link>
+                <Link href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span></Link>
+              </div>
+            </details>
+          </div>
+          <CrmTabs current={CRM_HOME} />
+        </header>
 
-          <script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} />
-          <section className="crm-meter" aria-label="Numeri del CRM">
-            <Link href={RUBRICA as Route} className="crm-meter-cell is-lead">
-              <CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} />
-              <span className="crm-meter-num"><RollValue id="total" text={String(ov.total)} /></span>
-              <span className="crm-meter-label">Contatti totali</span>
-              {ov.newThisMonth ? <span className="crm-kpi-chip" title={`${ov.newThisMonth} nuovi questo mese`}>↗ +{ov.newThisMonth}<span className="adm-sr"> nuovi questo mese</span></span> : null}
-            </Link>
-            <div className="crm-meter-cell">
-              <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} />
-              <span className="crm-meter-num"><RollValue id="rate" text={rate === null ? "n.d." : `${Math.round(rate * 100)}%`} /></span>
-              <span className="crm-meter-label">Conversione</span>
-              <span className="crm-kpi-chip is-quiet" title={`${deals.won} opportunità vinte, ${deals.lost} perse`}>{deals.won} vinte</span>
+        <div hidden><script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} /></div>
+        <section className="crm-oggi-kpis" aria-label="Numeri del CRM">
+          <article className="crm-kpi-card">
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /> Contatti</span>
+            <span className="crm-kpi-num"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
+            <span className="crm-kpi-meta" data-tone={month.tone}><i />{month.text}</span>
+            <Sparkline points={contactsLine} tone="quiet" />
+          </article>
+          <article className="crm-kpi-card">
+            <span className="crm-kpi-label"><CrmIcon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11l2 2 4-4" /> Assegnati</span>
+            <span className="crm-kpi-num"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
+            <span className="crm-kpi-meta" data-tone={freeLine.tone}><i />{freeLine.text}</span>
+            <Sparkline points={assignedLine} tone="quiet" />
+          </article>
+          <article className="crm-kpi-card">
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Opportunità</span>
+            <span className="crm-kpi-num"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
+            <span className="crm-kpi-meta" data-tone="quiet"><i />{dealStatus}</span>
+            <Sparkline points={dealsLine} tone="quiet" />
+          </article>
+          <article className="crm-kpi-card">
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare</span>
+            <span className="crm-kpi-num"><RollValue id="todo" text={String(kpi.todoDue)} /></span>
+            <span className="crm-kpi-meta" data-tone={urgent.tone}><i />{urgent.text}</span>
+            <Sparkline points={todoLine} tone="accent" />
+          </article>
+        </section>
+
+        <div className="crm-oggi-split">
+          <section className="crm-card-panel" aria-labelledby="crm-todo-h">
+            <div className="crm-panel-head">
+              <h2 id="crm-todo-h" className="adm-h2">
+                <CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi
+                <CrmTip text="I follow-up si pianificano dalla scheda. Le attività si creano nella sezione Attività." />
+              </h2>
+              <div className="crm-head-actions">
+                {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} /> : null}
+                <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Tutte le attività →</Link>
+              </div>
             </div>
-            <Link href={"/admin/crm/pipeline" as Route} className="crm-meter-cell" title="Trattative aperte a mano, non i contatti in una fase">
-              <CrmIcon d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5" />
-              <span className="crm-meter-num"><RollValue id="open" text={String(deals.open)} /></span>
-              <span className="crm-meter-label">Opportunità attive</span>
-            </Link>
-            <div className="crm-meter-cell">
-              <CrmIcon d="M5 20V12M10 20V8M15 20v-5M20 20V4" />
-              <span className="crm-meter-num"><RollValue id="won" text={eur(deals.wonValue) || "0 €"} /></span>
-              <span className="crm-meter-label">Valore vinto</span>
+            <div className="crm-card-body">
+              {followShown.length || actShown.length ? (
+                <ul className="crm-todo">
+                  {followShown.map((a) => {
+                    const due = dueLabel(a.nextActionAt, today);
+                    const time = clockOf(a.nextActionAt);
+                    return (
+                      <li key={a.id} className="crm-todo-row">
+                        <FollowUpDone id={a.id} seenAt={a.nextActionAt} label={`${a.nextAction || "Prossima azione"}, ${a.businessName}`} />
+                        <div className="crm-todo-text">
+                          <Link href={`${CRM_HOME}/${a.id}` as Route} className="crm-todo-title">{a.nextAction || "Prossima azione da definire"}</Link>
+                          <span className="adm-muted">{a.businessName}{scope === "team" ? ` · ${a.ownerName ?? "Non assegnato"}` : ""}</span>
+                        </div>
+                        <span className="crm-due" data-tone={due.tone}>{due.text}</span>
+                        <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                      </li>
+                    );
+                  })}
+                  {actShown.map((a) => {
+                    const due = dueLabel(a.dueDate, today);
+                    const time = clockOf(a.dueTime);
+                    return (
+                      <LeavingRow key={a.id}>
+                        <div className="crm-todo-row">
+                          <ActivityCheck id={a.id} version={a.version} done={false} label={`Completa ${a.title}`} />
+                          <div className="crm-todo-text">
+                            <Link href={`/admin/crm/attivita?a=${a.id}${scope === "team" ? "&ambito=team" : ""}` as Route} className="crm-todo-title">{a.title}</Link>
+                            <span className="adm-muted">{a.contactName ?? "Senza contatto"}</span>
+                          </div>
+                          <span className="crm-due" data-tone={due.tone}>{due.text}</span>
+                          <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                        </div>
+                      </LeavingRow>
+                    );
+                  })}
+                </ul>
+              ) : <EmptyNote icon={CRM_ICON["/admin/crm/attivita"]} text={scope === "team" ? "Niente in scadenza per il team." : "Niente in scadenza per te."} />}
             </div>
           </section>
 
-          <div className="crm-oggi-grid">
-            <section className="crm-card-panel" data-slot="todo" aria-labelledby="crm-todo-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-todo-h" className="adm-h2">
-                  <CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi <span className="crm-count">{todoCount}</span>
-                  <CrmTip text="I follow-up si pianificano dalla scheda. Le attività si creano nella sezione Attività." />
-                </h2>
-              </div>
-              <div className="crm-card-body">
-                {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} /> : null}
-                {followShown.length ? <FollowUpRows items={followShown} today={today} showOwner={scope === "team"} /> : null}
-                {actShown.length ? (
-                  <ul className="crm-todo">
-                    {actShown.map((a) => {
-                      const due = dueLabel(a.dueDate, today);
-                      const pill = a.dueTime && due.tone !== "late" ? `${due.text} · ${a.dueTime.slice(0, 5)}` : due.text;
-                      return (
-                        <LeavingRow key={a.id}>
-                          <div className="crm-todo-row">
-                            <ActivityCheck id={a.id} version={a.version} done={false} label={`Completa ${a.title}`} />
-                            <div className="crm-todo-text">
-                              <Link href={`/admin/crm/attivita?a=${a.id}${scope === "team" ? "&ambito=team" : ""}` as Route} className="crm-todo-title">{a.title}</Link>
-                              <span className="adm-muted">{a.contactName ?? "Senza contatto"} · attività</span>
-                            </div>
-                            <span className="crm-due" data-tone={due.tone}>{pill}</span>
-                          </div>
-                        </LeavingRow>
-                      );
-                    })}
-                  </ul>
-                ) : null}
-                {!followShown.length && !actShown.length ? <EmptyNote icon={CRM_ICON["/admin/crm/attivita"]} text={scope === "team" ? "Niente in scadenza per il team." : "Niente in scadenza per te."} /> : null}
-              </div>
-              <p className="crm-card-foot">
-                {todoHidden > 0 ? <span className="adm-muted crm-foot">Il resto è nella vista Attività.</span> : <span />}
-                <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Vedi tutte →</Link>
-              </p>
-            </section>
-
-            <section className="crm-card-panel" data-slot="feed" aria-labelledby="crm-feed-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-feed-h" className="adm-h2"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> Attività recenti</h2>
-              </div>
-              <div className="crm-card-body">
-                {feedShown.length ? (
-                  <ul className="crm-feed">
-                    {feedShown.map(({ e, d }) => (
-                      <li key={e.id}>
-                        <span className="crm-feed-icon" data-tone={d!.tone}><CrmIcon d={d!.icon} /></span>
-                        <div className="crm-todo-text">
-                          {e.contactId ? <Link href={`${CRM_HOME}/${e.contactId}` as Route} className="crm-todo-title">{d!.title}</Link> : <strong className="crm-todo-title">{d!.title}</strong>}
-                          <span className="adm-muted">{d!.sub}{e.actor ? ` · ${e.actor}` : ""}</span>
-                        </div>
-                        <time className="adm-muted crm-ago" dateTime={e.at}>{ago(e.at)}</time>
+          <section className="crm-card-panel" aria-labelledby="crm-attn-h">
+            <div className="crm-panel-head">
+              <h2 id="crm-attn-h" className="adm-h2">
+                <CrmIcon d="M12 9v4M12 17h.01M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z" /> Richiedono attenzione
+              </h2>
+            </div>
+            <div className="crm-card-body crm-attn">
+              <details className="crm-attn-item">
+                <summary>
+                  <span className="crm-attn-num"><RollValue id="free" text={String(ov.unassigned)} /></span>
+                  <span>Contatti non assegnati</span>
+                </summary>
+                {unassigned.length ? (
+                  <ul className="crm-attn-list">
+                    {unassigned.map((c) => (
+                      <li key={c.id}>
+                        <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
+                        <span className="adm-muted">{SOURCE_LABEL[c.source]}</span>
                       </li>
                     ))}
                   </ul>
-                ) : <EmptyNote icon="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" text="Nessuna attività recente." />}
-              </div>
-              {founder ? <p className="crm-card-foot"><Link className="crm-more" href={"/admin/audit" as Route}>Registro →</Link></p> : null}
-            </section>
-
-            <section className="crm-card-panel" data-slot="quick" aria-labelledby="crm-quick-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-quick-h" className="adm-h2">
-                  <CrmIcon d="M13 2L4 14h7l-1 8 9-12h-7z" /> Azioni rapide
-                  <CrmTip text="Un'opportunità è una trattativa, non un contatto. L'import CSV non ne crea." />
-                </h2>
-              </div>
-              <div className="crm-card-body">
-                <div className="crm-quick">
-                  <Link href={NEW_CONTACT as Route} className="crm-quick-item is-primary"><CrmIcon d={EVENT_ICON.add} /><span>Nuovo contatto</span><kbd>N</kbd></Link>
-                  <Link href={`${PIPELINE}?nuova=1` as Route} className="crm-quick-item">
-                    <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><kbd>O</kbd>
-                  </Link>
-                  <Link href={`${RUBRICA}?importa=1` as Route} className="crm-quick-item">
-                    <CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span>
-                  </Link>
-                  <Link href={"/admin/crm/radar" as Route} className="crm-quick-item" title="I prospect arrivano dalle ricerche di Iris">
-                    <CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span>
-                  </Link>
-                </div>
-              </div>
-            </section>
-
-            <section className="crm-card-panel" data-slot="prio" aria-labelledby="crm-top-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-top-h" className="adm-h2"><CrmIcon d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" /> Contatti prioritari <span className="crm-count">{priority.length}</span></h2>
-              </div>
-              <div className="crm-card-body">
+                ) : <p className="crm-empty">Nessun contatto senza responsabile.</p>}
+                <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
+              </details>
+              <details className="crm-attn-item">
+                <summary>
+                  <span className="crm-attn-num"><RollValue id="prio" text={String(scored)} /></span>
+                  <span>Contatti prioritari</span>
+                </summary>
                 {priority.length ? (
-                  <ul className="crm-prio">
+                  <ul className="crm-attn-list">
                     {priority.map((c) => (
                       <li key={c.id}>
-                        <Link href={`${CRM_HOME}/${c.id}` as Route} className="crm-prio-row">
-                          <span className="crm-avatar" aria-hidden="true">{initials(c.businessName)}</span>
-                          <span className="crm-prio-text">
-                            <strong>{c.businessName}</strong>
-                            <span className="adm-muted">{[c.city, c.type].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</span>
-                          </span>
-                          <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span>
-                          <ScoreRing score={c.score} />
-                        </Link>
+                        <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
+                        <ScoreRing score={c.score} />
                       </li>
                     ))}
                   </ul>
-                ) : <EmptyNote icon="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" text="Nessun contatto con punteggio." />}
-              </div>
-              <p className="crm-card-foot"><Link className="crm-more" href={RUBRICA as Route}>Vedi tutti →</Link></p>
-            </section>
+                ) : <p className="crm-empty">Nessun contatto con punteggio.</p>}
+                <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
+              </details>
+            </div>
+            <p className="crm-card-foot"><Link className="crm-more is-accent" href={RUBRICA as Route}>Apri la rubrica →</Link></p>
+          </section>
+        </div>
 
-            <section className="crm-card-panel" data-slot="free" aria-labelledby="crm-free-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-free-h" className="adm-h2">
-                  <CrmIcon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21v-1a6 6 0 0 1 9-5.2M17 15v6M14 18h6" /> Non assegnati <span className="crm-count">{ov.unassigned}</span>
-                  <CrmTip text="Contatti aperti senza responsabile, per esempio i lead del sito e i prospect Radar. Assegnali dalla scheda." />
-                </h2>
-              </div>
-              <div className="crm-card-body">
-                {unassigned.length ? (
-                  <ul className="crm-todo">
-                    {unassigned.map((c) => (
-                      <li key={c.id} className="crm-todo-row">
-                        <span className="crm-avatar is-sm" aria-hidden="true">{initials(c.businessName)}</span>
-                        <div className="crm-todo-text">
-                          <Link href={`${CRM_HOME}/${c.id}` as Route} className="crm-todo-title">{c.businessName}</Link>
-                          <span className="adm-muted">{[c.city, c.type].filter(Boolean).join(" · ") || STAGE_LABEL[c.stage]}</span>
-                        </div>
-                        <span className="crm-due" data-tone="soon">{SOURCE_LABEL[c.source]}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <EmptyNote icon="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21v-1a6 6 0 0 1 9-5.2M17 15v6M14 18h6" text="Nessun contatto senza responsabile." />}
-              </div>
-              <p className="crm-card-foot"><Link className="crm-more" href={RUBRICA as Route}>Rubrica →</Link></p>
-            </section>
-
-            <section className="crm-card-panel" data-slot="pipe" aria-labelledby="crm-pipe-h">
-              <div className="crm-panel-head">
-                <h2 id="crm-pipe-h" className="adm-h2">
-                  <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Pipeline
-                  <CrmTip text="Conta i contatti, non le trattative. La fase non viene azzerata e non apre un'opportunità." />
-                </h2>
-              </div>
-              <div className="crm-card-body">
-                <p className="adm-muted crm-hint">{ov.total} contatti, nella fase attuale. {deals.open ? `${deals.open} opportunità esplicite a parte.` : "Nessuna opportunità esplicita."}</p>
-                <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}, ${stagePct(ov.byStage[s], ov.total)}%`).join(", ")}>
-                  <div className="crm-bar-fill">
-                    {ov.total
-                      ? pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))
-                      : <span className="crm-bar-idle" />}
-                  </div>
-                </div>
-                <ul className="crm-legend">
-                  {pipelineStages.map((s) => (
-                    <li key={s}>
-                      <span className="crm-dot" data-stage={s} />
-                      <span className="crm-legend-name">{STAGE_LABEL[s]}</span>
-                      <strong>{ov.byStage[s]}</strong>
-                      <span className="crm-legend-pct">{stagePct(ov.byStage[s], ov.total)}%</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
+        <section className="crm-card-panel" aria-labelledby="crm-pipe-h">
+          <div className="crm-panel-head">
+            <h2 id="crm-pipe-h" className="adm-h2">
+              <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Pipeline commerciale
+              <CrmTip text="Conta i contatti, non le trattative. La fase non viene azzerata e non apre un'opportunità." />
+            </h2>
+            <Link className="crm-more" href={PIPELINE as Route}>Apri pipeline →</Link>
           </div>
+          <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}`).join(", ")}>
+            <div className="crm-bar-fill">
+              {ov.total
+                ? pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))
+                : <span className="crm-bar-idle" />}
+            </div>
+          </div>
+          <ol className="crm-pipe-cols">
+            {pipelineStages.map((s) => (
+              <li key={s}>
+                <span>{STAGE_LABEL[s]}</span>
+                <strong>{ov.byStage[s]}</strong>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="crm-card-panel" aria-labelledby="crm-feed-h">
+          <div className="crm-panel-head">
+            <h2 id="crm-feed-h" className="adm-h2"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> Attività recenti</h2>
+            {founder ? <Link className="crm-more" href={"/admin/audit" as Route}>Vedi tutte →</Link> : null}
+          </div>
+          {feed.length ? (
+            <ul className="crm-feed">
+              {feed.map(({ e, d }) => (
+                <li key={e.id}>
+                  <span className="crm-feed-icon" data-tone={d!.tone}><CrmIcon d={d!.icon} /></span>
+                  <span className="crm-feed-line">
+                    {e.contactId ? <Link href={`${CRM_HOME}/${e.contactId}` as Route}>{d!.title}</Link> : <strong>{d!.title}</strong>}
+                    <span className="adm-muted">{d!.sub}{e.actor ? ` · ${e.actor}` : ""}</span>
+                  </span>
+                  <time className="crm-ago" dateTime={e.at}>{ago(e.at)}</time>
+                </li>
+              ))}
+            </ul>
+          ) : <EmptyNote icon="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" text="Nessuna attività recente." />}
+        </section>
       </div>
     </>
   );
