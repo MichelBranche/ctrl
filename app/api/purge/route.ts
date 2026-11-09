@@ -3,6 +3,7 @@ import { dbConfigured } from "@/lib/db";
 import { purgeExpired } from "@/lib/request-guard";
 import { purgeAudit } from "@/lib/audit";
 import { runBackup } from "@/lib/backup";
+import { recordOggiKpis } from "@/lib/crm-kpi";
 
 export const maxDuration = 60;
 
@@ -17,8 +18,11 @@ export async function GET(req: Request) {
   if (!dbConfigured) return new Response("No database", { status: 503 });
   await purgeExpired();
   await purgeAudit();
+  // Same daily Hobby cron. Oggi also snapshots on visit; this covers a day nobody opened the page. A failure here does not skip the backup.
+  let kpi = false;
+  try { await recordOggiKpis(); kpi = true; } catch { kpi = false; }
   const backup = await runBackup();
-  return Response.json({ ok: backup.ok, backup: { ok: backup.ok, bytes: backup.bytes, kept: backup.kept } });
+  return Response.json({ ok: backup.ok, kpi, backup: { ok: backup.ok, bytes: backup.bytes, kept: backup.kept } });
 }
 
 /** Constant-time compare (hashing first makes lengths equal), so the secret cannot be guessed byte by byte. */

@@ -436,7 +436,7 @@ export async function crmOverview(now = new Date()): Promise<CrmOverview> {
   };
 }
 
-/** Highest commercial score among open contacts. */
+/** Highest commercial score among open contacts. Oggi shows this short list, and its length, not every scored contact. */
 export async function priorityContacts(limit = 3): Promise<Contact[]> {
   await ensureCrmSchema();
   const res = await db().execute({
