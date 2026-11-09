@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { CopyPromptButton } from "@/components/admin/crm/copy-prompt";
-import { CopyButton, FollowUpQuick, KindField, OwnerQuick, PanelShell, Peek, StageQuick } from "@/components/admin/crm/contact-panel-client";
+import { CopyButton, EstimateField, FollowUpQuick, KindField, OwnerQuick, PanelShell, Peek, StageQuick } from "@/components/admin/crm/contact-panel-client";
 import { DealControls } from "@/components/admin/crm/deal-controls";
 import { avatarHue, CrmIcon, day, eur, initials, MapsLink, meetHref, romeToday, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
 import { NoteForm } from "@/components/admin/crm/note-form";
@@ -48,9 +48,9 @@ export type PanelDeal = {
  * Contact side panel, shared by the CRM lists (Rubrica today; Pipeline and Radar can mount it with their own links).
  * Server-rendered from the URL, so the list behind it keeps its filters, sort and page.
  */
-export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, presentation = "default" }: {
+export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, presentation = "default", banner = null }: {
   id: string; tab: PanelTab | "analisi"; me: AdminUser; links: PanelLinks; analysis?: PanelAnalysis; deal?: PanelDeal;
-  presentation?: "default" | "rubrica";
+  presentation?: "default" | "rubrica"; banner?: string | null;
 }) {
   const tab = asked === "analisi" && !analysis ? "dettagli" : asked;
   const labelId = `crm-panel-${id}`;
@@ -94,13 +94,16 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
         <span className="crm-avatar" data-hue={avatarHue(c.businessName)} aria-hidden="true">{initials(c.businessName)}</span>
         <div className="crm-panel-title">
           <h2 id={labelId} className="adm-h2" tabIndex={-1}>{c.businessName}</h2>
+          {banner ? <p className="crm-pipe-banner">{banner}</p> : null}
           <p className="adm-muted">{[rubrica ? (kind === "persona" ? "Persona" : c.type ?? "Azienda") : c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
-          {rubrica && !c.archived && !deal ? (
+          {rubrica ? (
             <div className="crm-panel-meta">
-              <div className="crm-stage-pill"><StageQuick key={`s${c.version}`} contact={versioned} stage={c.stage} /></div>
-              {c.valueEur !== null ? <span className="crm-panel-amount">{eur(c.valueEur)}</span> : null}
+              {!c.archived && !deal
+                ? <div className="crm-stage-pill"><StageQuick key={`s${c.version}`} contact={versioned} stage={c.stage} /></div>
+                : <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span>}
+              {c.archived ? null : <EstimateField key={`e${c.version}`} contact={versioned} cents={c.estimatedValueCents} note={c.estimatedValueNote} />}
             </div>
-          ) : rubrica ? <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span> : null}
+          ) : null}
         </div>
         {rubrica ? null : <ScoreBadge score={c.score} />}
         <Link className="crm-icon-btn crm-panel-close" href={links.close as Route} scroll={false} aria-label="Chiudi scheda"><CrmIcon d={I.close} /></Link>

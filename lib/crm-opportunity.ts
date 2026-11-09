@@ -97,6 +97,24 @@ export async function listOpportunities(f: DealFilter = {}): Promise<Opportunity
   return res.rows.map((r) => toDeal(r as Record<string, unknown>)).filter((d): d is Opportunity => d !== null);
 }
 
+/** Open deal amount in euros, one row per contact. Several open deals: the highest amount. Null means a deal with no amount. */
+export async function openDealAmounts(ids: string[]): Promise<Map<string, number | null>> {
+  const out = new Map<string, number | null>();
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return out;
+  await ensureCrmSchema();
+  const marks = unique.map(() => "?").join(",");
+  const res = await db().execute({
+    sql: `SELECT contact_id, MAX(value_eur) AS value_eur FROM crm_opportunities
+      WHERE closed_at IS NULL AND contact_id IN (${marks}) GROUP BY contact_id`,
+    args: unique,
+  });
+  for (const row of res.rows) {
+    out.set(String(row.contact_id), row.value_eur === null || row.value_eur === undefined ? null : Number(row.value_eur));
+  }
+  return out;
+}
+
 export async function getOpportunity(id: string): Promise<Opportunity | null> {
   await ensureCrmSchema();
   const res = await db().execute({ sql: `SELECT ${COLS} ${FROM} WHERE o.id = ?`, args: [id] });

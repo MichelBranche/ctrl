@@ -102,6 +102,9 @@ export const ingestContactSchema = z.object({
   score: z.number().int().min(0).max(100).optional().nullable(),
   score_reasons: z.array(z.string().max(300)).max(20).optional().nullable(),
   notes: opt(5000),
+  /** Proposed job value in whole euros. Applied only when the contact is created. */
+  estimatedValue: z.number().int().min(0).max(100_000).optional().nullable(),
+  estimatedValueNote: z.string().trim().max(200).optional().nullable(),
   draft: ingestDraftSchema.optional().nullable(),
 });
 export const ingestSchema = z.object({

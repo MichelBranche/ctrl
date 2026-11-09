@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardSection } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
-import { addDraft, addNote, bulkWrite, completeFollowUp, createContact, crmOwners, getContact, getDraft, setArchived, setFollowUp, setKind, setOwner, setStage, updateContact, type ContactInput, type WriteResult } from "@/lib/crm";
+import { addDraft, addNote, bulkWrite, completeFollowUp, createContact, crmOwners, getContact, getDraft, setArchived, setEstimate, setFollowUp, setKind, setOwner, setStage, updateContact, type ContactInput, type WriteResult } from "@/lib/crm";
 import type { ContactKind } from "@/lib/crm-kind";
 import { isSource, isStage, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 import { CRM_SECTIONS, RUBRICA } from "@/lib/crm-nav";
@@ -213,6 +213,29 @@ export async function bulkContactsAction(items: BulkItem[], change: BulkChange):
   if (out.changed) parts.push(`${out.changed} modificati da altri nel frattempo e lasciati com'erano`);
   if (out.missing) parts.push(`${out.missing} non trovati o archiviati`);
   return out.updated ? { ...out, ok: `${parts.join(", ")}.` } : { ...out, error: `Nessun contatto aggiornato: ${parts.slice(1).join(", ") || "nessuna modifica"}.` };
+}
+
+const EURO = /^\d{1,6}$/;
+
+/** Proposed value, in whole euros. Empty clears it. Anyone with CRM can edit it, and the whole team sees it. */
+export async function setEstimateAction(id: string, euros: string, note: string, expectedVersion: number): Promise<CrmState> {
+  await guardSection("crm");
+  if (!ID.test(id) || !Number.isInteger(expectedVersion)) return { error: "Contatto non valido." };
+  const trimmed = euros.trim();
+  if (trimmed && !EURO.test(trimmed)) return { error: "Il valore stimato è un intero, da 0 a 100000 euro." };
+  const amount = trimmed ? Number(trimmed) : null;
+  if (amount !== null && amount > 100_000) return { error: "Il valore stimato è un intero, da 0 a 100000 euro." };
+  const text = note.trim().slice(0, 200) || null;
+  try {
+    const r = await setEstimate(id, amount === null ? null : amount * 100, text, expectedVersion);
+    if (r === "notfound") return { error: "Contatto non trovato." };
+    if (r === "conflict") { refresh(id); return { error: CONFLICT }; }
+    await logAction("crm.contact_update", { type: "crm_contact", id }, { estimatedValueCents: amount === null ? null : amount * 100 });
+    refresh(id);
+    return { ok: amount === null ? "Valore stimato rimosso." : "Valore stimato salvato." };
+  } catch {
+    return { error: "Non salvato. Riprova." };
+  }
 }
 
 /** Stored kind. Null puts the contact back on the deduction (company name, or a person when the names match). */
