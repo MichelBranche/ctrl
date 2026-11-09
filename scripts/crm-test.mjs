@@ -78,6 +78,14 @@ try {
   await M.ensureCrmSchema();
   assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "version" && Number(r.notnull) === 1 && String(r.dflt_value) === "1"), "version added by ensureCrmSchema");
   assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "kind" && Number(r.notnull) === 0), "kind column is nullable");
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "estimated_value_cents"), "estimate column");
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "estimated_value_note"), "estimate note");
+  assert.ok((await db().execute("PRAGMA table_info(crm_kpi_daily)")).rows.some((r) => r.name === "contacts_contacted"), "contacted kpi column");
+  assert.ok((await db().execute("PRAGMA table_info(crm_kpi_daily)")).rows.some((r) => r.name === "potential_value_cents"), "potential kpi column");
+  const pipeSql = readFileSync(join("db", "019_crm_pipeline.sql"), "utf8");
+  assert.ok(!/\bALTER\b/i.test(pipeSql), "pipeline sql stays re-runnable");
+  await db().executeMultiple(pipeSql);
+  await db().executeMultiple(pipeSql);
   assert.ok((await db().execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'crm_saved_views'")).rows.length, "saved views table");
   const rubricaSql = readFileSync(join("db", "018_crm_rubrica.sql"), "utf8");
   assert.ok(!/\bALTER\b/i.test(rubricaSql), "the sql file stays re-runnable");
@@ -651,6 +659,49 @@ try {
   await signIn("u-pm");
   await assert.rejects(() => A.bulkContactsAction([{ id: pair[0].id, version: 1 }], { kind: "owner", owner: "u-sales" }), /unauthorized/);
   console.log("ok rubrica batch");
+
+  const pipe = await K.createContact({ businessName: "Pipeline Sposta", email: "pipeline.sposta@gmail.com", source: "manuale" }, null);
+  const pipeRow = await K.getContact(pipe.id);
+  await signIn("u-pm");
+  await assert.rejects(() => A.moveStageAction(pipe.id, "call", pipeRow.version), /unauthorized/, "drag uses the same permission as the stage menu");
+  await assert.rejects(() => A.setEstimateAction(pipe.id, "3000", "", pipeRow.version), /unauthorized/);
+  await signIn("u-sales");
+  const dragStale = await A.moveStageAction(pipe.id, "call", pipeRow.version + 9);
+  assert.match(dragStale.error ?? "", /modificato/, "a stale drag does not write");
+  const afterStale = await K.getContact(pipe.id);
+  assert.equal(afterStale.stage, "nuovo");
+  assert.equal(afterStale.version, pipeRow.version, "failed drag rolls the row back");
+  const saved = await A.setEstimateAction(pipe.id, "4500", "Sito", pipeRow.version);
+  assert.equal(saved.ok, "Valore stimato salvato.");
+  assert.equal((await K.getContact(pipe.id)).estimatedValueCents, 450000);
+  assert.equal((await A.setEstimateAction(pipe.id, "4500", "Sito", pipeRow.version)).error?.length > 0, true, "a second save with the old version does not overwrite");
+
+  const stima = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Stima Nuova", email: "stima.nuova@gmail.com", estimatedValue: 3000, estimatedValueNote: "Prenotazioni" }] })).json();
+  assert.equal(stima.inserted, 1);
+  const stimaId = stima.ids[0];
+  assert.equal((await K.getContact(stimaId)).estimatedValueCents, 300000);
+  assert.equal((await K.getContact(stimaId)).estimatedValueNote, "Prenotazioni");
+  await db().execute({ sql: "UPDATE crm_contacts SET estimated_value_cents = 1000, estimated_value_note = 'gia' WHERE id = ?", args: [stimaId] });
+  const dupIngest = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Stima Nuova", email: "stima.nuova@gmail.com", estimatedValue: 9000, estimatedValueNote: "altro" }] })).json();
+  assert.equal(dupIngest.duplicates, 1);
+  assert.equal((await K.getContact(stimaId)).estimatedValueCents, 1000, "a duplicate ingest does not touch the estimate");
+  assert.equal((await K.getContact(stimaId)).estimatedValueNote, "gia");
+  assert.equal((await call(`Bearer ${secret}`, { contacts: [{ business_name: "Troppo", email: "troppo.valore@gmail.com", estimatedValue: 100001 }] })).status, 400);
+  assert.equal((await K.listContacts({ q: "Troppo" })).length, 0, "an out of range estimate creates nothing");
+  const zeroStima = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Zero Stima", email: "zero.stima@gmail.com", estimatedValue: 0 }] })).json();
+  assert.equal(zeroStima.inserted, 1);
+  assert.equal((await K.getContact(zeroStima.ids[0])).estimatedValueCents, 0, "zero is a real estimate");
+
+  const KpiPipe = await import("../lib/crm-kpi.ts");
+  assert.equal(KpiPipe.kpiChange(12, null), null);
+  assert.equal(KpiPipe.kpiChange(null, 4), null);
+  assert.equal(KpiPipe.kpiChange(8, 0), null, "no percentage when the past point is zero");
+  await db().execute("DELETE FROM crm_kpi_daily WHERE day IN ('2026-01-01', '2026-01-08')");
+  assert.equal(await KpiPipe.kpiWeekChange("potential_value_cents", "2026-01-08"), null, "no percentage without history");
+  await db().execute("INSERT INTO crm_kpi_daily (day, contacts_contacted, potential_value_cents) VALUES ('2026-01-01', 4, NULL), ('2026-01-08', 6, 1000)");
+  assert.equal(await KpiPipe.kpiWeekChange("potential_value_cents", "2026-01-08"), null, "a missing past potential is not a percentage");
+  assert.equal(await KpiPipe.kpiWeekChange("contacts_contacted", "2026-01-08"), 50);
+  console.log("ok pipeline");
 
   // 16. Iris search requests: daily credit in Rome, one active request, 3h expiry, founder gate, callback, ingest link.
   const Core = await import("../lib/crm-iris-core.ts");

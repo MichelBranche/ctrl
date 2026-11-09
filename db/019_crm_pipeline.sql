@@ -1,0 +1,6 @@
+-- Pipeline estimates and KPI columns. Both are added by ensureCrmSchema (addColumn ignores a duplicate).
+-- crm_contacts.estimated_value_cents: proposed value in euro cents, nullable. estimated_value_note: short optional note.
+-- crm_kpi_daily.contacts_contacted: contacts with a real send on or before that day.
+-- crm_kpi_daily.potential_value_cents: value of those contacted contacts (open deal if it has a value, otherwise the estimate).
+-- Rollback: leave the columns. Older SQLite cannot drop a column, and the previous code ignores them.
+-- Running this file twice does nothing: the columns are added in code, not here.
