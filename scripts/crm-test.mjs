@@ -22,7 +22,7 @@ process.env.TURSO_DATABASE_URL = pathToFileURL(join(dir, "t.db")).href;
 delete process.env.TURSO_AUTH_TOKEN;
 process.env.SESSION_SECRET = "test-only-session-secret-0123456789abcdef";
 delete process.env.ADMIN_EMAIL; delete process.env.ADMIN_PASSWORD_HASH; delete process.env.CRM_INGEST_SECRET;
-for (const k of ["RESEND_API_KEY", "MAIL_FROM", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "AGENCY_IMAP_USER", "AGENCY_IMAP_PASSWORD"]) delete process.env[k];
+for (const k of ["RESEND_API_KEY", "MAIL_FROM", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "AGENCY_IMAP_USER", "AGENCY_IMAP_PASSWORD", "DISCORD_WEBHOOK_URL"]) delete process.env[k];
 globalThis.__jar = new Map();
 const headersStub = `export async function headers(){return new Headers({"x-forwarded-for":"203.0.113.9","user-agent":"test"})}
 export async function cookies(){const j=globalThis.__jar;return{get:(n)=>j.has(n)?{name:n,value:j.get(n)}:undefined,set:()=>{},delete:()=>{}}}`;

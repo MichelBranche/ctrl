@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { getAdmin } from "@/lib/admin";
 import { db, dbConfigured } from "@/lib/db";
+import { recordAuditNotice } from "@/lib/discord-notify";
 import { ensureAuditSchema } from "@/lib/migrate";
 
 /**
@@ -40,9 +41,15 @@ export async function logAction(action: string, target?: AuditTarget, details?: 
     const write = async () => {
       try {
         await ensureAuditSchema();
-        await db().execute({
-          sql: "INSERT INTO audit_log (user_id, user_name, user_email, action, target_type, target_id, details, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        const inserted = await db().execute({
+          sql: "INSERT INTO audit_log (user_id, user_name, user_email, action, target_type, target_id, details, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
           args,
+        });
+        const id = Number(inserted.rows[0]?.id);
+        if (id) await recordAuditNotice({
+          id, action: args[3] as string, label: AUDIT_LABEL[args[3] as string] ?? String(args[3]),
+          targetType: (args[4] as string | null) ?? null, targetId: (args[5] as string | null) ?? null,
+          actorName: (args[1] as string | null) ?? null, details: (args[6] as string | null) ?? null,
         });
       } catch (error) {
         console.error("[audit] write failed:", error instanceof Error ? error.message : error);
@@ -127,6 +134,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "crm.activity_update": "Attività aggiornata",
   "crm.activity_done": "Attività completata",
   "crm.activity_reopen": "Attività riaperta",
+  "crm.iris_request": "Richiesta Iris",
 };
 
 /** Deletes audit entries older than 12 months (daily cron). */

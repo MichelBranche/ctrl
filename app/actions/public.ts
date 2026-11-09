@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { after } from "next/server";
 import { leadFromRequest } from "@/lib/crm";
+import { discordEnabled, recordAdminNotice } from "@/lib/discord-notify";
 import { db, dbConfigured } from "@/lib/db";
 import { allow } from "@/lib/request-guard";
 
@@ -28,6 +29,14 @@ export async function submitContact(form: FormData): Promise<ContactResult> {
       sql: "INSERT INTO contact_requests (id, name, email, subject, message, lang) VALUES (?, ?, ?, ?, ?, ?)",
       args: [id, name, email, subject, message, langOf(form)],
     });
+    // Name and subject only. The address and the message stay in the request row. Nothing is scheduled when Discord is unset.
+    if (discordEnabled()) {
+      const notice = () => recordAdminNotice({
+        id: `request:${id}`, kind: "site_form", event: "Richiesta dal sito",
+        title: [name, subject].filter(Boolean).join(" · "), actor: "Sito", href: "/admin/requests",
+      });
+      try { after(notice); } catch { await notice(); }
+    }
     // CRM lead after the response: leadFromRequest never throws, so the form result cannot change.
     const lead = () => leadFromRequest({ id, name, email, subject, message });
     try { after(lead); } catch { await lead(); }

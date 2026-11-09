@@ -3,6 +3,7 @@ import { dbConfigured } from "@/lib/db";
 import { purgeExpired } from "@/lib/request-guard";
 import { purgeAudit } from "@/lib/audit";
 import { runBackup } from "@/lib/backup";
+import { flushDiscord } from "@/lib/discord-notify";
 import { recordOggiKpis } from "@/lib/crm-kpi";
 
 export const maxDuration = 60;
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
   // Same daily Hobby cron. Oggi also snapshots on visit; this covers a day nobody opened the page. A failure here does not skip the backup.
   let kpi = false;
   try { await recordOggiKpis(); kpi = true; } catch { kpi = false; }
+  try { await flushDiscord(); } catch { /* the webhook is optional and must not skip the backup */ }
   const backup = await runBackup();
   return Response.json({ ok: backup.ok, kpi, backup: { ok: backup.ok, bytes: backup.bytes, kept: backup.kept } });
 }
