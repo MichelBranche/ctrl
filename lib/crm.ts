@@ -436,14 +436,7 @@ export async function crmOverview(now = new Date()): Promise<CrmOverview> {
   };
 }
 
-/** Open contacts that carry a score. The Oggi figure uses this, not the length of a short list. */
-export async function scoredOpenCount(): Promise<number> {
-  await ensureCrmSchema();
-  const r = await db().execute("SELECT COUNT(*) AS n FROM crm_contacts WHERE archived = 0 AND stage NOT IN ('vinto','perso') AND score IS NOT NULL");
-  return Number(r.rows[0]?.n ?? 0);
-}
-
-/** Highest commercial score among open contacts. */
+/** Highest commercial score among open contacts. Oggi shows this short list, and its length, not every scored contact. */
 export async function priorityContacts(limit = 3): Promise<Contact[]> {
   await ensureCrmSchema();
   const res = await db().execute({

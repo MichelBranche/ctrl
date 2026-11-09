@@ -5,9 +5,10 @@ import { ActivityCheck } from "@/components/admin/crm/activity-check";
 import { CrmIcon, CRM_ICON, CrmTabs, CrmTip, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { FollowUpDone, KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
 import { addDays, dueLabel, ScopeSwitch } from "@/components/admin/crm/follow-ups";
+import { AttentionLists } from "@/components/admin/crm/attention-pop";
 import { LeavingRow, RollValue } from "@/components/admin/crm/oggi-motion";
 import { requireSection } from "@/lib/admin";
-import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, scoredOpenCount, unassignedContacts, type CrmEvent } from "@/lib/crm";
+import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, unassignedContacts, type CrmEvent } from "@/lib/crm";
 import { SOURCE_LABEL, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 import { kpiSeries, liveKpiCounts, recordOggiKpis, type SparkPoint } from "@/lib/crm-kpi";
 import { CRM_HOME, followUpScope, PIPELINE, RUBRICA } from "@/lib/crm-nav";
@@ -161,9 +162,9 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const tomorrow = addDays(today, 1);
   const viewer = { id: me.id, founder };
   const kpi = await recordOggiKpis().catch(() => liveKpiCounts(today));
-  const [ov, due, events, priority, unassigned, openActs, scored, series] = await Promise.all([
-    crmOverview(), dueActions(scope === "team" ? null : me.id, today, tomorrow), recentCrmEvents(6).catch(() => []), priorityContacts(6), unassignedContacts(6),
-    listActivities({ scope, stato: "aperte", until: tomorrow }, viewer), scoredOpenCount(),
+  const [ov, due, events, priority, unassigned, openActs, series] = await Promise.all([
+    crmOverview(), dueActions(scope === "team" ? null : me.id, today, tomorrow), recentCrmEvents(6).catch(() => []), priorityContacts(3), unassignedContacts(6),
+    listActivities({ scope, stato: "aperte", until: tomorrow }, viewer),
     Promise.all([
       kpiSeries("contacts_total", today), kpiSeries("assigned", today), kpiSeries("opportunities_active", today), kpiSeries("todo_due", today),
     ]),
@@ -182,9 +183,15 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const dealStatus = kpi.opportunitiesActive === 0
     ? "Nessuna attiva"
     : kpi.opportunitiesActive === 1 ? "1 attiva" : `${kpi.opportunitiesActive} attive`;
-  const urgent = kpi.overdue === 0
+  const isLate = (day: string) => day.slice(0, 10) < today;
+  const todoCount = due.length + openActs.length;
+  const overdueCount = due.filter((a) => isLate(a.nextActionAt)).length + openActs.filter((a) => isLate(a.dueDate)).length;
+  const urgent = overdueCount === 0
     ? { text: "Nessuna urgente", tone: "quiet" as const }
-    : { text: kpi.overdue === 1 ? "1 urgente" : `${kpi.overdue} urgenti`, tone: "late" as const };
+    : { text: overdueCount === 1 ? "1 urgente" : `${overdueCount} urgenti`, tone: "late" as const };
+  const todoTip = scope === "team"
+    ? "Il numero è il da fare del team, come la lista sotto: follow-up e attività in scadenza fino a domani. La linea è il totale dell'agenzia."
+    : "Il numero è il tuo da fare, come la lista sotto: follow-up e attività in scadenza fino a domani. La linea è il totale dell'agenzia, perché lo storico non si divide per persona.";
 
   return (
     <>
@@ -232,8 +239,8 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             <Sparkline points={dealsLine} tone="quiet" />
           </article>
           <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare</span>
-            <span className="crm-kpi-num"><RollValue id="todo" text={String(kpi.todoDue)} /></span>
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare <CrmTip text={todoTip} /></span>
+            <span className="crm-kpi-num"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
             <span className="crm-kpi-meta" data-tone={urgent.tone}><i />{urgent.text}</span>
             <Sparkline points={todoLine} tone="accent" />
           </article>
@@ -297,41 +304,41 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                 <CrmIcon d="M12 9v4M12 17h.01M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z" /> Richiedono attenzione
               </h2>
             </div>
-            <div className="crm-card-body crm-attn">
-              <details className="crm-attn-item">
-                <summary>
-                  <span className="crm-attn-num"><RollValue id="free" text={String(ov.unassigned)} /></span>
-                  <span>Contatti non assegnati</span>
-                </summary>
-                {unassigned.length ? (
-                  <ul className="crm-attn-list">
-                    {unassigned.map((c) => (
-                      <li key={c.id}>
-                        <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
-                        <span className="adm-muted">{SOURCE_LABEL[c.source]}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="crm-empty">Nessun contatto senza responsabile.</p>}
-                <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
-              </details>
-              <details className="crm-attn-item">
-                <summary>
-                  <span className="crm-attn-num"><RollValue id="prio" text={String(scored)} /></span>
-                  <span>Contatti prioritari</span>
-                </summary>
-                {priority.length ? (
-                  <ul className="crm-attn-list">
-                    {priority.map((c) => (
-                      <li key={c.id}>
-                        <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
-                        <ScoreRing score={c.score} />
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="crm-empty">Nessun contatto con punteggio.</p>}
-                <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
-              </details>
+            <div className="crm-card-body">
+              <AttentionLists
+                freeCount={String(ov.unassigned)}
+                prioCount={String(priority.length)}
+                freePanel={(
+                  <>
+                    {unassigned.length ? (
+                      <ul className="crm-attn-list">
+                        {unassigned.map((c) => (
+                          <li key={c.id}>
+                            <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
+                            <span className="adm-muted">{SOURCE_LABEL[c.source]}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="crm-empty">Nessun contatto senza responsabile.</p>}
+                    <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
+                  </>
+                )}
+                prioPanel={(
+                  <>
+                    {priority.length ? (
+                      <ul className="crm-attn-list">
+                        {priority.map((c) => (
+                          <li key={c.id}>
+                            <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
+                            <ScoreRing score={c.score} />
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="crm-empty">Nessun contatto con punteggio.</p>}
+                    <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
+                  </>
+                )}
+              />
             </div>
             <p className="crm-card-foot"><Link className="crm-more is-accent" href={RUBRICA as Route}>Apri la rubrica →</Link></p>
           </section>
