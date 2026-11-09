@@ -37,7 +37,7 @@ Alcuni eventi non nascevano come riga di audit e ora passano dallo stesso punto:
 - la posta in arrivo non ancora vista, e la risposta di un lead se il mittente è un contatto (la prima apertura di cassetta, a tabella vuota, prepara l'archivio e non notifica lo storico)
 - follow-up e attività in scadenza nel giorno di Roma in cui scadono, una volta sola
 
-La coda è una tabella additiva su Turso. Il flush è opportunistico, dopo la risposta (`after`), e il cron giornaliero già presente riprova ciò che è rimasto. Un invio non blocca e non fa fallire l'azione. Timeout 4 secondi. Su HTTP 429 c'è un solo nuovo tentativo, dopo `retry_after` (al massimo 5 secondi). La riga viene segnata prima della chiamata: la stessa notifica non parte due volte. Dopo quattro tentativi falliti resta in coda ma non blocca le successive.
+La coda è la tabella additiva `discord_outbox` (`db/020_discord_outbox.sql`, dopo le migrazioni 018 e 019 del CRM). Il flush è opportunistico, dopo la risposta (`after`), e il cron giornaliero già presente riprova ciò che è rimasto. Un invio non blocca e non fa fallire l'azione. Timeout 4 secondi. Su HTTP 429 c'è un solo nuovo tentativo, dopo `retry_after` (al massimo 5 secondi). La riga viene segnata prima della chiamata: la stessa notifica non parte due volte. Dopo quattro tentativi falliti resta in coda ma non blocca le successive.
 
 ## Esempio
 

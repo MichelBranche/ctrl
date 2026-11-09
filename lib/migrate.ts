@@ -238,7 +238,7 @@ export function ensureAuditSchema(): Promise<void> {
 }
 
 let discordReady: Promise<void> | null = null;
-/** Discord outbox (see db/018_discord_outbox.sql). Additive. Rollback: DROP TABLE discord_outbox. */
+/** Discord outbox (see db/020_discord_outbox.sql). Additive. Rollback: DROP TABLE discord_outbox. */
 export function ensureDiscordSchema(): Promise<void> {
   discordReady ??= retryBusy(async () => {
     await db().batch([

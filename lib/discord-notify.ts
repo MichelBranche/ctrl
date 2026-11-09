@@ -12,7 +12,7 @@ import { ensureCrmSchema, ensureDiscordSchema } from "@/lib/migrate";
 /**
  * Admin notices to a Discord channel. Missing DISCORD_WEBHOOK_URL disables the feature:
  * no row, no request, no error for the caller. Sends never throw.
- * The outbox is additive (db/018_discord_outbox.sql). Rollback: DROP TABLE discord_outbox.
+ * The outbox is additive (db/020_discord_outbox.sql). Rollback: DROP TABLE discord_outbox.
  */
 
 const BURST_MS_DEFAULT = 200;
