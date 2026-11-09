@@ -28,14 +28,16 @@ function OggiSkeleton() {
   return (
     <div className="crm-layout crm-oggi-page" aria-busy="true" aria-label="Caricamento del CRM">
       <div className="crm-col-main">
-        <div className="crm-skel-head">
-          <div className="adm-skel crm-skel-kicker" />
-          <div className="adm-skel crm-skel-title" />
-          <div className="adm-skel crm-skel-date" />
-          <div className="adm-skel crm-skel-status" />
+        <div className="crm-oggi-lead">
+          <div className="crm-skel-head">
+            <div className="adm-skel crm-skel-kicker" />
+            <div className="adm-skel crm-skel-title" />
+            <div className="adm-skel crm-skel-date" />
+            <div className="adm-skel crm-skel-status" />
+          </div>
+          <div className="adm-skel crm-skel-tabs" />
         </div>
-        <div className="adm-skel crm-skel-tabs" />
-        <div className="crm-kpis">{[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel crm-kpi" />)}</div>
+        <div className="crm-meter">{[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel crm-meter-skel" />)}</div>
         <div className="crm-oggi"><div className="adm-skel crm-skel-panel" /><div className="adm-skel crm-skel-panel" /></div>
         <div className="adm-skel crm-skel-panel" />
       </div>
@@ -69,6 +71,21 @@ function oggiStatus(todo: number, free: number) {
 
 function EmptyNote({ icon, text }: { icon: string; text: string }) {
   return <p className="crm-empty"><CrmIcon d={icon} /><span>{text}</span></p>;
+}
+
+/** Share of contacts in a stage. Zero when the book is empty, so the legend never invents a ratio. */
+function stagePct(count: number, total: number) {
+  return total > 0 ? Math.round((count / total) * 100) : 0;
+}
+
+function ScoreRing({ score }: { score: number | null }) {
+  if (score === null) return null;
+  const level = score >= 70 ? "alto" : score >= 40 ? "medio" : "basso";
+  return (
+    <span className="crm-score-ring" data-level={level} style={{ ["--p" as string]: score }}>
+      <ScoreBadge score={score} />
+    </span>
+  );
 }
 
 function ago(iso: string, now = Date.now()) {
@@ -148,36 +165,38 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       <KeyShortcut href={`${PIPELINE}?nuova=1`} keyName="o" />
       <div className="crm-layout crm-oggi-page">
         <div className="crm-col-main">
-          <CrmHeader
-            title={`${greeting()}, ${first}`}
-            note={<p className="crm-date">{romeDateLabel()}</p>}
-            intro={oggiStatus(todoCount, ov.unassigned)}
-          />
-          <CrmTabs current={CRM_HOME} />
+          <div className="crm-oggi-lead">
+            <CrmHeader
+              title={`${greeting()}, ${first}`}
+              note={<p className="crm-date">{romeDateLabel()}</p>}
+              intro={oggiStatus(todoCount, ov.unassigned)}
+            />
+            <CrmTabs current={CRM_HOME} />
+          </div>
 
           <script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} />
-          <section className="crm-kpis" aria-label="Numeri del CRM">
-            <Link href={RUBRICA as Route} className="crm-kpi is-hero">
+          <section className="crm-meter" aria-label="Numeri del CRM">
+            <Link href={RUBRICA as Route} className="crm-meter-cell is-lead">
               <CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} />
-              <span className="crm-kpi-num"><RollValue id="total" text={String(ov.total)} /></span>
-              <span className="crm-kpi-label">Contatti totali</span>
+              <span className="crm-meter-num"><RollValue id="total" text={String(ov.total)} /></span>
+              <span className="crm-meter-label">Contatti totali</span>
               {ov.newThisMonth ? <span className="crm-kpi-chip" title={`${ov.newThisMonth} nuovi questo mese`}>↗ +{ov.newThisMonth}<span className="adm-sr"> nuovi questo mese</span></span> : null}
             </Link>
-            <div className="crm-kpi">
+            <div className="crm-meter-cell">
               <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} />
-              <span className="crm-kpi-num"><RollValue id="rate" text={rate === null ? "n.d." : `${Math.round(rate * 100)}%`} /></span>
-              <span className="crm-kpi-label">Conversione</span>
+              <span className="crm-meter-num"><RollValue id="rate" text={rate === null ? "n.d." : `${Math.round(rate * 100)}%`} /></span>
+              <span className="crm-meter-label">Conversione</span>
               <span className="crm-kpi-chip is-quiet" title={`${deals.won} opportunità vinte, ${deals.lost} perse`}>{deals.won} vinte</span>
             </div>
-            <Link href={"/admin/crm/pipeline" as Route} className="crm-kpi" title="Trattative aperte a mano, non i contatti in una fase">
+            <Link href={"/admin/crm/pipeline" as Route} className="crm-meter-cell" title="Trattative aperte a mano, non i contatti in una fase">
               <CrmIcon d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5" />
-              <span className="crm-kpi-num"><RollValue id="open" text={String(deals.open)} /></span>
-              <span className="crm-kpi-label">Opportunità attive</span>
+              <span className="crm-meter-num"><RollValue id="open" text={String(deals.open)} /></span>
+              <span className="crm-meter-label">Opportunità attive</span>
             </Link>
-            <div className="crm-kpi">
+            <div className="crm-meter-cell">
               <CrmIcon d="M5 20V12M10 20V8M15 20v-5M20 20V4" />
-              <span className="crm-kpi-num"><RollValue id="won" text={eur(deals.wonValue) || "0 €"} /></span>
-              <span className="crm-kpi-label">Valore vinto</span>
+              <span className="crm-meter-num"><RollValue id="won" text={eur(deals.wonValue) || "0 €"} /></span>
+              <span className="crm-meter-label">Valore vinto</span>
             </div>
           </section>
 
@@ -246,19 +265,17 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <Link className="crm-more" href={RUBRICA as Route}>Vedi tutti →</Link>
             </div>
             {priority.length ? (
-              <ul className="crm-top">
+              <ul className="crm-prio">
                 {priority.map((c) => (
                   <li key={c.id}>
-                    <Link href={`${CRM_HOME}/${c.id}` as Route} className="crm-top-card">
+                    <Link href={`${CRM_HOME}/${c.id}` as Route} className="crm-prio-row">
                       <span className="crm-avatar" aria-hidden="true">{initials(c.businessName)}</span>
-                      <span className="crm-top-text">
+                      <span className="crm-prio-text">
                         <strong>{c.businessName}</strong>
                         <span className="adm-muted">{[c.city, c.type].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</span>
                       </span>
-                      <span className="crm-top-side">
-                        <ScoreBadge score={c.score} />
-                        <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span>
-                      </span>
+                      <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span>
+                      <ScoreRing score={c.score} />
                     </Link>
                   </li>
                 ))}
@@ -317,13 +334,22 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <CrmTip text="Conta i contatti, non le trattative. La fase non viene azzerata e non apre un'opportunità." />
             </h2>
             <p className="adm-muted crm-hint">{ov.total} contatti, nella fase attuale. {deals.open ? `${deals.open} opportunità esplicite a parte.` : "Nessuna opportunità esplicita."}</p>
-            <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}`).join(", ")}>
+            <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}, ${stagePct(ov.byStage[s], ov.total)}%`).join(", ")}>
               <div className="crm-bar-fill">
-                {pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))}
+                {ov.total
+                  ? pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))
+                  : <span className="crm-bar-idle" />}
               </div>
             </div>
             <ul className="crm-legend">
-              {pipelineStages.map((s) => <li key={s}><span className="crm-dot" data-stage={s} />{STAGE_LABEL[s]}<strong>{ov.byStage[s]}</strong></li>)}
+              {pipelineStages.map((s) => (
+                <li key={s}>
+                  <span className="crm-dot" data-stage={s} />
+                  <span className="crm-legend-name">{STAGE_LABEL[s]}</span>
+                  <strong>{ov.byStage[s]}</strong>
+                  <span className="crm-legend-pct">{stagePct(ov.byStage[s], ov.total)}%</span>
+                </li>
+              ))}
             </ul>
           </section>
         </aside>
