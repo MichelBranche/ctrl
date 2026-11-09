@@ -534,7 +534,172 @@ try {
   assert.equal(N.radarSearch(N.parseRadarQuery({ ordina: "aggiornato" })), "?ordina=aggiornato&dir=desc", "the Rubrica default is explicit here");
   const rbad = N.parseRadarQuery({ prio: "urgente", tab: "admin", c: "../x" });
   assert.deepEqual([rbad.prio, rbad.tab, rbad.c], ["", "analisi", ""], "invalid Radar params fall back");
+  assert.equal(N.parseRadarQuery({ iris: "si" }).iris, "si");
+  assert.equal(N.parseRadarQuery({ iris: "../x" }).iris, "", "iris filter rejects a path");
+  assert.equal(N.radarSearch(N.parseRadarQuery({ iris: "si" })), "?iris=si");
   console.log("ok radar url state");
+
+  // 15. Iris search requests: daily credit in Rome, one active request, 3h expiry, founder gate, callback, ingest link.
+  const Core = await import("../lib/crm-iris-core.ts");
+  assert.equal(Core.irisTransition("queued", "working"), "ok");
+  assert.equal(Core.irisTransition("working", "queued"), "reject");
+  assert.equal(Core.irisTransition("queued", "ready"), "ok");
+  assert.equal(Core.irisTransition("working", "error"), "ok");
+  assert.equal(Core.irisTransition("ready", "error"), "reject");
+  assert.equal(Core.irisTransition("error", "working"), "reject");
+  assert.equal(Core.irisTransition("ready", "ready"), "same");
+  assert.equal(Core.irisWebhookHeaders("hook-key", undefined).Authorization, "Bearer hook-key");
+  assert.equal(Core.irisWebhookHeaders("hook-key", "X-Iris-Key")["X-Iris-Key"], "hook-key");
+  assert.equal(Core.irisWebhookHeaders("hook-key", "Bad Header"), null);
+  assert.equal(Core.romeClock("2026-11-09T09:42:00.000Z"), "10:42");
+  const params = { zone: "Alba, Cuneo", sectors: ["cantine", "Cantine"], count: 30, siteCriteria: ["datato", "datato"], notes: "sala" };
+  assert.deepEqual(Core.irisParamsSchema.parse(params).sectors, ["cantine"]);
+  assert.equal(Core.irisParamsSchema.safeParse({ ...params, count: 9 }).success, false);
+  assert.equal(Core.irisParamsSchema.safeParse({ ...params, notes: "x".repeat(1001) }).success, false);
+
+  const IR = await import("../lib/crm-iris.ts");
+  await addUser("u-michel", ["founder"], true);
+  await addUser("u-caleb", ["founder"], true);
+  await db().execute({ sql: "UPDATE admin_users SET name = 'Michel Branche' WHERE id = 'u-michel'" });
+  await db().execute({ sql: "UPDATE admin_users SET name = 'Caleb' WHERE id = 'u-caleb'" });
+  const posted = [];
+  const okFetch = async (url, init) => { posted.push({ url, body: JSON.parse(init.body), headers: init.headers }); return new Response(null, { status: 204 }); };
+  process.env.CRM_IRIS_WEBHOOK_URL = "https://iris.example/hook";
+  process.env.CRM_IRIS_WEBHOOK_KEY = "hook-key";
+  delete process.env.CRM_IRIS_WEBHOOK_HEADER;
+  const ask = (userId, name, now, fetchImpl = okFetch) => IR.requestIrisSearch({ userId, name, founder: true, params, now, origin: "http://t", fetchImpl });
+
+  const denied = await IR.requestIrisSearch({ userId: "u-sales", name: "Vendite", founder: false, params, origin: "http://t", fetchImpl: okFetch });
+  assert.equal(denied.status, 403);
+  assert.equal(posted.length, 0, "a refused request does not call Iris");
+
+  const failFetch = async () => { throw new Error("down"); };
+  const httpFail = async () => new Response("no", { status: 502 });
+  const tHung = new Date("2026-07-09T08:00:00.000Z");
+  const hung = await ask("u-michel", "Michel Branche", tHung);
+  assert.equal(hung.ok, true, JSON.stringify(hung));
+  await IR.applyIrisStatus(hung.id, { status: "working" }, tHung);
+  const tExact = new Date(tHung.getTime() + 3 * 60 * 60 * 1000);
+  assert.equal((await IR.currentIrisNotice(tExact)).phase, "working");
+  assert.equal((await ask("u-caleb", "Caleb", tExact)).status, 409, "exactly 3 hours is still active");
+  const tStale = new Date(tExact.getTime() + 1);
+  const irisStale = await IR.currentIrisNotice(tStale);
+  assert.equal(irisStale.phase, "expired");
+  assert.equal(irisStale.blocked, false);
+  const unlocked = await ask("u-michel", "Michel Branche", tStale);
+  assert.equal(unlocked.ok, true, "after 3 hours the stuck request no longer blocks and the day's credit is back");
+  await IR.applyIrisStatus(unlocked.id, { status: "error", error_message: "annullata" }, tStale);
+
+  const julyEarly = new Date("2026-07-09T20:00:00.000Z");
+  const summer = await ask("u-caleb", "Caleb", julyEarly);
+  assert.equal(summer.ok, true, JSON.stringify(summer));
+  await IR.applyIrisStatus(summer.id, { status: "ready", inserted: 1 }, julyEarly);
+  assert.equal((await ask("u-caleb", "Caleb", new Date("2026-07-09T21:30:00.000Z"))).status, 429, "20:00Z and 21:30Z are the same July day in Rome");
+  const julyNext = new Date("2026-07-09T22:30:00.000Z");
+  const summerNext = await ask("u-caleb", "Caleb", julyNext);
+  assert.equal(summerNext.ok, true, "22:30Z is the next Rome day in July");
+  await IR.applyIrisStatus(summerNext.id, { status: "error", error_message: "no" }, julyNext);
+  const rejected = await ask("u-michel", "Michel Branche", julyNext, httpFail);
+  assert.equal(rejected.status, 502);
+  const failed = await ask("u-michel", "Michel Branche", julyNext, failFetch);
+  assert.equal(failed.status, 502);
+  const recovered = await ask("u-michel", "Michel Branche", julyNext);
+  assert.equal(recovered.ok, true, "a failed webhook gives the day's credit back");
+  await IR.applyIrisStatus(recovered.id, { status: "ready", inserted: 0 }, julyNext);
+
+  const t0 = new Date("2026-11-09T09:42:00.000Z");
+  const caleb = await ask("u-caleb", "Caleb", t0);
+  assert.equal(caleb.ok, true, JSON.stringify(caleb));
+  const irisPost = posted.at(-1);
+  assert.equal(irisPost.headers.Authorization, "Bearer hook-key");
+  assert.equal(irisPost.body.requestedBy.name, "Caleb");
+  assert.equal(irisPost.body.requestId, caleb.id);
+  assert.equal(irisPost.body.statusUrl, `http://t/api/crm/iris-requests/${caleb.id}/status`);
+  assert.equal(irisPost.body.ingestUrl, "http://t/api/crm/ingest");
+  assert.deepEqual(irisPost.body.siteCriteria, ["datato"]);
+  assert.equal(irisPost.body.notes, "sala");
+  assert.equal(irisPost.body.count, 30);
+  const overlap = await ask("u-michel", "Michel Branche", t0);
+  assert.equal(overlap.status, 409, "one active request for the agency");
+  await IR.applyIrisStatus(caleb.id, { status: "working" }, t0);
+  const working = await IR.currentIrisNotice(t0);
+  assert.equal(working.name, "Caleb");
+  assert.equal(working.time, "10:42");
+  assert.equal(working.blocked, true);
+  assert.equal(Core.irisNoticeText(working), "Ricerca già richiesta da Caleb alle 10:42 (in lavorazione). Attendi almeno 60 minuti e verifica in Radar se i lead sono già stati uniti.");
+  assert.deepEqual([working.zone, working.sectors], ["Alba, Cuneo", ["cantine"]]);
+
+  const { POST: statusPost, PATCH: statusPatch } = await import("../app/api/crm/iris-requests/[id]/status/route.ts");
+  const statusCall = (method, id, auth, body) => (method === "PATCH" ? statusPatch : statusPost)(
+    new Request("http://t/status", { method, headers: { "content-type": "application/json", ...(auth ? { authorization: auth } : {}) }, body: JSON.stringify(body) }),
+    { params: Promise.resolve({ id }) },
+  );
+  assert.equal((await statusCall("POST", caleb.id, null, { status: "ready" })).status, 401);
+  const savedSecret = process.env.CRM_INGEST_SECRET;
+  delete process.env.CRM_INGEST_SECRET;
+  assert.equal((await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "ready" })).status, 503);
+  process.env.CRM_INGEST_SECRET = savedSecret;
+  assert.equal((await statusCall("POST", caleb.id, "Bearer wrong-wrong-wrong-wrong", { status: "working" })).status, 401);
+  assert.equal((await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "queued" })).status, 400);
+  assert.equal((await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "working" })).status, 200, "repeating working is idempotent");
+  assert.equal((await statusCall("PATCH", caleb.id, `Bearer ${secret}`, { status: "queued" })).status, 400);
+  const readyRes = await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "ready", inserted: 12, duplicates: 3 });
+  assert.equal(readyRes.status, 200);
+  assert.equal((await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "ready", inserted: 12 })).status, 200);
+  assert.equal((await statusCall("POST", caleb.id, `Bearer ${secret}`, { status: "error" })).status, 409);
+  const readyNotice = await IR.currentIrisNotice(new Date(t0.getTime() + 60_000));
+  assert.equal(readyNotice.phase, "ready");
+  assert.equal(readyNotice.blocked, false);
+  assert.equal(Core.irisNoticeText(readyNotice), "Pronta: 12 lead aggiunti");
+
+  assert.equal((await ask("u-caleb", "Caleb", t0)).status, 429, "same Rome day, credit spent");
+  const stillMorning = new Date("2026-11-09T22:30:00.000Z");
+  assert.equal((await ask("u-caleb", "Caleb", stillMorning)).status, 429, "22:30Z is still 9 November in Rome");
+  const romeNext = new Date("2026-11-09T23:30:00.000Z");
+  const michel = await ask("u-michel", "Michel Branche", romeNext);
+  assert.equal(michel.ok, true, "23:30Z is 10 November in Rome, and the other founder is free");
+  assert.equal((await IR.applyIrisStatus(michel.id, { status: "error", error_message: "stop" })).ok, true);
+  const retried = await ask("u-michel", "Michel Branche", romeNext);
+  assert.equal(retried.ok, true, "an error gives the day's credit back");
+  await IR.applyIrisStatus(retried.id, { status: "ready", inserted: 2 }, romeNext);
+
+  delete process.env.CRM_IRIS_WEBHOOK_URL;
+  const later = new Date("2026-11-12T12:00:00.000Z");
+  const missing = await ask("u-caleb", "Caleb", later);
+  assert.equal(missing.status, 502);
+  process.env.CRM_IRIS_WEBHOOK_URL = "https://iris.example/hook";
+  process.env.CRM_IRIS_WEBHOOK_HEADER = "X-Iris-Key";
+  const configured = await ask("u-caleb", "Caleb", later);
+  assert.equal(configured.ok, true);
+  assert.equal(posted.at(-1).headers["X-Iris-Key"], "hook-key");
+  assert.equal(posted.at(-1).headers.Authorization, undefined);
+
+  const linked = await call(`Bearer ${secret}`, { irisRequestId: configured.id, contacts: [
+    { business_name: "Cantina Collegata", email: "collegata.iris@gmail.com", city: "Alba" },
+    { business_name: "Pizzeria doppione", website: "mario.it" },
+  ] });
+  assert.equal(linked.status, 200);
+  const linkedJson = await linked.json();
+  assert.deepEqual(Object.keys(linkedJson).sort(), ["duplicates", "ids", "inserted"]);
+  assert.equal(linkedJson.inserted, 1);
+  assert.equal(linkedJson.duplicates, 1);
+  assert.equal((await K.getContact(linkedJson.ids[0])).irisRequestId, configured.id);
+  assert.equal((await K.getContact(a.id)).irisRequestId, null, "a duplicate is not relinked");
+  assert.equal((await K.listContacts({ iris: configured.id })).map((c) => c.id).join(), linkedJson.ids[0]);
+  await K.setArchived(linkedJson.ids[0], true);
+  const archivedDup = await (await call(`Bearer ${secret}`, { irisRequestId: configured.id, contacts: [{ business_name: "Cantina Collegata 2", email: "collegata.iris@gmail.com" }] })).json();
+  assert.deepEqual([archivedDup.inserted, archivedDup.duplicates], [0, 1]);
+  assert.equal((await K.getContact(linkedJson.ids[0])).businessName, "Cantina Collegata", "an archived duplicate is not rewritten");
+  assert.equal((await call(`Bearer ${secret}`, { irisRequestId: "00000000-0000-4000-8000-000000009999", contacts: [{ business_name: "Orfana", email: "orfana.iris@gmail.com" }] })).status, 404);
+
+  await signIn("u-sales");
+  const Act = await import("../app/admin/crm-iris-actions.ts");
+  const act = await Act.askIrisAction(params);
+  assert.match(act.error ?? "", /founder/);
+  delete process.env.CRM_IRIS_WEBHOOK_URL;
+  delete process.env.CRM_IRIS_WEBHOOK_KEY;
+  delete process.env.CRM_IRIS_WEBHOOK_HEADER;
+  console.log("ok iris requests");
 
   console.log("crm: all checks passed");
 } finally {

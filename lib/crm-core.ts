@@ -104,7 +104,10 @@ export const ingestContactSchema = z.object({
   notes: opt(5000),
   draft: ingestDraftSchema.optional().nullable(),
 });
-export const ingestSchema = z.object({ contacts: z.array(ingestContactSchema).min(1).max(100) });
+export const ingestSchema = z.object({
+  contacts: z.array(ingestContactSchema).min(1).max(100),
+  irisRequestId: z.string().trim().regex(/^[0-9a-f-]{36}$/i, "irisRequestId non valido").optional().nullable(),
+});
 export type IngestContact = z.infer<typeof ingestContactSchema>;
 
 /** Constant-time comparison (hashes first so lengths never leak). */

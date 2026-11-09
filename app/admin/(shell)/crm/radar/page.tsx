@@ -14,7 +14,10 @@ import {
   contactMailHref, CRM_HOME, PANEL_TABS, parseRadarQuery, PRIO_RANGE, RADAR, radarSearch, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS,
   type PanelTab, type RadarQuery, type RubricaSort,
 } from "@/lib/crm-nav";
-import { canAccess } from "@/lib/team-types";
+import { IrisRequestDialog } from "@/components/admin/crm/iris-request-dialog";
+import { currentIrisNotice, listIrisRequests, type IrisHistoryItem } from "@/lib/crm-iris";
+import { irisNoticeText } from "@/lib/crm-iris-core";
+import { canAccess, isFounder } from "@/lib/team-types";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -49,7 +52,6 @@ function PanelSkeleton() {
 
 const ASC_FIRST: RubricaSort[] = ["nome", "citta", "azione"];
 const I = {
-  search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
   eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
   star: "M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z",
   mail: "M4 6h16v12H4zM4 7l8 6 8-6",
@@ -70,17 +72,27 @@ function scoreBand(prio: RadarQuery["prio"]): Pick<ContactFilter, "scoreMin" | "
   }
 }
 
+const PHASE_LABEL: Record<IrisHistoryItem["phase"], string> = {
+  queued: "In coda", working: "In lavorazione", ready: "Pronta", error: "Errore", expired: "Scaduta",
+};
+
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const me = await requireSection("crm");
+  const founder = isFounder(me);
   const sp = await searchParams;
   const query = parseRadarQuery(sp);
   const today = romeToday();
   const filter: ContactFilter = {
     source: "radar", q: query.q || undefined, stage: isStage(query.fase) ? query.fase : undefined, type: query.categoria || undefined,
     city: query.citta || undefined, archived: query.archivio, owner: query.resp === "me" ? me.id : query.resp || undefined, ...scoreBand(query.prio),
+    ...(query.iris === "si" ? { iris: "any" as const } : query.iris ? { iris: query.iris } : {}),
   };
   const pageOf = (p: number) => listContacts({ ...filter, sort: query.ordina, dir: query.dir, limit: RUBRICA_PAGE_SIZE, offset: (p - 1) * RUBRICA_PAGE_SIZE });
-  const [total, firstTry, stats, f, owners] = await Promise.all([countContacts(filter), pageOf(query.p), radarStats(), facets("radar"), crmOwners()]);
+  const [total, firstTry, stats, f, owners, notice, history] = await Promise.all([
+    countContacts(filter), pageOf(query.p), radarStats(), facets("radar"), crmOwners(),
+    founder ? currentIrisNotice() : Promise.resolve(null),
+    founder ? listIrisRequests() : Promise.resolve([]),
+  ]);
   const pages = Math.max(1, Math.ceil(total / RUBRICA_PAGE_SIZE));
   const page = Math.min(query.p, pages);
   const contacts = page === query.p ? firstTry : await pageOf(page);
@@ -99,10 +111,11 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       id: c.id, version: c.version, name: c.businessName, type: c.type, stage: c.stage, city: c.city, address: c.address, region: c.region,
       source: SOURCE_LABEL[c.source], score: c.score, nextAction: c.nextAction, nextActionAt: c.nextActionAt, href: href({ c: c.id }),
       reasons: c.scoreReasons, drafts: { ready: mine.filter((d) => d.status === "bozza").length, sent: mine.filter((d) => d.status === "inviata").length },
+      fromIris: Boolean(c.irisRequestId),
     };
   });
   const from = total ? (page - 1) * RUBRICA_PAGE_SIZE + 1 : 0;
-  const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.owner || filter.archived || query.prio);
+  const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.owner || filter.archived || query.prio || query.iris);
   const listKey = radarSearch(view, { c: "", tab: "analisi" });
   const canSend = canAccess(me, "email");
   const panelLinks = {
@@ -118,13 +131,22 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     <div className="crm-rubrica crm-radar" data-panel={view.c ? "open" : undefined}>
       <div className="crm-rubrica-main">
         <CrmHeader title="Radar" intro="I prospect trovati da Iris, con punteggio e motivazioni: valutali e scegli chi contattare.">
-          <span className="crm-import">
-            <button type="button" className="adm-btn" disabled aria-describedby="crm-radar-search-note"><CrmIcon d={I.search} />Nuova ricerca</button>
-            <span id="crm-radar-search-note" className="adm-sr">Le ricerche partono da Iris, fuori dal CRM: i prospect trovati arrivano qui da soli.</span>
-          </span>
+          {founder ? <IrisRequestDialog notice={notice} /> : null}
           <span className="crm-import"><ImportDialog /></span>
         </CrmHeader>
         <CrmTabs current={RADAR} />
+        {founder && notice ? (
+          <div className="crm-iris-banner" role="status">
+            <p>{irisNoticeText(notice)}</p>
+            <p className="adm-muted">{notice.zone} · {notice.sectors.join(", ")}</p>
+            {notice.phase === "ready" ? <Link href={`${RADAR}?iris=${notice.id}` as Route}>Vedi i lead in Radar</Link> : null}
+          </div>
+        ) : null}
+        <p className="crm-hint crm-iris-filter">
+          {query.iris
+            ? <>Filtro attivo: da richiesta Iris. <Link href={href({ iris: "", p: 1 }) as Route}>Azzera</Link></>
+            : <Link href={href({ iris: "si", p: 1 }) as Route}>Da richiesta Iris</Link>}
+        </p>
 
         <section className="crm-kpis crm-kpis-5" aria-label="Numeri del Radar">
           <Link href={RADAR as Route} className="crm-kpi is-hero"><CrmIcon d={CRM_ICON[RADAR]} /><span className="crm-kpi-num">{stats.total}</span><span className="crm-kpi-label">Prospect dal Radar</span></Link>
@@ -147,6 +169,21 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           </div>
         )}
         <p className="crm-hint adm-muted crm-radar-note">I prospect del Radar sono già contatti della <Link href={`${RUBRICA}?fonte=radar` as Route}>Rubrica</Link> (fonte Radar). Niente parte da solo: nessuna email senza un clic su Invia, nessuna opportunità creata dal punteggio.</p>
+        {founder && history.length ? (
+          <details className="crm-iris-history">
+            <summary>Richieste a Iris</summary>
+            <ul>
+              {history.map((item) => (
+                <li key={item.id}>
+                  <span className="crm-iris-phase">{PHASE_LABEL[item.phase]}</span>
+                  <span>{item.name} · {item.zone}{item.sectors.length ? ` · ${item.sectors.join(", ")}` : ""}</span>
+                  {item.phase === "ready" ? <Link href={`${RADAR}?iris=${item.id}` as Route}>{item.inserted ?? 0} lead</Link> : null}
+                  {item.error ? <span className="adm-muted">{item.error}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </div>
       {view.c ? (
         <Suspense key={`${view.c}:${view.tab}`} fallback={<PanelSkeleton />}>
