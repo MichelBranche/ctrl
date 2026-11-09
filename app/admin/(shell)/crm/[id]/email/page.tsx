@@ -39,11 +39,12 @@ function PageSkeleton() {
   );
 }
 
-const TAB_LABEL: Record<PanelTab, string> = { dettagli: "Dettagli", note: "Note", attivita: "Attività", cronologia: "Cronologia" };
+const TAB_LABEL: Record<PanelTab, string> = { dettagli: "Dettagli", note: "Note", attivita: "Attività", opportunita: "Opportunità", cronologia: "Cronologia" };
 const TAB_ICON: Record<PanelTab | "email", string> = {
   dettagli: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01",
   note: "M5 4h14v16H5zM9 9h6M9 13h6M9 17h3",
   attivita: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 19v-1a4 4 0 0 0-3-3.9",
+  opportunita: "M4 16l4-8 4 5 3-4 5 7",
   email: "M3 6h18v12H3zM3 7l9 6 9-6",
   cronologia: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
 };

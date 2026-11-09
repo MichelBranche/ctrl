@@ -76,12 +76,43 @@ function where(f: DealFilter, periodStart: string | null): { sql: string; args: 
   return { sql: parts.join(" AND "), args };
 }
 
+/** Deals of one contact, open first. Used by the rubrica panel. */
+export async function dealsForContact(contactId: string): Promise<{ id: string; title: string; stage: Stage; valueEur: number | null; open: boolean }[]> {
+  await ensureCrmSchema();
+  const res = await db().execute({
+    sql: `SELECT id, title, stage, value_eur, closed_at FROM crm_opportunities WHERE contact_id = ? ORDER BY closed_at IS NOT NULL, updated_at DESC`,
+    args: [contactId],
+  });
+  return res.rows.flatMap((r) => {
+    if (!isStage(r.stage)) return [];
+    return [{ id: String(r.id), title: String(r.title), stage: r.stage, valueEur: r.value_eur === null || r.value_eur === undefined ? null : Number(r.value_eur), open: !r.closed_at }];
+  });
+}
+
 export async function listOpportunities(f: DealFilter = {}): Promise<Opportunity[]> {
   await ensureCrmSchema();
   const start = pipelinePeriodStart(f.period ?? "tutto");
   const w = where(f, start);
   const res = await db().execute({ sql: `SELECT ${COLS} ${FROM} WHERE ${w.sql} ORDER BY o.updated_at DESC, c.business_name`, args: w.args });
   return res.rows.map((r) => toDeal(r as Record<string, unknown>)).filter((d): d is Opportunity => d !== null);
+}
+
+/** Open deal amount in euros, one row per contact. Several open deals: the highest amount. Null means a deal with no amount. */
+export async function openDealAmounts(ids: string[]): Promise<Map<string, number | null>> {
+  const out = new Map<string, number | null>();
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return out;
+  await ensureCrmSchema();
+  const marks = unique.map(() => "?").join(",");
+  const res = await db().execute({
+    sql: `SELECT contact_id, MAX(value_eur) AS value_eur FROM crm_opportunities
+      WHERE closed_at IS NULL AND contact_id IN (${marks}) GROUP BY contact_id`,
+    args: unique,
+  });
+  for (const row of res.rows) {
+    out.set(String(row.contact_id), row.value_eur === null || row.value_eur === undefined ? null : Number(row.value_eur));
+  }
+  return out;
 }
 
 export async function getOpportunity(id: string): Promise<Opportunity | null> {

@@ -77,6 +77,20 @@ try {
   await M.ensureCrmSchema();
   await M.ensureCrmSchema();
   assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "version" && Number(r.notnull) === 1 && String(r.dflt_value) === "1"), "version added by ensureCrmSchema");
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "kind" && Number(r.notnull) === 0), "kind column is nullable");
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "estimated_value_cents"), "estimate column");
+  assert.ok((await db().execute("PRAGMA table_info(crm_contacts)")).rows.some((r) => r.name === "estimated_value_note"), "estimate note");
+  assert.ok((await db().execute("PRAGMA table_info(crm_kpi_daily)")).rows.some((r) => r.name === "contacts_contacted"), "contacted kpi column");
+  assert.ok((await db().execute("PRAGMA table_info(crm_kpi_daily)")).rows.some((r) => r.name === "potential_value_cents"), "potential kpi column");
+  const pipeSql = readFileSync(join("db", "019_crm_pipeline.sql"), "utf8");
+  assert.ok(!/\bALTER\b/i.test(pipeSql), "pipeline sql stays re-runnable");
+  await db().executeMultiple(pipeSql);
+  await db().executeMultiple(pipeSql);
+  assert.ok((await db().execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'crm_saved_views'")).rows.length, "saved views table");
+  const rubricaSql = readFileSync(join("db", "018_crm_rubrica.sql"), "utf8");
+  assert.ok(!/\bALTER\b/i.test(rubricaSql), "the sql file stays re-runnable");
+  await db().executeMultiple(rubricaSql);
+  await db().executeMultiple(rubricaSql);
   assert.ok((await db().execute("SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'crm_contacts_owner'")).rows.length, "owner index");
   const K = await import("../lib/crm.ts");
   const a = await K.createContact({ businessName: "Pizzeria Mario", email: "info@mario.it", phone: "333 1234567", source: "manuale" }, null);
@@ -539,7 +553,157 @@ try {
   assert.equal(N.radarSearch(N.parseRadarQuery({ iris: "si" })), "?iris=si");
   console.log("ok radar url state");
 
-  // 15. Iris search requests: daily credit in Rome, one active request, 3h expiry, founder gate, callback, ingest link.
+  // 15. Rubrica: next action, kind, saved views, batch permissions.
+  const NX = await import("../lib/crm-next.ts");
+  const KK = await import("../lib/crm-kind.ts");
+  const day = "2026-11-09";
+  const late = NX.pickNextTouch([
+    { title: "Dopo", at: "2026-11-12", source: "followup" },
+    { title: "Scaduta", at: "2026-11-01", time: "09:00", source: "attivita" },
+  ], day);
+  assert.equal(late.title, "Scaduta");
+  assert.equal(late.overdue, true);
+  assert.match(late.relative, /giorni fa/);
+  const sooner = NX.pickNextTouch([
+    { title: "Giorno", at: "2026-11-09", source: "followup" },
+    { title: "Ore", at: "2026-11-09", time: "10:00", source: "attivita" },
+  ], day);
+  assert.equal(sooner.title, "Ore", "a time the same day is earlier than an undated follow-up");
+  assert.equal(sooner.relative, "Oggi");
+  assert.equal(sooner.overdue, false);
+  assert.equal(NX.pickNextTouch([{ title: "Senza data", at: "", source: "followup" }], day), null);
+  const nx = await K.createContact({ businessName: "Prossima Azione", email: "prossima.azione@gmail.com", source: "manuale", nextAction: "Richiamare", nextActionAt: "2026-11-20" }, null);
+  await db().execute({
+    sql: "INSERT INTO crm_activities (id, contact_id, title, kind, due_date, due_time, assignee_user_id, created_by) VALUES ('act-nx', ?, 'Chiamata scaduta', 'call', '2026-11-01', '09:00', 'u-sales', 'u-sales')",
+    args: [nx.id],
+  });
+  const openNx = await K.openActivitiesFor([nx.id, nx.id]);
+  const fromDb = NX.pickNextTouch([
+    ...(openNx.get(nx.id) ?? []).map((a) => ({ title: a.title, at: a.at, time: a.time, source: "attivita" })),
+    { title: "Richiamare", at: "2026-11-20", source: "followup" },
+  ], day);
+  assert.equal(fromDb.source, "attivita");
+  assert.equal(fromDb.overdue, true);
+  await db().execute("UPDATE crm_activities SET done_at = '2026-11-09T10:00:00.000Z' WHERE id = 'act-nx'");
+  assert.equal((await K.openActivitiesFor([nx.id])).has(nx.id), false, "a completed activity leaves the next action");
+  console.log("ok next action");
+
+  assert.equal(KK.resolveKind({ businessName: "Anna Neri", contactName: "Anna Neri", type: null, kind: null }), "persona");
+  assert.equal(KK.resolveKind({ businessName: "Ottica Bianchi", contactName: "Luca Bianchi", type: "Ottica", kind: null }), "azienda");
+  assert.equal(KK.resolveKind({ businessName: "Solo Nome", contactName: null, type: null, kind: null }), "azienda");
+  assert.equal(KK.resolveKind({ businessName: "Anna Neri", contactName: "Anna Neri", type: null, kind: "azienda" }), "azienda", "a stored kind wins");
+  const person = await K.createContact({ businessName: "Giulia Verdi", contactName: "Giulia Verdi", source: "manuale" }, null);
+  const company = await K.createContact({ businessName: "Falegnameria Verdi", contactName: "Marco Verdi", type: "Legno", source: "manuale" }, null);
+  assert.ok((await K.listContacts({ kind: "persona", q: "Giulia Verdi" })).some((c) => c.id === person.id));
+  assert.ok((await K.listContacts({ kind: "azienda", q: "Falegnameria Verdi" })).some((c) => c.id === company.id));
+  assert.equal((await K.listContacts({ kind: "persona", q: "Falegnameria Verdi" })).length, 0);
+  const segs = await K.rubricaSegments();
+  assert.equal(segs.aziende + segs.persone, segs.tutti, "every open contact is an azienda or a persona");
+  await signIn("u-sales");
+  const personRow = await K.getContact(person.id);
+  assert.match((await A.setKindAction(person.id, "azienda", personRow.version)).ok ?? "", /azienda/);
+  assert.equal((await K.getContact(person.id)).kind, "azienda");
+  assert.ok((await K.listContacts({ kind: "azienda", q: "Giulia Verdi" })).some((c) => c.id === person.id), "an explicit kind replaces the deduction");
+  console.log("ok contact kind");
+
+  await addUser("u-founder", ["founder"], true);
+  await db().execute("INSERT INTO admin_2fa (user_id, secret_enc, enabled_at) VALUES ('u-founder', 'test-secret', strftime('%Y-%m-%dT%H:%M:%fZ','now'))");
+  const VA = await import("../app/admin/crm-view-actions.ts");
+  await signIn("u-sales");
+  assert.match((await VA.createViewAction("Langhe", "seg=aziende&q=mario&vista=griglia", true)).error ?? "", /founder/);
+  assert.match((await VA.createViewAction("L", "seg=aziende", false)).error ?? "", /2 e 40/);
+  const made = await VA.createViewAction("Langhe", `seg=aziende&q=mario%40rossi.it&vista=griglia&ordina=nome&dir=asc&c=${uuid}&p=4`, false);
+  assert.equal(made.ok, true);
+  const ownViews = await (await import("../lib/crm-views.ts")).listSavedViews("u-sales");
+  assert.equal(ownViews.length, 1);
+  assert.match(ownViews[0].params, /q=mario/);
+  assert.match(ownViews[0].params, /seg=aziende/);
+  assert.match(ownViews[0].params, /vista=griglia/);
+  assert.equal(ownViews[0].params.includes("c="), false);
+  assert.equal(/(^|&)p=/.test(ownViews[0].params), false);
+  assert.equal(ownViews[0].shared, false);
+  await signIn("u-mail");
+  assert.match((await VA.deleteViewAction(ownViews[0].id)).error ?? "", /tue viste/);
+  assert.match((await VA.renameViewAction(ownViews[0].id, "Altro nome")).error ?? "", /tue viste/);
+  assert.equal((await (await import("../lib/crm-views.ts")).listSavedViews("u-mail")).length, 0);
+  await signIn("u-founder");
+  assert.equal((await VA.createViewAction("Team Langhe", "seg=persone&fase=nuovo", true)).ok, true);
+  const sharedId = (await (await import("../lib/crm-views.ts")).listSavedViews("u-founder")).find((v) => v.name === "Team Langhe").id;
+  await signIn("u-mail");
+  const sharedSeen = await (await import("../lib/crm-views.ts")).listSavedViews("u-mail");
+  assert.ok(sharedSeen.some((v) => v.id === sharedId && v.shared && !v.mine));
+  assert.match((await VA.deleteViewAction(sharedId)).error ?? "", /tue viste/, "a commerciale cannot delete a shared view");
+  await signIn("u-founder");
+  assert.equal((await VA.renameViewAction(sharedId, "Team Alba")).ok, true);
+  assert.equal((await VA.deleteViewAction(sharedId)).ok, true);
+  await signIn("u-sales");
+  assert.equal((await VA.renameViewAction(ownViews[0].id, "Langhe mie")).ok, true);
+  assert.equal((await VA.deleteViewAction(ownViews[0].id)).ok, true);
+  await signIn("u-pm");
+  await assert.rejects(() => VA.createViewAction("No", "seg=tutti", false), /unauthorized/);
+  console.log("ok saved views");
+
+  await signIn("u-sales");
+  const held = await K.createContact({ businessName: "Gia in call", email: "gia.call@gmail.com", source: "manuale", stage: "call" }, null);
+  const heldVersion = (await K.getContact(held.id)).version;
+  const heldRes = await A.bulkContactsAction([{ id: held.id, version: heldVersion }], { kind: "stage", stage: "call" });
+  assert.equal(heldRes.updated, 1);
+  assert.equal((await K.getContact(held.id)).version, heldVersion, "an unchanged stage does not bump the version");
+  const pair = [
+    await K.createContact({ businessName: "Batch Uno", email: "batch.uno@gmail.com", source: "manuale" }, null),
+    await K.createContact({ businessName: "Batch Due", email: "batch.due@gmail.com", source: "manuale" }, null),
+  ];
+  const assigned = await A.bulkContactsAction(await Promise.all(pair.map(async (c) => ({ id: c.id, version: (await K.getContact(c.id)).version }))), { kind: "owner", owner: "u-sales" });
+  assert.equal(assigned.updated, 2);
+  for (const c of pair) assert.equal((await K.getContact(c.id)).ownerUserId, "u-sales");
+  await signIn("u-pm");
+  await assert.rejects(() => A.bulkContactsAction([{ id: pair[0].id, version: 1 }], { kind: "owner", owner: "u-sales" }), /unauthorized/);
+  console.log("ok rubrica batch");
+
+  const pipe = await K.createContact({ businessName: "Pipeline Sposta", email: "pipeline.sposta@gmail.com", source: "manuale" }, null);
+  const pipeRow = await K.getContact(pipe.id);
+  await signIn("u-pm");
+  await assert.rejects(() => A.moveStageAction(pipe.id, "call", pipeRow.version), /unauthorized/, "drag uses the same permission as the stage menu");
+  await assert.rejects(() => A.setEstimateAction(pipe.id, "3000", "", pipeRow.version), /unauthorized/);
+  await signIn("u-sales");
+  const dragStale = await A.moveStageAction(pipe.id, "call", pipeRow.version + 9);
+  assert.match(dragStale.error ?? "", /modificato/, "a stale drag does not write");
+  const afterStale = await K.getContact(pipe.id);
+  assert.equal(afterStale.stage, "nuovo");
+  assert.equal(afterStale.version, pipeRow.version, "failed drag rolls the row back");
+  const saved = await A.setEstimateAction(pipe.id, "4500", "Sito", pipeRow.version);
+  assert.equal(saved.ok, "Valore stimato salvato.");
+  assert.equal((await K.getContact(pipe.id)).estimatedValueCents, 450000);
+  assert.equal((await A.setEstimateAction(pipe.id, "4500", "Sito", pipeRow.version)).error?.length > 0, true, "a second save with the old version does not overwrite");
+
+  const stima = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Stima Nuova", email: "stima.nuova@gmail.com", estimatedValue: 3000, estimatedValueNote: "Prenotazioni" }] })).json();
+  assert.equal(stima.inserted, 1);
+  const stimaId = stima.ids[0];
+  assert.equal((await K.getContact(stimaId)).estimatedValueCents, 300000);
+  assert.equal((await K.getContact(stimaId)).estimatedValueNote, "Prenotazioni");
+  await db().execute({ sql: "UPDATE crm_contacts SET estimated_value_cents = 1000, estimated_value_note = 'gia' WHERE id = ?", args: [stimaId] });
+  const dupIngest = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Stima Nuova", email: "stima.nuova@gmail.com", estimatedValue: 9000, estimatedValueNote: "altro" }] })).json();
+  assert.equal(dupIngest.duplicates, 1);
+  assert.equal((await K.getContact(stimaId)).estimatedValueCents, 1000, "a duplicate ingest does not touch the estimate");
+  assert.equal((await K.getContact(stimaId)).estimatedValueNote, "gia");
+  assert.equal((await call(`Bearer ${secret}`, { contacts: [{ business_name: "Troppo", email: "troppo.valore@gmail.com", estimatedValue: 100001 }] })).status, 400);
+  assert.equal((await K.listContacts({ q: "Troppo" })).length, 0, "an out of range estimate creates nothing");
+  const zeroStima = await (await call(`Bearer ${secret}`, { contacts: [{ business_name: "Zero Stima", email: "zero.stima@gmail.com", estimatedValue: 0 }] })).json();
+  assert.equal(zeroStima.inserted, 1);
+  assert.equal((await K.getContact(zeroStima.ids[0])).estimatedValueCents, 0, "zero is a real estimate");
+
+  const KpiPipe = await import("../lib/crm-kpi.ts");
+  assert.equal(KpiPipe.kpiChange(12, null), null);
+  assert.equal(KpiPipe.kpiChange(null, 4), null);
+  assert.equal(KpiPipe.kpiChange(8, 0), null, "no percentage when the past point is zero");
+  await db().execute("DELETE FROM crm_kpi_daily WHERE day IN ('2026-01-01', '2026-01-08')");
+  assert.equal(await KpiPipe.kpiWeekChange("potential_value_cents", "2026-01-08"), null, "no percentage without history");
+  await db().execute("INSERT INTO crm_kpi_daily (day, contacts_contacted, potential_value_cents) VALUES ('2026-01-01', 4, NULL), ('2026-01-08', 6, 1000)");
+  assert.equal(await KpiPipe.kpiWeekChange("potential_value_cents", "2026-01-08"), null, "a missing past potential is not a percentage");
+  assert.equal(await KpiPipe.kpiWeekChange("contacts_contacted", "2026-01-08"), 50);
+  console.log("ok pipeline");
+
+  // 16. Iris search requests: daily credit in Rome, one active request, 3h expiry, founder gate, callback, ingest link.
   const Core = await import("../lib/crm-iris-core.ts");
   assert.equal(Core.irisTransition("queued", "working"), "ok");
   assert.equal(Core.irisTransition("working", "queued"), "reject");

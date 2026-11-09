@@ -1,11 +1,13 @@
 "use client";
-import { createContext, useActionState, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { panelFollowUpAction, panelOwnerAction, panelStageAction, type CrmState } from "@/app/admin/crm-actions";
+import { panelFollowUpAction, panelOwnerAction, panelStageAction, setEstimateAction, setKindAction, type CrmState } from "@/app/admin/crm-actions";
+import type { ContactKind } from "@/lib/crm-kind";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
-const MOBILE = "(max-width: 960px)";
+const MOBILE = "(max-width: 1279px)";
+const PANEL_WIDTH = "ctrl:crm-panel-w";
 /** Quick forms remount when the contact's version changes (fresh values after a save or a conflict): their result lives here. */
 const Flash = createContext<(s: CrmState) => void>(() => {});
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -18,7 +20,15 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   const router = useRouter();
   const ref = useRef<HTMLElement>(null);
   const [modal, setModal] = useState(false);
+  const [wide, setWide] = useState(false);
   const [flash, setFlash] = useState<CrmState>({});
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(PANEL_WIDTH);
+    const px = saved === "420" ? 420 : saved === "380" ? 380 : 400;
+    setWide(px === 420);
+    document.documentElement.style.setProperty("--crm-panel-w", `${px}px`);
+  }, []);
 
   useEffect(() => {
     if (!flash.ok) return;
@@ -49,13 +59,21 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
     return () => { document.body.style.overflow = prev; };
   }, [modal]);
 
+  const leave = (href: string) => {
+    const node = ref.current;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!node || reduce || !node.closest(".crm-rubrica-page, .crm-pipeline-page")) { router.push(href as Route, { scroll: false }); return; }
+    node.classList.add("is-closing");
+    window.setTimeout(() => router.push(href as Route, { scroll: false }), 180);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !e.defaultPrevented) {
         const open = document.querySelector("details[open].crm-menu");
         if (open) { open.removeAttribute("open"); return; }
         e.preventDefault();
-        router.push(closeHref as Route, { scroll: false });
+        leave(closeHref);
         return;
       }
       if (e.key !== "Tab" || !modal || !ref.current) return;
@@ -72,8 +90,23 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
 
   return (
     <>
-      {modal ? <div className="crm-sheet-backdrop" aria-hidden="true" onClick={() => router.push(closeHref as Route, { scroll: false })} /> : null}
-      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}>
+      {modal ? <div className="crm-sheet-backdrop" aria-hidden="true" onClick={() => leave(closeHref)} /> : null}
+      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}
+        onClick={(e) => {
+          const link = (e.target as HTMLElement).closest("a.crm-panel-close");
+          if (!link || !ref.current?.closest(".crm-rubrica-page, .crm-pipeline-page")) return;
+          e.preventDefault();
+          leave(link.getAttribute("href") || closeHref);
+        }}>
+        {modal ? null : (
+          <button type="button" className="crm-panel-size" aria-pressed={wide} aria-label={wide ? "Restringi il pannello" : "Allarga il pannello"}
+            onClick={() => {
+              const next = wide ? 380 : 420;
+              setWide(next === 420);
+              try { sessionStorage.setItem(PANEL_WIDTH, String(next)); } catch { /* private mode */ }
+              document.documentElement.style.setProperty("--crm-panel-w", `${next}px`);
+            }} />
+        )}
         <Flash.Provider value={setFlash}>{children}</Flash.Provider>
         <div className="crm-panel-flash" aria-live="polite">
           {flash.error ? <p className="adm-error" role="alert">{flash.error}</p> : flash.ok ? <p className="adm-ok">{flash.ok}</p> : null}
@@ -116,6 +149,28 @@ function useQuickAction(fn: (s: CrmState, f: FormData) => Promise<CrmState>) {
 }
 
 type Versioned = { id: string; version: number };
+
+/** A readable value. The existing editor opens only after a click. */
+export function Peek({ text, label, children }: { text: string; label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <div className="crm-peek is-open">
+        {children}
+        <button type="button" className="crm-textbtn" onClick={() => setOpen(false)}>Chiudi</button>
+      </div>
+    );
+  }
+  return (
+    <button type="button" className="crm-peek" onClick={() => setOpen(true)}>
+      <span>{text}</span>
+      <span className="crm-peek-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+      </span>
+      <span className="adm-sr">{label}</span>
+    </button>
+  );
+}
 
 export function StageQuick({ contact, stage }: { contact: Versioned; stage: Stage }) {
   const { form, action, pending } = useQuickAction(panelStageAction);
@@ -183,5 +238,72 @@ export function OwnerQuick({ contact, ownerId, owners, former }: { contact: Vers
         {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
     </form>
+  );
+}
+
+/** Proposed value in whole euros. Empty clears it. Anyone who can open the CRM can change it. */
+export function EstimateField({ contact, cents, note }: { contact: Versioned; cents: number | null; note: string | null }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [euros, setEuros] = useState(cents === null ? "" : String(Math.round(cents / 100)));
+  const [text, setText] = useState(note ?? "");
+  const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(false);
+  const shown = cents === null ? "Nessuna stima" : `€ ${Math.round(cents / 100).toLocaleString("it-IT")}`;
+  if (!editing) {
+    return (
+      <button type="button" className="crm-panel-amount" onClick={() => setEditing(true)}>
+        {shown}
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+        <span className="adm-sr">Modifica la stima</span>
+      </button>
+    );
+  }
+  return (
+    <form className="crm-quick-field crm-estimate" onSubmit={(e) => {
+      e.preventDefault();
+      setMsg("");
+      start(async () => {
+        const r = await setEstimateAction(contact.id, euros, text, contact.version);
+        setMsg(r.error ?? r.ok ?? "");
+        if (r.ok) router.refresh();
+      });
+    }}>
+      <span>Valore stimato</span>
+      <label className="adm-sr" htmlFor={`crm-estimate-${contact.id}`}>Valore stimato in euro</label>
+      <input id={`crm-estimate-${contact.id}`} className="adm-input" inputMode="numeric" value={euros} disabled={pending} placeholder="Euro, vuoto se non c'è"
+        onChange={(e) => setEuros(e.target.value)} />
+      <label className="adm-sr" htmlFor={`crm-estimate-note-${contact.id}`}>Nota sul valore stimato</label>
+      <input id={`crm-estimate-note-${contact.id}`} className="adm-input" value={text} disabled={pending} maxLength={200} placeholder="Nota breve, facoltativa"
+        onChange={(e) => setText(e.target.value)} />
+      <button className="adm-btn adm-btn-sm" type="submit" disabled={pending}>Salva stima</button>
+      <button className="crm-textbtn" type="button" onClick={() => setEditing(false)}>Chiudi</button>
+      {msg ? <span className="adm-muted">{msg}</span> : null}
+    </form>
+  );
+}
+
+/** Stored kind. Empty keeps the deduction (company name, or a person when the two names match). */
+export function KindField({ contact, stored }: { contact: Versioned; stored: ContactKind | null }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [value, setValue] = useState(stored ?? "");
+  return (
+    <label className="crm-quick-field">
+      <span>Tipo</span>
+      <select className="adm-input" value={value} disabled={pending} aria-label="Tipo di contatto"
+        onChange={(e) => {
+          const next = e.target.value;
+          setValue(next);
+          start(async () => {
+            await setKindAction(contact.id, next || null, contact.version);
+            router.refresh();
+          });
+        }}>
+        <option value="">Automatico</option>
+        <option value="azienda">Azienda</option>
+        <option value="persona">Persona</option>
+      </select>
+    </label>
   );
 }

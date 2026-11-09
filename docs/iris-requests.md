@@ -90,3 +90,16 @@ Senza `irisRequestId` il comportamento resta quello attuale. La risposta resta `
 I contatti nuovi vengono collegati alla richiesta e in Radar portano il badge «da richiesta Iris». Un duplicato, anche archiviato, non viene aggiornato e non riceve il collegamento. Nessuna email parte da sola e non si apre un'opportunità.
 
 Il filtro del Radar per quella richiesta è `https://www.ctrlagency.dev/admin/crm/radar?iris=<requestId>`.
+
+## 4. Valore stimato sull'ingest
+
+Campi opzionali, solo quando il contatto viene creato. La risposta resta `{ inserted, duplicates, ids }`.
+
+| Campo | Tipo | Regola |
+| --- | --- | --- |
+| `estimatedValue` | intero, euro | da 0 a 100000. Si salva in `crm_contacts.estimated_value_cents` (euro × 100). |
+| `estimatedValueNote` | stringa | facoltativa, al massimo 200 caratteri, in `crm_contacts.estimated_value_note`. |
+
+Un duplicato (stessa email, telefono o dominio) non viene aggiornato: il valore già presente resta com'è. Un valore fuori intervallo, o una nota troppo lunga, rifiuta l'intero payload con 400. Nessuna riga nuova.
+
+Il campo è visibile a tutto il team CRM e si può correggere a mano nel pannello Dettagli. Non crea un'opportunità. Sulla card, se esiste una trattativa aperta con un importo, si mostra quello. Altrimenti si mostra la stima con la scritta «stimato». Se manca, la card non mostra un importo.
