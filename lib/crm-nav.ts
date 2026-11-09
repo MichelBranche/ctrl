@@ -196,19 +196,22 @@ export const RADAR = `${CRM_HOME}/radar`;
 export const RADAR_PRIOS = ["alta", "media", "bassa", "senza"] as const;
 export type RadarPrio = (typeof RADAR_PRIOS)[number];
 export type RadarTab = PanelTab | "analisi";
-export type RadarQuery = Omit<RubricaQuery, "tab"> & { prio: RadarPrio | ""; tab: RadarTab };
+export type RadarQuery = Omit<RubricaQuery, "tab"> & { prio: RadarPrio | ""; tab: RadarTab; iris: string };
 /** Same bands as the score badge: alta 70+, media 40-69, bassa under 40, senza = no score from Iris. */
 export const PRIO_RANGE: Record<Exclude<RadarPrio, "senza">, [number, number]> = { alta: [70, 100], media: [40, 69], bassa: [0, 39] };
 
+const IRIS_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function parseRadarQuery(sp: Raw): RadarQuery {
   const base = parseRubricaQuery(sp);
-  const prio = read(sp, "prio"), tab = read(sp, "tab");
+  const prio = read(sp, "prio"), tab = read(sp, "tab"), iris = read(sp, "iris");
   const sorted = (RUBRICA_SORTS as readonly string[]).includes(read(sp, "ordina"));
   return {
     ...base,
     ...(sorted ? {} : { ordina: "punteggio" as const, dir: "desc" as const }),
     prio: (RADAR_PRIOS as readonly string[]).includes(prio) ? (prio as RadarPrio) : "",
     tab: (PANEL_TABS as readonly string[]).includes(tab) ? (tab as PanelTab) : "analisi",
+    iris: iris === "si" || IRIS_ID.test(iris) ? iris : "",
   };
 }
 
@@ -218,6 +221,7 @@ export function radarSearch(q: RadarQuery, patch: Partial<RadarQuery> = {}): str
   if (v.ordina === "punteggio" && v.dir === "desc") { out.delete("ordina"); out.delete("dir"); }
   else if (!out.has("ordina")) { out.set("ordina", v.ordina); out.set("dir", v.dir); }
   if (v.prio) out.set("prio", v.prio);
+  if (v.iris) out.set("iris", v.iris);
   if (v.c && v.tab !== "analisi") out.set("tab", v.tab);
   const s = out.toString();
   return s ? `?${s}` : "";

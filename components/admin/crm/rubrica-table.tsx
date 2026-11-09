@@ -13,6 +13,8 @@ export type RubricaRow = {
   source: string; score: number | null; nextAction: string | null; nextActionAt: string | null; href: string;
   /** Radar only: Iris reasons as received, and how many of its drafts wait for review / were sent. */
   reasons?: string[]; drafts?: { ready: number; sent: number };
+  /** Created from a founder request to Iris, not from an unsolicited ingest. */
+  fromIris?: boolean;
 };
 export type SortHead = { href: string; dir: "asc" | "desc" | null };
 export type Pager = { from: number; to: number; total: number; prev: string | null; next: string | null };
@@ -154,6 +156,7 @@ function RowCell({ cell, row: r, activeId, today, variant }: { cell: Cell; row: 
         <>
           <Link href={r.href as Route} scroll={false} data-row-link={r.id} aria-current={r.id === activeId ? "true" : undefined}>{r.name}<Opening /></Link>
           {r.type ? <span className="crm-sub">{r.type}</span> : null}
+          {r.fromIris ? <span className="crm-iris-badge">da richiesta Iris</span> : null}
         </>
       );
     case "fase":

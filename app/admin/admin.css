@@ -1577,6 +1577,36 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-import-dialog .crm-import-table td:nth-child(4) { grid-column: 1 / -1; }
 }
 
+/* Founder request to Iris. Orange stays on the submit button; the rest is the usual panel. */
+.crm-iris-dialog { width: min(36rem, calc(100vw - 1.5rem)); max-height: min(86dvh, 42rem); margin: auto; overflow: auto; border: 1px solid var(--adm-rule); border-radius: 0.7rem; padding: 1.1rem 1.15rem 1rem; background: var(--adm-panel); color: var(--adm-fg); box-shadow: 0 24px 60px rgba(0, 0, 0, .28); }
+.crm-iris-dialog::backdrop { background: rgba(16, 16, 16, .55); }
+.crm-iris-dialog .adm-h2 { margin: 0 0 0.35rem; }
+.crm-iris-dialog .adm-field { margin-top: 0.75rem; }
+.crm-iris-dialog fieldset { border: 0; padding: 0; }
+.crm-iris-dialog legend { margin-bottom: 0.35rem; color: var(--adm-dim); font-size: 0.82rem; }
+.crm-iris-dialog .adm-row-actions { margin-top: 0.9rem; }
+.crm-iris-banner, .crm-iris-warn { margin: 0 0 1rem; padding: 0.75rem 0.9rem; border: 1px solid var(--adm-rule); border-radius: 0.75rem; background: var(--adm-raise); }
+.crm-iris-banner p, .crm-iris-warn p { margin: 0; }
+.crm-iris-banner p + p, .crm-iris-warn p + p { margin-top: 0.25rem; }
+.crm-iris-banner a, .crm-iris-warn a { color: var(--adm-fg); }
+.crm-iris-filter { margin: 0 0 0.75rem; }
+.crm-iris-dialog .crm-iris-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem; }
+.crm-iris-dialog .crm-iris-chip { display: inline-flex; align-items: center; gap: 0.3rem; max-width: none; padding: 0.15rem 0.5rem; border: 1px solid var(--adm-rule); border-radius: 999px; background: transparent; color: var(--adm-fg); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.crm-iris-add { display: flex; gap: 0.4rem; }
+.crm-iris-add .adm-input { flex: 1; }
+.crm-iris-checks { display: flex; flex-wrap: wrap; gap: 0.45rem 0.9rem; }
+.crm-iris-checks label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.86rem; }
+.crm-iris-badge { display: inline-flex; margin-top: 0.2rem; padding: 0.05rem 0.4rem; border: 1px solid var(--adm-rule); border-radius: 999px; color: var(--adm-dim); font-size: 0.68rem; }
+.crm-iris-history { margin-top: 1rem; }
+.crm-iris-history summary { cursor: pointer; color: var(--adm-dim); }
+.crm-iris-history ul { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.7rem 0 0; padding: 0; list-style: none; }
+.crm-iris-history li { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; align-items: baseline; }
+.crm-iris-phase { color: var(--adm-fg); font-weight: 650; }
+@media (max-width: 40rem) {
+  .crm-iris-dialog { width: calc(100vw - 1rem); padding: 0.9rem 0.8rem; }
+  .crm-iris-dialog .adm-row-actions > * { flex: 1 1 100%; text-align: center; }
+}
+
 /* Pipeline: deals, not every contact. Perso stays collapsed until asked. */
 .crm-switch { display: inline-flex; gap: 0.25rem; padding: 0.2rem; border: 1px solid var(--adm-rule); border-radius: 999px; }
 .crm-switch a { padding: 0.35rem 0.75rem; border-radius: 999px; color: var(--adm-dim); text-decoration: none; font-size: 0.82rem; }

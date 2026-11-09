@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAction } from "@/lib/audit";
 import { ingestContact } from "@/lib/crm";
+import { irisRequestExists } from "@/lib/crm-iris";
 import { ingestAuth, ingestSchema } from "@/lib/crm-core";
 import { dbConfigured } from "@/lib/db";
 
@@ -22,10 +23,15 @@ export async function POST(req: Request) {
   try { data = JSON.parse(raw); } catch { return json({ error: "JSON non valido" }, 400); }
   const parsed = ingestSchema.safeParse(data);
   if (!parsed.success) return json({ error: "dati non validi", issues: parsed.error.issues.slice(0, 20).map((i) => ({ path: i.path.join("."), message: i.message })) }, 400);
+  let link: string | null = null;
+  if (parsed.data.irisRequestId) {
+    if (!(await irisRequestExists(parsed.data.irisRequestId))) return json({ error: "richiesta Iris sconosciuta" }, 404);
+    link = parsed.data.irisRequestId;
+  }
   const ids: string[] = [];
   let inserted = 0, duplicates = 0;
   for (const c of parsed.data.contacts) {
-    const r = await ingestContact(c);
+    const r = await ingestContact(c, link);
     ids.push(r.id);
     if (r.duplicate) duplicates++; else inserted++;
   }

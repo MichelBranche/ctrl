@@ -22,6 +22,8 @@ export type Contact = {
   /** Proposed value in euro cents. Null means nobody estimated it. Visible to the whole CRM team. */
   estimatedValueCents: number | null;
   estimatedValueNote: string | null;
+  /** Set only when this row was created from an Iris search request. Never written onto a duplicate. */
+  irisRequestId: string | null;
 };
 export type ContactInput = {
   businessName: string; type?: string | null; contactName?: string | null; email?: string | null; phone?: string | null; website?: string | null;
@@ -39,7 +41,7 @@ function reasons(v: unknown): string[] {
 
 const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.source, c.score,
   c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived,
-  c.version, c.stage_changed_at, c.kind, c.estimated_value_cents, c.estimated_value_note,
+  c.version, c.stage_changed_at, c.kind, c.estimated_value_cents, c.estimated_value_note, c.iris_request_id,
   CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
 const FROM = "FROM crm_contacts c LEFT JOIN admin_users u ON u.id = c.owner_user_id";
 
@@ -55,6 +57,7 @@ function toContact(r: Record<string, unknown>): Contact {
     kind: r.kind === "azienda" || r.kind === "persona" ? r.kind : null,
     estimatedValueCents: r.estimated_value_cents === null || r.estimated_value_cents === undefined || r.estimated_value_cents === "" ? null : Number(r.estimated_value_cents),
     estimatedValueNote: s(r.estimated_value_note),
+    irisRequestId: s(r.iris_request_id),
   };
 }
 
@@ -80,15 +83,15 @@ const fieldArgs = (c: ContactInput): InValue[] => {
 };
 
 const INSERT_CONTACT = `INSERT INTO crm_contacts (business_name, type, contact_name, email, phone, website, address, city, region, score, score_reasons, value_eur,
-  next_action, next_action_at, owner_user_id, notes, email_norm, phone_norm, domain, id, source, stage, created_by, request_id, created_at, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
+  next_action, next_action_at, owner_user_id, notes, email_norm, phone_norm, domain, id, source, stage, created_by, request_id, iris_request_id, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
 
 /**
  * Inserts unless a duplicate exists. The check and the insert share one write transaction, so two concurrent
  * creates of the same contact cannot both pass the check. Returns the new id, or the duplicate's id with
  * duplicate = true. Never updates the existing row.
  */
-export async function createContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string } = {}): Promise<{ id: string; duplicate: boolean }> {
+export async function createContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string; irisRequestId?: string | null } = {}): Promise<{ id: string; duplicate: boolean }> {
   await ensureCrmSchema();
   for (let attempt = 1; ; attempt++) {
     try {
@@ -101,7 +104,7 @@ export async function createContact(c: ContactInput, createdBy: string | null, e
   }
 }
 
-async function insertContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string }): Promise<{ id: string; duplicate: boolean }> {
+async function insertContact(c: ContactInput, createdBy: string | null, extra: { requestId?: string; createdAt?: string; irisRequestId?: string | null }): Promise<{ id: string; duplicate: boolean }> {
   const tx = await db().transaction("write");
   try {
     const k = dedupeKeys(c);
@@ -114,7 +117,7 @@ async function insertContact(c: ContactInput, createdBy: string | null, extra: {
       if (dup) return { id: dup, duplicate: true };
     }
     const id = crypto.randomUUID();
-    await tx.execute({ sql: INSERT_CONTACT, args: [...fieldArgs(c), id, c.source, c.stage ?? "nuovo", createdBy, extra.requestId ?? null, extra.createdAt ?? null] });
+    await tx.execute({ sql: INSERT_CONTACT, args: [...fieldArgs(c), id, c.source, c.stage ?? "nuovo", createdBy, extra.requestId ?? null, extra.irisRequestId ?? null, extra.createdAt ?? null] });
     await tx.commit();
     return { id, duplicate: false };
   } finally {
@@ -210,6 +213,8 @@ export type ContactFilter = {
   kind?: ContactKind;
   /** Score band (inclusive); `noScore` = contacts Iris sent without a score. */
   scoreMin?: number; scoreMax?: number; noScore?: boolean;
+  /** "any" = created from an Iris request; a request id = that request only. */
+  iris?: "any" | string;
 };
 const STAGE_ORDER = `CASE c.stage ${STAGES.map((st, i) => `WHEN '${st}' THEN ${i}`).join(" ")} END`;
 const SORT_SQL: Record<ContactSort, string> = {
@@ -233,6 +238,8 @@ function contactWhere(f: ContactFilter): { where: string; args: InValue[] } {
   if (f.owner === "none") where.push("c.owner_user_id IS NULL");
   else if (f.owner) { where.push("c.owner_user_id = ?"); args.push(f.owner); }
   if (f.kind) { where.push(`${KIND_SQL} = ?`); args.push(f.kind); }
+  if (f.iris === "any") where.push("c.iris_request_id IS NOT NULL");
+  else if (f.iris) { where.push("c.iris_request_id = ?"); args.push(f.iris); }
   return { where: where.join(" AND "), args };
 }
 export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
@@ -439,12 +446,12 @@ export async function addDraft(contactId: string, d: { subject: string; bodyText
   return id;
 }
 
-/** Ingest one prospect from the external assistant: dedupe, insert as source 'radar', optional draft. */
-export async function ingestContact(c: IngestContact): Promise<{ id: string; duplicate: boolean }> {
+/** Ingest one prospect from the external assistant: dedupe, insert as source 'radar', optional draft. A duplicate is never updated, so irisRequestId sticks only to a new row. */
+export async function ingestContact(c: IngestContact, irisRequestId?: string | null): Promise<{ id: string; duplicate: boolean }> {
   const r = await createContact({
     businessName: c.business_name, type: c.type, contactName: c.contact_name, email: c.email || null, phone: c.phone, website: c.website,
     address: c.address, city: c.city, region: c.region, source: "radar", score: c.score ?? null, scoreReasons: c.score_reasons ?? null, notes: c.notes,
-  }, null);
+  }, null, { irisRequestId: irisRequestId ?? null });
   if (!r.duplicate && c.draft) await addDraft(r.id, { subject: c.draft.subject, bodyText: c.draft.body_text, bodyHtml: c.draft.body_html });
   // Creation only. A duplicate keeps the value already stored.
   if (!r.duplicate && (c.estimatedValue != null || c.estimatedValueNote)) {
