@@ -237,6 +237,22 @@ export function ensureAuditSchema(): Promise<void> {
   return auditReady;
 }
 
+let discordReady: Promise<void> | null = null;
+/** Discord outbox (see db/018_discord_outbox.sql). Additive. Rollback: DROP TABLE discord_outbox. */
+export function ensureDiscordSchema(): Promise<void> {
+  discordReady ??= retryBusy(async () => {
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS discord_outbox (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, event TEXT NOT NULL, title TEXT NOT NULL,
+        actor TEXT, href TEXT NOT NULL, created_at TEXT NOT NULL, claim TEXT, claim_at TEXT,
+        attempts INTEGER NOT NULL DEFAULT 0, sent_at TEXT
+      )` },
+      { sql: "CREATE INDEX IF NOT EXISTS discord_outbox_pending ON discord_outbox (sent_at, created_at)" },
+    ], "write");
+  }).catch((error) => { discordReady = null; throw error; });
+  return discordReady;
+}
+
 let twoFactorReady: Promise<void> | null = null;
 /** Optional TOTP 2FA per admin user (see db/010_two_factor.sql). */
 export function ensureTwoFactorSchema(): Promise<void> {

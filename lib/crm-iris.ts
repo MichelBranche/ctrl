@@ -1,7 +1,9 @@
 import "server-only";
-import { db } from "@/lib/db";
-import { ensureCrmSchema } from "@/lib/migrate";
+import { after } from "next/server";
 import { romeDay } from "@/lib/crm-kpi";
+import { db } from "@/lib/db";
+import { discordEnabled, recordAdminNotice } from "@/lib/discord-notify";
+import { ensureCrmSchema } from "@/lib/migrate";
 import {
   IRIS_RECENT_MS, IRIS_STALE_MS, irisNoticeText, irisParamsSchema, irisStatusSchema, irisTransition, irisWebhookBody, irisWebhookHeaders,
   isIrisStatus, romeClock, type IrisNotice, type IrisParams, type IrisPhase, type IrisStatus,
@@ -213,7 +215,35 @@ export async function applyIrisStatus(id: string, body: unknown, now = new Date(
     args: [next.status, next.inserted ?? null, next.duplicates ?? null, next.status, errorMessage, iso(now), id, row.status],
   });
   if (!updated.rowsAffected && step === "ok") return { ok: false, status: 409, error: "transizione non valida" };
+  if (discordEnabled() && step === "ok" && updated.rowsAffected) {
+    const notice = () => recordAdminNotice({
+      id: `iris:${id}:${next.status}`,
+      kind: "iris",
+      event: "Stato richiesta Iris",
+      title: irisNoticeTitle(next),
+      actor: "Iris",
+      href: `/admin/crm/radar?iris=${id}`,
+    });
+    try { after(notice); } catch { await notice(); }
+  }
   return { ok: true, id };
+}
+
+function irisNoticeTitle(next: { status: "working" | "ready" | "error"; inserted?: number }): string {
+  const status = irisStatusLabel(next.status);
+  return status === "pronta" && typeof next.inserted === "number" ? `${status}, ${next.inserted} nuovi` : status;
+}
+
+function irisStatusLabel(status: "working" | "ready" | "error"): string {
+  switch (status) {
+    case "working": return "in lavorazione";
+    case "ready": return "pronta";
+    case "error": return "errore";
+    default: {
+      const exhaustive: never = status;
+      return exhaustive;
+    }
+  }
 }
 
 export { irisNoticeText };
