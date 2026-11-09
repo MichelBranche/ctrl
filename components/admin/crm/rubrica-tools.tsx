@@ -59,6 +59,7 @@ export function RubricaTools({ query, cities, types, owners }: {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const search = useRef<HTMLInputElement>(null);
+  const queued = useRef<number | null>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== "f") return;
@@ -72,6 +73,7 @@ export function RubricaTools({ query, cities, types, owners }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  useEffect(() => () => { if (queued.current) window.clearTimeout(queued.current); }, []);
   const go = (e?: FormEvent) => {
     e?.preventDefault();
     if (!form.current) return;
@@ -79,6 +81,10 @@ export function RubricaTools({ query, cities, types, owners }: {
     for (const [k, v] of new FormData(form.current)) if (typeof v === "string" && v.trim()) out.set(k, v.trim());
     const s = out.toString();
     router.push(`${RUBRICA}${s ? `?${s}` : ""}` as Route, { scroll: false });
+  };
+  const queueSearch = () => {
+    if (queued.current) window.clearTimeout(queued.current);
+    queued.current = window.setTimeout(() => go(), 200);
   };
   const extra = [query.categoria, query.fonte, query.resp, query.archivio ? "1" : ""].filter(Boolean).length;
   const listHref = `${RUBRICA}${rubricaSearch(query, { vista: "lista", p: 1 })}`;
@@ -91,7 +97,7 @@ export function RubricaTools({ query, cities, types, owners }: {
       {query.c ? <input type="hidden" name="c" value={query.c} /> : null}
       <label className="crm-search">
         <CrmIcon d={SEARCH} />
-        <input ref={search} className="adm-input" name="q" data-rubrica-search defaultValue={query.q} placeholder="Cerca nome, email, telefono, sito…" aria-keyshortcuts="Meta+F Control+F" />
+        <input ref={search} className="adm-input" name="q" data-rubrica-search defaultValue={query.q} placeholder="Cerca nome, email, telefono, sito…" aria-keyshortcuts="Meta+F Control+F" onInput={queueSearch} />
         <button className="adm-sr" type="submit">Cerca</button>
       </label>
       <details className="crm-menu">

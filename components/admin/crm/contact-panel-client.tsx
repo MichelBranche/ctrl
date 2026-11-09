@@ -6,7 +6,8 @@ import { panelFollowUpAction, panelOwnerAction, panelStageAction, setKindAction,
 import type { ContactKind } from "@/lib/crm-kind";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
-const MOBILE = "(max-width: 960px)";
+const MOBILE = "(max-width: 1279px)";
+const PANEL_WIDTH = "ctrl:crm-panel-w";
 /** Quick forms remount when the contact's version changes (fresh values after a save or a conflict): their result lives here. */
 const Flash = createContext<(s: CrmState) => void>(() => {});
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -19,7 +20,15 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   const router = useRouter();
   const ref = useRef<HTMLElement>(null);
   const [modal, setModal] = useState(false);
+  const [wide, setWide] = useState(false);
   const [flash, setFlash] = useState<CrmState>({});
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(PANEL_WIDTH);
+    const px = saved === "420" ? 420 : saved === "380" ? 380 : 400;
+    setWide(px === 420);
+    document.documentElement.style.setProperty("--crm-panel-w", `${px}px`);
+  }, []);
 
   useEffect(() => {
     if (!flash.ok) return;
@@ -89,6 +98,15 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
           e.preventDefault();
           leave(link.getAttribute("href") || closeHref);
         }}>
+        {modal ? null : (
+          <button type="button" className="crm-panel-size" aria-pressed={wide} aria-label={wide ? "Restringi il pannello" : "Allarga il pannello"}
+            onClick={() => {
+              const next = wide ? 380 : 420;
+              setWide(next === 420);
+              try { sessionStorage.setItem(PANEL_WIDTH, String(next)); } catch { /* private mode */ }
+              document.documentElement.style.setProperty("--crm-panel-w", `${next}px`);
+            }} />
+        )}
         <Flash.Provider value={setFlash}>{children}</Flash.Provider>
         <div className="crm-panel-flash" aria-live="polite">
           {flash.error ? <p className="adm-error" role="alert">{flash.error}</p> : flash.ok ? <p className="adm-ok">{flash.ok}</p> : null}
@@ -131,6 +149,28 @@ function useQuickAction(fn: (s: CrmState, f: FormData) => Promise<CrmState>) {
 }
 
 type Versioned = { id: string; version: number };
+
+/** A readable value. The existing editor opens only after a click. */
+export function Peek({ text, label, children }: { text: string; label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <div className="crm-peek is-open">
+        {children}
+        <button type="button" className="crm-textbtn" onClick={() => setOpen(false)}>Chiudi</button>
+      </div>
+    );
+  }
+  return (
+    <button type="button" className="crm-peek" onClick={() => setOpen(true)}>
+      <span>{text}</span>
+      <span className="crm-peek-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+      </span>
+      <span className="adm-sr">{label}</span>
+    </button>
+  );
+}
 
 export function StageQuick({ contact, stage }: { contact: Versioned; stage: Stage }) {
   const { form, action, pending } = useQuickAction(panelStageAction);

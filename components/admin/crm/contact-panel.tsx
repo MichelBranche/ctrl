@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { CopyPromptButton } from "@/components/admin/crm/copy-prompt";
-import { CopyButton, FollowUpQuick, KindField, OwnerQuick, PanelShell, StageQuick } from "@/components/admin/crm/contact-panel-client";
+import { CopyButton, FollowUpQuick, KindField, OwnerQuick, PanelShell, Peek, StageQuick } from "@/components/admin/crm/contact-panel-client";
 import { DealControls } from "@/components/admin/crm/deal-controls";
 import { avatarHue, CrmIcon, day, eur, initials, MapsLink, meetHref, romeToday, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
 import { NoteForm } from "@/components/admin/crm/note-form";
@@ -95,15 +95,20 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
         <div className="crm-panel-title">
           <h2 id={labelId} className="adm-h2" tabIndex={-1}>{c.businessName}</h2>
           <p className="adm-muted">{[rubrica ? (kind === "persona" ? "Persona" : c.type ?? "Azienda") : c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
-          {rubrica ? <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span> : null}
+          {rubrica && !c.archived && !deal ? (
+            <div className="crm-panel-meta">
+              <div className="crm-stage-pill"><StageQuick key={`s${c.version}`} contact={versioned} stage={c.stage} /></div>
+              {c.valueEur !== null ? <span className="crm-panel-amount">{eur(c.valueEur)}</span> : null}
+            </div>
+          ) : rubrica ? <span className="crm-stage" data-stage={c.stage}>{STAGE_LABEL[c.stage]}</span> : null}
         </div>
-        <ScoreBadge score={c.score} />
+        {rubrica ? null : <ScoreBadge score={c.score} />}
         <Link className="crm-icon-btn crm-panel-close" href={links.close as Route} scroll={false} aria-label="Chiudi scheda"><CrmIcon d={I.close} /></Link>
       </header>
 
       <div className="crm-panel-actions">
         {mail ? (c.email
-          ? <Link className="adm-btn adm-btn-sm adm-btn-primary" href={mailView.compose as Route}><CrmIcon d={I.mail} />Email</Link>
+          ? <Link className={`adm-btn adm-btn-sm${rubrica ? " crm-mail-cta" : " adm-btn-primary"}`} href={mailView.compose as Route}><CrmIcon d={I.mail} />Email</Link>
           : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessuna email registrata"><CrmIcon d={I.mail} />Email</span>) : null}
         {tel ? <a className="adm-btn adm-btn-sm" href={tel}><CrmIcon d={I.phone} />Chiama</a> : <span className="adm-btn adm-btn-sm" aria-disabled="true" title="Nessun telefono registrato"><CrmIcon d={I.phone} />Chiama</span>}
         {rubrica
@@ -128,7 +133,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
         {(rubrica ? PANEL_TABS : PANEL_TABS.filter((t) => t !== "opportunita")).map((t) => <Link key={t} href={links.tabs[t] as Route} scroll={false} replace aria-current={t === tab ? "page" : undefined}>{TAB_LABEL[t]}</Link>)}
       </nav>
 
-      <div className="crm-panel-body">
+      <div className="crm-panel-body" key={tab}>
         {c.archived ? <p className="crm-notice">Contatto archiviato: ripristinalo dalla scheda completa per modificarlo.</p> : null}
         {tab === "analisi" ? extra : tab === "dettagli" ? (
           <>
@@ -138,19 +143,19 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
                 <DealControls key={`${deal.id}:${deal.version}`} deal={deal} owners={owners} former={deal.former} />
                 <FollowUpQuick key={`f${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} compact label="Follow-up del contatto" />
               </>
-            ) : (
+            ) : rubrica ? null : (
               <div className="crm-quick-row">
                 <StageQuick key={`s${c.version}`} contact={versioned} stage={c.stage} />
                 <FollowUpQuick key={`f${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} compact />
               </div>
             )}
             <ul className="crm-facts">
-              <li><CrmIcon d={I.mail} />{c.email ? <><a href={`mailto:${c.email}`}>{c.email}</a><CopyButton text={c.email} label="Copia email" /></> : <span className="adm-muted">—</span>}</li>
-              <li><CrmIcon d={I.link} />{site ? <><a href={site} target="_blank" rel="noopener noreferrer nofollow">{c.website}</a><a className="crm-icon-btn" href={site} target="_blank" rel="noopener noreferrer nofollow" aria-label="Apri il sito in una nuova scheda"><CrmIcon d={I.ext} /></a></> : <span className="adm-muted">—</span>}</li>
-              <li><CrmIcon d={I.phone} />{tel ? <a href={tel}>{c.phone}</a> : <span className="adm-muted">—</span>}</li>
-              <li><CrmIcon d={I.pin} />{place ? <><span>{place}</span><MapsLink contact={c} compact /></> : <span className="adm-muted">—</span>}</li>
-              <li><CrmIcon d={I.tag} /><span className="crm-tags">{c.type ? <span className="crm-tag">{c.type}</span> : null}<span className="crm-tag">{SOURCE_LABEL[c.source]}</span>{!deal && c.valueEur !== null ? <span className="crm-tag">{eur(c.valueEur)}</span> : null}</span></li>
-              {c.contactName ? <li><CrmIcon d={I.user} /><span>Referente: {c.contactName}</span></li> : null}
+              <li><CrmIcon d={I.mail} /><span className="crm-fact-label">Email</span>{c.email ? <span className="crm-fact-value"><a href={`mailto:${c.email}`}>{c.email}</a><CopyButton text={c.email} label="Copia email" /></span> : <span className="crm-fact-value adm-muted">Non indicata</span>}</li>
+              <li><CrmIcon d={I.link} /><span className="crm-fact-label">Sito</span>{site ? <span className="crm-fact-value"><a href={site} target="_blank" rel="noopener noreferrer nofollow">{c.website}</a><a className="crm-icon-btn" href={site} target="_blank" rel="noopener noreferrer nofollow" aria-label="Apri il sito in una nuova scheda"><CrmIcon d={I.ext} /></a></span> : <span className="crm-fact-value adm-muted">Non indicato</span>}</li>
+              <li><CrmIcon d={I.phone} /><span className="crm-fact-label">Telefono</span>{tel ? <a className="crm-fact-value" href={tel}>{c.phone}</a> : <span className="crm-fact-value adm-muted">Non indicato</span>}</li>
+              <li><CrmIcon d={I.pin} /><span className="crm-fact-label">Sede</span>{place ? <span className="crm-fact-value"><span>{place}</span><MapsLink contact={c} compact /></span> : <span className="crm-fact-value adm-muted">Non indicata</span>}</li>
+              <li><CrmIcon d={I.tag} /><span className="crm-fact-label">Tag</span><span className="crm-fact-value crm-tags">{c.type ? <span className="crm-tag">{c.type}</span> : null}<span className="crm-tag">{SOURCE_LABEL[c.source]}</span>{!deal && c.valueEur !== null ? <span className="crm-tag">{eur(c.valueEur)}</span> : null}</span></li>
+              {c.contactName ? <li><CrmIcon d={I.user} /><span className="crm-fact-label">Referente</span><span className="crm-fact-value">{c.contactName}</span></li> : null}
             </ul>
             {c.scoreReasons.length ? (
               <section className="crm-iris" aria-label={c.source === "radar" ? "Nota Iris" : "Motivi del punteggio"}>
@@ -158,28 +163,50 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
                 <ul>{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
               </section>
             ) : null}
-            {c.archived || deal ? null : (
+            {c.archived || deal ? null : rubrica ? (
+              <Peek text={c.ownerName ? (c.ownerActive === false ? `${c.ownerName}, non più nel team` : c.ownerName) : "Non assegnato"} label="Modifica il responsabile">
+                <OwnerQuick key={`o${c.version}`} contact={versioned} ownerId={c.ownerUserId} owners={owners}
+                  former={c.ownerUserId && !owners.some((o) => o.id === c.ownerUserId) ? `${c.ownerName ?? "Account eliminato"} (${c.ownerActive === false ? "ex membro" : "senza accesso CRM"})` : null} />
+              </Peek>
+            ) : (
               <OwnerQuick key={`o${c.version}`} contact={versioned} ownerId={c.ownerUserId} owners={owners}
                 former={c.ownerUserId && !owners.some((o) => o.id === c.ownerUserId) ? `${c.ownerName ?? "Account eliminato"} (${c.ownerActive === false ? "ex membro" : "senza accesso CRM"})` : null} />
             )}
             {c.ownerUserId && c.ownerActive === false ? <p className="crm-hint adm-muted">Non fa più parte del team: resta responsabile finché non scegli qualcun altro.</p> : null}
-            {rubrica && !c.archived ? <KindField key={`k${c.version}`} contact={versioned} stored={c.kind} /> : null}
-            {rubrica ? (
-              <div className="crm-scorebar" aria-label={c.score === null ? "Nessun punteggio" : `Punteggio ${c.score} su 100`}>
-                <span>{c.score === null ? "Nessun punteggio" : `Punteggio ${c.score}/100`}</span>
-                <span className="crm-scorebar-track"><span style={{ width: `${Math.max(0, Math.min(100, c.score ?? 0))}%` }} /></span>
-              </div>
+            {rubrica && !c.archived ? (
+              <Peek text={c.kind === "persona" ? "Persona" : c.kind === "azienda" ? "Azienda" : "Tipo automatico"} label="Modifica il tipo">
+                <KindField key={`k${c.version}`} contact={versioned} stored={c.kind} />
+              </Peek>
             ) : null}
             {rubrica ? (
-              <section className="crm-upcoming" aria-label="Prossime azioni">
-                <h3>Prossime azioni</h3>
+              <section className="crm-scorecard" aria-label={c.score === null ? "Nessun punteggio" : `Punteggio ${c.score} su 100`}>
+                <div><h3>Punteggio</h3><strong>{c.score === null ? "n/d" : <>{c.score} <span>/ 100</span></>}</strong></div>
+                <span className="crm-scorebar-track"><span style={{ width: `${Math.max(0, Math.min(100, c.score ?? 0))}%` }} /></span>
+              </section>
+            ) : null}
+            {rubrica ? (
+              <section className="crm-upcoming" aria-label="Prossima azione">
+                <header>
+                  <h3>Prossima azione</h3>
+                  <Link href={`${ATTIVITA}?nuova=1&contatto=${c.id}` as Route}>+ Aggiungi</Link>
+                </header>
                 {next || c.nextAction ? (
                   <ul>
-                    {c.nextActionAt || c.nextAction ? <li><span>{c.nextAction ?? "Follow-up"}</span><span className="adm-muted">{c.nextActionAt ? day(c.nextActionAt) : "Senza data"}</span></li> : null}
+                    {c.nextActionAt || c.nextAction ? <li><span>{c.nextAction ?? "Follow-up"}</span><span className={c.nextActionAt && c.nextActionAt.slice(0, 10) < romeToday() && c.stage !== "vinto" && c.stage !== "perso" ? "is-late" : "adm-muted"}>{c.nextActionAt ? day(c.nextActionAt) : "Senza data"}</span></li> : null}
                     {openActs.map((a) => <li key={`${a.at}-${a.title}`}><span>{a.title}</span><span className={a.at < romeToday() ? "is-late" : "adm-muted"}>{day(a.at)}{a.time ? ` · ${a.time.slice(0, 5)}` : ""}</span></li>)}
                   </ul>
                 ) : <p className="adm-muted">Nessuna azione</p>}
-                <Link className="adm-btn adm-btn-sm" href={`${ATTIVITA}?nuova=1&contatto=${c.id}` as Route}>Aggiungi attività</Link>
+                {c.archived || deal ? null : (
+                  <Peek text={c.nextAction ? `${c.nextAction}${c.nextActionAt ? `, ${day(c.nextActionAt)}` : ""}` : "Nessun follow-up"} label="Modifica il follow-up">
+                    <FollowUpQuick key={`f${c.version}`} contact={versioned} text={c.nextAction} at={c.nextActionAt} compact={false} />
+                  </Peek>
+                )}
+              </section>
+            ) : null}
+            {rubrica ? (
+              <section className="crm-note-card">
+                <h3>Descrizione</h3>
+                <p>{c.notes?.trim() ? c.notes : "Nessuna descrizione"}</p>
               </section>
             ) : null}
           </>

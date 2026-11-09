@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useTransition, type ReactNode, type RefObject } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useTransition, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,10 @@ export type SortHead = { href: string; dir: "asc" | "desc" | null };
 export type Pager = { from: number; to: number; total: number; prev: string | null; next: string | null };
 
 const BULK_MAX = 100;
+const MAIL = "M4 6h16v12H4zM4 7l8 6 8-6";
+const USER = "M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z";
+const CAL = "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4";
+const MOVE = "M5 12h14M13 6l6 6-6 6";
 const addDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 /**
@@ -32,7 +36,11 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
   const [msg, setMsg] = useState<{ ok?: string; error?: string }>({});
   const [pending, start] = useTransition();
   const all = rows.length > 0 && rows.every((r) => picked.has(r.id));
-  const toggle = (id: string) => setPicked((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggle = useCallback((id: string) => setPicked((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; }), []);
+  useEffect(() => {
+    if (!activeId) return;
+    document.querySelector(`[data-row-link="${CSS.escape(activeId)}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeId, layout]);
   const run = (change: BulkChange, menu: RefObject<HTMLDetailsElement | null>) => {
     const items = rows.filter((r) => picked.has(r.id)).map((r) => ({ id: r.id, version: r.version }));
     menu.current?.removeAttribute("open");
@@ -42,7 +50,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
       if (result.updated || result.changed) { setPicked(new Set()); router.refresh(); }
     });
   };
-  const setStage = (row: BoardRow, stage: Stage, menu: HTMLDetailsElement | null) => {
+  const setStage = useCallback((row: BoardRow, stage: Stage, menu: HTMLDetailsElement | null) => {
     menu?.removeAttribute("open");
     if (stage === row.stage) return;
     start(async () => {
@@ -50,7 +58,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
       setMsg({ ok: result.ok, error: result.error });
       router.refresh();
     });
-  };
+  }, [router]);
   const chosen = rows.filter((r) => picked.has(r.id));
   const mailTitle = !canEmail
     ? "Non hai l'accesso alla posta."
@@ -64,19 +72,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
     <div className="crm-rubrica-results" data-layout={layout}>
       {layout === "griglia" ? (
         <ul className="crm-rubrica-grid">
-          {rows.map((r) => (
-            <li key={r.id} data-active={r.id === activeId ? "" : undefined} data-picked={picked.has(r.id) ? "" : undefined}>
-              <input type="checkbox" className="crm-cb" aria-label={`Seleziona ${r.name}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} />
-              <Link href={r.href as Route} scroll={false} data-row-link={r.id} className="crm-card-link">
-                <Avatar row={r} />
-                <span className="crm-card-name">{r.name}</span>
-                {r.sub ? <span className="crm-sub">{r.sub}</span> : null}
-              </Link>
-              <StagePill row={r} pending={pending} onPick={setStage} />
-              <ScoreRing score={r.score} />
-              <NextBit row={r} />
-            </li>
-          ))}
+          {rows.map((r) => <Card key={r.id} row={r} active={r.id === activeId} picked={picked.has(r.id)} pending={pending} onToggle={toggle} onStage={setStage} />)}
         </ul>
       ) : (
         <div className="crm-table-wrap">
@@ -92,20 +88,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} data-active={r.id === activeId ? "" : undefined} data-picked={picked.has(r.id) ? "" : undefined}>
-                  <td className="crm-col-check"><input type="checkbox" className="crm-cb" aria-label={`Seleziona ${r.name}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} /></td>
-                  <td className="crm-col-name">
-                    <Link href={r.href as Route} scroll={false} data-row-link={r.id} className="crm-person">
-                      <Avatar row={r} />
-                      <span><span className="crm-person-name">{r.name}</span>{r.sub ? <span className="crm-sub">{r.sub}</span> : null}</span>
-                    </Link>
-                  </td>
-                  <td><StagePill row={r} pending={pending} onPick={setStage} /></td>
-                  <td className="crm-col-score"><ScoreRing score={r.score} /></td>
-                  <td className="crm-col-next"><NextBit row={r} /></td>
-                </tr>
-              ))}
+              {rows.map((r) => <Person key={r.id} row={r} active={r.id === activeId} picked={picked.has(r.id)} pending={pending} onToggle={toggle} onStage={setStage} />)}
             </tbody>
           </table>
         </div>
@@ -121,9 +104,9 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
         <div className="crm-floatbar" role="toolbar" aria-label="Azioni sui selezionati">
           <span>{picked.size} {picked.size === 1 ? "selezionato" : "selezionati"}</span>
           {chosen.length === 1 && chosen[0]?.mailHref
-            ? <Link className="adm-btn adm-btn-sm" href={chosen[0].mailHref as Route}>Invia email</Link>
-            : <button type="button" className="adm-btn adm-btn-sm" disabled title={mailTitle}>Invia email</button>}
-          <BulkMenu label="Assegna" disabled={pending}>
+            ? <Link className="adm-btn adm-btn-sm" href={chosen[0].mailHref as Route}><CrmIcon d={MAIL} />Invia email</Link>
+            : <button type="button" className="adm-btn adm-btn-sm" disabled title={mailTitle}><CrmIcon d={MAIL} />Invia email</button>}
+          <BulkMenu label="Assegna" icon={USER} disabled={pending}>
             {(menu) => (
               <form onSubmit={(e) => { e.preventDefault(); const owner = String(new FormData(e.currentTarget).get("owner")); run({ kind: "owner", owner: owner || null }, menu); }}>
                 <label className="adm-field"><span>Responsabile</span>
@@ -133,7 +116,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
               </form>
             )}
           </BulkMenu>
-          <BulkMenu label="Pianifica" disabled={pending}>
+          <BulkMenu label="Pianifica" icon={CAL} disabled={pending}>
             {(menu) => (
               <form onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); run({ kind: "followup", at: String(form.get("at")), text: String(form.get("text") ?? "") || null }, menu); }}>
                 <label className="adm-field"><span>Entro il</span><input className="adm-input" type="date" name="at" required defaultValue={addDays(today, 1)} min={today} /></label>
@@ -142,7 +125,7 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
               </form>
             )}
           </BulkMenu>
-          <BulkMenu label="Cambia fase" disabled={pending}>
+          <BulkMenu label="Cambia fase" icon={MOVE} disabled={pending}>
             {(menu) => (
               <form onSubmit={(e) => { e.preventDefault(); run({ kind: "stage", stage: String(new FormData(e.currentTarget).get("stage")) }, menu); }}>
                 <label className="adm-field"><span>Nuova fase</span>
@@ -161,6 +144,41 @@ export function RubricaBoard({ rows, layout, activeId, sort, pager, owners, toda
     </div>
   );
 }
+
+type LineProps = { row: BoardRow; active: boolean; picked: boolean; pending: boolean; onToggle: (id: string) => void; onStage: (row: BoardRow, stage: Stage, menu: HTMLDetailsElement | null) => void };
+
+const Person = memo(function Person({ row, active, picked, pending, onToggle, onStage }: LineProps) {
+  return (
+    <tr data-active={active ? "" : undefined} data-picked={picked ? "" : undefined}>
+      <td className="crm-col-check"><input type="checkbox" className="crm-cb" aria-label={`Seleziona ${row.name}`} checked={picked} onChange={() => onToggle(row.id)} /></td>
+      <td className="crm-col-name">
+        <Link href={row.href as Route} scroll={false} data-row-link={row.id} className="crm-person">
+          <Avatar row={row} />
+          <span><span className="crm-person-name">{row.name}</span>{row.sub ? <span className="crm-sub">{row.sub}</span> : null}</span>
+        </Link>
+      </td>
+      <td><StagePill row={row} pending={pending} onPick={onStage} /></td>
+      <td className="crm-col-score"><ScoreRing score={row.score} /></td>
+      <td className="crm-col-next"><NextBit row={row} /></td>
+    </tr>
+  );
+});
+
+const Card = memo(function Card({ row, active, picked, pending, onToggle, onStage }: LineProps) {
+  return (
+    <li data-active={active ? "" : undefined} data-picked={picked ? "" : undefined}>
+      <input type="checkbox" className="crm-cb" aria-label={`Seleziona ${row.name}`} checked={picked} onChange={() => onToggle(row.id)} />
+      <Link href={row.href as Route} scroll={false} data-row-link={row.id} className="crm-card-link">
+        <Avatar row={row} />
+        <span className="crm-card-name">{row.name}</span>
+        {row.sub ? <span className="crm-sub">{row.sub}</span> : null}
+      </Link>
+      <StagePill row={row} pending={pending} onPick={onStage} />
+      <ScoreRing score={row.score} />
+      <NextBit row={row} />
+    </li>
+  );
+});
 
 function Sortable({ label, head, cls }: { label: string; head: SortHead; cls?: string }) {
   return (
@@ -216,12 +234,12 @@ function StagePill({ row, pending, onPick }: { row: BoardRow; pending: boolean; 
   );
 }
 
-function BulkMenu({ label, disabled, children }: { label: string; disabled: boolean; children: (menu: RefObject<HTMLDetailsElement | null>) => ReactNode }) {
+function BulkMenu({ label, icon, disabled, children }: { label: string; icon: string; disabled: boolean; children: (menu: RefObject<HTMLDetailsElement | null>) => ReactNode }) {
   const ref = useRef<HTMLDetailsElement>(null);
-  if (disabled) return <button type="button" className="adm-btn adm-btn-sm" disabled>{label}</button>;
+  if (disabled) return <button type="button" className="adm-btn adm-btn-sm" disabled><CrmIcon d={icon} />{label}</button>;
   return (
     <details ref={ref} className="crm-menu crm-menu-up">
-      <summary className="adm-btn adm-btn-sm">{label}</summary>
+      <summary className="adm-btn adm-btn-sm"><CrmIcon d={icon} />{label}</summary>
       <div className="crm-menu-list crm-menu-form">{children(ref)}</div>
     </details>
   );
