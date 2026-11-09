@@ -293,6 +293,18 @@ export function ensureCrmSchema(): Promise<void> {
       day TEXT PRIMARY KEY, contacts_total INTEGER, assigned INTEGER, opportunities_active INTEGER,
       todo_due INTEGER, overdue INTEGER, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )`);
+    // Additive only: azienda or persona. Null means "deduce on read". Rollback: the app ignores the column.
+    await addColumn("crm_contacts", "kind", "TEXT");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_kind ON crm_contacts (archived, kind)");
+    // Additive only: a named rubrica view, per user, optionally shared by a founder. Rollback: DROP TABLE crm_saved_views.
+    await db().execute(`CREATE TABLE IF NOT EXISTS crm_saved_views (
+      id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL, params TEXT NOT NULL,
+      shared INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`);
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_saved_views_owner ON crm_saved_views (owner_id, name)");
+    await db().execute("CREATE INDEX IF NOT EXISTS crm_saved_views_shared ON crm_saved_views (shared)");
   }).catch((error) => { crmReady = null; throw error; });
   return crmReady;
 }

@@ -1,8 +1,9 @@
 "use client";
-import { createContext, useActionState, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { panelFollowUpAction, panelOwnerAction, panelStageAction, type CrmState } from "@/app/admin/crm-actions";
+import { panelFollowUpAction, panelOwnerAction, panelStageAction, setKindAction, type CrmState } from "@/app/admin/crm-actions";
+import type { ContactKind } from "@/lib/crm-kind";
 import { STAGES, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 
 const MOBILE = "(max-width: 960px)";
@@ -49,13 +50,21 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
     return () => { document.body.style.overflow = prev; };
   }, [modal]);
 
+  const leave = (href: string) => {
+    const node = ref.current;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!node || reduce || !node.closest(".crm-rubrica-page")) { router.push(href as Route, { scroll: false }); return; }
+    node.classList.add("is-closing");
+    window.setTimeout(() => router.push(href as Route, { scroll: false }), 180);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !e.defaultPrevented) {
         const open = document.querySelector("details[open].crm-menu");
         if (open) { open.removeAttribute("open"); return; }
         e.preventDefault();
-        router.push(closeHref as Route, { scroll: false });
+        leave(closeHref);
         return;
       }
       if (e.key !== "Tab" || !modal || !ref.current) return;
@@ -72,8 +81,14 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
 
   return (
     <>
-      {modal ? <div className="crm-sheet-backdrop" aria-hidden="true" onClick={() => router.push(closeHref as Route, { scroll: false })} /> : null}
-      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}>
+      {modal ? <div className="crm-sheet-backdrop" aria-hidden="true" onClick={() => leave(closeHref)} /> : null}
+      <section ref={ref} className="crm-panel" role="dialog" aria-modal={modal || undefined} aria-labelledby={labelId}
+        onClick={(e) => {
+          const link = (e.target as HTMLElement).closest("a.crm-panel-close");
+          if (!link || !ref.current?.closest(".crm-rubrica-page")) return;
+          e.preventDefault();
+          leave(link.getAttribute("href") || closeHref);
+        }}>
         <Flash.Provider value={setFlash}>{children}</Flash.Provider>
         <div className="crm-panel-flash" aria-live="polite">
           {flash.error ? <p className="adm-error" role="alert">{flash.error}</p> : flash.ok ? <p className="adm-ok">{flash.ok}</p> : null}
@@ -183,5 +198,30 @@ export function OwnerQuick({ contact, ownerId, owners, former }: { contact: Vers
         {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
     </form>
+  );
+}
+
+/** Stored kind. Empty keeps the deduction (company name, or a person when the two names match). */
+export function KindField({ contact, stored }: { contact: Versioned; stored: ContactKind | null }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [value, setValue] = useState(stored ?? "");
+  return (
+    <label className="crm-quick-field">
+      <span>Tipo</span>
+      <select className="adm-input" value={value} disabled={pending} aria-label="Tipo di contatto"
+        onChange={(e) => {
+          const next = e.target.value;
+          setValue(next);
+          start(async () => {
+            await setKindAction(contact.id, next || null, contact.version);
+            router.refresh();
+          });
+        }}>
+        <option value="">Automatico</option>
+        <option value="azienda">Azienda</option>
+        <option value="persona">Persona</option>
+      </select>
+    </label>
   );
 }

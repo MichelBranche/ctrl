@@ -1625,3 +1625,102 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-act-row { grid-template-columns: auto auto minmax(0, 1fr) auto; }
   .crm-act-row .crm-stage, .crm-act-row .adm-badge, .crm-act-row .crm-avatar { grid-column: 3; justify-self: start; }
 }
+
+/* Rubrica redesign. Motion and the new chrome stay under .crm-rubrica-page so Radar and Pipeline keep their own panel. */
+.crm-rubrica-page { min-width: 0; }
+.crm-rubrica-glow { position: relative; }
+.crm-rubrica-glow::before { content: ""; position: absolute; z-index: 0; left: 18%; right: 8%; top: -1.6rem; height: 6.5rem; pointer-events: none; background: radial-gradient(58% 80% at 72% 0%, color-mix(in srgb, var(--adm-accent) 16%, transparent), transparent 72%); }
+.crm-rubrica-glow > * { position: relative; z-index: 1; }
+.crm-rubrica-segments { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin: 0.2rem 0 0.85rem; }
+.crm-rubrica-segments nav { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.crm-rubrica-segments nav a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.7rem; border: 1px solid var(--adm-rule); border-radius: 999px; color: var(--adm-dim); text-decoration: none; font-size: 0.84rem; }
+.crm-rubrica-segments nav a[aria-current="page"] { border-color: color-mix(in srgb, var(--adm-fg) 28%, var(--adm-rule)); color: var(--adm-fg); background: var(--adm-raise); }
+.crm-rubrica-segments nav a span { color: var(--adm-dim); font-variant-numeric: tabular-nums; }
+.crm-rubrica-tools { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-bottom: 0.85rem; }
+.crm-rubrica-tools .crm-search { flex: 1 1 14rem; min-width: 0; }
+.adm .crm-rubrica-tools .crm-search input.adm-input { width: 100%; padding-left: 2.3rem; }
+.adm .crm-rubrica-tools select.adm-input { width: auto; max-width: 12rem; }
+.crm-rubrica-tools .adm-input { min-width: 0; }
+.crm-view-toggle { display: inline-flex; padding: 0.15rem; border: 1px solid var(--adm-rule); border-radius: 999px; }
+.crm-view-toggle a { padding: 0.28rem 0.65rem; border-radius: 999px; color: var(--adm-dim); text-decoration: none; font-size: 0.8rem; }
+.crm-view-toggle a[aria-current="page"] { background: var(--adm-fg); color: var(--adm-bg); }
+.crm-saved-row { display: flex; flex-wrap: wrap; gap: 0.35rem 0.55rem; align-items: baseline; }
+.crm-saved-row a { color: var(--adm-fg); }
+.crm-textbtn { padding: 0; border: 0; background: none; color: var(--adm-dim); font: inherit; font-size: 0.78rem; cursor: pointer; }
+.crm-person { display: flex; align-items: center; gap: 0.65rem; min-width: 0; color: inherit; text-decoration: none; }
+.crm-person-name, .crm-card-name { display: block; font-weight: 650; }
+.crm-rubrica-page .crm-avatar[data-hue="0"] { background: #2c2824; color: #f2f0ea; }
+.crm-rubrica-page .crm-avatar[data-hue="1"] { background: #24302c; color: #f2f0ea; }
+.crm-rubrica-page .crm-avatar[data-hue="2"] { background: #2a2833; color: #f2f0ea; }
+.crm-rubrica-page .crm-avatar[data-hue="3"] { background: #33281f; color: #f2f0ea; }
+.crm-rubrica-page .crm-avatar[data-hue="4"] { background: #1f2c33; color: #f2f0ea; }
+.crm-rubrica-page .crm-avatar[data-hue="5"] { background: #332428; color: #f2f0ea; }
+.crm-stage-menu { position: relative; display: inline-block; width: max-content; max-width: 100%; }
+.crm-rubrica-page .crm-stage { display: inline-block; }
+.crm-rubrica-page .crm-saved > .crm-menu-list { left: auto; right: 0; width: min(16rem, calc(100vw - 1.5rem)); max-height: 18rem; overflow: auto; }
+.crm-stage-menu > summary { cursor: pointer; list-style: none; }
+.crm-stage-menu > summary::-webkit-details-marker { display: none; }
+.crm-stage-menu .crm-menu-list { position: absolute; z-index: 5; top: calc(100% + 0.25rem); left: 0; min-width: 9rem; padding: 0.3rem; border: 1px solid var(--adm-rule); border-radius: 0.55rem; background: var(--adm-panel); }
+.crm-stage-menu .crm-menu-list button { display: block; width: 100%; padding: 0.35rem 0.5rem; border: 0; border-radius: 0.35rem; background: none; color: var(--adm-fg); font: inherit; text-align: left; cursor: pointer; }
+.crm-stage-menu .crm-menu-list button:hover { background: var(--adm-raise); }
+.crm-ring { --turn: 0deg; display: inline-grid; place-items: center; width: 2.15rem; height: 2.15rem; border-radius: 50%; background: conic-gradient(var(--adm-fg) var(--turn), var(--adm-rule) 0); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.crm-ring span { display: grid; place-items: center; width: 1.65rem; height: 1.65rem; border-radius: 50%; background: var(--adm-panel); }
+.crm-ring[data-level="basso"] { background: conic-gradient(#c4553a var(--turn), var(--adm-rule) 0); }
+.crm-next-cell, .crm-next-empty { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.crm-next-empty { color: var(--adm-dim); }
+.crm-next-empty a, .crm-next-cell .is-late { color: var(--adm-accent); }
+.crm-next-cell[data-due] .is-late { font-weight: 650; }
+.crm-rubrica-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+.crm-rubrica-grid li { position: relative; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; padding: 0.85rem 0.85rem 0.75rem; border: 1px solid var(--adm-rule); border-radius: 0.8rem; background: var(--adm-panel); }
+.crm-rubrica-grid .crm-cb { position: absolute; top: 0.7rem; right: 0.7rem; }
+.crm-card-link { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-width: 0; padding-right: 1.4rem; color: inherit; text-decoration: none; }
+.crm-scorebar { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.82rem; }
+.crm-scorebar-track { height: 0.35rem; border-radius: 999px; background: var(--adm-raise); overflow: hidden; }
+.crm-scorebar-track span { display: block; height: 100%; background: var(--adm-fg); }
+.crm-upcoming { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.6rem; }
+.crm-upcoming h3 { margin: 0; font-size: 0.92rem; }
+.crm-upcoming ul { margin: 0; padding: 0; list-style: none; }
+.crm-upcoming li { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.3rem 0; border-bottom: 1px solid var(--adm-rule); }
+.crm-upcoming .is-late { color: var(--adm-accent); }
+.crm-floatbar { position: fixed; z-index: 45; left: 50%; bottom: 1.1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; width: max-content; max-width: calc(100vw - 1.5rem); padding: 0.55rem 0.7rem; border: 1px solid var(--adm-rule); border-radius: 0.8rem; background: var(--adm-panel); box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.85); transform: translateX(-50%); }
+.crm-rubrica-page .crm-table tbody tr { transition: background-color 120ms var(--adm-ease); }
+.crm-rubrica-page .crm-table tbody tr:hover { background: color-mix(in srgb, var(--adm-fg) 4%, transparent); }
+.crm-rubrica-page .crm-rubrica-grid li { transition: border-color 120ms var(--adm-ease), background-color 120ms var(--adm-ease); }
+.crm-rubrica-page .crm-rubrica-grid li:hover { border-color: color-mix(in srgb, var(--adm-fg) 18%, var(--adm-rule)); }
+.crm-rubrica-page .crm-panel { animation: crm-rubrica-panel-in 250ms var(--adm-ease); }
+.crm-rubrica-page .crm-panel.is-closing { animation: crm-rubrica-panel-out 180ms var(--adm-ease) forwards; }
+.crm-rubrica-results { animation: crm-rubrica-fade 180ms var(--adm-ease); }
+.crm-floatbar { animation: crm-rubrica-bar 200ms var(--adm-ease); }
+.crm-rubrica-page .adm-ok, .crm-rubrica-page .adm-error { animation: crm-rubrica-fade 170ms var(--adm-ease); }
+@keyframes crm-rubrica-panel-in { from { opacity: 0; transform: translateX(1rem); } to { opacity: 1; transform: none; } }
+@keyframes crm-rubrica-panel-out { to { opacity: 0; transform: translateX(1rem); } }
+@keyframes crm-rubrica-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes crm-rubrica-bar { from { opacity: 0; transform: translateX(-50%) translateY(0.8rem); } to { opacity: 1; transform: translateX(-50%); } }
+@media (max-width: 960px) {
+  .crm-rubrica-page .crm-panel { animation-name: crm-rubrica-sheet-in; }
+  .crm-rubrica-page .crm-panel.is-closing { animation-name: crm-rubrica-sheet-out; }
+}
+@keyframes crm-rubrica-sheet-in { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: none; } }
+@keyframes crm-rubrica-sheet-out { to { opacity: 0; transform: translateY(1rem); } }
+@media (max-width: 40rem) {
+  .crm-rubrica-sort { display: none; }
+  .crm-rubrica-tools .adm-input { flex: 1 1 8rem; }
+  .crm-floatbar { left: 0.75rem; right: 0.75rem; width: auto; transform: none; animation-name: crm-rubrica-bar-mobile; }
+  .crm-rubrica-page .crm-table-wrap { overflow: visible; }
+  .crm-rubrica-page .crm-rubrica-table, .crm-rubrica-page .crm-rubrica-table tbody { display: block; }
+  .crm-rubrica-page .crm-rubrica-table thead { display: block; }
+  .crm-rubrica-page .crm-rubrica-table thead tr { display: flex; }
+  .crm-rubrica-page .crm-rubrica-table thead th:not(.crm-col-check) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .crm-rubrica-page .crm-rubrica-table tbody tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check name score" "check stage next"; gap: 0.2rem 0.55rem; margin-bottom: 0.5rem; padding: 0.7rem; border: 1px solid var(--adm-rule); border-radius: 0.75rem; background: var(--adm-panel); }
+  .crm-rubrica-page .crm-col-check { grid-area: check; align-self: start; }
+  .crm-rubrica-page .crm-col-name { grid-area: name; }
+  .crm-rubrica-page .crm-col-score { grid-area: score; display: block; justify-self: end; }
+  .crm-rubrica-page .crm-rubrica-table td:nth-child(3) { grid-area: stage; }
+  .crm-rubrica-page .crm-col-next { grid-area: next; justify-self: end; text-align: right; }
+  .crm-rubrica-page .crm-rubrica-table td { border: 0; padding: 0; }
+}
+@keyframes crm-rubrica-bar-mobile { from { opacity: 0; transform: translateY(0.8rem); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .crm-rubrica-page, .crm-rubrica-page *, .crm-rubrica-page *::before, .crm-rubrica-page *::after { animation: none !important; transition: none !important; }
+  .crm-floatbar { animation: none !important; }
+}

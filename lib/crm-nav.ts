@@ -46,13 +46,18 @@ export const followUpScope = (requested: string | undefined, canSeeTeam: boolean
  */
 export const RUBRICA_SORTS = ["aggiornato", "nome", "fase", "citta", "punteggio", "azione"] as const;
 export type RubricaSort = (typeof RUBRICA_SORTS)[number];
-export const PANEL_TABS = ["dettagli", "note", "attivita", "cronologia"] as const;
+export const PANEL_TABS = ["dettagli", "note", "attivita", "opportunita", "cronologia"] as const;
 export type PanelTab = (typeof PANEL_TABS)[number];
 export const RUBRICA_PAGE_SIZE = 25;
+export const RUBRICA_SEGMENTS = ["tutti", "aziende", "persone", "liberi"] as const;
+export type RubricaSegment = (typeof RUBRICA_SEGMENTS)[number];
+export const RUBRICA_VIEWS = ["lista", "griglia"] as const;
+export type RubricaLayout = (typeof RUBRICA_VIEWS)[number];
 
 export type RubricaQuery = {
   q: string; fase: string; categoria: string; citta: string; fonte: string; resp: string; archivio: boolean;
   ordina: RubricaSort; dir: "asc" | "desc"; p: number; c: string; tab: PanelTab;
+  seg: RubricaSegment; vista: RubricaLayout;
 };
 type Raw = Record<string, string | string[] | undefined> | URLSearchParams;
 const read = (sp: Raw, k: string) => {
@@ -69,6 +74,8 @@ export function parseRubricaQuery(sp: Raw): RubricaQuery {
   const page = Number.parseInt(read(sp, "p"), 10);
   const sort = (RUBRICA_SORTS as readonly string[]).includes(ordina) ? (ordina as RubricaSort) : "aggiornato";
   const dir = read(sp, "dir");
+  const seg = read(sp, "seg");
+  const vista = read(sp, "vista");
   return {
     q: read(sp, "q"), fase: read(sp, "fase"), categoria: read(sp, "categoria"), citta: read(sp, "citta"), fonte: read(sp, "fonte"),
     resp: RESP_RE.test(read(sp, "resp")) ? read(sp, "resp") : "", archivio: read(sp, "archivio") === "1",
@@ -76,6 +83,8 @@ export function parseRubricaQuery(sp: Raw): RubricaQuery {
     p: Number.isFinite(page) && page > 1 ? Math.min(page, 10_000) : 1,
     c: ID_RE.test(read(sp, "c")) ? read(sp, "c") : "",
     tab: (PANEL_TABS as readonly string[]).includes(tab) ? (tab as PanelTab) : "dettagli",
+    seg: (RUBRICA_SEGMENTS as readonly string[]).includes(seg) ? (seg as RubricaSegment) : "tutti",
+    vista: vista === "griglia" ? "griglia" : "lista",
   };
 }
 
@@ -84,6 +93,8 @@ export function rubricaSearch(q: RubricaQuery, patch: Partial<RubricaQuery> = {}
   const v = { ...q, ...patch };
   const out = new URLSearchParams();
   for (const k of ["q", "fase", "categoria", "citta", "fonte", "resp"] as const) if (v[k]) out.set(k, v[k]);
+  if (v.seg !== "tutti") out.set("seg", v.seg);
+  if (v.vista !== "lista") out.set("vista", v.vista);
   if (v.archivio) out.set("archivio", "1");
   if (v.ordina !== "aggiornato" || v.dir !== "desc") { out.set("ordina", v.ordina); out.set("dir", v.dir); }
   if (v.p > 1) out.set("p", String(v.p));

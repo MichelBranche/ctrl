@@ -85,3 +85,9 @@ export const composeHref = (email: string) => `/admin/email?${new URLSearchParam
 export const meetHref = (c: { businessName: string; email: string | null }) =>
   `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
 export const initials = (name: string) => name.split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
+/** Stable 0–5 tint for an initials avatar. No network and no screenshot service. */
+export const avatarHue = (name: string) => {
+  let hash = 0;
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return hash % 6;
+};

@@ -4,6 +4,7 @@ import { CAN_SIGN_IN_SQL, ROLES_SQL, rowRoles } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ensureAuditSchema, ensureCrmSchema } from "@/lib/migrate";
 import { dedupeKeys, hasKeys, isSource, isStage, STAGES, type DraftStatus, type IngestContact, type Source, type Stage } from "@/lib/crm-core";
+import { KIND_SQL, type ContactKind } from "@/lib/crm-kind";
 import { canAccess, type Perms } from "@/lib/team-types";
 
 export type Contact = {
@@ -16,6 +17,8 @@ export type Contact = {
   /** false when the responsible person left the team (account disabled, removed or deleted); null without owner. */
   ownerActive: boolean | null;
   stageChangedAt: string | null;
+  /** Stored azienda/persona. Null means the list deduces it. */
+  kind: ContactKind | null;
 };
 export type ContactInput = {
   businessName: string; type?: string | null; contactName?: string | null; email?: string | null; phone?: string | null; website?: string | null;
@@ -33,7 +36,7 @@ function reasons(v: unknown): string[] {
 
 const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.source, c.score,
   c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived,
-  c.version, c.stage_changed_at, CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
+  c.version, c.stage_changed_at, c.kind, CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
 const FROM = "FROM crm_contacts c LEFT JOIN admin_users u ON u.id = c.owner_user_id";
 
 function toContact(r: Record<string, unknown>): Contact {
@@ -45,6 +48,7 @@ function toContact(r: Record<string, unknown>): Contact {
     createdAt: String(r.created_at), updatedAt: String(r.updated_at), archived: Number(r.archived) === 1,
     version: Number(r.version ?? 1), ownerActive: r.owner_active === null || r.owner_active === undefined ? null : Number(r.owner_active) === 1,
     stageChangedAt: s(r.stage_changed_at),
+    kind: r.kind === "azienda" || r.kind === "persona" ? r.kind : null,
   };
 }
 
@@ -168,6 +172,13 @@ export async function setStage(id: string, stage: Stage, expectedVersion?: numbe
   return { from };
 }
 
+/** Explicit azienda or persona. Null returns the contact to the deduced value. */
+export async function setKind(id: string, kind: ContactKind | null, expectedVersion: number): Promise<WriteResult> {
+  await ensureCrmSchema();
+  const r = await db().execute({ sql: `UPDATE crm_contacts SET kind = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`, args: [kind, id, expectedVersion] });
+  return r.rowsAffected ? "ok" : missOrConflict(id);
+}
+
 export async function setArchived(id: string, archived: boolean) {
   await ensureCrmSchema();
   const r = await db().execute({ sql: `UPDATE crm_contacts SET archived = ?, ${BUMP} WHERE id = ?`, args: [archived ? 1 : 0, id] });
@@ -179,6 +190,8 @@ export type ContactFilter = {
   q?: string; stage?: Stage; type?: string; city?: string; source?: Source; archived?: boolean; limit?: number; offset?: number;
   /** "none" = without responsible person; otherwise a user id. */
   owner?: string; sort?: ContactSort; dir?: "asc" | "desc";
+  /** Resolved kind: stored value, or the deduction when the column is null. */
+  kind?: ContactKind;
   /** Score band (inclusive); `noScore` = contacts Iris sent without a score. */
   scoreMin?: number; scoreMax?: number; noScore?: boolean;
 };
@@ -203,6 +216,7 @@ function contactWhere(f: ContactFilter): { where: string; args: InValue[] } {
   else if (f.scoreMin !== undefined || f.scoreMax !== undefined) { where.push("c.score BETWEEN ? AND ?"); args.push(f.scoreMin ?? 0, f.scoreMax ?? 100); }
   if (f.owner === "none") where.push("c.owner_user_id IS NULL");
   else if (f.owner) { where.push("c.owner_user_id = ?"); args.push(f.owner); }
+  if (f.kind) { where.push(`${KIND_SQL} = ?`); args.push(f.kind); }
   return { where: where.join(" AND "), args };
 }
 export async function listContacts(f: ContactFilter = {}): Promise<Contact[]> {
@@ -264,6 +278,95 @@ export async function countContacts(f: ContactFilter = {}): Promise<number> {
   const { where, args } = contactWhere(f);
   const r = await db().execute({ sql: `SELECT COUNT(*) AS n FROM crm_contacts c WHERE ${where}`, args });
   return Number(r.rows[0]?.n ?? 0);
+}
+
+export type RubricaSegments = { tutti: number; aziende: number; persone: number; liberi: number };
+
+/** Real sizes of the rubrica segments. Archived contacts stay out. */
+export async function rubricaSegments(): Promise<RubricaSegments> {
+  await ensureCrmSchema();
+  const r = await db().execute({
+    sql: `SELECT COUNT(*) AS tutti,
+      SUM(CASE WHEN ${KIND_SQL} = 'azienda' THEN 1 ELSE 0 END) AS aziende,
+      SUM(CASE WHEN ${KIND_SQL} = 'persona' THEN 1 ELSE 0 END) AS persone,
+      SUM(CASE WHEN c.owner_user_id IS NULL THEN 1 ELSE 0 END) AS liberi
+      FROM crm_contacts c WHERE c.archived = 0`,
+    args: [],
+  });
+  const row = r.rows[0] ?? {};
+  return { tutti: Number(row.tutti ?? 0), aziende: Number(row.aziende ?? 0), persone: Number(row.persone ?? 0), liberi: Number(row.liberi ?? 0) };
+}
+
+export type OpenActivity = { contactId: string; title: string; at: string; time: string | null };
+
+/** Open activities for a page of contacts, one query. */
+export async function openActivitiesFor(ids: string[]): Promise<Map<string, OpenActivity[]>> {
+  const out = new Map<string, OpenActivity[]>();
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return out;
+  await ensureCrmSchema();
+  const marks = unique.map(() => "?").join(",");
+  const res = await db().execute({
+    sql: `SELECT contact_id, title, due_date, due_time FROM crm_activities
+      WHERE done_at IS NULL AND contact_id IN (${marks})`,
+    args: unique,
+  });
+  for (const row of res.rows) {
+    const id = String(row.contact_id);
+    const item: OpenActivity = { contactId: id, title: String(row.title), at: String(row.due_date), time: row.due_time ? String(row.due_time) : null };
+    const list = out.get(id);
+    if (list) list.push(item); else out.set(id, [item]);
+  }
+  return out;
+}
+
+export type BulkWriteChange =
+  | { kind: "owner"; owner: string | null }
+  | { kind: "stage"; stage: Stage }
+  | { kind: "followup"; text: string | null; at: string | null };
+export type BulkWriteResult = {
+  updated: number; changed: number; missing: number;
+  updatedIds: string[];
+  /** Previous stage, only when the stage actually moved. */
+  stageFrom: Record<string, Stage>;
+};
+
+/**
+ * One write transaction for a batch. A contact whose version moved is left as it is.
+ * An unchanged stage still counts as updated and does not bump the version, matching a single stage write.
+ */
+export async function bulkWrite(items: { id: string; version: number }[], change: BulkWriteChange): Promise<BulkWriteResult> {
+  await ensureCrmSchema();
+  const out: BulkWriteResult = { updated: 0, changed: 0, missing: 0, updatedIds: [], stageFrom: {} };
+  const tx = await db().transaction("write");
+  try {
+    for (const item of items) {
+      const cur = await tx.execute({ sql: "SELECT stage, version, archived FROM crm_contacts WHERE id = ?", args: [item.id] });
+      const row = cur.rows[0];
+      if (!row || Number(row.archived) === 1) { out.missing++; continue; }
+      if (Number(row.version) !== item.version) { out.changed++; continue; }
+      if (change.kind === "stage" && row.stage === change.stage) { out.updated++; out.updatedIds.push(item.id); continue; }
+      const sql = change.kind === "stage"
+        ? `UPDATE crm_contacts SET stage = ?, stage_changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`
+        : change.kind === "owner"
+          ? `UPDATE crm_contacts SET owner_user_id = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`
+          : `UPDATE crm_contacts SET next_action = ?, next_action_at = ?, ${BUMP} WHERE id = ? AND archived = 0 AND version = ?`;
+      const args = change.kind === "stage"
+        ? [change.stage, item.id, item.version]
+        : change.kind === "owner"
+          ? [change.owner, item.id, item.version]
+          : [change.text, change.at, item.id, item.version];
+      const wrote = await tx.execute({ sql, args });
+      if (!wrote.rowsAffected) { out.changed++; continue; }
+      out.updated++;
+      out.updatedIds.push(item.id);
+      if (change.kind === "stage" && isStage(row.stage)) out.stageFrom[item.id] = row.stage;
+    }
+    await tx.commit();
+  } finally {
+    tx.close();
+  }
+  return out;
 }
 
 export async function getContact(id: string): Promise<Contact | null> {

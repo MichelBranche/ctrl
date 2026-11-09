@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardSection } from "@/lib/admin";
 import { logAction } from "@/lib/audit";
-import { addDraft, addNote, completeFollowUp, createContact, crmOwners, getContact, getDraft, setArchived, setFollowUp, setOwner, setStage, updateContact, type ContactInput, type WriteResult } from "@/lib/crm";
+import { addDraft, addNote, bulkWrite, completeFollowUp, createContact, crmOwners, getContact, getDraft, setArchived, setFollowUp, setKind, setOwner, setStage, updateContact, type ContactInput, type WriteResult } from "@/lib/crm";
+import type { ContactKind } from "@/lib/crm-kind";
 import { isSource, isStage, STAGE_LABEL, type Stage } from "@/lib/crm-core";
 import { CRM_SECTIONS, RUBRICA } from "@/lib/crm-nav";
 import { db } from "@/lib/db";
@@ -192,25 +193,19 @@ export async function bulkContactsAction(items: BulkItem[], change: BulkChange):
   if (change.kind === "stage" && !isStage(change.stage)) return { ...none, error: "Fase non valida." };
   if (change.kind === "followup" && (change.at !== null && !DATE.test(change.at))) return { ...none, error: "Data non valida." };
   if (change.kind === "owner" && change.owner !== null && !(await crmOwners()).some((o) => o.id === change.owner)) return { ...none, error: "Il responsabile scelto non è un membro attivo con accesso al CRM." };
-  const out = { ...none };
-  for (const { id, version: v } of new Map(items.map((i) => [i.id, i])).values()) {
-    try {
-      let r: WriteResult;
-      if (change.kind === "stage") {
-        const s = await setStage(id, change.stage as Stage, v);
-        r = s === "conflict" ? "conflict" : s ? "ok" : "notfound";
-        if (s && s !== "conflict" && s.from !== change.stage) await logAction("crm.stage", { type: "crm_contact", id }, { from: s.from, to: change.stage, bulk: true });
-      } else if (change.kind === "owner") {
-        r = await setOwner(id, change.owner, v);
-        if (r === "ok") await logAction("crm.owner", { type: "crm_contact", id }, { to: change.owner, bulk: true });
-      } else {
-        const text = change.text?.trim().slice(0, 300) || (change.at ? "Ricontattare" : null);
-        r = await setFollowUp(id, text, change.at, v);
-        if (r === "ok") await logAction("crm.followup_set", { type: "crm_contact", id }, { at: change.at, bulk: true });
-      }
-      if (r === "ok") out.updated++; else if (r === "conflict") out.changed++; else out.missing++;
-    } catch {
-      out.missing++;
+  const unique = [...new Map(items.map((i) => [i.id, i])).values()];
+  const wrote = await bulkWrite(unique, change.kind === "followup"
+    ? { kind: "followup", at: change.at, text: change.text?.trim().slice(0, 300) || (change.at ? "Ricontattare" : null) }
+    : change.kind === "stage" ? { kind: "stage", stage: change.stage as Stage } : { kind: "owner", owner: change.owner });
+  const out = { updated: wrote.updated, changed: wrote.changed, missing: wrote.missing };
+  for (const id of wrote.updatedIds) {
+    if (change.kind === "stage") {
+      const from = wrote.stageFrom[id];
+      if (from && from !== change.stage) await logAction("crm.stage", { type: "crm_contact", id }, { from, to: change.stage, bulk: true });
+    } else if (change.kind === "owner") {
+      await logAction("crm.owner", { type: "crm_contact", id }, { to: change.owner, bulk: true });
+    } else {
+      await logAction("crm.followup_set", { type: "crm_contact", id }, { at: change.at, bulk: true });
     }
   }
   refresh();
@@ -218,6 +213,24 @@ export async function bulkContactsAction(items: BulkItem[], change: BulkChange):
   if (out.changed) parts.push(`${out.changed} modificati da altri nel frattempo e lasciati com'erano`);
   if (out.missing) parts.push(`${out.missing} non trovati o archiviati`);
   return out.updated ? { ...out, ok: `${parts.join(", ")}.` } : { ...out, error: `Nessun contatto aggiornato: ${parts.slice(1).join(", ") || "nessuna modifica"}.` };
+}
+
+/** Stored kind. Null puts the contact back on the deduction (company name, or a person when the names match). */
+export async function setKindAction(id: string, kind: string | null, expectedVersion: number): Promise<CrmState> {
+  await guardSection("crm");
+  if (!ID.test(id) || !Number.isInteger(expectedVersion)) return { error: "Contatto non valido." };
+  if (kind !== null && kind !== "" && kind !== "azienda" && kind !== "persona") return { error: "Tipo non valido." };
+  const next: ContactKind | null = kind === "azienda" || kind === "persona" ? kind : null;
+  try {
+    const r = await setKind(id, next, expectedVersion);
+    if (r === "notfound") return { error: "Contatto non trovato." };
+    if (r === "conflict") { refresh(id); return { error: CONFLICT }; }
+    await logAction("crm.contact_update", { type: "crm_contact", id }, { kind: next });
+    refresh(id);
+    return { ok: next === "persona" ? "Segnato come persona." : next === "azienda" ? "Segnato come azienda." : "Tipo calcolato in automatico." };
+  } catch {
+    return { error: "Non salvato. Riprova." };
+  }
 }
 
 export async function archiveAction(f: FormData): Promise<void> {

@@ -76,6 +76,19 @@ function where(f: DealFilter, periodStart: string | null): { sql: string; args: 
   return { sql: parts.join(" AND "), args };
 }
 
+/** Deals of one contact, open first. Used by the rubrica panel. */
+export async function dealsForContact(contactId: string): Promise<{ id: string; title: string; stage: Stage; valueEur: number | null; open: boolean }[]> {
+  await ensureCrmSchema();
+  const res = await db().execute({
+    sql: `SELECT id, title, stage, value_eur, closed_at FROM crm_opportunities WHERE contact_id = ? ORDER BY closed_at IS NOT NULL, updated_at DESC`,
+    args: [contactId],
+  });
+  return res.rows.flatMap((r) => {
+    if (!isStage(r.stage)) return [];
+    return [{ id: String(r.id), title: String(r.title), stage: r.stage, valueEur: r.value_eur === null || r.value_eur === undefined ? null : Number(r.value_eur), open: !r.closed_at }];
+  });
+}
+
 export async function listOpportunities(f: DealFilter = {}): Promise<Opportunity[]> {
   await ensureCrmSchema();
   const start = pipelinePeriodStart(f.period ?? "tutto");
