@@ -1636,7 +1636,7 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 /* Rubrica redesign. Motion and the new chrome stay under .crm-rubrica-page so Radar and Pipeline keep their own panel. */
 .crm-rubrica-page { min-width: 0; }
 .crm-rubrica-glow { position: relative; overflow: hidden; }
-.crm-rubrica-glow::before { content: ""; position: absolute; z-index: 0; left: 22%; width: min(52rem, 86%); aspect-ratio: 1; top: calc(1.15rem - min(52rem, 86%)); border-radius: 50%; pointer-events: none; border: 1.5px solid color-mix(in srgb, var(--adm-accent) 72%, #fff); box-shadow: 0 0 16px 1px color-mix(in srgb, var(--adm-accent) 50%, transparent), 0 0 64px 8px color-mix(in srgb, var(--adm-accent) 20%, transparent); }
+.crm-rubrica-glow::before { content: ""; position: absolute; z-index: 0; left: 28%; width: min(42rem, 72%); height: min(42rem, 72%); top: 0.15rem; border-radius: 50%; pointer-events: none; border: 1.5px solid color-mix(in srgb, var(--adm-accent) 80%, #fff); box-shadow: 0 0 12px 1px color-mix(in srgb, var(--adm-accent) 60%, transparent), 0 0 36px 4px color-mix(in srgb, var(--adm-accent) 24%, transparent); mask-image: linear-gradient(#000 0 1.3rem, transparent 2.4rem); }
 .crm-rubrica-glow > * { position: relative; z-index: 1; }
 .crm-rubrica-segments { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin: 0.2rem 0 0.85rem; }
 .crm-rubrica-segments nav { display: flex; flex-wrap: wrap; gap: 0.15rem; padding: 0.18rem; border: 1px solid var(--adm-rule); border-radius: 999px; background: color-mix(in srgb, var(--adm-panel) 80%, transparent); }
