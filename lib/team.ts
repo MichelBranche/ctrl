@@ -17,15 +17,15 @@ export async function leaderboardVisible(): Promise<boolean> {
 
 export type TeamUser = { id: string; email: string; name: string; lastName: string | null; avatarUrl: string | null; roles: TeamRole[]; area: Area | null; active: boolean; status: InviteStatus; inviteExpiresAt: number | null; inviteSentAt: number | null; emailAccess: boolean; createdAt: string; lastLoginAt: string | null; removedAt: string | null; removedBy: string | null; totalCents: number; jobs: number };
 
-/** Founder-only: every account (never the password hash) with its lifetime totals. */
-export async function listUsers(): Promise<TeamUser[]> {
-  await ensureTeam();
-  const res = await db().execute(`
+const USER_SQL = `
     SELECT u.id, u.email, u.name, u.last_name, u.role, (SELECT GROUP_CONCAT(r.role) FROM admin_user_roles r WHERE r.user_id = u.id) AS roles, u.area, u.invite_state, u.invite_expires_at, u.invite_sent_at, u.removed_at, (SELECT b.name FROM admin_users b WHERE b.id = u.removed_by) AS removed_by_name, u.active, u.email_access, u.created_at, u.last_login_at, u.avatar_url IS NOT NULL AS has_avatar, u.updated_at,
            COALESCE(SUM(j.amount_cents), 0) AS total, COUNT(j.id) AS jobs
     FROM admin_users u LEFT JOIN team_jobs j ON j.user_id = u.id
-    GROUP BY u.id ORDER BY (u.role = 'founder') DESC, (u.invite_state IS NOT NULL), u.created_at`);
-  return res.rows.map((r) => ({
+    WHERE (? = '' OR u.id = ?)
+    GROUP BY u.id ORDER BY (u.role = 'founder') DESC, (u.invite_state IS NOT NULL), u.created_at`;
+
+function toTeamUser(r: Record<string, unknown>): TeamUser {
+  return {
     id: String(r.id),
     email: String(r.email),
     name: String(r.name),
@@ -44,11 +44,32 @@ export async function listUsers(): Promise<TeamUser[]> {
     removedBy: r.removed_by_name ? String(r.removed_by_name) : null,
     totalCents: Number(r.total),
     jobs: Number(r.jobs),
-  }));
+  };
+}
+
+async function queryUsers(id: string | null): Promise<TeamUser[]> {
+  await ensureTeam();
+  const key = id ?? "";
+  const res = await db().execute({ sql: USER_SQL, args: [key, key] });
+  return res.rows.map((r) => toTeamUser(r as Record<string, unknown>));
+}
+
+/** Founder-only: every account (never the password hash) with its lifetime totals. */
+export async function listUsers(): Promise<TeamUser[]> {
+  return queryUsers(null);
+}
+
+/** One account, including a removed member. Null when the id is unknown. */
+export async function getUser(id: string): Promise<TeamUser | null> {
+  if (!/^[\w-]{1,64}$/.test(id)) return null;
+  const rows = await queryUsers(id);
+  return rows[0] ?? null;
 }
 
 export const EARN_RANGES = ["30", "90", "365", "all"] as const;
 export type EarnRange = (typeof EARN_RANGES)[number];
+/** Introiti tabs, plus the 7-day window used by a team profile. "7" is not an Introiti tab. */
+export type EarningsSpan = EarnRange | "7";
 export const EARN_RANGE_LABEL: Record<EarnRange, string> = { "30": "30g", "90": "90g", "365": "12 mesi", all: "Sempre" };
 export const parseEarnRange = (v: unknown): EarnRange => (EARN_RANGES.includes(v as EarnRange) ? (v as EarnRange) : "365");
 
@@ -69,7 +90,7 @@ export type Earnings = {
 
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
-function rangeBounds(range: EarnRange, now: Date) {
+function rangeBounds(range: EarningsSpan, now: Date) {
   if (range === "all") return { from: "0000-01-01", prevFrom: null as string | null };
   const days = Number(range);
   const from = new Date(now.getTime() - (days - 1) * 86_400_000);
@@ -78,7 +99,7 @@ function rangeBounds(range: EarnRange, now: Date) {
 }
 
 /** Earnings for the Introiti page. Members: only their own jobs (+ totals-only leaderboard when the founder allows it). */
-export async function getEarnings(me: AdminUser, range: EarnRange, filterUser: string | null, now = new Date()): Promise<Earnings> {
+export async function getEarnings(me: AdminUser, range: EarningsSpan, filterUser: string | null, now = new Date()): Promise<Earnings> {
   await ensureTeam();
   const founder = isFounder(me);
   const userId = founder ? filterUser : me.id;

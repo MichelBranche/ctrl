@@ -1,43 +1,48 @@
-import { CallButton } from "@/components/admin/meet/meet-forms";
-import { connection as googleConnection, googleConfigured } from "@/lib/google-meet";
 import { UserAvatar } from "@/components/admin/user-avatar";
 import { Suspense } from "react";
 import { PanelSkeleton } from "@/components/admin/dashboard";
 import Link from "next/link";
-import { EditUserForm, LeaderboardSwitch, NewUserForm, ReactivateUser } from "@/components/admin/team/team-forms";
+import type { Route } from "next";
+import { LeaderboardSwitch, NewUserForm, ReactivateUser } from "@/components/admin/team/team-forms";
+import { KpiGrid, PeriodNav, formatCents } from "@/components/admin/team/work-view";
 import { requireSection } from "@/lib/admin";
-import { leaderboardVisible, listUsers } from "@/lib/team";
+import { leaderboardVisible, listUsers, type TeamUser } from "@/lib/team";
 import { INVITE_STATUS_LABEL } from "@/lib/team-invite-core";
+import { ZERO_KPI, parseTeamPeriod, teamMemberKpisFor, teamQuery, type TeamPeriodDays } from "@/lib/team-stats";
 import { AREA_LABEL, isFounder, ROLE_COLOR, ROLE_LABEL, ROLE_SECTIONS, SECTION_LABEL, TEAM_ROLES } from "@/lib/team-types";
 
-export default function TeamPage() {
+type SP = Record<string, string | string[] | undefined>;
+
+export default function TeamPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
     <main className="adm-main">
       <Suspense fallback={<PanelSkeleton />}>
-        <Body />
+        <Body searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-const eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "medium", timeStyle: "short" }) : "mai";
 const until = (ms: number | null) => (ms ? new Date(ms).toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "medium", timeStyle: "short" }) : "");
 const STATUS_CLASS = { attivo: "is-published", invitato: "is-scheduled", scaduto: "is-draft", revocato: "is-draft", disattivato: "is-draft", rimosso: "is-draft" } as const;
+const listHref = (days: TeamPeriodDays) => `/admin/team${teamQuery(days)}`;
 
-async function Body() {
+async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const me = await requireSection("team");
-  const googleLive = googleConfigured() && Boolean(await googleConnection().catch(() => null));
-  let users: Awaited<ReturnType<typeof listUsers>>;
+  const sp = await searchParams;
+  const days = parseTeamPeriod(sp.giorni);
+  let users: TeamUser[];
   let board = false;
+  let kpis = new Map<string, typeof ZERO_KPI>();
   try {
-    [users, board] = await Promise.all([listUsers(), leaderboardVisible()]);
+    [users, board, kpis] = await Promise.all([listUsers(), leaderboardVisible(), teamMemberKpisFor(days)]);
   } catch {
     return <p className="adm-error">Database non raggiungibile.</p>;
   }
   const former = users.filter((u) => u.status === "rimosso");
-  users = users.filter((u) => u.status !== "rimosso");
+  const active = users.filter((u) => u.status !== "rimosso");
   return (
     <>
       <header className="adm-top">
@@ -69,37 +74,45 @@ async function Body() {
       <section className="adm-panel adm-rise" style={{ "--i": 2 } as React.CSSProperties}>
         <div className="adm-panel-head">
           <h2 className="adm-h2">Profili</h2>
-          <span className="adm-muted">{users.length} {users.length === 1 ? "utente" : "utenti"}</span>
+          <PeriodNav days={days} hrefFor={listHref} />
         </div>
+        <p className="adm-muted">Il periodo vale per email inviate, attività completate, valore vinto e introiti registrati. I contatti assegnati e le attività in ritardo sono lo stock di adesso. Valore vinto e introiti restano separati.</p>
+        <p className="adm-muted">{active.length} {active.length === 1 ? "utente" : "utenti"}</p>
         <ul className="adm-users">
-          {users.map((u, i) => (
-            <li key={u.id} className="adm-user adm-rise" data-off={(u.status !== "attivo" && u.status !== "invitato") || undefined} style={{ "--i": i } as React.CSSProperties}>
-              <details>
-                <summary>
-                  <UserAvatar name={u.name} src={u.avatarUrl} />
-                  <span className="adm-user-id">
-                    <strong>{u.name}{u.id === me.id ? <em className="adm-muted"> · tu</em> : null}</strong>
-                    <span className="adm-muted">{u.email}</span>
-                  </span>
-                  <span className="adm-chips adm-chips-static">
-                    {u.roles.map((r) => (
-                      <span key={r} className="adm-chip" data-on style={{ "--chip": ROLE_COLOR[r] } as React.CSSProperties}><span className="adm-chip-dot" aria-hidden />{ROLE_LABEL[r]}</span>
-                    ))}
-                  </span>
-                  <span className="adm-muted">{u.area ? AREA_LABEL[u.area] : isFounder(u.roles) ? "Tutte le aree" : "Nessuna area"}{u.emailAccess ? " · Email" : ""}</span>
-                  <span className="adm-num">{eur.format(u.totalCents / 100)} <span className="adm-muted">· {u.jobs} lavori</span></span>
-                  <span className="adm-user-seen">
-                    <span className={`adm-badge ${STATUS_CLASS[u.status]}`}>{INVITE_STATUS_LABEL[u.status]}</span>{" "}
-                    {u.status === "attivo" && u.id !== me.id ? <><CallButton memberId={u.id} name={u.name} connected={googleLive} />{" "}</> : null}
-                    <span className="adm-muted">
-                      {u.status === "attivo" ? `Ultimo accesso: ${when(u.lastLoginAt)}` : u.status === "invitato" ? `Scade: ${until(u.inviteExpiresAt)}` : u.status === "scaduto" ? "Reinvia per un nuovo link" : ""}
+          {active.map((u, i) => {
+            const kpiId = `kpi-${u.id}`;
+            const off = u.status !== "attivo" && u.status !== "invitato";
+            return (
+              <li key={u.id} className="adm-rise" style={{ "--i": i } as React.CSSProperties}>
+                <article className="adm-user" data-off={off || undefined}>
+                  <header className="adm-user-head">
+                    <UserAvatar name={u.name} src={u.avatarUrl} />
+                    <div className="adm-user-id">
+                      <h3>
+                        <Link className="adm-user-card-link" href={`/admin/team/${u.id}${teamQuery(days)}` as Route} aria-describedby={kpiId}>
+                          {u.name}{u.id === me.id ? <em className="adm-muted"> · tu</em> : null}
+                        </Link>
+                      </h3>
+                      <span className="adm-muted">{u.email}</span>
+                    </div>
+                    <span className="adm-chips adm-chips-static">
+                      {u.roles.map((r) => (
+                        <span key={r} className="adm-chip" data-on style={{ "--chip": ROLE_COLOR[r] } as React.CSSProperties}><span className="adm-chip-dot" aria-hidden />{ROLE_LABEL[r]}</span>
+                      ))}
                     </span>
-                  </span>
-                </summary>
-                <EditUserForm user={u} self={u.id === me.id} />
-              </details>
-            </li>
-          ))}
+                    <span className="adm-muted">{u.area ? AREA_LABEL[u.area] : isFounder(u.roles) ? "Tutte le aree" : "Nessuna area"}{u.emailAccess ? " · Email" : ""}</span>
+                    <p className="adm-user-seen">
+                      <span className={`adm-badge ${STATUS_CLASS[u.status]}`}>{INVITE_STATUS_LABEL[u.status]}</span>{" "}
+                      <span className="adm-muted">
+                        {u.status === "attivo" ? `Ultimo accesso: ${when(u.lastLoginAt)}` : u.status === "invitato" ? `Scade: ${until(u.inviteExpiresAt)}` : u.status === "scaduto" ? "Reinvia per un nuovo link" : ""}
+                      </span>
+                    </p>
+                  </header>
+                  <KpiGrid id={kpiId} kpi={kpis.get(u.id) ?? ZERO_KPI} />
+                </article>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -114,9 +127,12 @@ async function Body() {
               <li key={u.id} className="adm-user" data-off>
                 <div className="adm-user-former">
                   <UserAvatar name={u.name} src={u.avatarUrl} />
-                  <span className="adm-user-id"><strong>{u.name}</strong><span className="adm-muted">{u.email}</span></span>
+                  <span className="adm-user-id">
+                    <strong><Link className="adm-link" href={`/admin/team/${u.id}${teamQuery(days)}` as Route}>{u.name}</Link></strong>
+                    <span className="adm-muted">{u.email}</span>
+                  </span>
                   <span className="adm-badge is-draft">Rimosso il {when(u.removedAt)}{u.removedBy ? ` da ${u.removedBy}` : ""}</span>
-                  <span className="adm-num">{eur.format(u.totalCents / 100)} <span className="adm-muted">· {u.jobs} lavori</span></span>
+                  <span className="adm-num">{formatCents(u.totalCents)} <span className="adm-muted">· {u.jobs} lavori</span></span>
                   <span className="adm-row-actions">
                     <Link className="adm-link" href={`/admin/audit?utente=${encodeURIComponent(u.id)}`}>Attività</Link>
                     <Link className="adm-link" href={`/admin/introiti?u=${encodeURIComponent(u.id)}&range=all`}>Introiti</Link>
