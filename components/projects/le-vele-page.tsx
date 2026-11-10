@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { SiteFooter } from "@/components/site-footer";
@@ -9,6 +8,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { Crumbs } from "@/components/seo/crumbs";
 import { FaqList } from "@/components/seo/faq";
 import { JsonLd } from "@/components/seo/json-ld";
+import { LeVeleFilm } from "@/components/projects/le-vele-film";
 import { LE_VELE } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { alternates, breadcrumbNode, faqNode, openGraph, ORG_ID, SITE_URL } from "@/lib/seo";
@@ -43,7 +43,10 @@ const copy = {
       { value: money.it, label: "valore delle prenotazioni" },
       { value: ads.it, label: "spesi in advertising" },
     ],
-    placeholder: "Segnaposto. Le fotografie e le schermate del sito di Residence Le Vele non sono ancora in archivio. Questo riquadro non è una cattura del sito.",
+    film: "Scorrimento del sito Residence Le Vele",
+    filmDesktop: "Scorrimento del sito Residence Le Vele su desktop",
+    filmMobile: "Scorrimento del sito Residence Le Vele su telefono",
+    visit: "Visita il sito",
     nextTitle: "Un sito per la tua struttura",
     nextText: "Se gestisci un hotel, un residence o un'altra struttura in Valle d'Aosta o nel Nord Italia, il percorso è lo stesso: un sito su misura e la prenotazione che si chiude da te.",
     nextCta: "Parliamo della struttura",
@@ -53,7 +56,7 @@ const copy = {
       { q: "I numeri sono del primo mese?", a: "Sì. 14 prenotazioni e 11.947 euro si riferiscono al primo mese online. La spesa in advertising in quel mese è stata 0 euro." },
       { q: "CTRL® ha costruito il sito?", a: "Sì. Il sito di Residence Le Vele è un lavoro di CTRL®." },
       { q: "Si può ottenere lo stesso risultato?", a: "Ogni struttura è diversa. Questi numeri descrivono questo caso, non un minimo garantito. Il metodo è un sito chiaro e una prenotazione diretta." },
-      { q: "Dove vedo il sito dal vivo?", a: "L'indirizzo pubblico del sito non è ancora in questa pagina. Lo aggiungiamo quando è confermato, insieme alle schermate vere al posto del segnaposto." },
+      { q: "Dove vedo il sito dal vivo?", a: "Il sito pubblico è https://www.residencelevelestintino.it." },
     ],
     crumb: "Percorso",
     home: "Home",
@@ -77,7 +80,10 @@ const copy = {
       { value: money.en, label: "value of the bookings" },
       { value: ads.en, label: "spent on advertising" },
     ],
-    placeholder: "Placeholder. Photographs and screenshots of the Residence Le Vele website are not in the archive yet. This frame is not a capture of the site.",
+    film: "Scroll-through of the Residence Le Vele website",
+    filmDesktop: "Scroll-through of the Residence Le Vele website on desktop",
+    filmMobile: "Scroll-through of the Residence Le Vele website on a phone",
+    visit: "Visit the site",
     nextTitle: "A website for your property",
     nextText: "If you run a hotel, a residence or another stay in Valle d'Aosta or Northern Italy, the path is the same: a custom site, and a booking that closes with you.",
     nextCta: "Talk about the property",
@@ -87,7 +93,7 @@ const copy = {
       { q: "Are the numbers from the first month?", a: "Yes. 14 bookings and €11,947 refer to the first month online. Advertising spend in that month was €0." },
       { q: "Did CTRL® build the website?", a: "Yes. The Residence Le Vele website is a CTRL® project." },
       { q: "Can the same result be expected?", a: "Every property is different. These numbers describe this case, not a guaranteed minimum. The method is a clear website and a direct booking." },
-      { q: "Where is the live site?", a: "The public address is not on this page yet. We will add it once it is confirmed, together with real screenshots in place of the placeholder." },
+      { q: "Where is the live site?", a: "The live site is https://www.residencelevelestintino.it." },
     ],
     crumb: "Breadcrumbs",
     home: "Home",
@@ -159,12 +165,14 @@ export function LeVeleView({ lang }: { lang: Locale }) {
           </div>
         </section>
 
-        <section className="wa-wrap" aria-label={c.placeholder}>
-          <figure className="sd-placeholder">
-            <div className="sd-placeholder-frame">
-              <Image src={LE_VELE.image} alt="" fill sizes="(max-width: 900px) 100vw, 70rem" />
-            </div>
-            <figcaption>{c.placeholder}</figcaption>
+        <section className="wa-wrap" aria-label={c.film}>
+          <figure className="lv-figure">
+            <LeVeleFilm label={c.film} labelDesktop={c.filmDesktop} labelMobile={c.filmMobile} />
+            <figcaption className="lv-caption">{c.film}</figcaption>
+            <a className="p-btn lv-visit" href={LE_VELE.url} target="_blank" rel="noopener noreferrer">
+              <span className="p-mono">{c.visit}</span>
+              <PArrow />
+            </a>
           </figure>
         </section>
 

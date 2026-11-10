@@ -17,7 +17,7 @@ Lingue del sito: italiano (https://www.ctrlagency.dev/) e inglese (https://www.c
 - https://www.ctrlagency.dev/services/webapp : webapp
 - https://www.ctrlagency.dev/services/software-ai : software, gestionali e AI
 - https://www.ctrlagency.dev/services/growth-support : SEO e posizionamento Google
-- https://www.ctrlagency.dev/projects/websites/residence-le-vele : caso Residence Le Vele, 14 prenotazioni e 11947 euro nel primo mese, 0 euro di ads
+- https://www.ctrlagency.dev/projects/websites/residence-le-vele : caso Residence Le Vele, 14 prenotazioni e 11947 euro nel primo mese, 0 euro di ads. Sito: https://www.residencelevelestintino.it
 - https://www.ctrlagency.dev/projects/websites : siti, filtro hospitality
 - https://www.ctrlagency.dev/contact : contatti, Aosta
 - https://www.ctrlagency.dev/journal : journal
