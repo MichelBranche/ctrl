@@ -362,6 +362,11 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-user-kpi dd { margin: 0.2rem 0 0; font-variant-numeric: tabular-nums; font-size: 1.02rem; font-weight: 600; }
 .adm-user-kpi small { display: block; margin-top: 0.15rem; color: var(--adm-dim); font-size: 0.72rem; font-weight: 400; }
 .adm-user-edit { display: grid; gap: 1rem; padding: 0; border-top: 0; padding-top: 0.4rem; }
+.adm-role-legend summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; list-style: none; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
+.adm-role-legend summary::-webkit-details-marker { display: none; }
+.adm-role-legend summary::after { content: "Mostra"; color: var(--adm-dim); font-size: 0.8rem; font-weight: 400; }
+.adm-role-legend details[open] summary { margin-bottom: 0.9rem; }
+.adm-role-legend details[open] summary::after { content: "Nascondi"; }
 .adm-edit-panel summary { width: fit-content; margin: 0.15rem 0 0; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
 .adm-edit-panel details[open] summary { margin-bottom: 1rem; }
 .adm-h3 { margin: 1rem 0 0.45rem; font-size: 0.92rem; font-weight: 600; }

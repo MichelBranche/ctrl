@@ -52,26 +52,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
         </div>
       </header>
 
-      <div className="adm-grid2">
-        <section className="adm-panel adm-rise" style={{ "--i": 0 } as React.CSSProperties}>
-          <h2 className="adm-h2">Impostazioni team</h2>
-          <LeaderboardSwitch visible={board} />
-        </section>
-        <section className="adm-panel adm-rise" style={{ "--i": 1 } as React.CSSProperties}>
-          <h2 className="adm-h2">Cosa può aprire ogni ruolo</h2>
-          <dl className="adm-dl">
-            {TEAM_ROLES.map((r) => (
-              <div key={r} style={{ display: "contents" }}>
-                <dt><span className="adm-chip-dot" style={{ "--chip": ROLE_COLOR[r] } as React.CSSProperties} aria-hidden /> {ROLE_LABEL[r]}</dt>
-                <dd>{r === "founder" ? "Tutto, compresi Team e Registro" : ROLE_SECTIONS[r].length ? ROLE_SECTIONS[r].map((x) => SECTION_LABEL[x]).join(", ") : "Solo le sezioni di base"}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="adm-muted">Chi ha più ruoli somma i permessi. Tutti vedono Panoramica, Desk, Introiti (solo i propri lavori) e Impostazioni. La casella Email si concede a persona. I founder hanno accesso completo e la verifica in due passaggi obbligatoria.</p>
-        </section>
-      </div>
-
-      <section className="adm-panel adm-rise" style={{ "--i": 2 } as React.CSSProperties}>
+      <section className="adm-panel adm-rise" style={{ "--i": 0 } as React.CSSProperties}>
         <div className="adm-panel-head">
           <h2 className="adm-h2">Profili</h2>
           <PeriodNav days={days} hrefFor={listHref} />
@@ -117,7 +98,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       </section>
 
       {former.length ? (
-        <section className="adm-panel adm-rise" style={{ "--i": 3 } as React.CSSProperties}>
+        <section className="adm-panel adm-rise" style={{ "--i": 1 } as React.CSSProperties}>
           <div className="adm-panel-head">
             <h2 className="adm-h2">Ex membri</h2>
             <span className="adm-muted">Non possono accedere. Nome e storico restano su registro, introiti, email e desk.</span>
@@ -144,6 +125,27 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           </ul>
         </section>
       ) : null}
+
+      <div className="adm-grid2">
+        <section className="adm-panel adm-rise" style={{ "--i": 2 } as React.CSSProperties}>
+          <h2 className="adm-h2">Impostazioni team</h2>
+          <LeaderboardSwitch visible={board} />
+        </section>
+        <section className="adm-panel adm-rise adm-role-legend" style={{ "--i": 3 } as React.CSSProperties}>
+          <details>
+            <summary className="adm-h2">Cosa può aprire ogni ruolo</summary>
+            <dl className="adm-dl">
+              {TEAM_ROLES.map((r) => (
+                <div key={r} style={{ display: "contents" }}>
+                  <dt><span className="adm-chip-dot" style={{ "--chip": ROLE_COLOR[r] } as React.CSSProperties} aria-hidden /> {ROLE_LABEL[r]}</dt>
+                  <dd>{r === "founder" ? "Tutto, compresi Team e Registro" : ROLE_SECTIONS[r].length ? ROLE_SECTIONS[r].map((x) => SECTION_LABEL[x]).join(", ") : "Solo le sezioni di base"}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="adm-muted">Chi ha più ruoli somma i permessi. Tutti vedono Panoramica, Desk, Introiti (solo i propri lavori) e Impostazioni. La casella Email si concede a persona. I founder hanno accesso completo e la verifica in due passaggi obbligatoria.</p>
+          </details>
+        </section>
+      </div>
 
       <section className="adm-panel adm-rise" style={{ "--i": 4 } as React.CSSProperties}>
         <h2 className="adm-h2">Invita nel team</h2>
