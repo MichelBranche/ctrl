@@ -32,7 +32,7 @@ registerHooks({
   },
 });
 
-const untouched = ["app/admin/meet-actions.ts", "app/admin/crm-actions.ts", "app/api/crm/ingest/route.ts", "lib/crm-import.ts", "lib/crm.ts", "lib/client-meet.ts"];
+const untouched = ["app/(admin)/admin/meet-actions.ts", "app/(admin)/admin/crm-actions.ts", "app/api/crm/ingest/route.ts", "lib/crm-import.ts", "lib/crm.ts", "lib/client-meet.ts"];
 for (const file of untouched) {
   const src = readFileSync(file, "utf8");
   assert.equal(src.includes("createOpportunity"), false, file);
@@ -57,7 +57,7 @@ try {
   const K = await import("../lib/crm.ts");
   const O = await import("../lib/crm-opportunity.ts");
   const I = await import("../lib/crm-import.ts");
-  const A = await import("../app/admin/crm-opportunity-actions.ts");
+  const A = await import("../app/(admin)/admin/crm-opportunity-actions.ts");
   const Meet = await import("../lib/client-meet.ts");
   const { SignJWT } = await import("jose");
   const { dumpDatabase } = await import("../lib/backup-core.ts");

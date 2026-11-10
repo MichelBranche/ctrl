@@ -109,8 +109,8 @@ try {
     .setIssuedAt().setExpirationTime("1h").setAudience("ctrl-admin").sign(new TextEncoder().encode(process.env.SESSION_SECRET))]]);
   const jars = Object.fromEntries(await Promise.all(["u-ana", "u-bea", "u-posta", "u-nomail"].map(async (u) => [u, await jar(u)])));
   const as = (user, fn) => globalThis.__als.run(jars[user], fn);
-  const E = await import("../app/admin/email-actions.ts");
-  const A = await import("../app/admin/crm-actions.ts");
+  const E = await import("../app/(admin)/admin/email-actions.ts");
+  const A = await import("../app/(admin)/admin/crm-actions.ts");
   const O = await import("../lib/crm-outreach.ts");
   const { MailError } = await import("../lib/mail/provider.ts");
   const form = (fields) => { const f = new FormData(); for (const [k, v] of Object.entries(fields)) if (v !== undefined) f.set(k, v); return f; };

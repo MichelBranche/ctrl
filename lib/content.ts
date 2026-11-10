@@ -123,7 +123,27 @@ export type Project = {
   gallery?: { src: string; kind: "cover" | "desktop" | "mobile" }[];
   /** Who built it: drives the per-card credit ("Realizzato da {name}"). */
   author?: ProjectAuthor;
+  /** Internal case study. Listed even when there is no public live URL yet. */
+  caseStudy?: boolean;
 };
+
+/**
+ * Verified first month of the Residence Le Vele website, built by CTRL.
+ * TODO(owner): set `url` to the live site when it should be public. Do not invent it.
+ * TODO(owner): set `place` to the town if it should be public. Do not invent it.
+ * TODO(owner): replace `image` with real screenshots. The current file is a marked placeholder.
+ */
+export const LE_VELE = {
+  slug: "residence-le-vele",
+  path: "/projects/websites/residence-le-vele",
+  client: "Residence Le Vele",
+  bookings: 14,
+  revenueEur: 11947,
+  adsEur: 0,
+  url: "",
+  place: "",
+  image: "/images/projects/works/residence-le-vele.webp",
+} as const;
 
 export type ProjectAuthor = { name: string; url: string };
 
@@ -160,6 +180,20 @@ export const websiteGroups: WebsiteGroup[] = [
 //   client: "Acme Srl", image: "/images/projects/works/acme.webp", url: "https://acme.it", year: "2026" },
 /* Websites: real work from michelbranche.it/portfolio (copy condensed from it). */
 export const projects: Project[] = [
+  {
+    slug: LE_VELE.slug,
+    category: "websites",
+    group: "hospitality",
+    caseStudy: true,
+    title: { it: "Residence Le Vele", en: "Residence Le Vele" },
+    client: LE_VELE.client,
+    place: { it: "Caso studio", en: "Case study" },
+    image: LE_VELE.image,
+    description: {
+      it: "Sito per una struttura ricettiva. Nel primo mese online: 14 prenotazioni e 11.947 euro, con 0 euro di advertising.",
+      en: "Website for a hospitality business. In the first month online: 14 bookings and €11,947, with €0 spent on advertising.",
+    },
+  },
   {
     slug: "omama",
     category: "websites",
@@ -428,7 +462,7 @@ export function getProjectCategory(slug: string) {
 
 /** Websites in display order (filter groups first, then list order): drives the list numbering and prev/next. */
 export function websitesInOrder() {
-  return websiteGroups.flatMap((g) => projects.filter((p) => p.category === "websites" && p.group === g.slug && p.url && p.image));
+  return websiteGroups.flatMap((g) => projects.filter((p) => p.category === "websites" && p.group === g.slug && p.image && (Boolean(p.url) || p.caseStudy)));
 }
 
 export function projectsIn(category: string) {

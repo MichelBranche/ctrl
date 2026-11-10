@@ -5,7 +5,7 @@ import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HoverProjects } from "@/components/hover-projects";
-import { homeFeatured, services } from "@/lib/content";
+import { homeFeatured, LE_VELE, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import "./home.css";
 
@@ -176,6 +176,19 @@ export function HomePage({ lang }: { lang: Locale }) {
                 tint: item.tint,
               }))}
             />
+            <aside className="h-proof" aria-labelledby="h-proof-title">
+              <p className="h-label">
+                <span>{h.proofKicker}</span>
+                <i className="h-bar" aria-hidden="true" />
+              </p>
+              <div className="h-proof-copy">
+                <h2 className="h-proof-title" id="h-proof-title">{h.proofTitle}</h2>
+                <p>{h.proofText}</p>
+                <Link href={localize(LE_VELE.path, lang)} className="h-small h-link">
+                  {h.proofCta} <Arrow />
+                </Link>
+              </div>
+            </aside>
           </section>
 
           {/* 4. PERCHE CTRL */}

@@ -120,7 +120,7 @@ try {
   console.log("ok db dedupe + site leads");
 
   // 4. Server actions refuse without a crm session.
-  const A = await import("../app/admin/crm-actions.ts");
+  const A = await import("../app/(admin)/admin/crm-actions.ts");
   await assert.rejects(() => A.moveStageAction(a.id, "vinto"), /unauthorized/);
   await assert.rejects(() => A.sendDraftAction(a.id), /unauthorized/);
   console.log("ok actions guarded");
@@ -200,7 +200,7 @@ try {
 
   assert.deepEqual(await K.inviteContacts({ roles: ["project_manager"] }), [], "Riunioni without crm gets no CRM contacts");
   assert.ok((await K.inviteContacts({ roles: ["commerciale"] })).some((c) => c.id === a.id));
-  const Meet = await import("../app/admin/meet-actions.ts");
+  const Meet = await import("../app/(admin)/admin/meet-actions.ts");
   const form = (o) => { const f = new FormData(); for (const [k, v] of Object.entries(o)) f.set(k, v); return f; };
   const future = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
   const invite = { client_name: "Mario Rossi", client_email: "info@mario.it", title: "Call conoscitiva", date: future, time: "10:00", minutes: "30", contact_id: a.id, meet_url: "https://meet.google.com/abc-defg-hij" };
@@ -290,7 +290,7 @@ try {
   await db().execute("DELETE FROM crm_opportunities WHERE id IN ('00000000-0000-4000-8000-00000000kp01', '00000000-0000-4000-8000-00000000kp02')");
   console.log("ok kpi snapshot");
 
-  const D = await import("../app/admin/dashboard-actions.ts");
+  const D = await import("../app/(admin)/admin/dashboard-actions.ts");
   await signIn("u-pm");
   assert.ok(!(await D.adminSearch("Pizzeria")).some((h) => h.hint.startsWith("Contatto CRM")), "palette hides CRM without crm");
   await signIn("u-sales");
@@ -300,7 +300,7 @@ try {
 
   const N = await import("../lib/crm-nav.ts");
   assert.deepEqual(N.CRM_SECTIONS.map((x) => x.label), ["Oggi", "Rubrica", "Pipeline", "Radar", "Attività"]);
-  for (const x of N.CRM_SECTIONS) assert.ok(existsSync(join("app/admin/(shell)", x.href.slice("/admin/".length), "page.tsx")), `no dead section: ${x.href}`);
+  for (const x of N.CRM_SECTIONS) assert.ok(existsSync(join("app/(admin)/admin/(shell)", x.href.slice("/admin/".length), "page.tsx")), `no dead section: ${x.href}`);
   assert.equal(N.legacyRubricaPath("/admin/crm", new URLSearchParams("fase=call&q=bar")), "/admin/crm/rubrica?fase=call&q=bar");
   assert.equal(N.legacyRubricaPath("/admin/crm", new URLSearchParams("archiviato=1")), "/admin/crm/rubrica?archiviato=1");
   assert.equal(N.legacyRubricaPath("/admin/crm", new URLSearchParams()), null);
@@ -533,7 +533,7 @@ try {
   const kept = await K.getContact(alta);
   assert.deepEqual([kept.businessName, kept.score, kept.stage, kept.scoreReasons], ["Cantina Alta (test)", 95, "contattato", ["Sito non responsive", "Nessun e-commerce"]], "saved prospects are not changed by a later ingest");
   assert.equal((await K.listContacts({ q: "Cantina Alta" })).length, 1, "and stay a single Rubrica contact");
-  const radarPage = readFileSync("app/admin/(shell)/crm/radar/page.tsx", "utf8");
+  const radarPage = readFileSync("app/(admin)/admin/(shell)/crm/radar/page.tsx", "utf8");
   assert.match(radarPage, /requireSection\("crm"\)/, "Radar page needs the crm section");
   assert.ok(!/crm-actions|sendDraftAction|sendAllowed/.test(radarPage), "Radar sends only through the shared draft editor");
   console.log("ok radar ingest compat");
@@ -608,7 +608,7 @@ try {
 
   await addUser("u-founder", ["founder"], true);
   await db().execute("INSERT INTO admin_2fa (user_id, secret_enc, enabled_at) VALUES ('u-founder', 'test-secret', strftime('%Y-%m-%dT%H:%M:%fZ','now'))");
-  const VA = await import("../app/admin/crm-view-actions.ts");
+  const VA = await import("../app/(admin)/admin/crm-view-actions.ts");
   await signIn("u-sales");
   assert.match((await VA.createViewAction("Langhe", "seg=aziende&q=mario&vista=griglia", true)).error ?? "", /founder/);
   assert.match((await VA.createViewAction("L", "seg=aziende", false)).error ?? "", /2 e 40/);
@@ -857,7 +857,7 @@ try {
   assert.equal((await call(`Bearer ${secret}`, { irisRequestId: "00000000-0000-4000-8000-000000009999", contacts: [{ business_name: "Orfana", email: "orfana.iris@gmail.com" }] })).status, 404);
 
   await signIn("u-sales");
-  const Act = await import("../app/admin/crm-iris-actions.ts");
+  const Act = await import("../app/(admin)/admin/crm-iris-actions.ts");
   const act = await Act.askIrisAction(params);
   assert.match(act.error ?? "", /founder/);
   delete process.env.CRM_IRIS_WEBHOOK_URL;

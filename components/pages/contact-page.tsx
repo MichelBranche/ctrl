@@ -5,8 +5,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ContactForm } from "@/components/pages/contact-form";
 import { contactCopy } from "@/components/pages/contact-copy";
+import { Crumbs } from "@/components/seo/crumbs";
+import { JsonLd } from "@/components/seo/json-ld";
 import { CONTACT_EMAIL } from "@/lib/content";
-import type { Locale } from "@/lib/i18n";
+import { localize, type Locale } from "@/lib/i18n";
+import { alternates, breadcrumbNode, openGraph } from "@/lib/seo";
 import { getSocialLinks } from "@/lib/settings";
 import "./contact.css";
 
@@ -14,7 +17,7 @@ const MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Aosta%2C+Valle
 
 export function contactMetadata(lang: Locale): Metadata {
   const c = contactCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription, alternates: { canonical: lang === "it" ? "/contact" : "/en/contact", languages: { it: "/contact", en: "/en/contact" } } };
+  return { title: c.metaTitle, description: c.metaDescription, alternates: alternates("/contact", lang), openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }) };
 }
 
 function Arrow({ className = "c-arrow" }: { className?: string }) {
@@ -28,13 +31,19 @@ function Arrow({ className = "c-arrow" }: { className?: string }) {
 export async function ContactView({ lang }: { lang: Locale }) {
   const c = contactCopy[lang];
   const socials = await getSocialLinks();
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: c.tag, path: "/contact" },
+  ];
   return (
     <>
+      <JsonLd data={[breadcrumbNode(lang, crumbs)]} />
       <SiteHeader />
       <main className="c-root">
         <section className="c-hero">
           <Image className="c-hero-img" src="/images/home/perche.jpg" alt="" fill priority sizes="100vw" />
           <div className="c-hero-copy">
+            <Crumbs label={lang === "it" ? "Percorso" : "Breadcrumbs"} items={crumbs.map((item) => ({ name: item.name, href: localize(item.path, lang) }))} />
             <p className="c-tag">{c.tag}</p>
             <h1 className="c-title">{c.title}</h1>
             <p className="c-lead">

@@ -134,6 +134,10 @@
   text-decoration: none;
   transition: background-color 0.5s ease;
 }
+.s-cell-body:hover { background: color-mix(in srgb, var(--s-fg) 5%, transparent); }
+.s-cell-body:focus-visible { outline: 1px solid var(--s-accent); outline-offset: -1px; }
+.s-local { max-width: var(--s-max); margin: 0 auto; padding: 4.5rem var(--gutter) 0; }
+.s-local-links { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.4rem; }
 .s-index { color: var(--s-fg); transition: color 0.35s ease; }
 .s-cell-title {
   margin: 1.4rem 0 0;

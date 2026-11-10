@@ -85,6 +85,10 @@ export const dict = {
       closeLead: "Raccontaci il tuo brand, il prodotto o il problema da risolvere. Siamo pronti a costruire qualcosa di grande, insieme.",
       closeCta: "Scrivici una email",
       location: "Aosta, Valle d'Aosta",
+      proofKicker: "Caso studio",
+      proofTitle: "Residence Le Vele",
+      proofText: "14 prenotazioni e 11.947 € nel primo mese online, con 0 € spesi in advertising.",
+      proofCta: "Leggi il caso",
     },
     services: {
       back: "Tutti i servizi",
@@ -104,9 +108,9 @@ export const dict = {
       scroll: "Scopri il team",
     },
     meta: {
-      title: "CTRL® | Dall'identità al prodotto. Un unico partner.",
+      title: "CTRL® | Agenzia web ad Aosta. Siti, hotel, software.",
       description:
-        "CTRL® è uno studio indipendente di creative technology che unisce design, sviluppo software e comunicazione visiva: dall'identità del brand ai prodotti digitali.",
+        "Studio di creative technology ad Aosta. Siti web su misura, hotel con prenotazione diretta, e-commerce, web app, software e brand. Prima la Valle d'Aosta, poi il Nord Italia.",
     },
   },
   en: {
@@ -154,6 +158,10 @@ export const dict = {
       closeLead: "Tell us about your brand, your product or the problem to solve. We are ready to build something great, together.",
       closeCta: "Send us an email",
       location: "Aosta, Valle d'Aosta",
+      proofKicker: "Case study",
+      proofTitle: "Residence Le Vele",
+      proofText: "14 bookings and €11,947 in the first month online, with €0 spent on advertising.",
+      proofCta: "Read the case",
     },
     services: {
       back: "All services",
@@ -173,9 +181,9 @@ export const dict = {
       scroll: "Meet the team",
     },
     meta: {
-      title: "CTRL® | From identity to product. One partner.",
+      title: "CTRL® | Web studio in Aosta. Sites, hotels, software.",
       description:
-        "CTRL® is an independent creative technology studio combining design, software development and visual communication: from brand identity to digital products.",
+        "Creative technology studio in Aosta, Valle d'Aosta. Custom websites, hotel sites with direct booking, online shops, web apps, software and brand identity. Northern Italy next.",
     },
   },
 } as const;

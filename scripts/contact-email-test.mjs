@@ -231,7 +231,7 @@ try {
     saveDraft: async (m) => { drafts.push(m); return 501; },
     mutate: async () => {},
   };
-  const E = await import("../app/admin/email-actions.ts");
+  const E = await import("../app/(admin)/admin/email-actions.ts");
   const form = (fields) => { const f = new FormData(); for (const [k, v] of Object.entries(fields)) f.set(k, v); return f; };
   const reply = { to: "info@fratellisavigliano.example", subject: "Re: Presentazione CTRL®", body: "Grazie, sentiamoci martedì.", replyFolder: "all", replyUid: "10114" };
   globalThis.__jar.clear();

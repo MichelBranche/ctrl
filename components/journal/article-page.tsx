@@ -10,6 +10,7 @@ import { JournalMotion } from "@/components/journal/journal-motion";
 import { PostBody } from "@/components/journal/markdown";
 import { PostCard } from "@/components/journal/post-card";
 import { localize, type Locale } from "@/lib/i18n";
+import { openGraph } from "@/lib/seo";
 import { getPublishedPost, getPublishedPosts } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate } from "@/lib/journal-types";
 import "./journal.css";
@@ -21,7 +22,7 @@ export async function articleMetadata(lang: Locale, slug: string): Promise<Metad
     title: post.title,
     description: post.excerpt || journalCopy[lang].metaDescription,
     alternates: { canonical: localize(`/journal/${post.slug}`, lang) },
-    openGraph: { type: "article", title: post.title, description: post.excerpt, publishedTime: post.published_at, images: post.cover_url ? [post.cover_url] : undefined },
+    openGraph: openGraph(lang, { type: "article", title: post.title, description: post.excerpt, publishedTime: post.published_at, ...(post.cover_url ? { images: [post.cover_url] } : {}) }),
   };
 }
 

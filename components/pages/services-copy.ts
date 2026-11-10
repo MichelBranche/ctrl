@@ -28,9 +28,9 @@ type ServicesCopy = {
 
 export const servicesCopy: Record<Locale, ServicesCopy> = {
   it: {
-    metaTitle: "Servizi",
+    metaTitle: "Servizi web ad Aosta",
     metaDescription:
-      "Brand e identità, sviluppo prodotto, comunicazione visiva, crescita e supporto, software e AI. Su misura o in abbonamento.",
+      "Siti su misura, brand identity, web app, software, SEO e siti per hotel. CTRL® è l'agenzia web di Aosta, in Valle d'Aosta, e lavora nel Nord Italia.",
     tag: "Servizi",
     title: "Servizi CTRL®",
     lead: "Idee, tecnologia e design per far crescere il tuo brand.",
@@ -72,9 +72,9 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
     },
   },
   en: {
-    metaTitle: "Services",
+    metaTitle: "Web services in Aosta",
     metaDescription:
-      "Brand and identity, product development, visual communication, growth and support, software and AI. Tailored or on subscription.",
+      "Custom websites, brand identity, web apps, software, SEO and hotel sites. CTRL® is the Aosta studio for Valle d'Aosta and Northern Italy.",
     tag: "Services",
     title: "CTRL® Services",
     lead: "Ideas, technology and design to grow your brand.",

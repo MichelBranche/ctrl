@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CONTACT_EMAIL, categoryPath, projectCategories, services } from "@/lib/content";
+import { CONTACT_EMAIL, LE_VELE, categoryPath, projectCategories, services } from "@/lib/content";
+import { LOCAL_PATH } from "@/lib/seo";
 import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
@@ -47,6 +48,18 @@ export function CommandMenu() {
         label: s.title[lang],
         run: () => go(localize(`/services/${s.slug}`, lang)),
       })),
+      {
+        id: "local",
+        group: nav.services,
+        label: lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
+        run: () => go(localize(LOCAL_PATH, lang)),
+      },
+      {
+        id: "le-vele",
+        group: nav.work,
+        label: "Residence Le Vele",
+        run: () => go(localize(LE_VELE.path, lang)),
+      },
       {
         id: "s-webapp",
         group: nav.services,

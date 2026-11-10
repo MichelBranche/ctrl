@@ -6,13 +6,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ServicesMotion } from "@/components/pages/services-motion";
 import { servicesCopy } from "@/components/pages/services-copy";
-import { services } from "@/lib/content";
+import { LE_VELE, services } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
+import { alternates, openGraph } from "@/lib/seo";
 import "./services.css";
 
 export function servicesMetadata(lang: Locale): Metadata {
   const c = servicesCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription, alternates: { canonical: localize("/services", lang), languages: { it: "/services", en: "/en/services" } } };
+  return { title: c.metaTitle, description: c.metaDescription, alternates: alternates("/services", lang), openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }) };
 }
 
 function Arrow({ className = "s-arrow" }: { className?: string }) {
@@ -98,7 +99,7 @@ export function ServicesView({ lang }: { lang: Locale }) {
           <ul className="s-grid">
             {services.map((s) => (
               <li className="s-cell" key={s.slug} data-s-cell>
-                <div className="s-cell-body">
+                <Link href={localize(`/services/${s.slug}`, lang) as Route} className="s-cell-body">
                   <span className="s-mono s-index">{s.index}</span>
                   <h2 className="s-cell-title">{s.title[lang]}</h2>
                   <p className="s-cell-text">{s.text[lang]}</p>
@@ -111,7 +112,7 @@ export function ServicesView({ lang }: { lang: Locale }) {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </Link>
               </li>
             ))}
             <li className="s-cell s-cell-mark" data-s-cell>
@@ -148,6 +149,28 @@ export function ServicesView({ lang }: { lang: Locale }) {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="s-local" aria-labelledby="s-local-title">
+          <div>
+            <p className="s-mono s-kicker">{lang === "it" ? "Valle d'Aosta" : "Valle d'Aosta"}</p>
+            <h2 className="s-h2" id="s-local-title">{lang === "it" ? "Agenzia web ad Aosta." : "A web studio in Aosta."}</h2>
+            <p className="s-modes-text">
+              {lang === "it"
+                ? "Prima la valle, poi l'ospitalità nel Nord Italia. Residence Le Vele: 14 prenotazioni e 11.947 € nel primo mese, con 0 € di ads."
+                : "The valley first, then hospitality across Northern Italy. Residence Le Vele: 14 bookings and €11,947 in the first month, with €0 of ads."}
+            </p>
+            <div className="s-local-links">
+              <Link href={localize("/agenzia-web-valle-d-aosta", lang) as Route} className="s-btn s-btn-line">
+                <span className="s-btn-label s-mono">{lang === "it" ? "Agenzia in Valle d'Aosta" : "Studio in Valle d'Aosta"}</span>
+                <Arrow />
+              </Link>
+              <Link href={localize(LE_VELE.path, lang) as Route} className="s-btn s-btn-fill">
+                <span className="s-btn-label s-mono">{lang === "it" ? "Caso Residence Le Vele" : "Residence Le Vele case"}</span>
+                <Arrow />
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="s-modes">

@@ -2,8 +2,8 @@ import type { Locale } from "@/lib/i18n";
 
 export const contactCopy = {
   it: {
-    metaTitle: "Contatti",
-    metaDescription: "Hai un progetto, un'idea o una domanda? Scrivi a CTRL, studio di Aosta.",
+    metaTitle: "Contatti dell'agenzia web ad Aosta",
+    metaDescription: "Scrivi a CTRL® ad Aosta. Nuovi siti, rifacimenti, hotel, web app e brand identity in Valle d'Aosta e nel Nord Italia. Rispondiamo entro 24 ore.",
     tag: "Contatti",
     title: "Parliamo.",
     lead: ["Hai un progetto, un'idea o una domanda?", "Siamo qui per ascoltarti."],
@@ -48,8 +48,8 @@ export const contactCopy = {
     mapAlt: "Mappa stilizzata del centro di Aosta",
   },
   en: {
-    metaTitle: "Contact",
-    metaDescription: "Have a project, an idea or a question? Write to CTRL, a studio based in Aosta.",
+    metaTitle: "Contact the Aosta web studio",
+    metaDescription: "Write to CTRL® in Aosta. New websites, rebuilds, hotels, web apps and brand identity in Valle d'Aosta and Northern Italy. We reply within 24 hours.",
     tag: "Contact",
     title: "Let's talk.",
     lead: ["Have a project, an idea or a question?", "We are here to listen."],

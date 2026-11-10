@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ShopProductPage } from "@/components/pages/shop-product-page";
+import { alternates, openGraph } from "@/lib/seo";
 import { getShopProduct, getShopProducts } from "@/lib/shop";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -15,8 +16,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getShopProduct(slug);
-  if (!product) return { title: "Product not found · CTRL®" };
-  return { title: `${product.titleEn} · CTRL® Shop`, description: product.descriptionEn, alternates: { canonical: `/en/shop/${product.slug}`, languages: { it: `/shop/${product.slug}`, en: `/en/shop/${product.slug}` } }, openGraph: { images: [product.images[0] || "/images/shop/hero.webp"] } };
+  if (!product) return { title: "Prodotto non trovato · CTRL®" };
+  return { title: `${product.titleIt} · Shop CTRL®`, description: product.descriptionIt, alternates: alternates(`/shop/${product.slug}`, "it"), openGraph: openGraph("it", { images: [product.images[0] || "/images/shop/hero.webp"] }) };
 }
 
 export default function Page({ params }: Props) {
@@ -27,5 +28,5 @@ async function Body({ params }: Props) {
   const { slug } = await params;
   const product = await getShopProduct(slug);
   if (!product?.published) notFound();
-  return <ShopProductPage lang="en" product={product} />;
+  return <ShopProductPage lang="it" product={product} />;
 }
