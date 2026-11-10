@@ -15,21 +15,6 @@
 .sd-details summary { padding: 1rem 0; font-weight: 600; letter-spacing: -0.01em; cursor: pointer; }
 .sd-details summary:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
 .sd-details p { margin: 0 0 1.1rem; max-width: 42rem; color: var(--p-dim); line-height: 1.6; text-wrap: pretty; }
-.lv-film { position: relative; background: #141414; border: 1px solid var(--p-rule); }
-.lv-still, .lv-still img, .lv-video { display: block; width: 100%; height: auto; }
-.lv-video-desktop { display: none; }
-.lv-film[data-playing] .lv-still { display: none; }
-.lv-film:not([data-playing]) .lv-video { display: none; }
-@media (min-width: 780px) {
-  .lv-film[data-playing] .lv-video-mobile { display: none; }
-  .lv-film[data-playing] .lv-video-desktop { display: block; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lv-film .lv-video { display: none; }
-  .lv-film .lv-still { display: block; }
-}
-.lv-caption { max-width: 40rem; margin: 0.9rem 0 0; color: var(--p-dim); line-height: 1.5; }
-.lv-visit { display: inline-flex; align-items: center; gap: 0.55rem; margin-top: 1rem; color: inherit; }
 .sd-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
 .sd-stats li { padding: 1.1rem 0 0; border-top: 1px solid var(--p-rule); }
 .sd-stats strong { display: block; font-family: var(--p-display-face); font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 500; letter-spacing: -0.03em; }
