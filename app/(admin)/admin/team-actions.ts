@@ -41,6 +41,7 @@ function validDate(v: string) {
 function refresh() {
   revalidatePath("/admin/introiti");
   revalidatePath("/admin/team");
+  revalidatePath("/admin/team/[id]", "page");
 }
 
 /** Members log their own jobs; a founder may log one for anyone. */

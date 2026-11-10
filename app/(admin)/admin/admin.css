@@ -342,19 +342,55 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-job-form .adm-span { grid-column: 1 / -1; }
 .adm-setting { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
 .adm-setting p { margin: 0.3rem 0 0; font-size: 0.85rem; }
-.adm-users { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
-.adm-user { border: 1px solid var(--adm-rule); border-radius: 0.5rem; transition: border-color 0.15s ease; }
-.adm-user:hover { border-color: color-mix(in srgb, var(--adm-accent) 40%, var(--adm-rule)); }
-.adm-user[data-off] { opacity: 0.55; }
-.adm-user summary { display: grid; grid-template-columns: auto minmax(10rem, 1.6fr) auto 1fr auto; gap: 0.4rem 1rem; align-items: center; padding: 0.8rem 1rem; cursor: url("/cursors/pointer.svg") 11 1, pointer; list-style: none; }
-.adm-user summary::-webkit-details-marker { display: none; }
+.adm-users { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.adm-user { position: relative; container-type: inline-size; border: 1px solid var(--adm-rule); border-radius: 0.5rem; padding: 0.9rem 1rem 1rem; transition: border-color 0.15s ease; }
+.adm-user[data-off] { opacity: 0.72; }
+.adm-user:has(.adm-user-card-link:hover),
+.adm-user:has(.adm-user-card-link:focus-visible) { border-color: color-mix(in srgb, var(--adm-accent) 40%, var(--adm-rule)); }
+.adm-user:has(.adm-user-card-link:focus-visible) { outline: 2px solid var(--adm-accent); outline-offset: 2px; }
+.adm-user-card-link { color: inherit; text-decoration: none; }
+.adm-user-card-link::after { content: ""; position: absolute; inset: 0; }
+.adm-user-card-link:focus-visible { outline: none; }
+.adm-user-head { display: grid; grid-template-columns: auto minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 0.35rem 1rem; align-items: center; }
+.adm-user-head h3 { margin: 0; font-size: 1rem; font-weight: 650; }
 .adm-user-id { display: grid; min-width: 0; }
 .adm-user-id > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.adm-user-seen { grid-column: 2 / -1; font-size: 0.78rem; }
-.adm-user-edit { display: grid; gap: 1rem; padding: 0 1rem 1rem; border-top: 1px solid var(--adm-rule); padding-top: 1rem; }
+.adm-user-seen { grid-column: 2 / -1; margin: 0; font-size: 0.78rem; }
+.adm-user-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.45rem; margin: 0.85rem 0 0; }
+.adm-user-kpi { min-width: 0; padding: 0.55rem 0.65rem; border-radius: 0.4rem; background: var(--adm-raise); }
+.adm-user-kpi dt { margin: 0; color: var(--adm-dim); font-size: 0.72rem; font-weight: 500; line-height: 1.3; }
+.adm-user-kpi dd { margin: 0.2rem 0 0; font-variant-numeric: tabular-nums; font-size: 1.02rem; font-weight: 600; }
+.adm-user-kpi small { display: block; margin-top: 0.15rem; color: var(--adm-dim); font-size: 0.72rem; font-weight: 400; }
+.adm-user-edit { display: grid; gap: 1rem; padding: 0; border-top: 0; padding-top: 0.4rem; }
+.adm-edit-panel summary { width: fit-content; margin: 0.15rem 0 0; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
+.adm-edit-panel details[open] summary { margin-bottom: 1rem; }
+.adm-h3 { margin: 1rem 0 0.45rem; font-size: 0.92rem; font-weight: 600; }
+.adm-team-activity:first-of-type .adm-h3 { margin-top: 0.2rem; }
+.adm-team-deal-stats { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+.adm-team-deal-stats .adm-stat-num { font-size: 1.45rem; }
+.adm-team-trend { display: grid; gap: 0.85rem; }
+.adm-team-trend-head { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.82rem; }
+.adm-team-trend-bars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: end; gap: 1px; height: 3.4rem; background: linear-gradient(to top, var(--adm-rule), var(--adm-rule) 1px, transparent 1px); }
+.adm-team-trend-bars span { display: block; min-height: 0; border-radius: 1px 1px 0 0; background: var(--adm-accent); }
+.adm-team-trend-bars[data-series="activity"] span { opacity: 0.72; }
+.adm-team-trend-bars[data-series="won"] span { background: #f5b942; }
+.adm-team-trend-bars[data-series="income"] span { background: #7aa2ff; }
+.adm-team-trend-axis { display: flex; justify-content: space-between; gap: 0.5rem; color: var(--adm-dim); font-size: 0.72rem; }
+@container (max-width: 52rem) {
+  .adm-user-head { grid-template-columns: auto minmax(0, 1fr); }
+  .adm-user-head > :nth-child(n + 3) { grid-column: 2; }
+  .adm-user-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (max-width: 28rem) {
+  .adm-user-kpis { grid-template-columns: 1fr; }
+}
 @media (max-width: 760px) {
-  .adm-user summary { grid-template-columns: auto 1fr auto; }
-  .adm-user summary > :nth-child(4), .adm-user summary > :nth-child(5) { grid-column: 2 / -1; }
+  .adm-user-head { grid-template-columns: auto minmax(0, 1fr); }
+  .adm-user-head > :nth-child(n + 3) { grid-column: 2; }
+  .adm-user-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .adm-user-kpis { grid-template-columns: 1fr; }
 }
 
 /* Email: shared agency inbox */
