@@ -181,6 +181,68 @@
 .wd-shot img { object-fit: cover; object-position: top; }
 .wd-cap { position: absolute; left: 0.8rem; bottom: 0.8rem; z-index: 1; padding: 0.3rem 0.5rem; background: var(--p-shade); color: var(--p-dim); }
 
+/* Residence Le Vele: same frame and spacing as the website gallery, with a playing film. */
+.lv-reel {
+  max-width: var(--p-max);
+  margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.25rem);
+}
+.lv-figure { margin: 0; }
+.lv-frame {
+  overflow: hidden;
+  border: 1px solid var(--p-rule);
+  background: var(--p-card);
+}
+.lv-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 390 / 844;
+  object-fit: cover;
+  background: #0b0b0b;
+}
+.lv-cap {
+  margin: 0.85rem 0 0;
+  color: var(--p-faint);
+}
+.lv-story, .lv-faq {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: start;
+  max-width: var(--p-max);
+  margin: clamp(3.5rem, 8vw, 6rem) auto 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.25rem);
+}
+.lv-story-title {
+  margin: 0;
+  font-family: var(--p-display-face);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.lv-story p, .lv-faq p {
+  margin: 0 0 1rem;
+  max-width: 40rem;
+  color: var(--p-dim);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.lv-faq-list { border-top: 1px solid var(--p-rule); }
+.lv-faq details { border-bottom: 1px solid var(--p-rule); }
+.lv-faq summary { padding: 1rem 0; font-weight: 600; cursor: pointer; }
+.lv-faq summary:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 3px; }
+@media (min-width: 780px) {
+  .lv-video { aspect-ratio: 1440 / 900; }
+}
+@media (max-width: 900px) {
+  .lv-story, .lv-faq { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv-video { pointer-events: none; }
+}
+
 .wd-video {
   max-width: 72rem;
   margin: clamp(3rem, 6vw, 5rem) auto;

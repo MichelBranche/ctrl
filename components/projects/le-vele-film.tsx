@@ -1,130 +1,116 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { LE_VELE_MEDIA } from "@/lib/content";
 
 const WIDE = "(min-width: 780px)";
-const BASE = "/videos/projects/residence-le-vele";
 
-const media = {
-  desktop: {
-    poster: "/images/projects/works/residence-le-vele.webp",
-    posterJpg: "/images/projects/works/residence-le-vele.jpg",
-    webm: `${BASE}/desktop.webm`,
-    mp4: `${BASE}/desktop.mp4`,
-  },
-  mobile: {
-    poster: "/images/projects/works/residence-le-vele-mobile.webp",
-    posterJpg: "/images/projects/works/residence-le-vele-mobile.jpg",
-    webm: `${BASE}/mobile.webm`,
-    mp4: `${BASE}/mobile.mp4`,
-  },
-} as const;
+function cutFor(wide: boolean) {
+  return wide ? LE_VELE_MEDIA.desktop : LE_VELE_MEDIA.mobile;
+}
 
-export function LeVeleFilm({ label, labelDesktop, labelMobile }: { label: string; labelDesktop: string; labelMobile: string }) {
-  const root = useRef<HTMLDivElement>(null);
-  const desktop = useRef<HTMLVideoElement>(null);
-  const mobile = useRef<HTMLVideoElement>(null);
-  const [armed, setArmed] = useState(false);
-  const [wide, setWide] = useState(false);
-  const [playing, setPlaying] = useState(false);
+/** Loads the scroll film only when it nears the viewport, then plays it. */
+export function LeVeleFilm({ labelDesktop, labelMobile }: { labelDesktop: string; labelMobile: string }) {
+  const video = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    const node = video.current;
+    if (!node) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const width = window.matchMedia(WIDE);
-    const onWidth = () => setWide(width.matches);
-    width.addEventListener("change", onWidth);
 
-    if (motion.matches) {
-      return () => width.removeEventListener("change", onWidth);
-    }
+    const applyPoster = () => {
+      const cut = cutFor(width.matches);
+      node.poster = cut.poster;
+      node.setAttribute("aria-label", width.matches ? labelDesktop : labelMobile);
+    };
 
-    const node = root.current;
+    const stop = () => {
+      node.pause();
+      node.autoplay = false;
+      node.replaceChildren();
+      node.removeAttribute("src");
+      node.load();
+    };
+
+    const playCut = () => {
+      if (motion.matches) {
+        stop();
+        applyPoster();
+        return;
+      }
+      const cut = cutFor(width.matches);
+      node.muted = true;
+      node.defaultMuted = true;
+      node.playsInline = true;
+      node.loop = true;
+      node.autoplay = true;
+      node.preload = "metadata";
+      node.poster = cut.poster;
+      const webm = document.createElement("source");
+      webm.src = cut.webm;
+      webm.type = "video/webm";
+      const mp4 = document.createElement("source");
+      mp4.src = cut.mp4;
+      mp4.type = "video/mp4";
+      node.replaceChildren(webm, mp4);
+      const start = () => {
+        node.play().catch(() => undefined);
+      };
+      node.addEventListener("loadeddata", start, { once: true });
+      node.load();
+      start();
+    };
+
+    applyPoster();
+    if (motion.matches) return;
+
+    let seen = false;
+    const arm = () => {
+      if (seen) return;
+      seen = true;
+      playCut();
+    };
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        setWide(width.matches);
-        setArmed(true);
-        observer.disconnect();
+        if (entries.some((entry) => entry.isIntersecting)) {
+          arm();
+          observer.disconnect();
+        }
       },
-      { rootMargin: "240px 0px" },
+      { rootMargin: "400px 0px" },
     );
-    if (node) observer.observe(node);
+    observer.observe(node);
 
-    const onMotion = () => {
-      if (!motion.matches) return;
-      desktop.current?.pause();
-      mobile.current?.pause();
-      setPlaying(false);
-      setArmed(false);
+    const onChange = () => {
+      applyPoster();
+      if (motion.matches) {
+        seen = false;
+        stop();
+        return;
+      }
+      seen = false;
+      playCut();
     };
-    motion.addEventListener("change", onMotion);
+    motion.addEventListener("change", onChange);
+    width.addEventListener("change", onChange);
     return () => {
       observer.disconnect();
-      width.removeEventListener("change", onWidth);
-      motion.removeEventListener("change", onMotion);
+      motion.removeEventListener("change", onChange);
+      width.removeEventListener("change", onChange);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!armed) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const active = wide ? desktop.current : mobile.current;
-    const idle = wide ? mobile.current : desktop.current;
-    idle?.pause();
-    if (!active) return;
-    const play = () => {
-      active.play().catch(() => undefined);
-    };
-    active.addEventListener("playing", () => setPlaying(true), { once: true });
-    active.addEventListener("canplay", play, { once: true });
-    active.load();
-    return () => active.removeEventListener("canplay", play);
-  }, [armed, wide]);
+  }, [labelDesktop, labelMobile]);
 
   return (
-    <div className="lv-film" ref={root} data-playing={playing ? "" : undefined}>
-      <picture className="lv-still">
-        <source media={WIDE} srcSet={media.desktop.poster} type="image/webp" />
-        <source media={WIDE} srcSet={media.desktop.posterJpg} type="image/jpeg" />
-        <source srcSet={media.mobile.poster} type="image/webp" />
-        <img src={media.mobile.posterJpg} alt={label} />
-      </picture>
-      <video
-        ref={desktop}
-        className="lv-video lv-video-desktop"
-        autoPlay={armed && wide}
-        muted
-        loop
-        playsInline
-        preload={armed && wide ? "metadata" : "none"}
-        poster={media.desktop.poster}
-        aria-label={labelDesktop}
-      >
-        {armed && wide ? (
-          <>
-            <source src={media.desktop.webm} type="video/webm" />
-            <source src={media.desktop.mp4} type="video/mp4" />
-          </>
-        ) : null}
-      </video>
-      <video
-        ref={mobile}
-        className="lv-video lv-video-mobile"
-        autoPlay={armed && !wide}
-        muted
-        loop
-        playsInline
-        preload={armed && !wide ? "metadata" : "none"}
-        poster={media.mobile.poster}
-        aria-label={labelMobile}
-      >
-        {armed && !wide ? (
-          <>
-            <source src={media.mobile.webm} type="video/webm" />
-            <source src={media.mobile.mp4} type="video/mp4" />
-          </>
-        ) : null}
-      </video>
-    </div>
+    <video
+      ref={video}
+      className="lv-video"
+      muted
+      loop
+      playsInline
+      preload="none"
+      poster={LE_VELE_MEDIA.desktop.poster}
+      aria-label={labelDesktop}
+    />
   );
 }

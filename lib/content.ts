@@ -143,6 +143,20 @@ export const LE_VELE = {
   image: "/images/projects/works/residence-le-vele.webp",
 } as const;
 
+/** Swap these files in place when a new cut arrives. Paths stay stable. */
+export const LE_VELE_MEDIA = {
+  desktop: {
+    webm: "/videos/projects/residence-le-vele/desktop.webm",
+    mp4: "/videos/projects/residence-le-vele/desktop.mp4",
+    poster: "/images/projects/works/residence-le-vele.webp",
+  },
+  mobile: {
+    webm: "/videos/projects/residence-le-vele/mobile.webm",
+    mp4: "/videos/projects/residence-le-vele/mobile.mp4",
+    poster: "/images/projects/works/residence-le-vele-mobile.webp",
+  },
+} as const;
+
 export type ProjectAuthor = { name: string; url: string };
 
 export const AUTHORS = {

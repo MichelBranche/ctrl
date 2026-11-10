@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Route } from "next";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { CtaLink } from "@/components/cta-link";
 import { PArrow } from "@/components/projects/arrow";
-import { ProjectsMotion } from "@/components/projects/projects-motion";
-import { Crumbs } from "@/components/seo/crumbs";
-import { FaqList } from "@/components/seo/faq";
-import { JsonLd } from "@/components/seo/json-ld";
+import { ProjectsCta } from "@/components/projects/cta";
 import { LeVeleFilm } from "@/components/projects/le-vele-film";
-import { LE_VELE } from "@/lib/content";
+import { projectsCopy } from "@/components/projects/projects-copy";
+import { ProjectsMotion } from "@/components/projects/projects-motion";
+import { JsonLd } from "@/components/seo/json-ld";
+import { LE_VELE, websiteGroups, websitesInOrder } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { alternates, breadcrumbNode, faqNode, openGraph, ORG_ID, SITE_URL } from "@/lib/seo";
-import "@/components/projects/projects.css";
-import "@/components/services/webapp.css";
-import "@/components/pages/service-detail.css";
+import "./projects.css";
+import "./websites.css";
 
 const money = {
   it: new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(LE_VELE.revenueEur),
@@ -29,28 +28,21 @@ const copy = {
   it: {
     metaTitle: "Residence Le Vele: 14 prenotazioni, 0 € di ads",
     metaDescription: `Caso studio CTRL®: il sito di Residence Le Vele ha portato ${LE_VELE.bookings} prenotazioni e ${money.it} nel primo mese online, senza spesa in advertising.`,
-    kicker: "Caso studio · Hospitality",
-    title: "Residence Le Vele",
-    lead: `Sito realizzato da CTRL® per una struttura ricettiva. Nel primo mese online ha raccolto ${LE_VELE.bookings} prenotazioni e ${money.it}, con ${ads.it} spesi in advertising.`,
+    lead: "Sito per una struttura ricettiva, progettato e sviluppato da CTRL®. Nel primo mese online le prenotazioni sono arrivate dal sito, senza una campagna ads.",
     storyTitle: "Cosa è successo",
     story: [
-      "Residence Le Vele aveva bisogno di un sito proprio, non solo di una scheda su un portale. CTRL® ha progettato e sviluppato il sito: camere, informazioni, e un modo per prenotare in modo diretto.",
-      "Nel primo mese online i numeri, verificati, sono questi: 14 prenotazioni, 11.947 euro di valore, 0 euro di pubblicità. Nessun budget ads dietro il risultato. Il canale è stato il sito.",
+      "Residence Le Vele aveva bisogno di un sito proprio, non solo di una scheda su un portale. Il lavoro è stato il sito: camere, informazioni, e un modo per prenotare in modo diretto.",
+      `Nel primo mese online i numeri verificati sono ${LE_VELE.bookings} prenotazioni e ${money.it}. La spesa in advertising è stata ${ads.it}.`,
       "Non è una promessa per la struttura successiva. Ogni hotel ha stagionalità, reputazione e offerta diverse. È un caso reale, con cifre che possiamo mostrare.",
     ],
-    stats: [
-      { value: String(LE_VELE.bookings), label: "prenotazioni nel primo mese online" },
-      { value: money.it, label: "valore delle prenotazioni" },
-      { value: ads.it, label: "spesi in advertising" },
+    facts: [
+      { label: "Prenotazioni", value: String(LE_VELE.bookings) },
+      { label: "Primo mese", value: money.it },
+      { label: "Advertising", value: ads.it },
     ],
-    film: "Scorrimento del sito Residence Le Vele",
+    film: "Scorrimento del sito",
     filmDesktop: "Scorrimento del sito Residence Le Vele su desktop",
     filmMobile: "Scorrimento del sito Residence Le Vele su telefono",
-    visit: "Visita il sito",
-    nextTitle: "Un sito per la tua struttura",
-    nextText: "Se gestisci un hotel, un residence o un'altra struttura in Valle d'Aosta o nel Nord Italia, il percorso è lo stesso: un sito su misura e la prenotazione che si chiude da te.",
-    nextCta: "Parliamo della struttura",
-    servicesCta: "Siti per hotel",
     faqTitle: "Domande frequenti",
     faqs: [
       { q: "I numeri sono del primo mese?", a: "Sì. 14 prenotazioni e 11.947 euro si riferiscono al primo mese online. La spesa in advertising in quel mese è stata 0 euro." },
@@ -58,36 +50,25 @@ const copy = {
       { q: "Si può ottenere lo stesso risultato?", a: "Ogni struttura è diversa. Questi numeri descrivono questo caso, non un minimo garantito. Il metodo è un sito chiaro e una prenotazione diretta." },
       { q: "Dove vedo il sito dal vivo?", a: "Il sito pubblico è https://www.residencelevelestintino.it." },
     ],
-    crumb: "Percorso",
-    home: "Home",
-    projects: "Progetti",
-    sites: "Siti web",
   },
   en: {
     metaTitle: "Residence Le Vele: 14 bookings, €0 on ads",
     metaDescription: `CTRL® case study: the Residence Le Vele website brought ${LE_VELE.bookings} bookings and ${money.en} in its first month online, with no advertising spend.`,
-    kicker: "Case study · Hospitality",
-    title: "Residence Le Vele",
-    lead: `Website built by CTRL® for a hospitality business. In the first month online it took ${LE_VELE.bookings} bookings and ${money.en}, with ${ads.en} spent on advertising.`,
+    lead: "A website for a hospitality business, designed and built by CTRL®. In the first month online the bookings came from the site, with no ad campaign.",
     storyTitle: "What happened",
     story: [
-      "Residence Le Vele needed its own website, not only a listing on a portal. CTRL® designed and built the site: rooms, information, and a way to book directly.",
-      "In the first month online the verified numbers are these: 14 bookings, €11,947 in value, €0 of advertising. No ad budget sat behind the result. The channel was the website.",
+      "Residence Le Vele needed its own website, not only a listing on a portal. The work was the site: rooms, information, and a way to book directly.",
+      `In the first month online the verified numbers are ${LE_VELE.bookings} bookings and ${money.en}. Advertising spend was ${ads.en}.`,
       "This is not a promise for the next property. Every hotel has a different season, reputation and offer. It is a real case, with figures we can show.",
     ],
-    stats: [
-      { value: String(LE_VELE.bookings), label: "bookings in the first month online" },
-      { value: money.en, label: "value of the bookings" },
-      { value: ads.en, label: "spent on advertising" },
+    facts: [
+      { label: "Bookings", value: String(LE_VELE.bookings) },
+      { label: "First month", value: money.en },
+      { label: "Advertising", value: ads.en },
     ],
-    film: "Scroll-through of the Residence Le Vele website",
+    film: "Site scroll-through",
     filmDesktop: "Scroll-through of the Residence Le Vele website on desktop",
     filmMobile: "Scroll-through of the Residence Le Vele website on a phone",
-    visit: "Visit the site",
-    nextTitle: "A website for your property",
-    nextText: "If you run a hotel, a residence or another stay in Valle d'Aosta or Northern Italy, the path is the same: a custom site, and a booking that closes with you.",
-    nextCta: "Talk about the property",
-    servicesCta: "Websites for hotels",
     faqTitle: "Common questions",
     faqs: [
       { q: "Are the numbers from the first month?", a: "Yes. 14 bookings and €11,947 refer to the first month online. Advertising spend in that month was €0." },
@@ -95,10 +76,6 @@ const copy = {
       { q: "Can the same result be expected?", a: "Every property is different. These numbers describe this case, not a guaranteed minimum. The method is a clear website and a direct booking." },
       { q: "Where is the live site?", a: "The live site is https://www.residencelevelestintino.it." },
     ],
-    crumb: "Breadcrumbs",
-    home: "Home",
-    projects: "Projects",
-    sites: "Websites",
   },
 } as const;
 
@@ -114,10 +91,18 @@ export function leVeleMetadata(lang: Locale): Metadata {
 
 export function LeVeleView({ lang }: { lang: Locale }) {
   const c = copy[lang];
+  const sites = projectsCopy[lang];
+  const s = sites.sites;
+  const group = websiteGroups.find((item) => item.slug === "hospitality")?.label[lang] ?? "Hospitality";
+  const list = websitesInOrder();
+  const index = Math.max(0, list.findIndex((item) => item.slug === LE_VELE.slug));
+  const prev = list[(index - 1 + list.length) % list.length];
+  const next = list[(index + 1) % list.length];
+  const href = (slug: string) => localize(`/projects/websites/${slug}`, lang);
   const crumbs = [
-    { name: c.home, path: "/" },
-    { name: c.projects, path: "/projects" },
-    { name: c.sites, path: "/projects/websites" },
+    { name: lang === "it" ? "Home" : "Home", path: "/" },
+    { name: sites.metaTitle, path: "/projects" },
+    { name: s.back, path: "/projects/websites" },
     { name: "Residence Le Vele", path: LE_VELE.path },
   ];
   const article = {
@@ -131,71 +116,77 @@ export function LeVeleView({ lang }: { lang: Locale }) {
     about: "Residence Le Vele",
     inLanguage: lang === "it" ? "it-IT" : "en-US",
   };
+
   return (
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), article, faqNode([...c.faqs])]} />
       <SiteHeader />
       <main className="p-root" data-motion-root>
-        <section className="p-hero">
-          <div className="p-hero-copy">
-            <Crumbs label={c.crumb} items={crumbs.map((item) => ({ name: item.name, href: localize(item.path, lang) }))} />
-            <p className="p-tag p-mono">{c.kicker}</p>
-            <h1 className="p-title p-title-cat">{c.title}</h1>
-            <p className="p-lead">{c.lead}</p>
+        <section className="wd-hero">
+          <div className="wd-crumbs">
+            <Link href={localize("/projects/websites", lang)} className="p-back p-mono" data-p-fade>
+              <PArrow className="p-arrow p-arrow-back" />
+              {s.back}
+            </Link>
+          </div>
+          <p className="p-tag p-mono" data-p-fade>{group}</p>
+          <h1 className="wd-title" data-p-split>Residence Le Vele</h1>
+          <dl className="wd-facts p-mono" data-p-fade>
+            <div><dt>{s.facts.category}</dt><dd>{group}</dd></div>
+            {c.facts.map((fact) => (
+              <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+            ))}
+          </dl>
+          <div className="wd-body">
+            <p className="wd-lead" data-p-fade>{c.lead}</p>
+            <CtaLink href={LE_VELE.url} external className="wd-live" data-p-fade>
+              {s.live}
+            </CtaLink>
           </div>
         </section>
 
-        <section className="wa-wrap">
-          <ul className="sd-stats">
-            {c.stats.map((stat) => (
-              <li key={stat.label}>
-                <strong>{stat.value}</strong>
-                <span>{stat.label}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="wa-wrap sd-split" aria-labelledby="lv-story">
-          <h2 className="wa-h2" id="lv-story">{c.storyTitle}</h2>
-          <div>
-            {c.story.map((paragraph) => (
-              <p className="sd-prose" key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        </section>
-
-        <section className="wa-wrap" aria-label={c.film}>
+        <section className="lv-reel" aria-label={c.film}>
           <figure className="lv-figure">
-            <LeVeleFilm label={c.film} labelDesktop={c.filmDesktop} labelMobile={c.filmMobile} />
-            <figcaption className="lv-caption">{c.film}</figcaption>
-            <a className="p-btn lv-visit" href={LE_VELE.url} target="_blank" rel="noopener noreferrer">
-              <span className="p-mono">{c.visit}</span>
-              <PArrow />
-            </a>
+            <div className="lv-frame">
+              <LeVeleFilm labelDesktop={c.filmDesktop} labelMobile={c.filmMobile} />
+            </div>
+            <figcaption className="lv-cap p-mono">{c.film}</figcaption>
           </figure>
         </section>
 
-        <section className="wa-wrap sd-split" aria-labelledby="lv-next">
-          <h2 className="wa-h2" id="lv-next">{c.nextTitle}</h2>
+        <section className="lv-story" aria-labelledby="lv-story-title">
+          <h2 className="lv-story-title" id="lv-story-title">{c.storyTitle}</h2>
           <div>
-            <p className="sd-prose">{c.nextText}</p>
-            <div className="sd-links">
-              <Link href={localize("/contact", lang) as Route} className="p-btn p-btn-fill">
-                <span className="p-mono">{c.nextCta}</span>
-                <PArrow />
-              </Link>
-              <Link href={localize("/services/visual-communication", lang) as Route} className="p-btn">
-                <span className="p-mono">{c.servicesCta}</span>
-                <PArrow />
-              </Link>
-            </div>
+            {c.story.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </section>
 
-        <div className="wa-wrap">
-          <FaqList id="lv-faq" title={c.faqTitle} items={[...c.faqs]} />
-        </div>
+        <section className="lv-faq" aria-labelledby="lv-faq-title">
+          <h2 className="lv-story-title" id="lv-faq-title">{c.faqTitle}</h2>
+          <div className="lv-faq-list">
+            {c.faqs.map((item) => (
+              <details key={item.q}>
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <nav className="wd-nav" aria-label={s.back}>
+          <Link href={href(prev.slug)}>
+            <span className="wd-nav-k p-mono"><PArrow className="p-arrow p-arrow-back" />{s.prev}</span>
+            <span className="wd-nav-t">{prev.title[lang]}</span>
+          </Link>
+          <Link href={href(next.slug)}>
+            <span className="wd-nav-k p-mono">{s.next}<PArrow className="p-arrow" /></span>
+            <span className="wd-nav-t">{next.title[lang]}</span>
+          </Link>
+        </nav>
+
+        <ProjectsCta copy={sites} href={localize("/contact", lang)} />
         <ProjectsMotion />
       </main>
       <SiteFooter />
