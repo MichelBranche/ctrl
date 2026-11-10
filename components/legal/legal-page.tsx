@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { PostBody } from "@/components/journal/markdown";
 import { cookies, LEGAL_UPDATED, privacy } from "@/components/legal/legal-copy";
 import type { Locale } from "@/lib/i18n";
+import { alternates, openGraph } from "@/lib/seo";
 import "@/components/journal/journal.css";
 import "./legal.css";
 
@@ -19,7 +20,8 @@ export function legalMetadata(doc: Doc, lang: Locale): Metadata {
   return {
     title: `${d.title} · CTRL®`,
     description: d.lead,
-    alternates: { canonical: PATHS[doc][lang], languages: { it: PATHS[doc].it, en: PATHS[doc].en } },
+    alternates: alternates(PATHS[doc].it, lang, PATHS[doc].en),
+    openGraph: openGraph(lang, { title: `${d.title} · CTRL®`, description: d.lead }),
   };
 }
 

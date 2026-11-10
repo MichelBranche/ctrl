@@ -23,7 +23,7 @@ const CSP = [
 const nextConfig: NextConfig = {
   /* config options here */
   // Admin cover uploads go through a Server Action (covers are capped at 5 MB).
-  experimental: { serverActions: { bodySizeLimit: "6mb" } },
+  experimental: { serverActions: { bodySizeLimit: "6mb" }, globalNotFound: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/covers/**" },
@@ -49,6 +49,9 @@ const nextConfig: NextConfig = {
     ];
   },
   // The old /work pages were replaced by /projects (website concepts map to the websites category).
+  async rewrites() {
+    return [{ source: "/:key([a-fA-F0-9]{8,128})\\.txt", destination: "/api/indexnow-key/:key" }];
+  },
   async redirects() {
     return [
       { source: "/work", destination: "/projects", permanent: true },

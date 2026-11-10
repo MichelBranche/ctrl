@@ -204,7 +204,7 @@ try {
   const rememberedExp = c.exp;
 
   // 7. Disabling 2FA revokes other copies and keeps this browser on the same deadline.
-  const { disableTwoFactor } = await import("../app/admin/two-factor-actions.ts");
+  const { disableTwoFactor } = await import("../app/(admin)/admin/two-factor-actions.ts");
   const off = new FormData();
   off.set("password", PW);
   off.set("code", codes[0]);
@@ -238,7 +238,7 @@ try {
   assert.equal(await A.login("member@test.invalid", PW), "ok", "2FA is off, so the password is enough again");
   const memberCookie = jar.get(A.SESSION_COOKIE);
   jar.set(A.SESSION_COOKIE, founderCookie);
-  const { resetUserTwoFactor } = await import("../app/admin/team-actions.ts");
+  const { resetUserTwoFactor } = await import("../app/(admin)/admin/team-actions.ts");
   const reset = new FormData();
   reset.set("id", "m1");
   assert.equal((await resetUserTwoFactor({}, reset)).ok, "Verifica in due passaggi azzerata.");
@@ -247,7 +247,7 @@ try {
 
   // 9. The sign-in form opts in only when the checkbox value is exactly "1".
   wipe();
-  const { signIn } = await import("../app/admin/actions.ts");
+  const { signIn } = await import("../app/(admin)/admin/actions.ts");
   const bare = new FormData();
   bare.set("email", "member@test.invalid");
   bare.set("password", PW);

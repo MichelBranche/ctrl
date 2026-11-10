@@ -356,6 +356,27 @@
   display: block;
 }
 
+.h-proof {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.4fr) minmax(0, 1fr);
+  gap: 1.5rem 3rem;
+  align-items: end;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--h-rule);
+}
+.h-proof-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.h-proof-copy p { max-width: 36rem; margin: 0 0 1rem; color: var(--h-dim); line-height: 1.5; }
+@media (max-width: 700px) {
+  .h-proof { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* PERCHE */
 .h-why {
   position: relative;

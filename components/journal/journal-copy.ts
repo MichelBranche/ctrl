@@ -2,8 +2,8 @@ import type { Locale } from "@/lib/i18n";
 
 export const journalCopy = {
   it: {
-    metaTitle: "Journal",
-    metaDescription: "Approfondimenti, idee e prospettive di CTRL® su design, tecnologia e innovazione.",
+    metaTitle: "Journal su design, siti e SEO",
+    metaDescription: "Note di CTRL®, studio di Aosta, su siti web, design, software e posizionamento. Per chi costruisce un'attività in Valle d'Aosta e nel Nord Italia.",
     tag: "Journal",
     title: "Journal.",
     lead: "Approfondimenti, idee e prospettive su design, tecnologia e innovazione.",
@@ -34,8 +34,8 @@ export const journalCopy = {
     minutes: "min di lettura",
   },
   en: {
-    metaTitle: "Journal",
-    metaDescription: "Insights, ideas and perspectives from CTRL® on design, technology and innovation.",
+    metaTitle: "Journal on design, websites and SEO",
+    metaDescription: "Notes from CTRL®, the Aosta studio, on websites, design, software and search. For people building a business in Valle d'Aosta and Northern Italy.",
     tag: "Journal",
     title: "Journal.",
     lead: "Insights, ideas and perspectives on design, technology and innovation.",

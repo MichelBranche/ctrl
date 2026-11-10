@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import type { Route } from "next";
 import { useRef, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -8,6 +10,8 @@ import { SplitText } from "gsap/SplitText";
 import { CtrlMark } from "@/components/letter-hover";
 import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
+import { localize } from "@/lib/i18n";
+import { LOCAL_PATH } from "@/lib/seo";
 import { CONTACT_EMAIL } from "@/lib/content";
 import type { SocialKey, SocialLink } from "@/lib/settings-types";
 import "./site-footer.css";
@@ -141,7 +145,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
         </p>
         <p className="h-close-lead">{h.closeLead}</p>
         <p className="h-small h-close-kicker">
-          <span>{h.location}</span>
+          <Link href={localize(LOCAL_PATH, lang) as Route}>{h.location}</Link>
           <span>© 2026 CTRL®</span>
         </p>
         {footerSocials.length ? (

@@ -11,6 +11,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
 import { categoryPath, getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
+import { alternates, openGraph } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
 
@@ -21,8 +22,8 @@ export function categoryMetadata(slug: string, lang: Locale): Metadata {
   return {
     title: projectsCopy[lang].categoryMeta(cat.label[lang]),
     description: cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang],
-    alternates: { canonical: localize(path, lang), languages: { it: path, en: `/en${path}` } },
-    openGraph: { images: [cat.image] },
+    alternates: alternates(path, lang),
+    openGraph: openGraph(lang, { title: projectsCopy[lang].categoryMeta(cat.label[lang]), description: cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang], images: [cat.image] }),
   };
 }
 

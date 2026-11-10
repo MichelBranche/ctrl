@@ -31,7 +31,7 @@ registerHooks({
   },
 });
 
-const untouched = ["app/admin/meet-actions.ts", "app/admin/crm-actions.ts", "app/api/crm/ingest/route.ts", "lib/crm-import.ts", "lib/crm.ts", "lib/client-meet.ts", "lib/crm-opportunity.ts"];
+const untouched = ["app/(admin)/admin/meet-actions.ts", "app/(admin)/admin/crm-actions.ts", "app/api/crm/ingest/route.ts", "lib/crm-import.ts", "lib/crm.ts", "lib/client-meet.ts", "lib/crm-opportunity.ts"];
 for (const file of untouched) {
   const src = readFileSync(file, "utf8");
   assert.equal(src.includes("createActivity"), false, file);
@@ -66,7 +66,7 @@ try {
   await M.ensureCrmSchema();
   const K = await import("../lib/crm.ts");
   const A = await import("../lib/crm-activity.ts");
-  const Act = await import("../app/admin/crm-activity-actions.ts");
+  const Act = await import("../app/(admin)/admin/crm-activity-actions.ts");
   const I = await import("../lib/crm-import.ts");
   const Meet = await import("../lib/client-meet.ts");
   const { SignJWT } = await import("jose");

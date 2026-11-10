@@ -72,7 +72,7 @@ try {
   await M.ensureCrmSchema();
   const K = await import("../lib/crm.ts");
   const I = await import("../lib/crm-import.ts");
-  const A = await import("../app/admin/crm-import-actions.ts");
+  const A = await import("../app/(admin)/admin/crm-import-actions.ts");
   const { SignJWT } = await import("jose");
   const addUser = async (id, roles) => {
     await db().execute({ sql: "INSERT INTO admin_users (id, email, name, password_hash, role, active, email_access) VALUES (?, ?, ?, '!', 'member', 1, 0)", args: [id, `${id}@t.test`, id] });

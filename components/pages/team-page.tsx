@@ -6,10 +6,11 @@ import { SiteHeader } from "@/components/site-header";
 import { team } from "@/lib/content";
 import { TeamSocials } from "@/components/team-socials";
 import { dict, type Locale } from "@/lib/i18n";
+import { alternates, openGraph } from "@/lib/seo";
 import "./team.css";
 
 export function teamMetadata(lang: Locale): Metadata {
-  return { title: dict[lang].nav.team, description: dict[lang].team.description, alternates: { canonical: lang === "it" ? "/team" : "/en/team", languages: { it: "/team", en: "/en/team" } } };
+  return { title: dict[lang].nav.team, description: dict[lang].team.description, alternates: alternates("/team", lang), openGraph: openGraph(lang, { title: dict[lang].nav.team, description: dict[lang].team.description }) };
 }
 
 export function TeamView({ lang }: { lang: Locale }) {

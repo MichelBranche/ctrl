@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ShopPage } from "@/components/pages/shop-page";
+import { alternates, openGraph } from "@/lib/seo";
 import { getShopProducts } from "@/lib/shop";
 
 export const metadata: Metadata = {
   title: "Shop · CTRL®",
-  description: "CTRL® objects and tools. Discover the NFC and QR review card.",
-  alternates: { canonical: "/en/shop", languages: { it: "/shop", en: "/en/shop" } },
-  openGraph: { images: ["/images/shop/hero.webp"] },
+  description: "Oggetti e strumenti CTRL®. Scopri le card per raccogliere recensioni con NFC e QR code.",
+  alternates: alternates("/shop", "it"),
+  openGraph: openGraph("it", { images: ["/images/shop/hero.webp"] }),
 };
 
 export default function Page() {
@@ -20,5 +21,5 @@ export default function Page() {
 }
 
 async function Products() {
-  return <ShopPage lang="en" products={await getShopProducts()} />;
+  return <ShopPage lang="it" products={await getShopProducts()} />;
 }

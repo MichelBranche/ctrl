@@ -7,7 +7,9 @@ import { PArrow } from "@/components/projects/arrow";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebappCarousel } from "@/components/services/webapp-carousel";
 import { webappCopy } from "@/components/services/webapp-copy";
+import { JsonLd } from "@/components/seo/json-ld";
 import { localize, type Locale } from "@/lib/i18n";
+import { alternates, breadcrumbNode, openGraph, serviceNode } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "./webapp.css";
 
@@ -18,8 +20,8 @@ export function webappMetadata(lang: Locale): Metadata {
   return {
     title: c.metaTitle,
     description: c.metaDescription,
-    alternates: { canonical: localize(PATH, lang), languages: { it: PATH, en: `/en${PATH}` } },
-    openGraph: { images: ["/images/projects/webapps.webp"] },
+    alternates: alternates(PATH, lang),
+    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription, images: ["/images/projects/webapps.webp"] }),
   };
 }
 
@@ -32,8 +34,14 @@ const ICONS = {
 
 export function WebappView({ lang }: { lang: Locale }) {
   const c = webappCopy[lang];
+  const crumbs = [
+    { name: lang === "it" ? "Home" : "Home", path: "/" },
+    { name: c.crumbs[0], path: "/services" },
+    { name: c.crumbs[1], path: PATH },
+  ];
   return (
     <>
+      <JsonLd data={[breadcrumbNode(lang, crumbs), serviceNode(lang, { name: c.metaTitle, description: c.metaDescription, path: PATH, serviceType: "Web application development" })]} />
       <SiteHeader />
       <main className="p-root wa-root" data-motion-root>
         <section className="p-hero wa-hero">
