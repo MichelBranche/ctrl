@@ -129,9 +129,7 @@ export type Project = {
 
 /**
  * Verified first month of the Residence Le Vele website, built by CTRL.
- * TODO(owner): set `url` to the live site when it should be public. Do not invent it.
- * TODO(owner): set `place` to the town if it should be public. Do not invent it.
- * TODO(owner): replace `image` with real screenshots. The current file is a marked placeholder.
+ * `place` stays empty: the public copy does not name a town.
  */
 export const LE_VELE = {
   slug: "residence-le-vele",
@@ -140,7 +138,7 @@ export const LE_VELE = {
   bookings: 14,
   revenueEur: 11947,
   adsEur: 0,
-  url: "",
+  url: "https://www.residencelevelestintino.it",
   place: "",
   image: "/images/projects/works/residence-le-vele.webp",
 } as const;
@@ -189,6 +187,7 @@ export const projects: Project[] = [
     client: LE_VELE.client,
     place: { it: "Caso studio", en: "Case study" },
     image: LE_VELE.image,
+    url: LE_VELE.url,
     description: {
       it: "Sito per una struttura ricettiva. Nel primo mese online: 14 prenotazioni e 11.947 euro, con 0 euro di advertising.",
       en: "Website for a hospitality business. In the first month online: 14 bookings and €11,947, with €0 spent on advertising.",
