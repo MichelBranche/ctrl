@@ -51,7 +51,7 @@ const copy = {
     ],
     faqTitle: "Domande frequenti",
     faqs: [
-      { q: "Dove siete?", a: "Ad Aosta, in Valle d'Aosta. Il lavoro si fa di persona quando serve e da remoto per il resto. L'indirizzo preciso, il telefono e la partita IVA li pubblichiamo appena sono confermati." },
+      { q: "Dove siete?", a: "In Via St. Martin de Corléans 179, 11100 Aosta. Il telefono è +39 388 166 0117. La partita IVA non è ancora pubblicata." },
       { q: "Lavorate solo in Valle d'Aosta?", a: "Partiamo dalla valle. Poi seguiamo nicchie nel Nord Italia, soprattutto hotel e strutture ricettive. Non apriamo una pagina «siti web» per ogni città." },
       { q: "Fate siti per hotel con prenotazione diretta?", a: "Sì. Il sito mostra camere, date e prezzo, e la prenotazione si chiude sul sito della struttura. I portali possono restare, ma non sono obbligatori." },
       { q: "Quanto costa un sito?", a: "Non abbiamo un prezzo a pagina. Un sito essenziale e un sito hotel con più lingue non costano la stessa cosa. Il preventivo arriva dopo aver visto contenuti, lingue e integrazioni." },
@@ -90,7 +90,7 @@ const copy = {
     ],
     faqTitle: "Common questions",
     faqs: [
-      { q: "Where are you?", a: "In Aosta, Valle d'Aosta. We meet in person when it helps and work remotely the rest of the time. Street address, phone and VAT number go on the site once they are confirmed." },
+      { q: "Where are you?", a: "At Via St. Martin de Corléans 179, 11100 Aosta. The phone number is +39 388 166 0117. The VAT number is not published yet." },
       { q: "Do you only work in Valle d'Aosta?", a: "We start in the valley. Then we follow niches across Northern Italy, especially hotels and stays. We do not open a “websites” page for every city." },
       { q: "Do you build hotel sites with direct booking?", a: "Yes. The site shows rooms, dates and price, and the booking closes on the property's own site. Portals can stay, but they are not required." },
       { q: "How much does a website cost?", a: "We do not price by the page. A simple site and a hotel site in several languages do not cost the same. The proposal comes after we have seen the content, the languages and the integrations." },

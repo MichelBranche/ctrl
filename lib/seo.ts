@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, team } from "@/lib/content";
+import { CONTACT_EMAIL, CONTACT_PHONE, team } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export const SITE_URL = "https://www.ctrlagency.dev";
@@ -10,20 +10,17 @@ export const LOCAL_PATH = "/agenzia-web-valle-d-aosta";
  * Public facts we will not invent.
  * Schema omits a field while its env value is empty.
  *
- * TODO(owner): BUSINESS_STREET_ADDRESS
- * TODO(owner): BUSINESS_POSTAL_CODE
- * TODO(owner): BUSINESS_PHONE (the public NAP number; the WhatsApp constant is not assumed)
- * TODO(owner): BUSINESS_VAT_ID (partita IVA)
+ * Street, postal code and phone are the public studio NAP. Env overrides them.
+ * TODO(owner): BUSINESS_VAT_ID (partita IVA). Leave empty: there is no VAT number yet.
  * TODO(owner): BUSINESS_LEGAL_NAME (if it differs from CTRL®)
  * TODO(owner): INDEXNOW_KEY (8 to 128 hex characters). The key file is served at /<key>.txt
  *
- * Founder names match /team: Michel Branche and Kallebe Gallo.
- * TODO(owner): the brief also says "Caleb". Confirm before renaming Kallebe in this graph.
+ * Founders, as published on /team: Michel Branche and Kallebe Gallo.
  */
 export const businessProfile = {
-  streetAddress: process.env.BUSINESS_STREET_ADDRESS ?? "",
-  postalCode: process.env.BUSINESS_POSTAL_CODE ?? "",
-  telephone: process.env.BUSINESS_PHONE ?? "",
+  streetAddress: process.env.BUSINESS_STREET_ADDRESS ?? "Via St. Martin de Corléans, 179",
+  postalCode: process.env.BUSINESS_POSTAL_CODE ?? "11100",
+  telephone: process.env.BUSINESS_PHONE ?? CONTACT_PHONE,
   vatId: process.env.BUSINESS_VAT_ID ?? "",
   legalName: process.env.BUSINESS_LEGAL_NAME ?? "",
 };
