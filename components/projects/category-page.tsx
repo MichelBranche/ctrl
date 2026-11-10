@@ -9,7 +9,7 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
-import { categoryPath, getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
+import { categoryPath, getProjectCategory, LE_VELE, LE_VELE_MEDIA, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { alternates, openGraph } from "@/lib/seo";
 import "./projects.css";
@@ -83,6 +83,15 @@ function WebsitesSection({ lang }: { lang: Locale }) {
     place: w.place?.[lang] ?? w.client,
     year: w.year,
     image: w.image as string,
+    film: w.slug === LE_VELE.slug
+      ? {
+          webm: LE_VELE_MEDIA.desktop.webm,
+          mp4: LE_VELE_MEDIA.desktop.mp4,
+          poster: LE_VELE_MEDIA.desktop.poster,
+          label: lang === "it" ? "Scorrimento del sito Residence Le Vele" : "Scroll-through of the Residence Le Vele website",
+          play: lang === "it" ? "Riproduci il video" : "Play the video",
+        }
+      : undefined,
     author: w.author,
   }));
   const groups = websiteGroups.filter((g) => items.some((i) => i.group === g.slug)).map((g) => ({ slug: g.slug, label: g.label[lang] }));

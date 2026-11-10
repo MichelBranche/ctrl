@@ -149,11 +149,13 @@ export const LE_VELE_MEDIA = {
     webm: "/videos/projects/residence-le-vele/desktop.webm",
     mp4: "/videos/projects/residence-le-vele/desktop.mp4",
     poster: "/images/projects/works/residence-le-vele.webp",
+    posterJpg: "/images/projects/works/residence-le-vele.jpg",
   },
   mobile: {
     webm: "/videos/projects/residence-le-vele/mobile.webm",
     mp4: "/videos/projects/residence-le-vele/mobile.mp4",
     poster: "/images/projects/works/residence-le-vele-mobile.webp",
+    posterJpg: "/images/projects/works/residence-le-vele-mobile.jpg",
   },
 } as const;
 

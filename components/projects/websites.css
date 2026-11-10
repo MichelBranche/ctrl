@@ -96,9 +96,9 @@
   background: var(--p-card);
 }
 .w-preview-img { position: absolute; inset: 0; clip-path: inset(100% 0 0 0); transition: clip-path 0.55s var(--p-ease); }
-.w-preview-img img { object-fit: cover; transform: scale(1.15); transition: transform 0.9s var(--p-ease); }
+.w-preview-img img, .w-preview-img .lv-stage { object-fit: cover; transform: scale(1.15); transition: transform 0.9s var(--p-ease); }
 .w-preview-img[data-on] { z-index: 1; clip-path: inset(0 0 0 0); }
-.w-preview-img[data-on] img { transform: scale(1); }
+.w-preview-img[data-on] img, .w-preview-img[data-on] .lv-stage { transform: scale(1); }
 @media (hover: none), (pointer: coarse) { .w-preview { display: none; } }
 
 /* Touch and narrow screens: a small thumbnail stands in for the hover image */
@@ -189,18 +189,57 @@
 }
 .lv-figure { margin: 0; }
 .lv-frame {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--p-rule);
   background: var(--p-card);
+  aspect-ratio: 390 / 844;
 }
 .lv-video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 390 / 844;
+  height: 100%;
   object-fit: cover;
   background: #0b0b0b;
 }
+.lv-stage { position: absolute; inset: 0; }
+.lv-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+.lv-stage[data-playing] .lv-still { opacity: 0; pointer-events: none; }
+.lv-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  translate: -50% -50%;
+  border: 1px solid var(--p-rule-hi);
+  border-radius: 50%;
+  background: var(--p-shade);
+  color: var(--p-fg);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+}
+.lv-play svg { width: 1rem; height: 1rem; margin-left: 0.12rem; }
+.lv-stage[data-blocked] .lv-play { opacity: 1; pointer-events: auto; }
+.lv-stage[data-playing] .lv-play { opacity: 0; pointer-events: none; }
+.lv-play:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 4px; }
+.lv-stage-fill { position: absolute; inset: 0; }
+.w-thumb .lv-play, .w-preview-img .lv-play { width: 2.4rem; height: 2.4rem; }
+.w-preview .lv-play { pointer-events: auto; }
 .lv-cap {
   margin: 0.85rem 0 0;
   color: var(--p-faint);
@@ -234,13 +273,13 @@
 .lv-faq summary { padding: 1rem 0; font-weight: 600; cursor: pointer; }
 .lv-faq summary:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 3px; }
 @media (min-width: 780px) {
-  .lv-video { aspect-ratio: 1440 / 900; }
+  .lv-frame { aspect-ratio: 16 / 9; }
 }
 @media (max-width: 900px) {
   .lv-story, .lv-faq { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lv-video { pointer-events: none; }
+  .lv-still { transition: none; }
 }
 
 .wd-video {

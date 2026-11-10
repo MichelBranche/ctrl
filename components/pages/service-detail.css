@@ -15,6 +15,8 @@
 .sd-details summary { padding: 1rem 0; font-weight: 600; letter-spacing: -0.01em; cursor: pointer; }
 .sd-details summary:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
 .sd-details p { margin: 0 0 1.1rem; max-width: 42rem; color: var(--p-dim); line-height: 1.6; text-wrap: pretty; }
+/* Le Vele: the film stays painted. display:none before play() never starts the element. */
+.lv-video { display: block; opacity: 1; }
 .sd-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
 .sd-stats li { padding: 1.1rem 0 0; border-top: 1px solid var(--p-rule); }
 .sd-stats strong { display: block; font-family: var(--p-display-face); font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 500; letter-spacing: -0.03em; }

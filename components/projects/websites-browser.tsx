@@ -8,6 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Pointer
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { PArrow } from "@/components/projects/arrow";
+import { LeVeleFilm } from "@/components/projects/le-vele-film";
 import type { ProjectAuthor } from "@/lib/content";
 import { scheduleRefresh } from "@/lib/refresh";
 
@@ -22,6 +23,7 @@ export type SiteRow = {
   place: string;
   year?: string;
   image: string;
+  film?: { webm: string; mp4: string; poster: string; label: string; play: string };
   author?: ProjectAuthor;
 };
 
@@ -183,7 +185,11 @@ export function WebsitesBrowser({ items, groups, copy }: { items: SiteRow[]; gro
             <Link href={item.href} className="w-row-link" onFocus={() => setActive(null)}>
               <span className="w-num p-mono">{num(i)}</span>
               <span className="w-thumb" aria-hidden="true">
-                <Image src={item.image} alt="" fill sizes="4rem" className="w-thumb-img" />
+                {item.film ? (
+                  <LeVeleFilm variant="fill" fixedCut={item.film} labelDesktop={item.film.label} labelMobile={item.film.label} playLabel={item.film.play} />
+                ) : (
+                  <Image src={item.image} alt="" fill sizes="4rem" className="w-thumb-img" />
+                )}
               </span>
               <span className="w-name">
                 <span className="w-title">{item.title}</span>
@@ -207,8 +213,13 @@ export function WebsitesBrowser({ items, groups, copy }: { items: SiteRow[]; gro
       </ul>
 
       <div className="w-preview" ref={preview} aria-hidden="true">
+        {items.filter((item) => item.film).map((item) => (
+          <span key={item.slug} className="w-preview-img" data-on={active === item.slug ? "" : undefined}>
+            <LeVeleFilm variant="fill" fixedCut={item.film} labelDesktop={item.film?.label ?? ""} labelMobile={item.film?.label ?? ""} playLabel={item.film?.play ?? ""} />
+          </span>
+        ))}
         {armed
-          ? items.map((item) => (
+          ? items.filter((item) => !item.film).map((item) => (
               <span key={item.slug} className="w-preview-img" data-on={active === item.slug ? "" : undefined}>
                 <Image src={item.image} alt="" fill sizes="22rem" loading="eager" />
               </span>

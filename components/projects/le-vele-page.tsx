@@ -9,7 +9,7 @@ import { LeVeleFilm } from "@/components/projects/le-vele-film";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { JsonLd } from "@/components/seo/json-ld";
-import { LE_VELE, websiteGroups, websitesInOrder } from "@/lib/content";
+import { LE_VELE, LE_VELE_MEDIA, websiteGroups, websitesInOrder } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { alternates, breadcrumbNode, faqNode, openGraph, ORG_ID, SITE_URL } from "@/lib/seo";
 import "./projects.css";
@@ -43,6 +43,7 @@ const copy = {
     film: "Scorrimento del sito",
     filmDesktop: "Scorrimento del sito Residence Le Vele su desktop",
     filmMobile: "Scorrimento del sito Residence Le Vele su telefono",
+    play: "Riproduci il video",
     faqTitle: "Domande frequenti",
     faqs: [
       { q: "I numeri sono del primo mese?", a: "Sì. 14 prenotazioni e 11.947 euro si riferiscono al primo mese online. La spesa in advertising in quel mese è stata 0 euro." },
@@ -69,6 +70,7 @@ const copy = {
     film: "Site scroll-through",
     filmDesktop: "Scroll-through of the Residence Le Vele website on desktop",
     filmMobile: "Scroll-through of the Residence Le Vele website on a phone",
+    play: "Play the video",
     faqTitle: "Common questions",
     faqs: [
       { q: "Are the numbers from the first month?", a: "Yes. 14 bookings and €11,947 refer to the first month online. Advertising spend in that month was €0." },
@@ -85,7 +87,7 @@ export function leVeleMetadata(lang: Locale): Metadata {
     title: c.metaTitle,
     description: c.metaDescription,
     alternates: alternates(LE_VELE.path, lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription, images: [LE_VELE.image] }),
+    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription, images: [LE_VELE_MEDIA.desktop.posterJpg] }),
   };
 }
 
@@ -110,7 +112,7 @@ export function LeVeleView({ lang }: { lang: Locale }) {
     headline: c.metaTitle,
     description: c.metaDescription,
     url: `${SITE_URL}${localize(LE_VELE.path, lang)}`,
-    image: `${SITE_URL}${LE_VELE.image}`,
+    image: `${SITE_URL}${LE_VELE_MEDIA.desktop.posterJpg}`,
     author: { "@id": ORG_ID },
     publisher: { "@id": ORG_ID },
     about: "Residence Le Vele",
@@ -148,7 +150,7 @@ export function LeVeleView({ lang }: { lang: Locale }) {
         <section className="lv-reel" aria-label={c.film}>
           <figure className="lv-figure">
             <div className="lv-frame">
-              <LeVeleFilm labelDesktop={c.filmDesktop} labelMobile={c.filmMobile} />
+              <LeVeleFilm labelDesktop={c.filmDesktop} labelMobile={c.filmMobile} playLabel={c.play} />
             </div>
             <figcaption className="lv-cap p-mono">{c.film}</figcaption>
           </figure>
