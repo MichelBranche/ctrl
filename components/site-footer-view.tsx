@@ -167,6 +167,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
           </ul>
         ) : null}
         <p className="h-small h-legal">
+          <Link href={localize("/bookings", lang) as Route}>{t.bookings.nav}</Link>
           <a href={lang === "en" ? "/en/privacy" : "/privacy"}>Privacy</a>
           <a href={lang === "en" ? "/en/cookies" : "/cookie"}>Cookie</a>
         </p>

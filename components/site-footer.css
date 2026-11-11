@@ -164,7 +164,8 @@
 
 .h-legal {
   display: flex;
-  gap: 1.2rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
   margin: 0;
 }
 

@@ -53,6 +53,7 @@ const staticItalianPaths = [
   "/journal",
   "/shop",
   "/contact",
+  "/bookings",
   "/privacy",
   "/cookie",
   "/agenzia-web-valle-d-aosta",
