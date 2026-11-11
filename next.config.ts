@@ -2,9 +2,12 @@ import type { NextConfig } from "next";
 
 // Static CSP (no nonce): a per-request nonce would make every page dynamic and defeat Cache Components.
 // Next streams inline bootstrap scripts, so script-src keeps 'unsafe-inline' but only same-origin script files load.
+const scriptSrc = ["'self'", "'unsafe-inline'", "https://va.vercel-scripts.com"];
+// next dev uses eval for debugging. Production responses stay without it.
+if (process.env.NODE_ENV !== "production") scriptSrc.push("'unsafe-eval'");
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+  `script-src ${scriptSrc.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",

@@ -257,6 +257,18 @@ a.adm-stat:hover::after { opacity: 1; }
 .adm-barlist { display: grid; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
 .adm-barlist li { position: relative; display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0.6rem; border-radius: 0.3rem; font-size: 0.85rem; }
 .adm-barlist-fill { position: absolute; inset: 0; border-radius: inherit; background: color-mix(in srgb, var(--adm-accent) 16%, transparent); transform-origin: left; transition: background-color 0.15s ease; }
+@media (prefers-reduced-motion: no-preference) {
+  .adm-barlist-fill { animation: adm-bar 0.7s var(--adm-ease) both; }
+  .adm-donut-seg { animation: adm-donut 0.9s var(--adm-ease) both; }
+}
+@keyframes adm-bar { from { transform: scaleX(0); } }
+@keyframes adm-donut { from { stroke-dashoffset: 90; } }
+@media (prefers-reduced-motion: no-preference) {
+  .adm-area-line { stroke-dasharray: 1; animation: adm-draw 1.15s var(--adm-ease) both; }
+  .adm-area-fill { animation: adm-fade 0.8s ease 0.35s both; }
+}
+@keyframes adm-draw { from { stroke-dashoffset: 1; } }
+@keyframes adm-fade { from { opacity: 0; } }
 .adm-barlist li:hover .adm-barlist-fill { background: color-mix(in srgb, var(--adm-accent) 28%, transparent); }
 .adm-barlist-key { position: relative; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.8rem; }
 .adm-barlist-num { position: relative; font-variant-numeric: tabular-nums; color: var(--adm-dim); }
@@ -317,18 +329,6 @@ a.adm-stat:hover::after { opacity: 1; }
 .shop-admin-sub { margin: 1.2rem 0 .2rem; font-size: 1rem; }
 .shop-admin-supplier { margin-top: 1.2rem; padding-top: .8rem; border-top: 1px solid var(--adm-rule); }
 .shop-admin-supplier summary { cursor: url("/cursors/pointer.svg") 11 1, pointer; font-size: 1rem; }
-/* Panoramica: shop block */
-.adm-ov-shop { display: grid; gap: 0.75rem; margin-block: 0.5rem 1rem; }
-.adm-ov-shop-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
-.adm-ov-shop-stats { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin: 0; }
-@media (min-width: 1100px) { .adm-ov-shop-grid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; } .adm-ov-shop-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.adm-feed-dot.is-order { background: #f5a524; }
-.adm-feed-dot.is-order.is-annullata { background: var(--adm-dim); }
-.adm-ov-hot[data-hot] { border-color: color-mix(in srgb, var(--adm-accent) 55%, var(--adm-rule)); }
-.adm-ov-hot[data-hot] .adm-stat-num { color: var(--adm-accent); }
-.adm-ov-ping { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--adm-accent); box-shadow: 0 0 0 0 var(--adm-accent); animation: adm-ping 2s ease-out infinite; }
-@media (prefers-reduced-motion: reduce) { .adm-ov-ping { animation: none; } }
-
 /* Team + Introiti */
 .adm-earn-chart svg { display: block; width: 100%; height: auto; }
 .adm-earn-bar { fill: color-mix(in srgb, var(--adm-accent) 70%, transparent); transition: fill 0.15s ease; }

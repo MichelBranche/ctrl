@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./admin.css";
+import "./command.css";
 
 export const metadata: Metadata = {
   title: "Admin",

@@ -39,7 +39,7 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin/stats">[
             <TrafficPanel range={range} height={340} />
           </Suspense>
           <Suspense key={`b${range}`} fallback={<PanelSkeleton h="20rem" />}>
-            <BreakdownPanels range={range} limit={10} />
+            <BreakdownPanels range={range} limit={10} id="analisi" />
           </Suspense>
         </>
       )}

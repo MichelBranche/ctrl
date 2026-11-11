@@ -17,7 +17,10 @@ export function proxy(req: NextRequest) {
   // Admin only: keep the area out of search engines and out of shared caches. Auth is checked server-side in every page and action.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     const legacy = legacyRubricaPath(pathname, req.nextUrl.searchParams);
-    const response = legacy ? NextResponse.redirect(new URL(legacy, req.url), 307) : NextResponse.next();
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-ctrl-path", pathname);
+    requestHeaders.set("x-ctrl-search", search);
+    const response = legacy ? NextResponse.redirect(new URL(legacy, req.url), 307) : NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Cache-Control", "private, no-store");
     // The invite link carries a single-use token in the path: never leak it in a Referer header.

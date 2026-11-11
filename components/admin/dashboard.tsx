@@ -125,11 +125,11 @@ const countryName = (cc: string) => {
   }
 };
 
-export async function BreakdownPanels({ range, limit = 6 }: { range: Range; limit?: number }) {
+export async function BreakdownPanels({ range, limit = 6, id }: { range: Range; limit?: number; id?: string }) {
   const b = await breakdowns(range, limit).catch(() => null);
   if (!b) return null;
   return (
-    <div className="adm-grid2">
+    <div className="adm-grid2" id={id}>
       <section className="adm-panel adm-rise" style={{ "--i": 0 } as React.CSSProperties}>
         <h2 className="adm-h2">Pagine più viste</h2>
         <BarList rows={b.pages} empty="Nessuna pagina vista nel periodo." />
