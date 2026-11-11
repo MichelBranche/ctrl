@@ -11,6 +11,7 @@ type State = "idle" | "invalid" | "consent" | "busy" | "done" | "rate" | "error"
 const COPY = {
   it: {
     title: "Newsletter",
+    lead: "Ogni tanto, una nota dallo studio.",
     label: "La tua email",
     cta: "Iscriviti",
     consent: "Acconsento a ricevere la newsletter di CTRL® secondo la",
@@ -23,6 +24,7 @@ const COPY = {
   },
   en: {
     title: "Newsletter",
+    lead: "A note from the studio, now and then.",
     label: "Your email",
     cta: "Subscribe",
     consent: "I agree to receive the CTRL® newsletter under the",
@@ -60,6 +62,7 @@ export function FooterNewsletter({ lang }: { lang: Locale }) {
   return (
     <form className="f-news" onSubmit={submit} noValidate>
       <p className="h-small f-news-title">{c.title}</p>
+      <p className="f-news-lead">{c.lead}</p>
       <div className="f-news-row">
         <label className="f-sr" htmlFor={`${id}-email`}>{c.label}</label>
         <input id={`${id}-email`} name="email" type="email" autoComplete="email" inputMode="email" placeholder={c.label}

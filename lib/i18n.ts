@@ -75,7 +75,8 @@ export const dict = {
       whyWords: ["Strategia.", "Design.", "Tecnologia.", "Risultati."],
       whyLead: "Un approccio integrato per trasformare idee complesse in soluzioni semplici, belle e performanti.",
       stats: [
-        { value: "2", label: ["Aree", "Design e AI"] },
+        // Six offers already claimed on the site: websites, direct-booking hotels, e-commerce, web apps, software, brand.
+        { value: "6", label: ["Aree", "Dal sito al software"] },
         { value: "5", label: ["Lingue", "Parlate dal team"] },
         { value: "100%", label: ["Su misura", "Nessun template"] },
         { value: "∞", label: ["Curiosità", "Per il futuro"] },
@@ -148,7 +149,8 @@ export const dict = {
       whyWords: ["Strategy.", "Design.", "Technology.", "Results."],
       whyLead: "An integrated approach that turns complex ideas into simple, beautiful, high-performing solutions.",
       stats: [
-        { value: "2", label: ["Areas", "Design and AI"] },
+        // Same six offers as the Italian line.
+        { value: "6", label: ["Areas", "From site to software"] },
         { value: "5", label: ["Languages", "Spoken by the team"] },
         { value: "100%", label: ["Tailored", "No templates"] },
         { value: "∞", label: ["Curiosity", "For the future"] },
