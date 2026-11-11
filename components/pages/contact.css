@@ -164,10 +164,20 @@
   font-family: var(--c-display-face);
   font-size: clamp(2.2rem, 3.6vw, 3.6rem);
   font-weight: 500;
-  line-height: 1.02;
+  line-height: 1.15;
   letter-spacing: -0.04em;
   overflow-wrap: break-word;
   min-width: 0;
+}
+/* Scroll-reveal wraps each heading line in an overflow mask. The mask is the line box,
+   which crops descenders (the g in "progetto") unless the line has room inside it. */
+.c-root .reveal-line {
+  display: block;
+  line-height: 1.25;
+  padding-top: 0.08em;
+  padding-bottom: 0.22em;
+  margin-top: -0.08em;
+  margin-bottom: -0.22em;
 }
 .c-form-text { max-width: 26rem; margin: 1.6rem 0 0; font-size: 0.98rem; line-height: 1.55; color: var(--c-fg); }
 .c-form {
@@ -337,9 +347,23 @@
 }
 .cw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .cw-kicker, .cw-count { margin: 0; color: var(--c-dim); }
-.cw-count { color: var(--c-fg); font-variant-numeric: tabular-nums; }
-.cw-roll { display: inline-grid; height: 1.25em; overflow: hidden; vertical-align: bottom; line-height: 1.25; }
-.cw-roll span { grid-area: 1 / 1; line-height: 1.25; }
+.cw-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  color: var(--c-fg);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.cw-count-rest { line-height: 1; }
+.cw-roll {
+  display: inline-grid;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  vertical-align: baseline;
+}
+.cw-roll span { grid-area: 1 / 1; display: block; height: 1em; line-height: 1; }
 .cw-track { height: 1px; margin-top: 1rem; background: var(--c-rule); }
 .cw-track span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(0.2); transform-origin: left center; }
 .cw-shell { overflow: hidden; }
@@ -353,7 +377,7 @@
   font-size: clamp(1.85rem, 3.2vw, 2.65rem);
   font-weight: 500;
   letter-spacing: -0.045em;
-  line-height: 1.02;
+  line-height: 1.15;
 }
 .cw-sub { display: block; max-width: 34rem; margin: 0.5rem 0 0; color: var(--c-dim); font-size: 0.95rem; line-height: 1.45; }
 .cw-options { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.2rem; }
@@ -499,14 +523,14 @@
   text-transform: uppercase;
 }
 .cw-back:hover { color: var(--c-fg); border-bottom-color: var(--c-accent); }
-.cw-success { padding-top: 0.4rem; }
+.cw-success { padding: 0.85rem 0.1rem 0.15rem; }
 .cw-thanks {
-  margin: 1rem 0 0;
+  margin: 0;
   font-family: var(--c-display-face);
   font-size: clamp(2.2rem, 4vw, 3.3rem);
   font-weight: 500;
   letter-spacing: -0.045em;
-  line-height: 0.98;
+  line-height: 1.15;
   overflow-wrap: anywhere;
 }
 .cw-promise { max-width: 28rem; margin: 0.9rem 0 0; color: var(--c-dim); font-size: 1.02rem; line-height: 1.45; }

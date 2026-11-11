@@ -61,6 +61,8 @@ function issueText(lang: Locale, issue: InquiryIssue): string {
   }
 }
 
+const stepLabel = (n: number) => String(n).padStart(2, "0");
+
 function RollNum({ value }: { value: number }) {
   const scope = useRef<HTMLSpanElement>(null);
   const [anim, setAnim] = useState({ prev: value, next: value, dir: 1, id: 0 });
@@ -81,8 +83,8 @@ function RollNum({ value }: { value: number }) {
   }, { dependencies: [anim.id], scope, revertOnUpdate: true });
   return (
     <span className="cw-roll" ref={scope} aria-hidden="true">
-      <span>{anim.prev}</span>
-      <span>{anim.next}</span>
+      <span>{stepLabel(anim.prev)}</span>
+      <span>{stepLabel(anim.next)}</span>
     </span>
   );
 }
@@ -377,12 +379,12 @@ export function ContactForm({ lang }: { lang: Locale }) {
   };
 
   return (
-    <form className="cw" ref={root} onSubmit={onSubmit} onKeyDown={onKeyDown} noValidate data-step={draft.step}>
+    <form className="cw" ref={root} onSubmit={onSubmit} onKeyDown={onKeyDown} noValidate data-step={draft.step} data-no-reveal="">
       <div className="cw-top">
         <p className="c-mono cw-kicker">{draft.step >= 5 ? c.sent : c.kicker}</p>
         <p className="c-mono cw-count">
           <RollNum value={draft.step >= 5 ? 5 : draft.step + 1} />
-          <span aria-hidden="true">/{5}</span>
+          <span className="cw-count-rest" aria-hidden="true"> / 05</span>
         </p>
       </div>
       <div className="cw-track" aria-hidden="true"><span ref={bar} /></div>
