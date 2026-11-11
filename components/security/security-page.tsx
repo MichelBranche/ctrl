@@ -13,7 +13,7 @@ import { SecuritySection } from "@/components/security/security-section";
 import { SECURITY_IMAGE, SECURITY_PATH, securityCopy } from "@/components/security/security-copy";
 import { services } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, faqNode, openGraph, serviceNode, SITE_URL } from "@/lib/seo";
+import { breadcrumbNode, faqNode, publicMeta, schemaName, serviceNode, SITE_URL } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "@/components/services/webapp.css";
 import "@/components/pages/service-detail.css";
@@ -22,12 +22,7 @@ const PARENT = "/services/growth-support";
 
 export function securityMetadata(lang: Locale): Metadata {
   const p = securityCopy[lang].page;
-  return {
-    title: p.metaTitle,
-    description: p.metaDescription,
-    alternates: alternates(SECURITY_PATH, lang),
-    openGraph: openGraph(lang, { title: p.metaTitle, description: p.metaDescription, images: [SECURITY_IMAGE] }),
-  };
+  return publicMeta(lang, { title: p.metaTitle, description: p.metaDescription, itPath: SECURITY_PATH, images: [SECURITY_IMAGE] });
 }
 
 /** Service node plus the two yearly plans as offers (prices VAT excluded). */
@@ -35,7 +30,7 @@ function securityServiceNode(lang: Locale) {
   const c = securityCopy[lang];
   const url = `${SITE_URL}${localize(SECURITY_PATH, lang)}`;
   return {
-    ...serviceNode(lang, { name: c.page.metaTitle, description: c.page.metaDescription, path: SECURITY_PATH, serviceType: c.page.serviceType }),
+    ...serviceNode(lang, { name: schemaName(c.page.metaTitle), description: c.page.metaDescription, path: SECURITY_PATH, serviceType: c.page.serviceType }),
     image: `${SITE_URL}${SECURITY_IMAGE}`,
     hasOfferCatalog: {
       "@type": "OfferCatalog",

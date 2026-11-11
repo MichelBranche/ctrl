@@ -155,9 +155,9 @@ export const securityCopy: Record<Locale, SecurityCopy> = {
     more: "Scopri il servizio",
     imageAlt: "Scudo di vetro davanti a un globo di punti attraversato da connessioni luminose",
     page: {
-      metaTitle: "Sicurezza web e certificati SSL/TLS gestiti",
+      metaTitle: "Sicurezza web e certificati SSL gestiti ad Aosta | CTRL®",
       metaDescription:
-        "Certificati SSL/TLS, hosting cloud edge, protezione DDoS, security headers e SPF, DKIM, DMARC gestiti da CTRL®. Piani annuali da 240 € + IVA, anche per siti esistenti.",
+        "Certificati SSL/TLS, hosting edge, protezione DDoS, security headers ed email del dominio. Piani da 240 € + IVA, anche per siti già online. In Italia.",
       serviceType: "Managed website security and SSL/TLS certificate management",
       crumbs: ["Servizi", "Crescita e supporto", "Sicurezza web"],
       tag: "Crescita e supporto",
@@ -290,9 +290,9 @@ export const securityCopy: Record<Locale, SecurityCopy> = {
     more: "Explore the service",
     imageAlt: "Glass shield in front of a dotted globe crossed by glowing connections",
     page: {
-      metaTitle: "Managed web security and SSL/TLS certificates",
+      metaTitle: "Managed web security and SSL certificates, Aosta | CTRL®",
       metaDescription:
-        "SSL/TLS certificates, cloud edge hosting, DDoS protection, security headers and SPF, DKIM, DMARC managed by CTRL®. Yearly plans from €240 + VAT, existing sites included.",
+        "SSL/TLS certificates, edge hosting, DDoS protection, security headers and domain email. Yearly plans from €240 + VAT, including sites already online.",
       serviceType: "Managed website security and SSL/TLS certificate management",
       crumbs: ["Services", "Growth & Support", "Web security"],
       tag: "Growth & Support",

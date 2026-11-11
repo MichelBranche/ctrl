@@ -27,8 +27,8 @@ export type ServiceDetail = {
 };
 
 const brandIt: ServiceDetail = {
-  metaTitle: "Grafica e brand identity ad Aosta",
-  metaDescription: "Logo, colori, tipografia e linee guida per attività e hotel in Valle d'Aosta e nel Nord Italia. CTRL® costruisce un'identità che regge su sito, social e stampa.",
+  metaTitle: "Brand identity e grafica per attività ad Aosta | CTRL®",
+  metaDescription: "Logo, colori, tipografia e linee guida per attività e hotel. CTRL®, ad Aosta, costruisce un'identità che regge su sito, social e stampa. Su preventivo.",
   serviceType: "Brand identity",
   tag: "01",
   title: "Brand e identità",
@@ -78,8 +78,8 @@ const brandIt: ServiceDetail = {
 };
 
 const brandEn: ServiceDetail = {
-  metaTitle: "Brand identity and graphic design in Aosta",
-  metaDescription: "Logo, colour, type and guidelines for businesses and hotels in Valle d'Aosta and Northern Italy. CTRL® builds an identity that holds on the site, social and print.",
+  metaTitle: "Brand identity and graphic design in Aosta | CTRL®",
+  metaDescription: "Logo, colour, type and guidelines for businesses and hotels. CTRL® in Aosta builds an identity that holds on the site, on social and in print.",
   serviceType: "Brand identity",
   tag: "01",
   title: "Brand & identity",
@@ -129,8 +129,8 @@ const brandEn: ServiceDetail = {
 };
 
 const productIt: ServiceDetail = {
-  metaTitle: "Web app e prodotti digitali su misura",
-  metaDescription: "Web app, aree riservate e prodotti digitali su misura ad Aosta. CTRL® progetta e sviluppa senza template, per team in Valle d'Aosta e nel Nord Italia.",
+  metaTitle: "Web app e prodotti digitali su misura ad Aosta | CTRL®",
+  metaDescription: "Web app, aree riservate e prodotti digitali, senza template. CTRL® li progetta ad Aosta per team in Valle d'Aosta e nel Nord Italia. Scrivici.",
   serviceType: "Web application development",
   tag: "02",
   title: "Sviluppo prodotto",
@@ -180,8 +180,8 @@ const productIt: ServiceDetail = {
 };
 
 const productEn: ServiceDetail = {
-  metaTitle: "Custom web apps and digital products",
-  metaDescription: "Custom web apps, private areas and digital products from Aosta. CTRL® designs and builds without templates, for teams in Valle d'Aosta and Northern Italy.",
+  metaTitle: "Custom web apps and digital products in Aosta | CTRL®",
+  metaDescription: "Custom web apps, private areas and digital products, with no templates. CTRL® designs them in Aosta for teams in Valle d'Aosta and Northern Italy.",
   serviceType: "Web application development",
   tag: "02",
   title: "Product development",
@@ -231,8 +231,8 @@ const productEn: ServiceDetail = {
 };
 
 const visualIt: ServiceDetail = {
-  metaTitle: "Siti web su misura ad Aosta",
-  metaDescription: "Realizzazione siti web su misura ad Aosta: vetrine, rifacimenti, e-commerce e siti per hotel con prenotazione diretta. Studio CTRL® in Valle d'Aosta, per il Nord Italia.",
+  metaTitle: "Sito web su misura ad Aosta, in Valle d'Aosta | CTRL®",
+  metaDescription: "Realizziamo siti web su misura ad Aosta: vetrine, rifacimenti, e-commerce e hotel con prenotazione diretta, per la valle e il Nord Italia. Su preventivo.",
   serviceType: "Web design and development",
   tag: "03",
   title: "Comunicazione visiva",
@@ -288,8 +288,8 @@ const visualIt: ServiceDetail = {
 };
 
 const visualEn: ServiceDetail = {
-  metaTitle: "Custom websites in Aosta",
-  metaDescription: "Custom websites in Aosta: new sites, rebuilds, online shops and hotel sites with direct booking. CTRL® is based in Valle d'Aosta and works across Northern Italy.",
+  metaTitle: "Custom websites in Aosta and Valle d'Aosta | CTRL®",
+  metaDescription: "Custom websites in Aosta: new sites, rebuilds, online shops and hotel sites with direct booking. Based in Valle d'Aosta, working across Northern Italy.",
   serviceType: "Web design and development",
   tag: "03",
   title: "Visual communication",
@@ -345,8 +345,8 @@ const visualEn: ServiceDetail = {
 };
 
 const growthIt: ServiceDetail = {
-  metaTitle: "SEO e posizionamento Google ad Aosta",
-  metaDescription: "SEO tecnica, contenuti e manutenzione per siti di attività e hotel. CTRL® segue il posizionamento su Google da Aosta, in Valle d'Aosta e nel Nord Italia.",
+  metaTitle: "SEO e posizionamento Google per siti ad Aosta | CTRL®",
+  metaDescription: "SEO tecnica, contenuti e manutenzione per siti di attività e hotel. CTRL® segue Google da Aosta, in Valle d'Aosta e nel Nord Italia. Su preventivo.",
   serviceType: "Search engine optimization",
   tag: "04",
   title: "Crescita e supporto",
@@ -398,7 +398,7 @@ const growthIt: ServiceDetail = {
 };
 
 const growthEn: ServiceDetail = {
-  metaTitle: "SEO and Google rankings in Aosta",
+  metaTitle: "SEO and Google rankings for sites in Aosta | CTRL®",
   metaDescription: "Technical SEO, content and maintenance for business and hotel websites. CTRL® works on Google from Aosta, for Valle d'Aosta and Northern Italy.",
   serviceType: "Search engine optimization",
   tag: "04",
@@ -451,8 +451,8 @@ const growthEn: ServiceDetail = {
 };
 
 const softwareIt: ServiceDetail = {
-  metaTitle: "Software e gestionali su misura ad Aosta",
-  metaDescription: "Gestionali, automazioni e software su misura, oppure in abbonamento, con l'AI dove toglie un lavoro ripetitivo. CTRL®, studio ad Aosta, per la Valle d'Aosta e il Nord Italia.",
+  metaTitle: "Software e gestionali su misura, studio ad Aosta | CTRL®",
+  metaDescription: "Gestionali, automazioni e software su misura o in abbonamento, con l'AI dove toglie lavoro ripetitivo. CTRL® ad Aosta, per la valle e il Nord.",
   serviceType: "Custom software",
   tag: "05",
   title: "Software e AI",
@@ -503,8 +503,8 @@ const softwareIt: ServiceDetail = {
 };
 
 const softwareEn: ServiceDetail = {
-  metaTitle: "Custom software and internal tools in Aosta",
-  metaDescription: "Custom internal tools, automations and subscription software, with AI where it removes repetitive work. CTRL®, the Aosta studio, for Valle d'Aosta and Northern Italy.",
+  metaTitle: "Custom software and internal tools in Aosta | CTRL®",
+  metaDescription: "Custom internal tools, automations and subscription software, with AI where it removes repetitive work. CTRL® in Aosta, for the valley and Northern Italy.",
   serviceType: "Custom software",
   tag: "05",
   title: "Software & AI",

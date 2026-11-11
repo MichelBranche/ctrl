@@ -11,7 +11,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LE_VELE, LE_VELE_MEDIA, websiteGroups, websitesInOrder } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, faqNode, openGraph, ORG_ID, SITE_URL } from "@/lib/seo";
+import { breadcrumbNode, faqNode, publicMeta, ORG_ID, SITE_URL } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
 
@@ -26,8 +26,8 @@ const ads = {
 
 const copy = {
   it: {
-    metaTitle: "Residence Le Vele: 14 prenotazioni, 0 € di ads",
-    metaDescription: `Caso studio CTRL®: il sito di Residence Le Vele ha portato ${LE_VELE.bookings} prenotazioni e ${money.it} nel primo mese online, senza spesa in advertising.`,
+    metaTitle: "Residence Le Vele: 14 prenotazioni, zero ads | CTRL®",
+    metaDescription: `Caso studio CTRL®: il sito di Residence Le Vele ha portato ${LE_VELE.bookings} prenotazioni e ${money.it} nel primo mese online, senza spesa in advertising. Caso reale.`,
     lead: "Sito per una struttura ricettiva, progettato e sviluppato da CTRL®. Nel primo mese online le prenotazioni sono arrivate dal sito, senza una campagna ads.",
     storyTitle: "Cosa è successo",
     story: [
@@ -53,8 +53,8 @@ const copy = {
     ],
   },
   en: {
-    metaTitle: "Residence Le Vele: 14 bookings, €0 on ads",
-    metaDescription: `CTRL® case study: the Residence Le Vele website brought ${LE_VELE.bookings} bookings and ${money.en} in its first month online, with no advertising spend.`,
+    metaTitle: "Residence Le Vele: 14 bookings and no ad spend | CTRL®",
+    metaDescription: `CTRL® case study: the Residence Le Vele website brought ${LE_VELE.bookings} bookings and ${money.en} in its first month online, with no advertising spend. A real case.`,
     lead: "A website for a hospitality business, designed and built by CTRL®. In the first month online the bookings came from the site, with no ad campaign.",
     storyTitle: "What happened",
     story: [
@@ -83,12 +83,7 @@ const copy = {
 
 export function leVeleMetadata(lang: Locale): Metadata {
   const c = copy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: alternates(LE_VELE.path, lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription, images: [LE_VELE_MEDIA.desktop.posterJpg] }),
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: LE_VELE.path, images: [LE_VELE_MEDIA.desktop.posterJpg] });
 }
 
 export function LeVeleView({ lang }: { lang: Locale }) {

@@ -77,7 +77,8 @@ export function CtrlMark({ className }: { className?: string }) {
   const ref = useRef<HTMLParagraphElement>(null);
   useLetterHover(ref);
   return (
-    <p className={className} aria-label="CTRL®" ref={ref}>
+    <p className={className} ref={ref}>
+      <span className="u-sr">CTRL®</span>
       {"CTRL".split("").map((l) => (
         <span data-letter aria-hidden="true" key={l} style={{ display: "inline-block" }}>
           {l}

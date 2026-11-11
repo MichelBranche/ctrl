@@ -10,7 +10,7 @@ const CSP = [
   "font-src 'self' data:",
   "connect-src 'self' https://va.vercel-scripts.com",
   "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
-  "frame-src 'self' https://www.youtube-nocookie.com",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.google.com https://maps.google.com https://calendar.google.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "object-src 'none'",
@@ -23,12 +23,13 @@ const CSP = [
 const nextConfig: NextConfig = {
   /* config options here */
   // Admin cover uploads go through a Server Action (covers are capped at 5 MB).
-  experimental: { serverActions: { bodySizeLimit: "6mb" }, globalNotFound: true },
+  experimental: { serverActions: { bodySizeLimit: "6mb" }, globalNotFound: true, inlineCss: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/covers/**" },
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/shop/**" },
     ],
+    formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3440, 3840],
     qualities: [75, 90],
   },
@@ -38,12 +39,35 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()" },
           { key: "Content-Security-Policy", value: CSP },
+        ],
+      },
+      {
+        source: "/llms.txt",
+        headers: [
+          { key: "Content-Type", value: "text/markdown; charset=utf-8" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+          { key: "X-Robots-Tag", value: "all" },
+        ],
+      },
+      {
+        source: "/.well-known/ard.json",
+        headers: [
+          { key: "Content-Type", value: "application/json; charset=utf-8" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+      {
+        source: "/.well-known/ai-catalog.json",
+        headers: [
+          { key: "Content-Type", value: "application/json; charset=utf-8" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
         ],
       },
     ];
@@ -80,6 +104,11 @@ const nextConfig: NextConfig = {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
+      },
+      "*": {
+        condition: { path: /(?:^|\/)polyfill-module\.js$/ },
+        loaders: ["./lib/empty-polyfill-loader.cjs"],
+        as: "*.js",
       },
     },
   },

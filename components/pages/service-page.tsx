@@ -13,7 +13,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getServiceDetail } from "@/components/pages/service-detail-copy";
 import { getService, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, faqNode, openGraph, serviceNode } from "@/lib/seo";
+import { breadcrumbNode, faqNode, publicMeta, schemaName, serviceNode } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "@/components/services/webapp.css";
 import "./service-detail.css";
@@ -23,12 +23,7 @@ export function serviceMetadata(slug: string, lang: Locale): Metadata {
   const detail = getServiceDetail(slug, lang);
   if (!service || !detail) return { title: dict[lang].services.fallback };
   const path = `/services/${service.slug}`;
-  return {
-    title: detail.metaTitle,
-    description: detail.metaDescription,
-    alternates: alternates(path, lang),
-    openGraph: openGraph(lang, { title: detail.metaTitle, description: detail.metaDescription, images: [detail.image] }),
-  };
+  return publicMeta(lang, { title: detail.metaTitle, description: detail.metaDescription, itPath: path, images: [detail.image] });
 }
 
 export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
@@ -49,7 +44,7 @@ export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
 
   return (
     <>
-      <JsonLd data={[breadcrumbNode(lang, crumbs), serviceNode(lang, { name: detail.metaTitle, description: detail.metaDescription, path, serviceType: detail.serviceType }), faqNode(detail.faqs)]} />
+      <JsonLd data={[breadcrumbNode(lang, crumbs), serviceNode(lang, { name: schemaName(detail.metaTitle), description: detail.metaDescription, path, serviceType: detail.serviceType }), faqNode(detail.faqs)]} />
       <SiteHeader />
       <main className="p-root wa-root" data-motion-root>
         <section className="p-hero wa-hero">

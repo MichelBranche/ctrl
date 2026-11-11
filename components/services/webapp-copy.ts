@@ -12,8 +12,8 @@ export const webappCopy: Record<Locale, {
   processKicker: string; processTitle: [string, string]; steps: { title: string; text: string }[];
 }> = {
   it: {
-    metaTitle: "Webapp su misura ad Aosta",
-    metaDescription: "Webapp con aree riservate, dashboard e flussi su misura. CTRL® le progetta ad Aosta per team in Valle d'Aosta e nel Nord Italia.",
+    metaTitle: "Webapp su misura ad Aosta, con aree riservate | CTRL®",
+    metaDescription: "Webapp con aree riservate, dashboard e flussi su misura. CTRL® le sviluppa ad Aosta per team in Valle d'Aosta e nel Nord Italia. Scrivici. Senza template.",
     crumbs: ["Servizi", "Webapp"],
     back: "Tutti i servizi",
     tag: "Webapp",
@@ -56,8 +56,8 @@ export const webappCopy: Record<Locale, {
     ],
   },
   en: {
-    metaTitle: "Custom web apps in Aosta",
-    metaDescription: "Web apps with private areas, dashboards and custom flows. CTRL® designs them in Aosta for teams in Valle d'Aosta and Northern Italy.",
+    metaTitle: "Custom web apps in Aosta, with private areas | CTRL®",
+    metaDescription: "Web apps with private areas, dashboards and custom flows. CTRL® builds them in Aosta for teams in Valle d'Aosta and across Northern Italy. No templates.",
     crumbs: ["Services", "Web apps"],
     back: "All services",
     tag: "Web apps",

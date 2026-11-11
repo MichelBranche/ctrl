@@ -43,6 +43,7 @@ function detect(text: string): Intent | null {
 export function faqAnswer(text: string, lang: Locale): ChatReply {
   const it = lang === "it";
   const contact: ChatLink = { label: it ? "Contatti" : "Contact", href: contactHref(lang) };
+  const book: ChatLink = { label: it ? "Prenota una call" : "Book a call", href: localize("/bookings", lang) };
   const mail: ChatLink = { label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` };
   const out = (reply: string, links: ChatLink[]): ChatReply => ({ reply, links, source: "faq" });
 
@@ -70,9 +71,9 @@ export function faqAnswer(text: string, lang: Locale): ChatReply {
     case "contact":
       return out(
         it
-          ? `Puoi scriverci a ${CONTACT_EMAIL} oppure usare la sezione contatti in fondo alla pagina.`
-          : `You can write to us at ${CONTACT_EMAIL} or use the contact section at the bottom of the page.`,
-        [mail, contact],
+          ? `Puoi prenotare una call introduttiva gratuita su Google Meet, scriverci a ${CONTACT_EMAIL} oppure usare il modulo contatti.`
+          : `You can book a free intro call on Google Meet, write to us at ${CONTACT_EMAIL}, or use the contact form.`,
+        [book, mail, contact],
       );
     case "team":
       return out(

@@ -7,8 +7,8 @@ import type { ShopProduct } from "@/lib/shop-data";
 import "./shop.css";
 
 const copy = {
-  it: { kicker: "SHOP", title: "Shop.", lead: ["Gli essenziali CTRL®.", "Strumenti, merch e altro."], madeToOrder: "Realizzata su ordinazione", none: "Stiamo preparando il prossimo drop." },
-  en: { kicker: "SHOP", title: "Shop.", lead: ["Get your CTRL essentials.", "Tools, merch and more."], madeToOrder: "Made to order", none: "We’re preparing the next drop." },
+  it: { kicker: "SHOP", title: "Shop.", lead: ["Card NFC per le recensioni.", "E gli altri essenziali CTRL®."], madeToOrder: "Realizzata su ordinazione", none: "Stiamo preparando il prossimo drop." },
+  en: { kicker: "SHOP", title: "Shop.", lead: ["NFC cards for reviews.", "And the other CTRL® essentials."], madeToOrder: "Made to order", none: "We’re preparing the next drop." },
 } as const;
 
 export function ShopPage({ lang, products }: { lang: Locale; products: ShopProduct[] }) {

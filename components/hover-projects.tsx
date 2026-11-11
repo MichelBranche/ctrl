@@ -66,7 +66,7 @@ function Thumb({ item, i, onHover, onPick, current }: { item: HoverProject; i: n
         }}
         onFocus={() => { setOn(true); onHover(i); }} onBlur={() => { setOn(false); onHover(null); }}>
         {item.image ? (
-          <NextImage src={item.image} alt="" fill sizes="120px" quality={90} />
+          <NextImage src={item.image} alt="" fill sizes="(max-width: 900px) 55px, 120px" quality={75} />
         ) : (
           <span className="h-placeholder" aria-hidden="true" />
         )}
@@ -89,8 +89,9 @@ export function HoverProjects({ items, defaultName, openLabel, hint }: { items: 
     else leave.current = setTimeout(() => setActive(null), 140);
   };
   useEffect(() => () => { if (leave.current) clearTimeout(leave.current); }, []);
-  // Warm the thumbnails so the first hover never waits on the network/decoder.
+  // Desktop warms the originals immediately, same as before. Mobile skips them so they do not compete with LCP.
   useEffect(() => {
+    if (window.matchMedia("(max-width: 900px)").matches) return;
     for (const it of items) if (it.image) { const im = new Image(); im.src = it.image; void im.decode().catch(() => {}); }
   }, [items]);
 

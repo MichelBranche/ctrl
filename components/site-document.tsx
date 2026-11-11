@@ -8,6 +8,11 @@ import type { Locale } from "@/lib/i18n";
 export function SiteDocument({ lang, jsonLd = true, children }: { lang: Locale; jsonLd?: boolean; children: ReactNode }) {
   return (
     <html lang={lang} suppressHydrationWarning className={`js pt-booting ${geist.variable} ${satoshi.variable}`}>
+      {/* App Router metadata has no slot for rel=ard. */}
+      {/* eslint-disable-next-line @next/next/no-head-element */}
+      <head>
+        <link rel="ard" href="/.well-known/ard.json" />
+      </head>
       <body className={geist.className}>
         <noscript>
           <style>{".pt-root[data-boot]{display:none!important}"}</style>

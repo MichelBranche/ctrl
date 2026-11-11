@@ -28,12 +28,12 @@ type ServicesCopy = {
 
 export const servicesCopy: Record<Locale, ServicesCopy> = {
   it: {
-    metaTitle: "Servizi web ad Aosta",
+    metaTitle: "Servizi web ad Aosta: siti, software e brand | CTRL®",
     metaDescription:
-      "Siti su misura, brand identity, web app, software, SEO e siti per hotel. CTRL® è l'agenzia web di Aosta, in Valle d'Aosta, e lavora nel Nord Italia.",
+      "Siti su misura, brand, web app, software, SEO e sicurezza. CTRL® è l'agenzia web di Aosta e lavora in Valle d'Aosta e nel Nord Italia. Scrivici.",
     tag: "Servizi",
     title: "Servizi CTRL®",
-    lead: "Idee, tecnologia e design per far crescere il tuo brand.",
+    lead: "Siti su misura, brand, web app, software e SEO, dall'agenzia web di Aosta.",
     discover: "Scopri i servizi",
     gridLabel: "I nostri servizi",
     graphicAlt: "Segno grafico CTRL: una A disegnata come una montagna",
@@ -72,12 +72,12 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
     },
   },
   en: {
-    metaTitle: "Web services in Aosta",
+    metaTitle: "Web services in Aosta: sites, software, brand | CTRL®",
     metaDescription:
-      "Custom websites, brand identity, web apps, software, SEO and hotel sites. CTRL® is the Aosta studio for Valle d'Aosta and Northern Italy.",
+      "Custom websites, brand identity, web apps, software, SEO and security. CTRL® is the Aosta web agency for Valle d'Aosta and Northern Italy. Talk to us.",
     tag: "Services",
     title: "CTRL® Services",
-    lead: "Ideas, technology and design to grow your brand.",
+    lead: "Custom websites, brand, web apps, software and SEO, from the web agency in Aosta.",
     discover: "Explore the services",
     gridLabel: "Our services",
     graphicAlt: "CTRL graphic mark: an A drawn as a mountain",
