@@ -172,6 +172,37 @@
 .s-points li { display: flex; align-items: center; gap: 0.8rem; }
 .s-points .s-arrow { color: var(--s-accent); width: 0.95rem; height: 0.95rem; }
 
+/* Sub-service link under a category (Crescita e supporto: sicurezza web). Sits outside the cell link. */
+.s-cell-has-sub { display: flex; flex-direction: column; }
+.s-cell-has-sub .s-cell-body { flex: 1; height: auto; padding-bottom: 1.6rem; }
+/* One hover surface for the whole cell, so the tint does not stop above the sub link. */
+.s-cell-has-sub { transition: background-color 0.5s ease; }
+.s-cell-has-sub:hover { background: color-mix(in srgb, var(--s-fg) 5%, transparent); }
+.s-cell-has-sub .s-cell-body:hover { background: none; }
+.s-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 var(--gutter) 2.4rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--s-rule);
+  border-radius: 8px;
+  color: var(--s-fg);
+  text-decoration: none;
+  transition: border-color 0.4s ease, background-color 0.4s ease;
+}
+.s-sub:hover { border-color: var(--s-accent); background: color-mix(in srgb, var(--s-accent) 7%, transparent); }
+.s-sub:focus-visible { outline: 1px solid var(--s-accent); outline-offset: 2px; }
+.s-sub-dot { position: relative; flex: none; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--s-accent); }
+.s-sub-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--s-accent); animation: s-sub-ping 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+@keyframes s-sub-ping { 0% { transform: scale(1); opacity: 0.55; } 80%, 100% { transform: scale(3); opacity: 0; } }
+.s-sub-copy { display: grid; gap: 0.3rem; min-width: 0; flex: 1; }
+.s-sub-label { font-size: 0.95rem; font-weight: 560; line-height: 1.3; }
+.s-sub-note { color: var(--s-dim); }
+.s-sub-arrow { flex: none; width: 1rem; height: 1rem; color: var(--s-accent); transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.s-sub:hover .s-sub-arrow { transform: translateX(4px); }
+@media (prefers-reduced-motion: reduce) { .s-sub-dot::after { animation: none; } }
+
 .s-cell-mark {
   display: flex;
   align-items: flex-end;

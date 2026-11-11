@@ -49,7 +49,7 @@ export type ProjectsCopy = {
 export const projectsCopy: Record<Locale, ProjectsCopy> = {
   it: {
     metaTitle: "Progetti",
-    metaDescription: "Siti web, webapp, software, brand, mockup commerciali e video promozionali: i lavori di CTRL® divisi per categoria.",
+    metaDescription: "Siti web, webapp, software, brand e video promozionali di CTRL® divisi per categoria, più la sicurezza web e i certificati SSL/TLS gestiti.",
     tag: "Progetti",
     title: "Progetti.",
     lead: ["Idee, soluzioni e risultati concreti.", "Scopri alcuni dei nostri lavori."],
@@ -94,7 +94,7 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
   },
   en: {
     metaTitle: "Projects",
-    metaDescription: "Websites, web apps, software, brand, commercial mockups and promo videos: CTRL® work grouped by category.",
+    metaDescription: "CTRL® websites, web apps, software, brand and promo videos grouped by category, plus managed web security and SSL/TLS certificates.",
     tag: "Projects",
     title: "Projects.",
     lead: ["Ideas, solutions and concrete results.", "Explore some of our work."],

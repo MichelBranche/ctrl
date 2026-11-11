@@ -79,15 +79,17 @@ export const projectCategories: ProjectCategory[] = [
     image: "/images/projects/brand-identity.webp",
   },
   {
-    slug: "commercial-mockups",
-    label: { it: "Mockup commerciali", en: "Commercial mockups" },
-    title: { it: ["Mockup", "realistici"], en: ["Realistic", "mockups"] },
-    text: { it: "Presenta i tuoi prodotti con stile e impatto.", en: "Present your products with style and impact." },
+    // Replaced the "Mockup realistici" placeholder; the category lives on its service page.
+    slug: "web-security",
+    label: { it: "Sicurezza web", en: "Web security" },
+    title: { it: ["Sicurezza", "e SSL gestiti"], en: ["Managed", "security & SSL"] },
+    text: { it: "Certificati, cloud edge e protezione, seguiti da noi.", en: "Certificates, cloud edge and protection, handled by us." },
     intro: {
-      it: "Visualizzazioni di packaging e prodotto per presentazioni, e-commerce e campagne, prima ancora della produzione.",
-      en: "Packaging and product visuals for pitches, e-commerce and campaigns, even before production.",
+      it: "Certificati SSL/TLS, hosting cloud edge, security headers ed email autenticate, gestiti con un piano annuale.",
+      en: "SSL/TLS certificates, cloud edge hosting, security headers and authenticated email, managed on a yearly plan.",
     },
-    image: "/images/projects/commercial-mockups.webp",
+    image: "/images/services/web-security.webp",
+    href: "/services/web-security",
   },
   {
     slug: "promo-videos",
@@ -527,6 +529,8 @@ export type Service = {
   summary: L;
   points: L<string[]>;
   icon: "document" | "code" | "monitor" | "arrow" | "spark";
+  /** Dedicated sub-service page listed under this category on /services. */
+  sub?: { href: string; label: L; note: L };
 };
 
 export const services: Service[] = [
@@ -601,6 +605,11 @@ export const services: Service[] = [
       en: ["Optimisation", "Maintenance", "Ongoing support", "Evolution"],
     },
     icon: "arrow",
+    sub: {
+      href: "/services/web-security",
+      label: { it: "Sicurezza web e SSL/TLS gestiti", en: "Managed web security and SSL/TLS" },
+      note: { it: "Da 240 € / anno + IVA", en: "From €240 / year + VAT" },
+    },
   },
   {
     slug: "software-ai",

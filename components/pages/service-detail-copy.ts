@@ -391,6 +391,7 @@ const growthIt: ServiceDetail = {
   ],
   cta: "Parliamo di posizionamento",
   related: [
+    { href: "/services/web-security", label: "Sicurezza web e SSL gestiti" },
     { href: "/services/visual-communication", label: "Siti web su misura" },
     { href: "/projects/websites/residence-le-vele", label: "Caso Residence Le Vele" },
   ],
@@ -443,6 +444,7 @@ const growthEn: ServiceDetail = {
   ],
   cta: "Talk about search",
   related: [
+    { href: "/services/web-security", label: "Managed web security and SSL" },
     { href: "/services/visual-communication", label: "Custom websites" },
     { href: "/projects/websites/residence-le-vele", label: "Residence Le Vele case study" },
   ],
