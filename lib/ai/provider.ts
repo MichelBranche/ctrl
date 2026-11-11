@@ -12,7 +12,9 @@ import {
   CHAT_MAX_TOKENS,
   EMAIL_MAX_TOKENS,
   EMAIL_SYSTEM,
+  EMAIL_TEMPERATURE,
   parseEmailJson,
+  polishOutreach,
   stripEmDash,
 } from "@/lib/ai/copy";
 
@@ -158,13 +160,15 @@ export async function generateOutreach(prompt: string): Promise<{ subject: strin
       maxOutputTokens: EMAIL_MAX_TOKENS,
       maxRetries: 0,
       timeout: 20_000,
-      temperature: target.kind === "cloudflare" ? 0.2 : undefined,
+      temperature: EMAIL_TEMPERATURE,
       providerOptions: target.kind === "groq" && target.model.includes("gpt-oss") ? { openai: { reasoningEffort: "low" } } : undefined,
       telemetry: quiet,
     });
     const parsed = parseEmailJson(result.text);
     if (!parsed) throw new OutputError();
-    return { subject: stripEmDash(parsed.subject), body: stripEmDash(parsed.body) };
+    const polished = polishOutreach(parsed.subject, parsed.body);
+    if (!polished) throw new OutputError();
+    return polished;
   });
 }
 
