@@ -1,13 +1,14 @@
 "use client";
 
-import { animate, motion, useInView, useReducedMotion } from "motion/react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { animate, motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 /* Hand-rolled SVG charts animated with Motion (already a site dependency, so no new bundle weight).
  * Every chart takes real series from the server and renders an explicit empty state instead of zeros dressed up as data. */
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 const nf = new Intl.NumberFormat("it-IT");
+const eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 const fmtDay = (d: string, long = false) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString("it-IT", long ? { weekday: "short", day: "numeric", month: "short" } : { day: "numeric", month: "short" });
 
@@ -27,23 +28,25 @@ function smooth(pts: [number, number][], floor: number) {
   return d;
 }
 
-export function CountUp({ value, className }: { value: number; className?: string }) {
+export function CountUp({ value, className, money = false }: { value: number; className?: string; money?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
+  const paint = (n: number) => (money ? eur.format(n) : nf.format(Math.round(n)));
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const draw = (n: number) => (money ? eur.format(n) : nf.format(Math.round(n)));
     if (reduce) {
-      el.textContent = nf.format(value);
+      el.textContent = draw(value);
       return;
     }
-    const c = animate(0, value, { duration: 1.1, ease: EASE, onUpdate: (v) => (el.textContent = nf.format(Math.round(v))) });
+    const c = animate(0, value, { duration: 1.1, ease: EASE, onUpdate: (v) => (el.textContent = draw(v)) });
     return () => c.stop();
-  }, [value, reduce]);
+  }, [value, reduce, money]);
   // Server HTML already holds the final number, so no-JS and screen readers see the real value.
   return (
     <span ref={ref} className={className}>
-      {nf.format(value)}
+      {paint(value)}
     </span>
   );
 }
@@ -51,9 +54,16 @@ export function CountUp({ value, className }: { value: number; className?: strin
 export function Sparkline({ data, label }: { data: number[]; label: string }) {
   const reduce = useReducedMotion();
   const gid = useId();
-  if (data.length < 2 || data.every((v) => v === 0)) return <span className="adm-spark adm-spark-empty" aria-hidden="true" />;
   const W = 120;
   const H = 32;
+  if (data.length < 2) return <span className="adm-spark adm-spark-empty" aria-hidden="true" />;
+  if (data.every((v) => v === 0)) {
+    return (
+      <svg className="adm-spark is-flat" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label}>
+        <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="rgba(242,240,234,0.38)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      </svg>
+    );
+  }
   const max = Math.max(...data);
   const pts = data.map((v, i): [number, number] => [(i / (data.length - 1)) * W, H - 2 - (v / max) * (H - 4)]);
   const line = smooth(pts, H - 2);
@@ -84,16 +94,16 @@ export type SeriesPoint = { date: string; pageviews: number; visitors: number };
 
 export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?: number }) {
   const wrap = useRef<HTMLDivElement>(null);
-  const inView = useInView(wrap, { once: true, margin: "-40px" });
-  const reduce = useReducedMotion();
-  const [w, setW] = useState(0);
+  const [w, setW] = useState(960);
   const [hover, setHover] = useState<number | null>(null);
   const gid = useId();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = wrap.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setW(Math.max(280, Math.round(e.contentRect.width))));
+    const apply = () => setW(Math.max(280, Math.round(el.clientWidth)));
+    apply();
+    const ro = new ResizeObserver(apply);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -113,7 +123,6 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
   const vi = smooth(data.map((d, i) => [x(i), y(d.visitors)]), base);
   const ticks = [0, 0.5, 1].map((f) => Math.round(nice * f));
   const every = Math.ceil(data.length / Math.max(2, Math.floor(iw / 72)));
-  const show = inView || reduce;
 
   const pick = (clientX: number) => {
     const r = wrap.current?.getBoundingClientRect();
@@ -140,15 +149,12 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
       }}
       onBlur={() => setHover(null)}
     >
-      {w > 0 ? <svg width={w} height={height} aria-hidden="true">
+      {w > 0 ? <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id={`${gid}-pv`} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stopColor="var(--adm-accent)" stopOpacity="0.32" />
             <stop offset="1" stopColor="var(--adm-accent)" stopOpacity="0" />
           </linearGradient>
-          <clipPath id={`${gid}-clip`}>
-            <motion.rect x={PAD.l} y={0} height={height} initial={{ width: reduce ? iw : 0 }} animate={{ width: show ? iw + PAD.r : 0 }} transition={{ duration: reduce ? 0 : 1.2, ease: EASE }} />
-          </clipPath>
         </defs>
         {ticks.map((t) => (
           <g key={t}>
@@ -165,9 +171,9 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
             </text>
           ) : null,
         )}
-        <g clipPath={`url(#${gid}-clip)`}>
-          <path d={`${pv} L${x(data.length - 1)},${base} L${x(0)},${base} Z`} fill={`url(#${gid}-pv)`} />
-          <path d={pv} fill="none" stroke="var(--adm-accent)" strokeWidth="2" />
+        <g>
+          <path className="adm-area-fill" d={`${pv} L${x(data.length - 1)},${base} L${x(0)},${base} Z`} fill={`url(#${gid}-pv)`} />
+          <path className="adm-area-line" d={pv} fill="none" stroke="var(--adm-accent)" strokeWidth="2.25" pathLength={1} />
           <path d={vi} fill="none" stroke="var(--adm-fg)" strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="3 4" />
         </g>
         {h && hover !== null ? (
@@ -196,21 +202,13 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
 export type Row = { key: string; pageviews: number; visitors: number };
 
 export function BarList({ rows, empty }: { rows: (Row & { label?: string })[]; empty: string }) {
-  const reduce = useReducedMotion();
   if (!rows.length) return <p className="adm-muted adm-empty">{empty}</p>;
   const max = Math.max(...rows.map((r) => r.pageviews), 1);
   return (
     <ol className="adm-barlist">
       {rows.map((r, i) => (
         <li key={r.key}>
-          <motion.span
-            className="adm-barlist-fill"
-            initial={reduce ? false : { scaleX: 0 }}
-            whileInView={{ scaleX: r.pageviews / max }}
-            viewport={{ once: true }}
-            style={reduce ? { scaleX: r.pageviews / max } : undefined}
-            transition={{ duration: 0.8, delay: i * 0.05, ease: EASE }}
-          />
+          <span className="adm-barlist-fill" style={{ transform: `scaleX(${r.pageviews / max})`, animationDelay: `${i * 50}ms` }} />
           <span className="adm-barlist-key" title={r.key}>
             {r.label ?? r.key}
           </span>
@@ -224,39 +222,37 @@ export function BarList({ rows, empty }: { rows: (Row & { label?: string })[]; e
 const DEVICE: Record<string, string> = { desktop: "Desktop", mobile: "Mobile", tablet: "Tablet" };
 const SHADES = ["var(--adm-accent)", "var(--adm-fg)", "rgba(242,240,234,0.45)", "rgba(242,240,234,0.25)"];
 
-export function Donut({ rows }: { rows: Row[] }) {
-  const reduce = useReducedMotion();
+export function Donut({ rows, empty = "Nessun dato sui dispositivi.", centerLabel = "visualizzazioni", showShare = false }: { rows: (Row & { label?: string })[]; empty?: string; centerLabel?: string; showShare?: boolean }) {
   const [active, setActive] = useState<number | null>(null);
   const total = rows.reduce((a, r) => a + r.pageviews, 0);
-  if (!total) return <p className="adm-muted adm-empty">Nessun dato sui dispositivi.</p>;
+  if (!total) return <p className="adm-muted adm-empty">{empty}</p>;
   const R = 52;
   const C = 2 * Math.PI * R;
   const offs = rows.map((_, i) => rows.slice(0, i).reduce((a, r) => a + r.pageviews / total, 0));
   const cur = active !== null ? rows[active] : null;
   return (
     <div className="adm-donut">
-      <svg viewBox="0 0 140 140" role="img" aria-label={rows.map((r) => `${DEVICE[r.key] ?? r.key} ${Math.round((r.pageviews / total) * 100)}%`).join(", ")}>
+      <svg viewBox="0 0 140 140" role="img" aria-label={rows.map((r) => `${r.label ?? DEVICE[r.key] ?? r.key} ${Math.round((r.pageviews / total) * 100)}%`).join(", ")}>
         <circle cx="70" cy="70" r={R} className="adm-donut-track" />
         {rows.map((r, i) => {
           const frac = r.pageviews / total;
           const off = offs[i];
           return (
-            <motion.circle
+            <circle
               key={r.key}
+              className="adm-donut-seg"
               cx="70"
               cy="70"
               r={R}
               fill="none"
               stroke={SHADES[i % SHADES.length]}
-              strokeWidth={active === i ? 16 : 12}
+              strokeWidth={active === i ? 16 : 14}
               strokeDasharray={`${Math.max(0, frac * C - 2)} ${C}`}
+              strokeDashoffset={0}
               transform={`rotate(${off * 360 - 90} 70 70)`}
-              initial={reduce ? false : { strokeDashoffset: frac * C }}
-              animate={{ strokeDashoffset: 0 }}
-              transition={{ duration: 0.9, delay: 0.15 + i * 0.12, ease: EASE }}
               onPointerEnter={() => setActive(i)}
               onPointerLeave={() => setActive(null)}
-              style={{ transition: "stroke-width 0.15s ease", cursor: "default" }}
+              style={{ animationDelay: `${0.12 + i * 0.1}s`, cursor: "default" }}
             />
           );
         })}
@@ -264,14 +260,15 @@ export function Donut({ rows }: { rows: Row[] }) {
           {cur ? `${Math.round((cur.pageviews / total) * 100)}%` : nf.format(total)}
         </text>
         <text x="70" y="84" textAnchor="middle" className="adm-donut-label">
-          {cur ? (DEVICE[cur.key] ?? cur.key) : "visualizzazioni"}
+          {cur ? (cur.label ?? DEVICE[cur.key] ?? cur.key) : centerLabel}
         </text>
       </svg>
       <ul className="adm-legend">
         {rows.map((r, i) => (
           <li key={r.key} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)} data-active={active === i || undefined}>
             <i style={{ background: SHADES[i % SHADES.length] }} />
-            <span>{DEVICE[r.key] ?? r.key}</span>
+            <span>{r.label ?? DEVICE[r.key] ?? r.key}</span>
+            {showShare ? <span className="adm-barlist-num">{nf.format(r.pageviews)}</span> : null}
             <span className="adm-barlist-num">{Math.round((r.pageviews / total) * 100)}%</span>
           </li>
         ))}

@@ -1,14 +1,16 @@
 "use client";
 
 import { UserAvatar } from "@/components/admin/user-avatar";
+import { NoticeBell } from "@/components/admin/command/notices";
 import Link from "next/link";
 import { NavPending } from "@/components/admin/email/mail-speed";
 import { clearMailMemory, noteMailOwner } from "@/lib/mail/list-memory";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { signOut } from "@/app/admin/actions";
-import { adminSearch, type SearchHit } from "@/app/admin/dashboard-actions";
+import type { CommandNotice } from "@/lib/command-types";
 import { CRM_HOME, crmCrumb, RUBRICA } from "@/lib/crm-nav";
+import { SEARCH_GROUPS, SEARCH_GROUP_LABEL, type SearchHit } from "@/lib/search-types";
 
 type Nav = { href: string; label: string; icon: ReactNode; badge?: "requests" | "email" };
 
@@ -39,12 +41,12 @@ const NAV: Nav[] = [
 ];
 
 const ACTIONS: (SearchHit & { needs?: string })[] = [
-  { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new", needs: "/admin/journal" },
-  { label: "Nuova email", hint: "Azione", href: "/admin/email?compose=new", needs: "/admin/email" },
-  { label: "Nuovo contatto CRM", hint: "Azione", href: `${RUBRICA}?nuovo=1#nuovo`, needs: CRM_HOME },
-  { label: "Registra un lavoro", hint: "Azione", href: "/admin/introiti#nuovo" },
-  { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export", needs: "/admin/newsletter" },
-  { label: "Apri il sito", hint: "Azione", href: "/" },
+  { label: "Nuovo articolo", hint: "Azione", href: "/admin/posts/new", group: "azioni", needs: "/admin/journal" },
+  { label: "Nuova email", hint: "Azione", href: "/admin/email?compose=new", group: "azioni", needs: "/admin/email" },
+  { label: "Nuovo contatto CRM", hint: "Azione", href: `${RUBRICA}?nuovo=1#nuovo`, group: "azioni", needs: CRM_HOME },
+  { label: "Registra un lavoro", hint: "Azione", href: "/admin/introiti#nuovo", group: "azioni" },
+  { label: "Esporta iscritti CSV", hint: "Azione", href: "/admin/newsletter/export", group: "azioni", needs: "/admin/newsletter" },
+  { label: "Apri il sito", hint: "Azione", href: "/", group: "azioni" },
 ];
 
 const readCollapsed = () => localStorage.getItem("adm-collapsed") === "1";
@@ -92,8 +94,9 @@ function useEmailUnread(enabled: boolean) {
 const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
-export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, children }: { userId: string; email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; children: ReactNode }) {
+export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, notices = [], children }: { userId: string; email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; notices?: CommandNotice[]; children: ReactNode }) {
   const path = usePathname();
+  const command = path === "/admin";
   const nav = NAV.filter((n) => allowed.includes(n.href));
   const emailUnread = useEmailUnread(allowed.includes("/admin/email"));
   const counts = { requests: badges.requests, email: emailUnread };
@@ -136,7 +139,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, ch
   const crmTail = current?.href === CRM_HOME ? crmCrumb(path) : null;
 
   return (
-    <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined}>
+    <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined} data-command={command ? "" : undefined}>
       <aside className="adm-side" aria-label="Sezioni">
         <div className="adm-side-head">
           <Link href="/admin" className="adm-brand" aria-label="CTRL® Admin, panoramica">
@@ -167,49 +170,57 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, ch
       <button type="button" className="adm-scrim" aria-label="Chiudi menu" tabIndex={-1} onClick={() => setDrawer(false)} />
 
       <div className="adm-body">
-        <header className="adm-topbar">
+        <header className={`adm-topbar${command ? " cc-topbar" : ""}`}>
           <button type="button" className="adm-icon-btn adm-burger" onClick={() => setDrawer(true)} aria-label="Apri menu" aria-expanded={drawer}>
             {I("M4 7h16M4 12h16M4 17h16")}
           </button>
-          <nav className="adm-crumbs" aria-label="Percorso">
-            <Link href="/admin">Admin</Link>
-            {current && current.href !== "/admin" ? (
-              <>
-                <span aria-hidden="true">/</span>
-                {crmTail ? <Link href={CRM_HOME}>{current.label}</Link> : <span aria-current="page">{current.label}</span>}
-                {crmTail ? <><span aria-hidden="true">/</span><span aria-current="page">{crmTail}</span></> : null}
-              </>
-            ) : null}
-          </nav>
-          <button type="button" className="adm-search" onClick={() => setPalette(true)}>
+          {command ? (
+            <p className="cc-brand"><Link href="/admin"><span className="cc-slash">/</span> Command Center</Link></p>
+          ) : (
+            <nav className="adm-crumbs" aria-label="Percorso">
+              <Link href="/admin">Admin</Link>
+              {current && current.href !== "/admin" ? (
+                <>
+                  <span aria-hidden="true">/</span>
+                  {crmTail ? <Link href={CRM_HOME}>{current.label}</Link> : <span aria-current="page">{current.label}</span>}
+                  {crmTail ? <><span aria-hidden="true">/</span><span aria-current="page">{crmTail}</span></> : null}
+                </>
+              ) : null}
+            </nav>
+          )}
+          <button type="button" className={`adm-search${command ? " cc-search" : ""}`} onClick={() => setPalette(true)} aria-keyshortcuts="Meta+K Control+K">
             {I("M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4")}
-            <span>Cerca o vai a…</span>
+            <span>{command ? "Cerca contatti, ordini, articoli, attività..." : "Cerca o vai a…"}</span>
             <kbd>⌘K</kbd>
           </button>
-          <div className="adm-account">
-            <button type="button" className="adm-avatar" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu" aria-label="Account">
-              <UserAvatar name={name || email} src={avatarUrl} />
-            </button>
-            {menu ? (
-              <div className="adm-menu" role="menu">
-                <p className="adm-menu-email">
-                  <strong>{name}</strong>
-                  <br />
-                  {email}
-                </p>
-                <Link href="/admin/settings" role="menuitem" className="adm-menu-item">
-                  Impostazioni
-                </Link>
-                <a href="/" target="_blank" rel="noopener noreferrer" role="menuitem" className="adm-menu-item">
-                  Apri il sito
-                </a>
-                <form action={signOut} onSubmit={() => clearMailMemory()}>
-                  <button role="menuitem" className="adm-menu-item">
-                    Esci
-                  </button>
-                </form>
-              </div>
-            ) : null}
+          <div className={command ? "cc-tools" : "contents"}>
+            {command ? <NoticeBell notices={notices} /> : null}
+            <div className={`adm-account${command ? " cc-account" : ""}`}>
+              <button type="button" className="adm-avatar" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu" aria-label="Account">
+                <UserAvatar name={name || email} src={avatarUrl} />
+                {command ? I("M6 9l6 6 6-6") : null}
+              </button>
+              {menu ? (
+                <div className="adm-menu" role="menu">
+                  <p className="adm-menu-email">
+                    <strong>{name}</strong>
+                    <br />
+                    {email}
+                  </p>
+                  <Link href="/admin/settings" role="menuitem" className="adm-menu-item">
+                    Impostazioni
+                  </Link>
+                  <a href="/" target="_blank" rel="noopener noreferrer" role="menuitem" className="adm-menu-item">
+                    Apri il sito
+                  </a>
+                  <form action={signOut} onSubmit={() => clearMailMemory()}>
+                    <button role="menuitem" className="adm-menu-item">
+                      Esci
+                    </button>
+                  </form>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
         <div className="adm-content">{children}</div>
@@ -257,19 +268,40 @@ function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; 
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [sel, setSel] = useState(0);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
 
-  useEffect(() => input.current?.focus(), []);
   useEffect(() => {
-    if (q.trim().length < 2) return;
-    const t = setTimeout(() => start(async () => setHits(await adminSearch(q).catch(() => []))), 180);
-    return () => clearTimeout(t);
+    const node = dialog.current;
+    if (!node || node.open) return;
+    node.showModal();
+    input.current?.focus();
+  }, []);
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) return;
+    const ac = new AbortController();
+    const t = setTimeout(() => {
+      setPending(true);
+      void fetch(`/admin/search?q=${encodeURIComponent(term)}`, { signal: ac.signal, cache: "no-store" })
+        .then(async (res) => (res.ok ? (await res.json()) as { hits?: SearchHit[] } : { hits: [] }))
+        .then((data) => setHits(Array.isArray(data.hits) ? data.hits : []))
+        .catch(() => { if (!ac.signal.aborted) setHits([]); })
+        .finally(() => { if (!ac.signal.aborted) setPending(false); });
+    }, 180);
+    return () => {
+      clearTimeout(t);
+      ac.abort();
+    };
   }, [q]);
 
   const needle = q.trim().toLowerCase();
-  const local = [...nav.map((n) => ({ label: n.label, hint: "Sezione", href: n.href })), ...actions.map(({ label, hint, href }) => ({ label, hint, href }))].filter((x) => !needle || x.label.toLowerCase().includes(needle));
-  const items = [...local, ...(q.trim().length < 2 ? [] : hits)];
+  const local: SearchHit[] = [
+    ...nav.map((n) => ({ label: n.label, hint: "Sezione", href: n.href, group: "sezioni" as const })),
+    ...actions.map(({ label, hint, href, group }) => ({ label, hint, href, group })),
+  ].filter((item) => !needle || item.label.toLowerCase().includes(needle));
+  const items = [...local, ...(q.trim().length < 2 ? [] : hits)].sort((a, b) => SEARCH_GROUPS.indexOf(a.group) - SEARCH_GROUPS.indexOf(b.group) || a.label.localeCompare(b.label, "it"));
 
   const go = useCallback(
     (h: SearchHit) => {
@@ -283,7 +315,7 @@ function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSel((s) => Math.min(s + 1, items.length - 1));
+      setSel((s) => Math.min(s + 1, Math.max(items.length - 1, 0)));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSel((s) => Math.max(s - 1, 0));
@@ -294,12 +326,12 @@ function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; 
   };
 
   return (
-    <div className="adm-palette-wrap" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="adm-palette" role="dialog" aria-modal="true" aria-label="Cerca">
+    <dialog ref={dialog} className="adm-palette-dialog" aria-label="Cerca" onCancel={(e) => { e.preventDefault(); onClose(); }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="adm-palette">
         <input
           ref={input}
           className="adm-palette-input"
-          placeholder="Cerca articoli, richieste, contatti o sezioni"
+          placeholder="Cerca contatti, ordini, articoli, attività..."
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -310,17 +342,24 @@ function Palette({ nav, actions, onClose }: { nav: Nav[]; actions: SearchHit[]; 
           aria-expanded="true"
           aria-controls="adm-palette-list"
           aria-activedescendant={items[sel] ? `adm-hit-${sel}` : undefined}
+          aria-busy={pending}
         />
         <ul id="adm-palette-list" className="adm-palette-list" role="listbox">
-          {items.map((h, i) => (
-            <li key={`${h.href}-${i}`} id={`adm-hit-${i}`} role="option" aria-selected={i === sel} className="adm-hit" onMouseEnter={() => setSel(i)} onClick={() => go(h)}>
-              <span>{h.label}</span>
-              <span className="adm-muted">{h.hint}</span>
-            </li>
-          ))}
+          {items.map((h, i) => {
+            const header = i === 0 || items[i - 1]?.group !== h.group ? SEARCH_GROUP_LABEL[h.group] : null;
+            return (
+              <Fragment key={`${h.group}-${h.href}-${h.label}`}>
+                {header ? <li className="adm-hit-group" role="presentation">{header}</li> : null}
+                <li id={`adm-hit-${i}`} role="option" aria-selected={i === sel} className="adm-hit" onMouseEnter={() => setSel(i)} onClick={() => go(h)}>
+                  <span>{h.label}</span>
+                  <span className="adm-muted">{h.hint}</span>
+                </li>
+              </Fragment>
+            );
+          })}
           {!items.length ? <li className="adm-hit adm-muted">{pending ? "Ricerca…" : "Nessun risultato."}</li> : null}
         </ul>
       </div>
-    </div>
+    </dialog>
   );
 }
