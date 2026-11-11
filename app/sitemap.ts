@@ -13,6 +13,8 @@ const publicPaths = [
   ...services.flatMap((service) => [`/services/${service.slug}`, `/en/services/${service.slug}`]),
   "/services/webapp",
   "/en/services/webapp",
+  "/services/web-security",
+  "/en/services/web-security",
   "/projects/webapps/agenda-easy",
   "/en/projects/webapps/agenda-easy",
   ...websitesInOrder().flatMap((project) => [`/projects/websites/${project.slug}`, `/en/projects/websites/${project.slug}`]),

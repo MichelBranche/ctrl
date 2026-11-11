@@ -7,6 +7,7 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { ProjectsBrowser, type CategoryCard } from "@/components/projects/projects-browser";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
+import { SecuritySection } from "@/components/security/security-section";
 import { categoryPath, projectCategories } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { alternates, openGraph } from "@/lib/seo";
@@ -60,6 +61,7 @@ export function ProjectsView({ lang }: { lang: Locale }) {
           copy={{ all: c.all, filterLabel: c.filterLabel, filterAll: c.filterAll, viewLabel: c.viewLabel, gridView: c.gridView, listView: c.listView, open: c.open }}
         />
         <ProjectsCta copy={c} href={localize("/contact", lang)} />
+        <SecuritySection lang={lang} variant="projects" />
         <ProjectsMotion />
       </main>
       <SiteFooter />

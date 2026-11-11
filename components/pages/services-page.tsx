@@ -98,7 +98,7 @@ export function ServicesView({ lang }: { lang: Locale }) {
         <section className="s-grid-wrap" id="servizi" aria-label={c.gridLabel}>
           <ul className="s-grid">
             {services.map((s) => (
-              <li className="s-cell" key={s.slug} data-s-cell>
+              <li className={`s-cell${s.sub ? " s-cell-has-sub" : ""}`} key={s.slug} data-s-cell>
                 <Link href={localize(`/services/${s.slug}`, lang) as Route} className="s-cell-body">
                   <span className="s-mono s-index">{s.index}</span>
                   <h2 className="s-cell-title">{s.title[lang]}</h2>
@@ -113,6 +113,16 @@ export function ServicesView({ lang }: { lang: Locale }) {
                     ))}
                   </ul>
                 </Link>
+                {s.sub ? (
+                  <Link href={localize(s.sub.href, lang) as Route} className="s-sub">
+                    <span className="s-sub-dot" aria-hidden="true" />
+                    <span className="s-sub-copy">
+                      <span className="s-sub-label">{s.sub.label[lang]}</span>
+                      <span className="s-sub-note s-mono">{s.sub.note[lang]}</span>
+                    </span>
+                    <Arrow className="s-arrow s-sub-arrow" />
+                  </Link>
+                ) : null}
               </li>
             ))}
             <li className="s-cell s-cell-mark" data-s-cell>

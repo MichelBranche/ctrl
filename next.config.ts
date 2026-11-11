@@ -60,6 +60,11 @@ const nextConfig: NextConfig = {
       // Webapp category lives on its service page; /projects/webapps/agenda-easy stays.
       { source: "/projects/webapps", destination: "/services/webapp", permanent: true },
       { source: "/en/projects/webapps", destination: "/en/services/webapp", permanent: true },
+      // The "Mockup realistici" placeholder category was replaced by the managed security service.
+      { source: "/projects/commercial-mockups", destination: "/services/web-security", permanent: true },
+      { source: "/en/projects/commercial-mockups", destination: "/en/services/web-security", permanent: true },
+      { source: "/projects/web-security", destination: "/services/web-security", permanent: true },
+      { source: "/en/projects/web-security", destination: "/en/services/web-security", permanent: true },
       { source: "/en/work/:slug", destination: "/en/projects/websites", permanent: true },
       // The Studio page was removed; the home has no about section, so send it home.
       { source: "/about", destination: "/", permanent: true },
