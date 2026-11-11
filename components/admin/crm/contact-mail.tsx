@@ -130,7 +130,7 @@ export async function ContactMailDetail({ ctx }: { ctx: ContactMailCtx }) {
           <Link className="adm-btn adm-btn-sm crm-mail-back" href={list as Route}>← Email del contatto</Link>
         </div>
         <ComposeForm key={`new:${ctx.address}`} draft={{ to: ctx.address, cc: "", subject: "", body: "" }} reply={null} sender={emailSender(ctx.me)} from={ctx.from} cancelHref={list} sentHref={list}
-          outreach={await composeOutreach(ctx.me, ctx.address, "")} />
+          outreach={await composeOutreach(ctx.me, ctx.address, "")} aiContactId={ctx.id} />
       </>
     );
   }
@@ -238,7 +238,7 @@ async function Message({ ctx, msg, thread, list }: { ctx: ContactMailCtx; msg: M
       {reply ? (
         <section className="adm-mail-reply" aria-label="Risposta">
           <ComposeForm key={`${msg.folder}:${msg.uid}:${q.compose}`} sender={emailSender(ctx.me)} draft={reply}
-            reply={{ folder: msg.folder, uid: msg.uid }} from={ctx.from} cancelHref={self} sentHref={list} outreach={outreach} />
+            reply={{ folder: msg.folder, uid: msg.uid }} from={ctx.from} cancelHref={self} sentHref={list} outreach={outreach} aiContactId={ctx.id} />
         </section>
       ) : null}
       {thread.length > 1 ? (

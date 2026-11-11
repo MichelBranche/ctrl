@@ -1937,3 +1937,92 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-pipeline-page, .crm-pipeline-page *, .crm-pipeline-page *::before, .crm-pipeline-page *::after { animation: none !important; transition: none !important; }
   .crm-card-face.is-lifted { transform: none; }
 }
+
+/* Admin AI: generate button in the contact composer, and the corner assistant. The public mascot CSS is reused, not edited. */
+.crm-ai-generate { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.75rem; }
+.crm-ai-generate p { margin: 0; flex-basis: 100%; }
+
+.crm-ai {
+  position: fixed;
+  z-index: 34;
+  right: calc(1rem + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.crm-ai-launcher,
+.crm-ai-panel { pointer-events: auto; }
+.crm-ai-launcher {
+  display: block;
+  width: 4.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+}
+.crm-ai-launcher .ctrl-mascot.is-mini { width: 4.25rem; }
+.crm-ai-launcher:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 3px; border-radius: 0.8rem; }
+.crm-ai-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.6rem);
+  display: flex;
+  flex-direction: column;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(24rem, calc(100dvh - 8rem));
+  overflow: hidden;
+  border: 1px solid var(--adm-rule);
+  border-radius: 0.9rem;
+  background: var(--adm-panel);
+  box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.85);
+}
+.crm-ai-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--adm-rule); }
+.crm-ai-head .ctrl-mascot.is-mini { width: 2rem; }
+.crm-ai-head div { flex: 1; min-width: 0; }
+.crm-ai-name { margin: 0; font-size: 0.92rem; font-weight: 650; }
+.crm-ai-status { margin: 0.1rem 0 0; color: var(--adm-dim); font-size: 0.72rem; }
+.crm-ai-close {
+  display: grid; place-items: center; width: 2rem; height: 2rem; flex: none;
+  border: 1px solid var(--adm-rule); border-radius: 999px; background: transparent; color: var(--adm-fg); cursor: pointer;
+}
+.crm-ai-close svg { width: 0.75rem; height: 0.75rem; }
+.crm-ai-close svg path { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.crm-ai-close:hover { border-color: var(--adm-accent); color: var(--adm-accent); }
+.crm-ai-log { display: flex; flex: 1; flex-direction: column; gap: 0.45rem; overflow: auto; overscroll-behavior: contain; padding: 0.8rem; }
+.crm-ai-msg { max-width: 92%; margin: 0; padding: 0.5rem 0.7rem; border-radius: 0.7rem; font-size: 0.84rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.crm-ai-msg.is-assistant { align-self: flex-start; background: var(--adm-raise); border-bottom-left-radius: 0.2rem; }
+.crm-ai-msg.is-user { align-self: flex-end; background: var(--adm-accent); color: var(--adm-ink); border-bottom-right-radius: 0.2rem; }
+.crm-ai-typing { display: flex; gap: 0.25rem; }
+.crm-ai-typing i { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--adm-dim); }
+.crm-ai-chips { display: flex; gap: 0.35rem; overflow-x: auto; padding: 0 0.8rem 0.6rem; scrollbar-width: none; }
+.crm-ai-chip {
+  flex: none; padding: 0.3rem 0.65rem; border: 1px solid var(--adm-rule); border-radius: 999px;
+  background: transparent; color: var(--adm-fg); font: inherit; font-size: 0.75rem; cursor: pointer;
+}
+.crm-ai-chip:hover:not(:disabled) { border-color: var(--adm-accent); }
+.crm-ai-chip:disabled { opacity: 0.5; cursor: default; }
+.crm-ai-form { display: flex; align-items: flex-end; gap: 0.45rem; padding: 0.65rem 0.8rem 0.8rem; border-top: 1px solid var(--adm-rule); }
+.crm-ai-input {
+  flex: 1; min-width: 0; max-height: 6rem; padding: 0.5rem 0.7rem; resize: none;
+  border: 1px solid var(--adm-rule); border-radius: 0.7rem; background: var(--adm-bg); color: var(--adm-fg); font: inherit; font-size: 0.88rem;
+}
+.crm-ai-form .adm-btn { flex: none; }
+@media (max-width: 640px) {
+  .crm-ai-launcher { width: 3.4rem; }
+  .crm-ai-launcher .ctrl-mascot.is-mini { width: 3.4rem; }
+  .crm-ai.is-open .crm-ai-launcher { visibility: hidden; }
+  .crm-ai-panel {
+    position: fixed;
+    left: calc(0.75rem + env(safe-area-inset-left));
+    right: calc(0.75rem + env(safe-area-inset-right));
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(70dvh, 32rem);
+  }
+  .crm-ai-input { font-size: 16px; }
+  .crm-ai-close { width: 2.5rem; height: 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crm-ai-typing i { opacity: 0.7; }
+}
+
