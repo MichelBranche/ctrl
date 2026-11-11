@@ -24,7 +24,7 @@ Un messaggio può raggruppare fino a 10 embed, uno per evento. Ogni embed ha:
 
 `allowed_mentions` è vuoto (`parse` vuoto): `@everyone`, `@here` e le menzioni utente non scattano. I caratteri markdown nei nomi sono escapati.
 
-Non escono il corpo della mail, il telefono, l'email del contatto, i documenti e le note. Un indirizzo finito per sbaglio in un titolo viene tolto prima dell'invio.
+Non escono il corpo della mail, il telefono, l'email del contatto, i documenti e le note. Un indirizzo finito per sbaglio in un titolo viene tolto prima dell'invio. Fa eccezione la richiesta lasciata sul sito: lì i contatti servono per rispondere, e sono descritti nell'esempio in fondo.
 
 ## Dove si aggancia
 
@@ -32,7 +32,7 @@ L'unico punto di invio è la coda `discord_outbox`, riempita subito dopo l'inser
 
 Alcuni eventi non nascevano come riga di audit e ora passano dallo stesso punto:
 
-- il form contatti del sito (`requests.received`), con nome e oggetto
+- il form contatti del sito, con nome, contatti, servizi, obiettivo, budget, tempi e nota (vedi sotto)
 - il cambio stato di una richiesta Iris (`crm.iris_status`: in lavorazione, pronta, errore)
 - la posta in arrivo non ancora vista, e la risposta di un lead se il mittente è un contatto (la prima apertura di cassetta, a tabella vuota, prepara l'archivio e non notifica lo storico)
 - follow-up e attività in scadenza nel giorno di Roma in cui scadono, una volta sola
@@ -41,7 +41,7 @@ La coda è la tabella additiva `discord_outbox` (`db/020_discord_outbox.sql`, do
 
 ## Esempio
 
-Richiesta dal sito, embed blu, senza dati di contatto oltre al nome e all'oggetto:
+Gli altri eventi restano senza email, telefono e note. La richiesta dal sito è l'eccezione: il team deve poter rispondere, quindi l'embed porta nome, email, telefono, servizi, obiettivo, budget, tempi e nota. Parte sullo stesso webhook, fuori dalla coda che toglie gli indirizzi. Se l'invio non riesce, in coda resta solo nome e oggetto. `@everyone` e le menzioni restano spente.
 
 ```json
 {
@@ -49,14 +49,22 @@ Richiesta dal sito, embed blu, senza dati di contatto oltre al nome e all'oggett
   "embeds": [
     {
       "title": "Richiesta dal sito",
-      "description": "Cantina Rossi · Disponibilità per un nuovo sito",
-      "url": "https://www.ctrlagency.dev/admin/requests",
+      "description": "Mario Rossi",
+      "url": "https://www.ctrlagency.dev/admin/crm/CONTATTO",
       "color": 3447003,
       "timestamp": "2026-11-09T09:42:00.000Z",
-      "fields": [{ "name": "Chi", "value": "Sito", "inline": true }]
+      "fields": [
+        { "name": "Email", "value": "mario@example.com", "inline": true },
+        { "name": "Telefono", "value": "+393331112233", "inline": true },
+        { "name": "Servizi", "value": "Sito web, E-commerce", "inline": false },
+        { "name": "Obiettivo", "value": "Partire da zero", "inline": true },
+        { "name": "Budget", "value": "3.000-6.000 €, IVA esclusa", "inline": true },
+        { "name": "Tempi", "value": "Entro 1-3 mesi", "inline": true },
+        { "name": "Nota", "value": "Vorrei partire a gennaio", "inline": false }
+      ]
     }
   ]
 }
 ```
 
-Nel canale si legge: **Richiesta dal sito**, Cantina Rossi · Disponibilità per un nuovo sito, Chi: Sito, con il link alla pagina Richieste.
+Nel canale si legge **Richiesta dal sito**, il nome, i campi qui sopra, e il link alla scheda in Rubrica (o a Richieste, se la scheda non è nata).

@@ -113,6 +113,18 @@ try {
   assert.equal(leads.length, 1, "one lead per request, idempotent");
   assert.equal(leads[0].email, "anna@studio.it");
   assert.equal((await K.listNotes(a.id)).length, 1, "request from a known contact becomes a note");
+  const phoneLead = await K.leadFromRequest({ id: "r-phone", name: "Lucia Fonti", email: "lucia@fonti-altra.it", phone: "+39 333 1234567", subject: "Sito web", message: "Seconda richiesta, stesso telefono" });
+  assert.equal(phoneLead && phoneLead.duplicate, true, "same phone is not a second contact");
+  assert.equal(phoneLead && phoneLead.id, a.id);
+  assert.equal((await K.listNotes(a.id)).length, 2, "known phone becomes a note");
+  await K.leadFromRequest({ id: "r-phone", name: "Lucia Fonti", email: "lucia@fonti-altra.it", phone: "3331234567", subject: "Sito web", message: "Seconda richiesta, stesso telefono" });
+  assert.equal((await K.listNotes(a.id)).length, 2, "the same request is not noted twice");
+  const fresh = await K.leadFromRequest({ id: "r-fresh", name: "Giulia Verdi", email: "giulia.verdi.nuova@gmail.com", phone: "347 1234567", subject: "E-commerce", message: "Budget: 3.000-6.000 €" });
+  assert.equal(fresh && fresh.duplicate, false);
+  const freshRow = await K.getContact(fresh.id);
+  assert.equal(freshRow.phone, "+393471234567");
+  assert.equal(freshRow.email, "giulia.verdi.nuova@gmail.com");
+  assert.equal(freshRow.source, "sito");
   await K.leadFromRequest({ id: "r3", name: "x", email: "y" }).catch(() => assert.fail("leadFromRequest must never throw"));
   const stats = await K.crmStats();
   assert.equal(stats.won, 1);

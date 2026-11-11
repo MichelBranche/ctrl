@@ -3,6 +3,7 @@ import type { InValue } from "@libsql/client";
 import { CAN_SIGN_IN_SQL, ROLES_SQL, rowRoles } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ensureAuditSchema, ensureCrmSchema } from "@/lib/migrate";
+import { normalizePhone } from "@/lib/contact-inquiry";
 import { dedupeKeys, hasKeys, isSource, isStage, STAGES, type DraftStatus, type IngestContact, type Source, type Stage } from "@/lib/crm-core";
 import { KIND_SQL, type ContactKind } from "@/lib/crm-kind";
 import { canAccess, type Perms } from "@/lib/team-types";
@@ -463,23 +464,49 @@ export async function ingestContact(c: IngestContact, irisRequestId?: string | n
   return r;
 }
 
-/** New site request -> CRM lead (source 'sito'). Idempotent per request id; never throws (the public form must not break). */
-export async function leadFromRequest(req: { id: string; name: string; email: string; subject?: string; message?: string; createdAt?: string }): Promise<void> {
+export type SiteLeadResult = { id: string; duplicate: boolean };
+
+/** Same request id never writes a second note. The marker is how a duplicate (no request_id on the row) stays idempotent. */
+async function attachRequestNote(contactId: string, req: { id: string; subject?: string; message?: string }) {
+  const marker = `Rif. sito ${req.id}`;
+  const existing = await db().execute({
+    sql: "SELECT 1 FROM crm_notes WHERE contact_id = ? AND instr(body, ?) > 0 LIMIT 1",
+    args: [contactId, marker],
+  });
+  if (existing.rows.length) return;
+  const body = [marker, "Nuova richiesta dal sito", req.subject, req.message].filter(Boolean).join("\n\n").slice(0, 5000);
+  await addNote(contactId, null, body);
+}
+
+/**
+ * New site request -> CRM lead (source 'sito'). Idempotent per request id.
+ * Email or phone already in the Rubrica: no second contact, the request is a note.
+ * Never throws (the public form must not break).
+ */
+export async function leadFromRequest(req: { id: string; name: string; email: string; phone?: string | null; subject?: string; message?: string; createdAt?: string }): Promise<SiteLeadResult | null> {
   try {
     await ensureCrmSchema();
-    const known = await db().execute({ sql: "SELECT 1 FROM crm_contacts WHERE request_id = ?", args: [req.id] });
-    if (known.rows.length) return;
-    const dup = await findDuplicate({ email: req.email });
+    const known = await db().execute({ sql: "SELECT id FROM crm_contacts WHERE request_id = ?", args: [req.id] });
+    if (known.rows[0]) return { id: String(known.rows[0].id), duplicate: false };
+    const parsedPhone = req.phone ? normalizePhone(req.phone) : { ok: true as const, phone: null };
+    const phone = parsedPhone.ok ? parsedPhone.phone : null;
+    const dup = await findDuplicate({ email: req.email, phone });
     if (dup) {
-      await addNote(dup, null, `Nuova richiesta dal sito${req.subject ? `: ${req.subject}` : ""}\n\n${(req.message ?? "").slice(0, 4000)}`);
-      return;
+      await attachRequestNote(dup, req);
+      return { id: dup, duplicate: true };
     }
-    await createContact({
-      businessName: req.name.slice(0, 200), contactName: req.name.slice(0, 120), email: req.email, source: "sito",
+    const created = await createContact({
+      businessName: req.name.slice(0, 200), contactName: req.name.slice(0, 120), email: req.email, phone, source: "sito",
       nextAction: "Rispondere alla richiesta", notes: [req.subject, req.message].filter(Boolean).join("\n\n").slice(0, 5000) || null,
     }, null, { requestId: req.id, createdAt: req.createdAt });
+    if (created.duplicate) {
+      await attachRequestNote(created.id, req);
+      return { id: created.id, duplicate: true };
+    }
+    return { id: created.id, duplicate: false };
   } catch (error) {
     console.error("[crm] lead dal sito non creato:", error instanceof Error ? error.message : error);
+    return null;
   }
 }
 

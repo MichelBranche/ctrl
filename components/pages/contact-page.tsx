@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { ContactForm } from "@/components/pages/contact-form";
+import { ContactForm } from "@/components/pages/contact-wizard";
 import { contactCopy } from "@/components/pages/contact-copy";
 import { Crumbs } from "@/components/seo/crumbs";
 import { JsonLd } from "@/components/seo/json-ld";
