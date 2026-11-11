@@ -13,31 +13,36 @@ export const studio = {
 };
 
 /**
- * CTRL Agency on Google Maps. The address line, the pin and the Maps link all come from here.
- * Reverse geocoding this pin only returns the town hall on the square, not a street for the studio,
- * so the visible line stays the city.
+ * Studio address. Nominatim has no civic number for this street, so the point is the
+ * Esri World Geocoder PointAddress for Corso Saint-Martin-de-Corléans 179, 11100 Aosta
+ * (45.733991379726, 7.297648176224). The Google listing feature id is a different pin,
+ * in the historic center, and stays only on the "open in Google Maps" link.
  */
-const STUDIO_LATITUDE = 45.7374637;
-const STUDIO_LONGITUDE = 7.3197432;
+const STUDIO_ADDRESS = "Via St. Martin de Corléans 179, 11100 Aosta";
+const STUDIO_LATITUDE = 45.733991379726;
+const STUDIO_LONGITUDE = 7.297648176224;
 const STUDIO_FEATURE_ID = "0x478921b7884a51df:0x8402eb2a8a05baa2";
+/** Camera of the Google Business listing. Not the street address. */
+const LISTING_LATITUDE = 45.7374637;
+const LISTING_LONGITUDE = 7.3197432;
 
 export const STUDIO_PLACE = {
   address: {
-    it: "Aosta, Valle d'Aosta",
-    en: "Aosta, Aosta Valley",
+    it: STUDIO_ADDRESS,
+    en: STUDIO_ADDRESS,
   },
   latitude: STUDIO_LATITUDE,
   longitude: STUDIO_LONGITUDE,
   /** Feature id from the Google Business listing. */
   featureId: STUDIO_FEATURE_ID,
-  mapsUrl: `https://www.google.com/maps/place/CTRL+Agency/@${STUDIO_LATITUDE},${STUDIO_LONGITUDE},17z/data=!4m2!3m1!1s${STUDIO_FEATURE_ID}`,
+  mapsUrl: `https://www.google.com/maps/place/CTRL+Agency/@${LISTING_LATITUDE},${LISTING_LONGITUDE},17z/data=!4m2!3m1!1s${STUDIO_FEATURE_ID}`,
   reviewUrl: "https://g.page/r/CaK6BYoq6wKEEBM/review",
 } as const;
 
-/** Embedded Google map centred on the CTRL Agency listing. */
+/** Embedded Google map centred on the street address, not the listing pin. */
 export function studioMapEmbedUrl(lang: Locale): string {
   const url = new URL("https://www.google.com/maps");
-  url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude}`);
+  url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude} (${STUDIO_PLACE.address.it})`);
   url.searchParams.set("z", "17");
   url.searchParams.set("hl", lang === "en" ? "en" : "it");
   url.searchParams.set("output", "embed");
