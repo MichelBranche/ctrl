@@ -25,23 +25,29 @@ const assert = (await import("node:assert/strict")).default;
 const { contactEmailFacts, contactEmailPrompt } = await import("../lib/crm-prompt.ts");
 const {
   ASSISTANT_SYSTEM,
+  EMAIL_CLOSING,
   EMAIL_MAX_TOKENS,
   EMAIL_SYSTEM,
-  OUTREACH_OPENING,
+  EMAIL_TEMPERATURE,
   classifyAsk,
   clip,
   composeUserPrompt,
   mockOutreachEmail,
   parseEmailJson,
+  polishOutreach,
   stripEmDash,
 } = await import("../lib/ai/copy.ts");
 
+const STOCK_OPENER = "il vostro sito poteva rappresentare un buon punto di partenza";
 assert.equal(EMAIL_MAX_TOKENS, 800);
-assert.ok(EMAIL_SYSTEM.includes(OUTREACH_OPENING));
+assert.equal(EMAIL_TEMPERATURE, 0.8);
+assert.equal(EMAIL_CLOSING, "Cordiali saluti,");
 assert.ok(EMAIL_SYSTEM.includes("Lei"));
-assert.ok(EMAIL_SYSTEM.includes("14 prenotazioni"));
-assert.ok(EMAIL_SYSTEM.includes("11.947 euro"));
-assert.ok(EMAIL_SYSTEM.includes("CTRL®"));
+assert.ok(EMAIL_SYSTEM.includes("accompagnarLa"));
+assert.ok(EMAIL_SYSTEM.includes(EMAIL_CLOSING));
+assert.ok(EMAIL_SYSTEM.includes(`Non aprire con «${STOCK_OPENER}»`));
+assert.ok(EMAIL_SYSTEM.includes("non citare Le Vele come blocco standard"));
+assert.ok(EMAIL_SYSTEM.includes("Non inventare"));
 assert.equal(EMAIL_SYSTEM.includes("\u2014"), false);
 assert.equal(ASSISTANT_SYSTEM.includes("\u2014"), false);
 assert.ok(ASSISTANT_SYSTEM.includes("solo"));
@@ -85,15 +91,38 @@ assert.equal(parseEmailJson("niente"), null);
 console.log("ok json parse");
 
 const clean = mockOutreachEmail("Fratelli Savigliano (QA)", []);
-assert.ok(clean.body.includes(OUTREACH_OPENING));
-assert.ok(clean.body.includes("14 prenotazioni"));
-assert.ok(clean.body.endsWith("CTRL®"));
+assert.ok(clean.body.startsWith("Gentile responsabile di Fratelli Savigliano (QA),"));
+assert.ok(clean.body.includes("accompagnarLa"));
+assert.ok(clean.body.includes("Suo"));
+assert.ok(clean.body.endsWith(EMAIL_CLOSING));
+assert.equal(clean.body.includes(STOCK_OPENER), false);
+assert.equal(clean.body.includes("14 prenotazioni"), false);
+assert.equal(clean.body.includes("CTRL"), false);
 assert.equal(/\btu\b/i.test(clean.body), false);
 assert.equal(clean.body.includes("lento"), false);
 assert.equal(clean.body.includes("\u2014"), false);
 const withIssue = mockOutreachEmail("Cantina", ["Sito lento su mobile"]);
 assert.ok(withIssue.body.includes("Sito lento su mobile"));
+assert.ok(withIssue.body.endsWith(EMAIL_CLOSING));
+assert.equal(withIssue.subject.length <= 80, true);
 console.log("ok mock email does not invent flaws");
+
+const signed = polishOutreach(
+  "Richieste di gruppo online per Capodoglio Murazzi",
+  "Gentile responsabile di Capodoglio Murazzi,\n\nUna osservazione — concreta, presa dai dati.\n\nCordiali saluti,\n\nCTRL®\nMichel Branche",
+);
+assert.ok(signed);
+assert.equal(signed.body.endsWith("Cordiali saluti,"), true);
+assert.equal(signed.body.includes("CTRL"), false);
+assert.equal(signed.body.includes("Michel"), false);
+assert.equal(signed.body.includes("\u2014"), false);
+assert.ok(signed.body.includes("Una osservazione, concreta"));
+const bare = polishOutreach("Percorso per il locale", "Gentile responsabile,\n\n" + "x".repeat(90));
+assert.ok(bare);
+assert.ok(bare.body.endsWith("\n\nCordiali saluti,"));
+assert.equal(polishOutreach("", "testo"), null);
+assert.equal(polishOutreach("Oggetto", "troppo corto"), null);
+console.log("ok closing is the last line");
 
 assert.equal(classifyAsk("Che tempo fa domani a Milano?"), "offtopic");
 assert.equal(classifyAsk("ciao"), "offtopic");

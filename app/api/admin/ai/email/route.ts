@@ -1,5 +1,5 @@
 import { aiConfigured, aiMockEnabled } from "@/lib/ai/config";
-import { mockOutreachEmail, stripEmDash } from "@/lib/ai/copy";
+import { mockOutreachEmail, polishOutreach } from "@/lib/ai/copy";
 import { buildEmailDossier } from "@/lib/ai/email-context";
 import { aiFailure, aiJson, readActor, readJson } from "@/lib/ai/http";
 import { AI_MSG } from "@/lib/ai/messages";
@@ -38,13 +38,12 @@ export async function POST(req: Request) {
 
   try {
     const draft = aiMockEnabled() ? mockOutreachEmail(dossier.businessName, dossier.issues) : await generateOutreach(dossier.prompt);
-    const subject = stripEmDash(draft.subject).replace(/\s+/g, " ").trim().slice(0, 180);
-    const text = stripEmDash(draft.body).trim().slice(0, 4000);
-    if (!subject || !text) {
+    const letter = polishOutreach(draft.subject, draft.body);
+    if (!letter) {
       await releaseSlot(user.id);
       return aiFailure(new AiError("bad_output"));
     }
-    return aiJson({ subject, body: text });
+    return aiJson(letter);
   } catch (error) {
     await releaseSlot(user.id);
     return aiFailure(error);
