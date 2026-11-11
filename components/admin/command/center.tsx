@@ -20,26 +20,28 @@ function Icon({ d }: { d: string }) {
   );
 }
 
+const PEOPLE = "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75";
+const BAG = "M6 7h12l-1 14H7L6 7zM9 7V5a3 3 0 0 1 6 0v2";
+const DOC = "M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h4";
+const MAIL = "M4 6h16v12H4zM4 7l8 6 8-6";
+const EYE = "M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
+const TARGET = "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z";
+
 const KPI_ICON: Record<CommandKpi["id"], string> = {
-  views: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-  visitors: "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 11h-4M20 9v4",
-  revenue: "M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2",
-  deals: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 3v2M12 19v2M3 12h2M19 12h2M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  views: EYE,
+  visitors: PEOPLE,
+  revenue: BAG,
+  deals: TARGET,
 };
 
 const SHORTCUT_ICON: Record<CommandShortcut["id"], string> = {
-  crm: "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 8v6M22 11h-6",
-  shop: "M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2",
-  content: "M5 4h11l3 3v13H5zM9 9h6M9 13h6M9 17h4",
-  analytics: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+  crm: PEOPLE,
+  shop: BAG,
+  content: DOC,
+  analytics: "M4 19V9M10 19V5M16 19v-6M22 19H2",
 };
 
-const ACT_ICON = {
-  crm: "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-  shop: "M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2",
-  post: "M5 4h11l3 3v13H5zM9 9h6M9 13h6",
-  newsletter: "M4 6h16v12H4zM4 7l8 6 8-6",
-} as const;
+const MARK_ICON = { mail: MAIL, bag: BAG, doc: DOC, users: PEOPLE } as const;
 
 function PeriodMenu({ range }: { range: CommandRange }) {
   const [open, setOpen] = useState(false);
@@ -82,10 +84,7 @@ function PeriodMenu({ range }: { range: CommandRange }) {
 
 function TodoCheck({ item }: { item: CommandTodo }) {
   const check = item.check;
-  if (!check) {
-    if (!item.done) return <span className="cc-check-gap" aria-hidden="true" />;
-    return <input type="checkbox" defaultChecked disabled aria-label={`${item.title}, completata`} />;
-  }
+  if (!check) return <span className={`cc-box${item.done ? " is-on" : ""}`} aria-hidden="true" />;
   switch (check.kind) {
     case "activity":
       return <ActivityCheck id={check.id} version={check.version} done={item.done} label={item.title} />;
@@ -129,8 +128,8 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         </picture>
         <div className="cc-hero-copy" data-cc-hero>
           <p className="cc-date">{model.dateLabel}</p>
-          <h1>Il tuo workspace, a colpo d&apos;occhio.</h1>
-          <p className="cc-lead">Monitora la tua azienda, gestisci le priorità e fai crescere i tuoi progetti.</p>
+          <h1>{model.greeting}</h1>
+          {model.lead ? <p className="cc-lead">{model.lead}</p> : null}
           <div className="cc-chips">
             <Link href={model.systems.href} className={`cc-chip is-${model.systems.tone}`} title={model.systems.title}>
               <span className="cc-live" aria-hidden="true" />
@@ -148,8 +147,8 @@ export function CommandCenter({ model }: { model: CommandModel }) {
             <span className="cc-kpi-top">
               <Icon d={KPI_ICON[card.id]} />
               <span className="cc-kpi-label">{card.label}</span>
-              {card.spark.length > 1 ? <span className="cc-kpi-spark"><Sparkline data={card.spark} label={`Andamento ${card.label}`} /></span> : null}
             </span>
+            <span className="cc-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={`Andamento ${card.label}`} /></span>
             {card.unavailable ? (
               <span className="cc-kpi-note">{card.unavailable}</span>
             ) : (
@@ -227,7 +226,7 @@ export function CommandCenter({ model }: { model: CommandModel }) {
             <ol className="cc-feed">
               {model.activity.items.map((item) => (
                 <li key={item.id} className="cc-row">
-                  <span className={`cc-act-icon is-${item.tone}`}><Icon d={ACT_ICON[item.tone]} /></span>
+                  <span className={`cc-act-icon is-${item.mark}`}><Icon d={MARK_ICON[item.mark]} /></span>
                   <Link href={item.href}>{item.title}</Link>
                   <time dateTime={item.at}>{item.ago}</time>
                 </li>
