@@ -4,6 +4,7 @@ import { purgeExpired } from "@/lib/request-guard";
 import { purgeAudit } from "@/lib/audit";
 import { runBackup } from "@/lib/backup";
 import { flushDiscord } from "@/lib/discord-notify";
+import { syncGoogleReviews } from "@/lib/google-reviews";
 import { recordOggiKpis } from "@/lib/crm-kpi";
 
 export const maxDuration = 60;
@@ -23,8 +24,11 @@ export async function GET(req: Request) {
   let kpi = false;
   try { await recordOggiKpis(); kpi = true; } catch { kpi = false; }
   try { await flushDiscord(); } catch { /* the webhook is optional and must not skip the backup */ }
+  // Same daily Hobby cron. One Place Details call when the cached row is older than a day; a failure keeps the previous row.
+  let reviews = "skipped";
+  try { reviews = await syncGoogleReviews(); } catch { reviews = "error"; }
   const backup = await runBackup();
-  return Response.json({ ok: backup.ok, kpi, backup: { ok: backup.ok, bytes: backup.bytes, kept: backup.kept } });
+  return Response.json({ ok: backup.ok, kpi, reviews, backup: { ok: backup.ok, bytes: backup.bytes, kept: backup.kept } });
 }
 
 /** Constant-time compare (hashing first makes lengths equal), so the secret cannot be guessed byte by byte. */

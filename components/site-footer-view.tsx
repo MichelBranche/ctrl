@@ -138,6 +138,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
     <footer className="h-close" id="contact" ref={root}>
       <i className="h-dot" aria-hidden="true" />
       <CtrlMark className="h-mark" />
+      <FooterNewsletter lang={lang} />
       <div className="h-close-info">
         <p className="h-small h-close-kicker">
           <span>{h.closeKicker[0]}</span>
@@ -164,7 +165,6 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
             ))}
           </ul>
         ) : null}
-        <FooterNewsletter lang={lang} />
         <p className="h-small h-legal">
           <a href={lang === "en" ? "/en/privacy" : "/privacy"}>Privacy</a>
           <a href={lang === "en" ? "/en/cookies" : "/cookie"}>Cookie</a>

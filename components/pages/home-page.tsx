@@ -1,11 +1,14 @@
 import { CtaLink } from "@/components/cta-link";
 import Image from "next/image";
 import Link from "next/link";
+import { HeroReviews } from "@/components/hero-reviews";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HoverProjects } from "@/components/hover-projects";
 import { homeFeatured, LE_VELE, services } from "@/lib/content";
+import { presentReviews } from "@/lib/google-reviews-core";
+import { getGoogleReviews } from "@/lib/google-reviews";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import "./home.css";
 
@@ -18,8 +21,10 @@ function Arrow({ className = "" }: { className?: string }) {
 }
 
 
-export function HomePage({ lang }: { lang: Locale }) {
+export async function HomePage({ lang }: { lang: Locale }) {
   const h = dict[lang].home;
+  const reviews = await getGoogleReviews();
+  const reviewStrip = reviews?.reviews.length ? presentReviews(reviews, lang) : null;
 
   return (
     <>
@@ -27,7 +32,7 @@ export function HomePage({ lang }: { lang: Locale }) {
       <HomeMotion>
         <main className="h-root">
           {/* 1. HERO */}
-          <section className="h-hero" data-hero id="top">
+          <section className="h-hero" data-hero id="top" data-reviews={reviewStrip ? "" : undefined}>
             <div className="h-hero-copy">
               <p className="h-label" data-load="kicker">
                 <span>{h.kicker[0]}</span>
@@ -74,6 +79,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 ))}
               </p>
             </div>
+            {reviewStrip ? <HeroReviews data={reviewStrip} /> : null}
           </section>
 
           {/* 2. COSA FACCIAMO */}
