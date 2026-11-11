@@ -1,0 +1,118 @@
+{
+  "entries": [
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:docs:llms-txt",
+      "displayName": "CTRL llms.txt",
+      "description": "Markdown overview of CTRL, the independent creative technology studio in Aosta, with absolute links to the public pages.",
+      "type": "application/llms-txt+markdown",
+      "url": "https://www.ctrlagency.dev/llms.txt",
+      "representativeQueries": [
+        "What does CTRL do?",
+        "Where is the CTRL studio based?",
+        "Which pages describe the CTRL services?"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:docs:sitemap",
+      "displayName": "CTRL sitemap",
+      "description": "XML sitemap of the public CTRL site.",
+      "type": "application/xml",
+      "url": "https://www.ctrlagency.dev/sitemap.xml",
+      "representativeQueries": [
+        "List the public CTRL pages",
+        "CTRL sitemap"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:home",
+      "displayName": "CTRL home",
+      "description": "Italian home of CTRL, creative technology studio in Aosta.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/",
+      "representativeQueries": [
+        "CTRL agenzia web Aosta",
+        "CTRL home page",
+        "Creative technology studio in Aosta"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:valle-d-aosta",
+      "displayName": "Agenzia web in Valle d'Aosta",
+      "description": "Page about CTRL as a web studio in Valle d'Aosta.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/agenzia-web-valle-d-aosta",
+      "representativeQueries": [
+        "Agenzia web in Valle d'Aosta",
+        "CTRL Valle d'Aosta"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:services",
+      "displayName": "CTRL services",
+      "description": "Service index: custom websites, brand identity, product development, web apps, software and AI, SEO, and web security.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/services",
+      "representativeQueries": [
+        "CTRL services",
+        "Siti web, brand e software CTRL",
+        "What services does CTRL offer?"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:websites",
+      "displayName": "CTRL website projects",
+      "description": "Selected website projects, including hospitality work.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/projects/websites",
+      "representativeQueries": [
+        "CTRL website projects",
+        "Siti realizzati da CTRL"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:residence-le-vele",
+      "displayName": "Residence Le Vele",
+      "description": "Case study of the Residence Le Vele site built by CTRL. The page reports 14 bookings and 11947 euros in the first month, with 0 euros of ads.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/projects/websites/residence-le-vele",
+      "representativeQueries": [
+        "Residence Le Vele case study",
+        "CTRL hotel website results",
+        "Residence Le Vele first month bookings"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:contact",
+      "displayName": "CTRL contact",
+      "description": "Contact page for the Aosta studio.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/contact",
+      "representativeQueries": [
+        "Contact CTRL in Aosta",
+        "CTRL email and address"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:team",
+      "displayName": "CTRL team",
+      "description": "Team page for Michel Branche and Kallebe Gallo.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/team",
+      "representativeQueries": [
+        "Who founded CTRL?",
+        "CTRL team Michel Branche Kallebe Gallo"
+      ]
+    },
+    {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:journal",
+      "displayName": "CTRL journal",
+      "description": "Journal of notes and articles from CTRL.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/journal",
+      "representativeQueries": [
+        "CTRL journal",
+        "Articles from CTRL"
+      ]
+    }
+  ]
+}
