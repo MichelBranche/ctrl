@@ -12,6 +12,32 @@ export const studio = {
   email: CONTACT_EMAIL,
 };
 
+/**
+ * Contact page place. The address line, the map pin and the Maps link all come from here.
+ * TODO(owner): Michel will send the exact street address and the Google Business place link.
+ * Until then the line stays the city, and the pin is the city of Aosta, not a street.
+ */
+export const STUDIO_PLACE = {
+  address: {
+    it: "Aosta, Valle d'Aosta",
+    en: "Aosta, Aosta Valley",
+  },
+  latitude: 45.737,
+  longitude: 7.3206,
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Aosta%2C+Valle+d%27Aosta",
+  reviewUrl: "https://g.page/r/CaK6BYoq6wKEEBM/review",
+} as const;
+
+/** Embedded Google map centred on STUDIO_PLACE. The visible address line stays the city until the listing is confirmed. */
+export function studioMapEmbedUrl(lang: Locale): string {
+  const url = new URL("https://www.google.com/maps");
+  url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude}`);
+  url.searchParams.set("z", "14");
+  url.searchParams.set("hl", lang === "en" ? "en" : "it");
+  url.searchParams.set("output", "embed");
+  return url.toString();
+}
+
 /* ------------------------------------------------------------------ */
 /* Projects: categories (the /projects index) and the works inside them. */
 /* ------------------------------------------------------------------ */
