@@ -7,6 +7,7 @@ import { useActionState, useDeferredValue, useEffect, useRef, useState, useTrans
 import { emailDocument } from "@/lib/mail/document";
 import { brandedEmail, type EmailSender } from "@/lib/mail/template";
 import { markOpened, markUnread, sendMail, saveMailDraft, toggleClaim, type SendState } from "@/app/admin/email-actions";
+import { GenerateEmailButton } from "@/components/admin/crm/generate-email";
 import { OutreachDialog } from "@/components/admin/crm/outreach-dialog";
 import type { OutreachWarning } from "@/lib/crm-outreach-types";
 
@@ -163,7 +164,7 @@ type Draft = { to: string; cc: string; subject: string; body: string };
  * `outreach`: CRM warning computed on the server when the composer opens; writing stays locked until "Continua comunque".
  * The server re-checks at send time (lib/crm-outreach.ts) and may answer with an updated warning instead of sending.
  */
-export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender, sentHref = "/admin/email?f=sent", outreach = null }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string; sentHref?: string; outreach?: OutreachWarning | null }) {
+export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid = 0, sender, sentHref = "/admin/email?f=sent", outreach = null, aiContactId }: { sender?: EmailSender | null; original?: { folder: string; uid: number; files: number }; draftUid?: number; draft: Draft; reply: { folder: string; uid: number } | null; from: string; cancelHref: string; sentHref?: string; outreach?: OutreachWarning | null; aiContactId?: string }) {
   const router = useRouter();
   /** Idempotency key of the attempt in flight; a new one only after an attempt that certainly sent nothing new. */
   const sendKey = useRef<string | null>(null);
@@ -185,6 +186,7 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
   }, {});
   const activeDraftUid = saved.draftUid ?? draftUid;
   const [showCc, setShowCc] = useState(Boolean(draft.cc));
+  const [subject, setSubject] = useState(draft.subject);
   const [body, setBody] = useState(draft.body);
   const [preview, setPreview] = useState(false);
   const previewBody = useDeferredValue(body);
@@ -245,8 +247,9 @@ export function ComposeForm({ draft, reply, from, cancelHref, original, draftUid
       )}
       <label className="adm-field">
         <span>Oggetto</span>
-        <input className="adm-input" name="subject" defaultValue={draft.subject} maxLength={250} required />
+        <input className="adm-input" name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={250} required />
       </label>
+      {aiContactId ? <GenerateEmailButton contactId={aiContactId} disabled={locked || pending || saving} onFill={(next) => { setSubject(next.subject); setBody(next.body); }} /> : null}
       <label className="adm-field">
         <span>Messaggio</span>
         <textarea className="adm-input" name="body" value={body} onChange={(e) => setBody(e.target.value)} rows={12} required autoFocus={Boolean(reply)} />

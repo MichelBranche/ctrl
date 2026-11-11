@@ -410,6 +410,24 @@ const OPPORTUNITY_DDL = [
   "CREATE UNIQUE INDEX IF NOT EXISTS crm_opportunities_key ON crm_opportunities (idempotency_key) WHERE idempotency_key IS NOT NULL",
 ];
 
+let aiReady: Promise<void> | null = null;
+
+/**
+ * Per-user daily AI request counts (db/021_ai_usage.sql). A count only: no prompt, no email body, no contact row.
+ * Idempotent. Rollback: DROP TABLE ai_usage.
+ */
+export function ensureAiSchema(): Promise<void> {
+  aiReady ??= retryBusy(async () => {
+    await db().execute(`CREATE TABLE IF NOT EXISTS ai_usage (
+      user_id TEXT NOT NULL,
+      day TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (user_id, day)
+    )`);
+  }).catch((error) => { aiReady = null; throw error; });
+  return aiReady;
+}
+
 let clientMeetReady: Promise<void> | null = null;
 /** Client Meet invites (mirrors db/013_client_meetings.sql). Idempotent, once per instance. */
 export function ensureClientMeetSchema(): Promise<void> {

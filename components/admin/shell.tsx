@@ -1,5 +1,6 @@
 "use client";
 
+import { CrmAssistant } from "@/components/admin/ai-assistant";
 import { UserAvatar } from "@/components/admin/user-avatar";
 import Link from "next/link";
 import { NavPending } from "@/components/admin/email/mail-speed";
@@ -215,6 +216,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, ch
         <div className="adm-content">{children}</div>
       </div>
       {palette ? <Palette nav={nav} actions={actions} onClose={() => setPalette(false)} /> : null}
+      <CrmAssistant />
     </div>
   );
 }
