@@ -2,7 +2,24 @@ import type { MetadataRoute } from "next";
 
 const siteUrl = "https://www.ctrlagency.dev";
 
-const aiAgents = ["GPTBot", "OAI-SearchBot", "PerplexityBot", "Google-Extended", "ClaudeBot"];
+/** Search and answer-engine crawlers. All of them may read the public site. */
+const aiAgents = [
+  "GPTBot",
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "PerplexityBot",
+  "Perplexity-User",
+  "Google-Extended",
+  "GoogleOther",
+  "Applebot-Extended",
+  "ClaudeBot",
+  "Claude-SearchBot",
+  "anthropic-ai",
+  "Amazonbot",
+  "meta-externalagent",
+  "CCBot",
+  "cohere-ai",
+];
 const publicRule = { allow: "/", disallow: ["/admin", "/api"] };
 
 export default function robots(): MetadataRoute.Robots {

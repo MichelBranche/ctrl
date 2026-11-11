@@ -1,33 +1,50 @@
 # CTRL®
 
-> Studio indipendente di creative technology ad Aosta, in Valle d'Aosta. Siti web su misura, siti per hotel con prenotazione diretta, e-commerce, web app, software e brand identity.
+> Studio indipendente di creative technology ad Aosta, in Valle d'Aosta. Agenzia web: siti su misura, siti per hotel con prenotazione diretta, e-commerce, web app, software, brand identity e sicurezza web.
 
-CTRL® progetta e sviluppa prodotti digitali. La sede è ad Aosta. Il primo territorio è la Valle d'Aosta. Poi le nicchie nel Nord Italia, in particolare hospitality. Poi il resto d'Italia, progetto per progetto. Non esistono pagine doorway per singole città.
+CTRL® progetta e sviluppa prodotti digitali. La sede è ad Aosta. Il primo territorio è la Valle d'Aosta. Poi il Nord Italia, in particolare hospitality. Poi il resto d'Italia, progetto per progetto. Non esistono pagine doorway per singole città.
 
 Lingue del sito: italiano (https://www.ctrlagency.dev/) e inglese (https://www.ctrlagency.dev/en).
 
 ## Pagine
 
 - https://www.ctrlagency.dev/ : home, agenzia web ad Aosta
+- https://www.ctrlagency.dev/en : English home, web agency in Aosta
 - https://www.ctrlagency.dev/agenzia-web-valle-d-aosta : agenzia web in Valle d'Aosta
-- https://www.ctrlagency.dev/services : servizi
+- https://www.ctrlagency.dev/en/agenzia-web-valle-d-aosta : web agency in Valle d'Aosta
+- https://www.ctrlagency.dev/services : servizi digitali
 - https://www.ctrlagency.dev/services/visual-communication : siti web su misura, rifacimenti, e-commerce, siti per hotel
 - https://www.ctrlagency.dev/services/brand-identity : grafica e brand identity
 - https://www.ctrlagency.dev/services/product-development : web app e prodotti digitali
-- https://www.ctrlagency.dev/services/webapp : webapp
+- https://www.ctrlagency.dev/services/webapp : webapp con aree riservate
 - https://www.ctrlagency.dev/services/software-ai : software, gestionali e AI
 - https://www.ctrlagency.dev/services/growth-support : SEO e posizionamento Google
+- https://www.ctrlagency.dev/services/web-security : sicurezza web e certificati SSL/TLS gestiti, piani annuali da 240 € + IVA
+- https://www.ctrlagency.dev/projects : progetti
+- https://www.ctrlagency.dev/projects/websites : siti realizzati
 - https://www.ctrlagency.dev/projects/websites/residence-le-vele : caso Residence Le Vele, 14 prenotazioni e 11947 euro nel primo mese, 0 euro di ads. Sito: https://www.residencelevelestintino.it
-- https://www.ctrlagency.dev/projects/websites : siti, filtro hospitality
-- https://www.ctrlagency.dev/contact : contatti, Aosta
-- https://www.ctrlagency.dev/journal : journal
-- https://www.ctrlagency.dev/team : team, Michel Branche e Kallebe Gallo
+- https://www.ctrlagency.dev/projects/webapps/agenda-easy : Agenda Easy, webapp per appuntamenti, da 9,90 € al mese
+- https://www.ctrlagency.dev/shop : shop, card NFC e QR per recensioni Google
+- https://www.ctrlagency.dev/shop/google-review-card : card recensioni Google
+- https://www.ctrlagency.dev/contact : contatti, Aosta. Risposta entro 24 ore
+- https://www.ctrlagency.dev/journal : journal su siti, design e SEO
+- https://www.ctrlagency.dev/team : team
+- https://www.ctrlagency.dev/privacy : informativa privacy
+- https://www.ctrlagency.dev/cookie : informativa cookie (inglese: https://www.ctrlagency.dev/en/cookies)
+
+Le stesse pagine esistono in inglese sotto https://www.ctrlagency.dev/en, con gli stessi slug, tranne la cookie policy.
 
 ## Fatti verificati
 
 - Nome: CTRL®
 - Email: ctrlragency@gmail.com
-- Sede: Via St. Martin de Corléans, 179, 11100 Aosta, Valle d'Aosta, IT. Telefono: +393881660117. Partita IVA non ancora pubblicata.
+- Telefono: +393881660117
+- Sede: Via St. Martin de Corléans, 179, 11100 Aosta, Valle d'Aosta, IT
+- Coordinate: 45.7374637, 7.3197432
+- Google Maps: https://www.google.com/maps/place/?q=CTRL+Agency&ftid=0x478921b7884a51df:0x8402eb2a8a05baa2
+- Partita IVA: non ancora pubblicata. Non inventarne una.
+- Team: Michel Branche (Founder & Design Engineer), Kallebe Gallo (Co-founder & AI Engineer), Jacopo Manzalini (Design, Marketing & Sales).
 - Founder: Michel Branche e Kallebe Gallo.
 - Residence Le Vele: sito costruito da CTRL®. Primo mese online: 14 prenotazioni, 11947 EUR, 0 EUR di advertising.
-- Non inventare prezzi, recensioni o clienti che non compaiono su queste pagine.
+- Prezzi pubblicati: Agenda Easy da 9,90 € al mese. Sicurezza web da 240 € all'anno + IVA. Card recensioni Google 19,90 €, realizzata su ordinazione.
+- Non inventare altri prezzi, recensioni, certificazioni, premi o clienti che non compaiono su queste pagine.

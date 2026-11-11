@@ -8,7 +8,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { AGENDA_EASY_LIVE, AGENDA_EASY_VIDEO, agendaCopy } from "./copy";
 import { YouTubeFacade } from "./youtube-facade";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "./agenda-easy.css";
 
@@ -17,12 +17,7 @@ const IMG = "/images/projects/agenda-easy";
 
 export function agendaEasyMetadata(lang: Locale): Metadata {
   const c = agendaCopy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: alternates(AGENDA_EASY_PATH, lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription, images: [`${IMG}/hero.webp`] }),
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: AGENDA_EASY_PATH, images: [`${IMG}/hero.webp`] });
 }
 
 const ICONS = {

@@ -71,8 +71,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Siti web", "per aziende"], en: ["Websites", "for businesses"] },
     text: { it: "Esperienze digitali su misura per il tuo business.", en: "Custom digital experiences for your business." },
     intro: {
-      it: "Siti istituzionali, vetrine e piattaforme editoriali progettati e sviluppati su misura, veloci e facili da gestire.",
-      en: "Corporate sites, showcases and editorial platforms, designed and built to measure, fast and easy to manage.",
+      it: "Siti istituzionali, vetrine e piattaforme editoriali progettati e sviluppati su misura ad Aosta, veloci e facili da gestire.",
+      en: "Corporate sites, showcases and editorial platforms, designed and built to measure in Aosta, fast and easy to manage.",
     },
     image: "/images/projects/websites.webp",
   },
@@ -94,8 +94,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Software", "su misura"], en: ["Custom", "software"] },
     text: { it: "Soluzioni software pensate per i tuoi processi.", en: "Software solutions designed around your processes." },
     intro: {
-      it: "Strumenti interni, automazioni e integrazioni pensati attorno al modo in cui lavora il tuo team.",
-      en: "Internal tools, automations and integrations designed around the way your team works.",
+      it: "Strumenti interni, automazioni e integrazioni pensati attorno al modo in cui lavora il tuo team, dallo studio di Aosta.",
+      en: "Internal tools, automations and integrations designed around the way your team works, from the Aosta studio.",
     },
     image: "/images/projects/software.webp",
   },
@@ -105,8 +105,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Brand", "che durano"], en: ["Brands", "that last"] },
     text: { it: "Identità visiva e strategia per distinguerti.", en: "Visual identity and strategy to stand out." },
     intro: {
-      it: "Logo, sistema visivo e linee guida per un'identità coerente su ogni punto di contatto.",
-      en: "Logo, visual system and guidelines for an identity that holds together at every touchpoint.",
+      it: "Logo, sistema visivo e linee guida per un'identità coerente, progettati ad Aosta per attività e hotel.",
+      en: "Logo, visual system and guidelines for an identity that holds together, designed in Aosta for businesses and hotels.",
     },
     image: "/images/projects/brand-identity.webp",
   },
@@ -129,8 +129,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Video", "che coinvolgono"], en: ["Videos", "that engage"] },
     text: { it: "Motion design e video per raccontare il tuo brand.", en: "Motion design and video to tell your brand's story." },
     intro: {
-      it: "Motion design, spot e contenuti brevi per social e lanci, pensati per raccontare il brand in pochi secondi.",
-      en: "Motion design, spots and short-form content for social and launches, made to tell the brand in seconds.",
+      it: "Motion design, spot e contenuti brevi per social e lanci, realizzati dallo studio CTRL® ad Aosta.",
+      en: "Motion design, spots and short-form content for social and launches, made by the CTRL® studio in Aosta.",
     },
     image: "/images/projects/promo-videos.webp",
   },

@@ -10,7 +10,7 @@ import { FaqList } from "@/components/seo/faq";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LE_VELE } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, faqNode, LOCAL_PATH, openGraph } from "@/lib/seo";
+import { breadcrumbNode, faqNode, LOCAL_PATH, publicMeta } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "@/components/services/webapp.css";
 import "./service-detail.css";
@@ -22,8 +22,8 @@ const money = {
 
 const copy = {
   it: {
-    metaTitle: "Agenzia web in Valle d'Aosta",
-    metaDescription: "CTRL® è l'agenzia web di Aosta. Siti su misura, hotel con prenotazione diretta, e-commerce, web app, software e brand identity. Prima la Valle d'Aosta, poi il Nord Italia.",
+    metaTitle: "Agenzia web in Valle d'Aosta, con sede ad Aosta | CTRL®",
+    metaDescription: "Cerchi un'agenzia web in Valle d'Aosta? CTRL® ha sede ad Aosta e realizza siti su misura, hotel, e-commerce, web app e software. Scrivi allo studio.",
     title: "Agenzia web in Valle d'Aosta",
     lead: "Siamo uno studio di creative technology ad Aosta. Progettiamo e sviluppiamo siti, identità e software per attività della valle, e per hotel e brand del Nord Italia.",
     whereTitle: "Prima la valle.",
@@ -39,6 +39,7 @@ const copy = {
       { href: "/services/webapp", kicker: "Webapp", label: "Webapp con aree riservate e dashboard" },
       { href: "/services/software-ai", kicker: "Software", label: "Gestionali su misura, automazioni e AI" },
       { href: "/services/growth-support", kicker: "SEO", label: "SEO, posizionamento Google e manutenzione" },
+      { href: "/services/web-security", kicker: "Sicurezza", label: "Certificati SSL/TLS, hosting e protezione del sito" },
     ],
     caseKicker: "Caso studio",
     caseTitle: "Residence Le Vele",
@@ -61,8 +62,8 @@ const copy = {
     home: "Home",
   },
   en: {
-    metaTitle: "Web studio in Valle d'Aosta",
-    metaDescription: "CTRL® is the web studio in Aosta. Custom sites, hotels with direct booking, online shops, web apps, software and brand identity. Valle d'Aosta first, then Northern Italy.",
+    metaTitle: "Web agency in Valle d'Aosta, based in Aosta | CTRL®",
+    metaDescription: "Looking for a web agency in Valle d'Aosta? CTRL® is based in Aosta and builds custom sites, hotels, shops, web apps and software. Write to us.",
     title: "A web studio in Valle d'Aosta",
     lead: "We are a creative technology studio in Aosta. We design and build websites, identities and software for businesses in the valley, and for hotels and brands across Northern Italy.",
     whereTitle: "The valley first.",
@@ -78,6 +79,7 @@ const copy = {
       { href: "/services/webapp", kicker: "Web apps", label: "Web apps with private areas and dashboards" },
       { href: "/services/software-ai", kicker: "Software", label: "Custom internal tools, automations and AI" },
       { href: "/services/growth-support", kicker: "SEO", label: "SEO, Google rankings and maintenance" },
+      { href: "/services/web-security", kicker: "Security", label: "SSL/TLS certificates, hosting and site protection" },
     ],
     caseKicker: "Case study",
     caseTitle: "Residence Le Vele",
@@ -103,12 +105,7 @@ const copy = {
 
 export function localMetadata(lang: Locale): Metadata {
   const c = copy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: alternates(LOCAL_PATH, lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }),
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: LOCAL_PATH });
 }
 
 export function LocalView({ lang }: { lang: Locale }) {

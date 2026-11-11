@@ -12,13 +12,13 @@ import { CONTACT_EMAIL, STUDIO_PLACE, studioMapEmbedUrl } from "@/lib/content";
 import { formatRating } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, openGraph } from "@/lib/seo";
+import { breadcrumbNode, publicMeta } from "@/lib/seo";
 import { getSocialLinks } from "@/lib/settings";
 import "./contact.css";
 
 export function contactMetadata(lang: Locale): Metadata {
   const c = contactCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription, alternates: alternates("/contact", lang), openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }) };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/contact" });
 }
 
 function Arrow({ className = "c-arrow" }: { className?: string }) {

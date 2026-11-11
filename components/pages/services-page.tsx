@@ -8,12 +8,12 @@ import { ServicesMotion } from "@/components/pages/services-motion";
 import { servicesCopy } from "@/components/pages/services-copy";
 import { LE_VELE, services } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta } from "@/lib/seo";
 import "./services.css";
 
 export function servicesMetadata(lang: Locale): Metadata {
   const c = servicesCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription, alternates: alternates("/services", lang), openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }) };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/services" });
 }
 
 function Arrow({ className = "s-arrow" }: { className?: string }) {

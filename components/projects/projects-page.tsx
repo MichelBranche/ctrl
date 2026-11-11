@@ -10,17 +10,12 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { SecuritySection } from "@/components/security/security-section";
 import { categoryPath, projectCategories } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta } from "@/lib/seo";
 import "./projects.css";
 
 export function projectsMetadata(lang: Locale): Metadata {
   const c = projectsCopy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: alternates("/projects", lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }),
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/projects" });
 }
 
 export function ProjectsView({ lang }: { lang: Locale }) {

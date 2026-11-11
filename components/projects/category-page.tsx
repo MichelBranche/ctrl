@@ -11,7 +11,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
 import { categoryPath, getProjectCategory, LE_VELE, LE_VELE_MEDIA, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
 
@@ -19,12 +19,10 @@ export function categoryMetadata(slug: string, lang: Locale): Metadata {
   const cat = getProjectCategory(slug);
   if (!cat) return {};
   const path = `/projects/${cat.slug}`;
-  return {
-    title: projectsCopy[lang].categoryMeta(cat.label[lang]),
-    description: cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang],
-    alternates: alternates(path, lang),
-    openGraph: openGraph(lang, { title: projectsCopy[lang].categoryMeta(cat.label[lang]), description: cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang], images: [cat.image] }),
-  };
+  const seo = projectsCopy[lang].categorySeo[cat.slug];
+  const title = seo?.title ?? projectsCopy[lang].categoryMeta(cat.label[lang]);
+  const description = seo?.description ?? (cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang]);
+  return publicMeta(lang, { title, description, itPath: path, images: [cat.image] });
 }
 
 function WorkCard({ work, lang }: { work: Project; lang: Locale }) {
