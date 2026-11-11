@@ -98,21 +98,34 @@
 .bk-actions { grid-column: 1 / -1; justify-self: center; width: min(100%, 52rem); }
 .bk-frame {
   height: 52rem;
+  overflow: hidden;
   border: 1px solid var(--bk-rule);
-  background: #fff;
+  border-radius: 12px;
+  background: var(--bk-bg);
 }
-.bk-iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
+.bk-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+  /* Appointment schedules have no dark theme. invert(0.957) turns Google's white
+     into the page background #0b0b0b; hue-rotate(180deg) puts the blues back. */
+  filter: invert(0.957) hue-rotate(180deg);
+}
 
 .bk-soon {
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: hidden;
   text-align: center;
   padding: 2.4rem 1.6rem 2.1rem;
   border: 1px solid var(--bk-rule);
+  border-radius: 12px;
   background:
     linear-gradient(var(--bk-accent), var(--bk-accent)) top / 100% 2px no-repeat,
-    rgba(242, 240, 234, 0.03);
+    var(--bk-bg);
 }
 .bk-h2 {
   margin: 0.9rem 0 0;
