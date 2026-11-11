@@ -40,7 +40,7 @@ Le stesse pagine esistono in inglese sotto https://www.ctrlagency.dev/en, con gl
 - Email: ctrlragency@gmail.com
 - Telefono: +393881660117
 - Sede: Via St. Martin de Corléans, 179, 11100 Aosta, Valle d'Aosta, IT
-- Coordinate: 45.7374637, 7.3197432
+- Coordinate: 45.733991379726, 7.297648176224
 - Google Maps: https://www.google.com/maps/place/?q=CTRL+Agency&ftid=0x478921b7884a51df:0x8402eb2a8a05baa2
 - Partita IVA: non ancora pubblicata. Non inventarne una.
 - Team: Michel Branche (Founder & Design Engineer), Kallebe Gallo (Co-founder & AI Engineer), Jacopo Manzalini (Design, Marketing & Sales).

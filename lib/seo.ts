@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, CONTACT_PHONE, services, team } from "@/lib/content";
+import { CONTACT_EMAIL, CONTACT_PHONE, STUDIO_PLACE, services, team } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export const SITE_URL = "https://www.ctrlagency.dev";
@@ -9,8 +9,8 @@ export const LOCAL_PATH = "/agenzia-web-valle-d-aosta";
 /** Google Maps place for CTRL Agency. Identity URL only: no review markup. */
 export const MAPS_URL = "https://www.google.com/maps/place/?q=CTRL+Agency&ftid=0x478921b7884a51df:0x8402eb2a8a05baa2";
 
-/** Pin published with the studio listing. */
-export const STUDIO_GEO = { latitude: 45.7374637, longitude: 7.3197432 } as const;
+/** Street address point from STUDIO_PLACE. Not the Google listing pin. */
+export const STUDIO_GEO = { latitude: STUDIO_PLACE.latitude, longitude: STUDIO_PLACE.longitude } as const;
 
 /**
  * Public facts we will not invent.
@@ -26,7 +26,7 @@ export const STUDIO_GEO = { latitude: 45.7374637, longitude: 7.3197432 } as cons
  * Founders, as published on /team: Michel Branche and Kallebe Gallo.
  */
 export const businessProfile = {
-  streetAddress: process.env.BUSINESS_STREET_ADDRESS ?? "Via St. Martin de Corléans, 179",
+  streetAddress: process.env.BUSINESS_STREET_ADDRESS ?? "Via St. Martin de Corléans 179",
   postalCode: process.env.BUSINESS_POSTAL_CODE ?? "11100",
   telephone: process.env.BUSINESS_PHONE ?? CONTACT_PHONE,
   legalName: process.env.BUSINESS_LEGAL_NAME ?? "",
