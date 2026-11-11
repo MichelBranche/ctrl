@@ -2,9 +2,10 @@ import "server-only";
 import { after } from "next/server";
 import { db, dbConfigured } from "@/lib/db";
 import {
-  auditActor, auditHref, auditTitle, discordPayload, discordWebhookUrl, kindFromAction, scrubDiscord,
+  absoluteCrmUrl, auditActor, auditHref, auditTitle, discordPayload, discordWebhookUrl, kindFromAction, scrubDiscord,
   type NoticeDraft,
 } from "@/lib/discord-core";
+import { adminBrief, siteInquiryDiscordPayload, type Inquiry } from "@/lib/contact-inquiry";
 import { dedupeKeys } from "@/lib/crm-core";
 import { romeDay } from "@/lib/crm-kpi";
 import { ensureCrmSchema, ensureDiscordSchema } from "@/lib/migrate";
@@ -305,6 +306,38 @@ async function postOnce(url: string, body: string, timeoutMs: number, fetchImpl:
   const text = await res.text().then((value) => value.slice(0, 400)).catch(() => "");
   if (res.ok) return { ok: true, retryMs: null };
   return { ok: false, retryMs: retryDelay(res.status, res.headers.get("retry-after"), text) };
+}
+
+/**
+ * Formatted site-form notice: name, contacts, services, goal, budget, timing, note.
+ * Posted straight to the same webhook. The generic outbox still strips addresses, so this
+ * path does not go through it. A failed send falls back to a scrubbed outbox row and never throws.
+ */
+export async function notifySiteInquiry(inquiry: Inquiry, href: string, requestId: string): Promise<void> {
+  const url = configured();
+  if (!url || !requestId) return;
+  const path = href.startsWith("/admin") ? href : "/admin/requests";
+  try {
+    const body = JSON.stringify(siteInquiryDiscordPayload(inquiry, absoluteCrmUrl(path), new Date().toISOString()));
+    let result = await postOnce(url, body, SEND_TIMEOUT_MS, fetch);
+    if (!result.ok && result.retryMs != null) {
+      await new Promise((resolve) => setTimeout(resolve, result.retryMs ?? 0));
+      result = await postOnce(url, body, SEND_TIMEOUT_MS, fetch);
+    }
+    if (result.ok) return;
+    console.error("[discord] site inquiry failed");
+  } catch (error) {
+    console.error("[discord] site inquiry failed:", error instanceof Error ? error.message : error);
+  }
+  const brief = adminBrief(inquiry);
+  await recordAdminNotice({
+    id: `request:${requestId}`.slice(0, 120),
+    kind: "site_form",
+    event: "Richiesta dal sito",
+    title: [inquiry.name, brief.subject].filter(Boolean).join(" · "),
+    actor: "Sito",
+    href: path,
+  });
 }
 
 /**

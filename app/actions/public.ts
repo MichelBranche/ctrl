@@ -2,8 +2,9 @@
 
 import { randomBytes } from "node:crypto";
 import { after } from "next/server";
+import { adminBrief, inquiryFromForm } from "@/lib/contact-inquiry";
 import { leadFromRequest } from "@/lib/crm";
-import { discordEnabled, recordAdminNotice } from "@/lib/discord-notify";
+import { notifySiteInquiry } from "@/lib/discord-notify";
 import { db, dbConfigured } from "@/lib/db";
 import { allow } from "@/lib/request-guard";
 
@@ -16,30 +17,27 @@ export type ContactResult = { ok: true } | { ok: false; error: "invalid" | "rate
 /** Saves a contact form submission. Honeypot hits get a fake success; nothing about the sender's IP is stored. */
 export async function submitContact(form: FormData): Promise<ContactResult> {
   if (clip(form, "company_site", 200)) return { ok: true };
-  const name = clip(form, "name", 120);
-  const email = clip(form, "email", 200);
-  const subject = clip(form, "subject", 120);
-  const message = clip(form, "message", 5000);
-  if (!name || !EMAIL.test(email) || !subject || message.length < 2) return { ok: false, error: "invalid" };
+  const parsed = inquiryFromForm(form);
+  if (!parsed.ok) return { ok: false, error: "invalid" };
+  const inquiry = parsed.inquiry;
+  const { subject, message } = adminBrief(inquiry);
   if (!dbConfigured) return { ok: false, error: "unavailable" };
   try {
     if (!(await allow("contact", 5, 3_600_000))) return { ok: false, error: "rate" };
     const id = crypto.randomUUID();
     await db().execute({
       sql: "INSERT INTO contact_requests (id, name, email, subject, message, lang) VALUES (?, ?, ?, ?, ?, ?)",
-      args: [id, name, email, subject, message, langOf(form)],
+      args: [id, inquiry.name, inquiry.email, subject, message, inquiry.lang],
     });
-    // Name and subject only. The address and the message stay in the request row. Nothing is scheduled when Discord is unset.
-    if (discordEnabled()) {
-      const notice = () => recordAdminNotice({
-        id: `request:${id}`, kind: "site_form", event: "Richiesta dal sito",
-        title: [name, subject].filter(Boolean).join(" · "), actor: "Sito", href: "/admin/requests",
+    // CRM and Discord run after the response. Either one failing leaves the saved request as it is.
+    const followUp = async () => {
+      const lead = await leadFromRequest({
+        id, name: inquiry.name, email: inquiry.email, phone: inquiry.phone, subject, message,
       });
-      try { after(notice); } catch { await notice(); }
-    }
-    // CRM lead after the response: leadFromRequest never throws, so the form result cannot change.
-    const lead = () => leadFromRequest({ id, name, email, subject, message });
-    try { after(lead); } catch { await lead(); }
+      const href = lead && /^[A-Za-z0-9_-]{1,80}$/.test(lead.id) ? `/admin/crm/${lead.id}` : "/admin/requests";
+      await notifySiteInquiry(inquiry, href, id);
+    };
+    try { after(followUp); } catch { await followUp(); }
     return { ok: true };
   } catch (error) {
     console.error("[contact] save failed:", error instanceof Error ? error.message : error);
