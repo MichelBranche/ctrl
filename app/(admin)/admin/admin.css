@@ -1953,14 +1953,15 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 .crm-ai-panel { pointer-events: auto; }
 .crm-ai-launcher {
   display: block;
-  width: 4.25rem;
+  width: 84px;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  transition: transform 0.3s ease;
 }
-.crm-ai-launcher .ctrl-mascot.is-mini { width: 4.25rem; }
+.crm-ai-launcher.is-open { transform: scale(0.88); }
 .crm-ai-launcher:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 3px; border-radius: 0.8rem; }
 .crm-ai-panel {
   position: absolute;
@@ -2008,8 +2009,7 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 }
 .crm-ai-form .adm-btn { flex: none; }
 @media (max-width: 640px) {
-  .crm-ai-launcher { width: 3.4rem; }
-  .crm-ai-launcher .ctrl-mascot.is-mini { width: 3.4rem; }
+  .crm-ai-launcher { width: 60px; }
   .crm-ai.is-open .crm-ai-launcher { visibility: hidden; }
   .crm-ai-panel {
     position: fixed;
@@ -2024,5 +2024,6 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .crm-ai-typing i { opacity: 0.7; }
+  .crm-ai-launcher { transition: none; }
 }
 

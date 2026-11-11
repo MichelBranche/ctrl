@@ -146,13 +146,13 @@ export function CrmAssistant() {
       <button
         ref={launcher}
         type="button"
-        className="crm-ai-launcher"
+        className={`crm-ai-launcher${open ? " is-open" : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         aria-label={open ? "Chiudi assistente CRM" : "Apri assistente CRM"}
         onClick={() => setOpen((value) => !value)}
       >
-        <CtrlMascot mini thinking={busy} />
+        <CtrlMascot thinking={busy} />
       </button>
     </div>
   );
