@@ -96,15 +96,23 @@ export function ContactForm({ lang }: { lang: Locale }) {
   const bar = useRef<HTMLSpanElement>(null);
   const moving = useRef(false);
   const arm = useRef<number | null>(null);
+  const draftRef = useRef<Draft>(EMPTY);
   const storedRaw = useSyncExternalStore(subscribeStorage, readStorage, () => null);
+  const [bootKey, setBootKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [seenRaw, setSeenRaw] = useState<string | null>(null);
-  if (storedRaw !== seenRaw) {
-    setSeenRaw(storedRaw);
+  // Read the saved draft once. Later writes must not flow back into state: that replay
+  // was dropping whichever chip the visitor had just toggled.
+  if (storedRaw !== null && bootKey === null) {
+    setBootKey(storedRaw);
     const saved = readDraft(storedRaw);
-    if (saved) setDraft(saved);
+    if (saved) {
+      setDraft(() => {
+        draftRef.current = saved;
+        return saved;
+      });
+    }
   }
-  const ready = seenRaw !== null;
+  const ready = bootKey !== null;
   const [hint, setHint] = useState<InquiryIssue | null>(null);
   const [touched, setTouched] = useState<{ name?: boolean; email?: boolean; phone?: boolean }>({});
   const [pending, setPending] = useState(false);
@@ -141,6 +149,10 @@ export function ContactForm({ lang }: { lang: Locale }) {
       onComplete: () => gsap.set(badge, { clearProps: "opacity,visibility,transform" }),
     });
   });
+
+  useLayoutEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
 
   useEffect(() => {
     if (!ready) return;
@@ -201,7 +213,9 @@ export function ContactForm({ lang }: { lang: Locale }) {
       if (body && !reducedMotion()) {
         await playTo(body, { x: -40 * dir, autoAlpha: 0, filter: "blur(8px)", duration: 0.26, ease: "power2.in" });
       }
-      flushSync(() => setDraft((d) => ({ ...d, ...patch, step: next })));
+      const resolved = { ...draftRef.current, ...patch, step: next };
+      draftRef.current = resolved;
+      flushSync(() => setDraft(resolved));
       if (body && !reducedMotion()) {
         await playFromTo(
           body,
@@ -217,8 +231,11 @@ export function ContactForm({ lang }: { lang: Locale }) {
     }
   };
 
-  const draftRef = useRef(draft);
-  useEffect(() => { draftRef.current = draft; }, [draft]);
+  const commit = (update: (current: Draft) => Draft) => {
+    const resolved = update(draftRef.current);
+    draftRef.current = resolved;
+    setDraft(resolved);
+  };
 
   const forward = async () => {
     clearArm();
@@ -327,7 +344,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
   const toggleService = (id: ServiceId, input: HTMLInputElement) => {
     popCheck(input);
     setHint((h) => (h === "services" ? null : h));
-    setDraft((d) => {
+    commit((d) => {
       const picked = new Set(d.services);
       if (picked.has(id)) picked.delete(id);
       else picked.add(id);
@@ -338,7 +355,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
   const pickSingle = <T extends string>(key: "goal" | "budget" | "timing", id: T, input: HTMLInputElement) => {
     popCheck(input);
     setHint(null);
-    setDraft((d) => ({ ...d, [key]: id }));
+    commit((d) => ({ ...d, [key]: id }));
   };
 
   const show = (field: "name" | "email" | "phone", invalid: boolean) => (touched[field] || hint === field) && invalid;
@@ -418,7 +435,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
                     onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                     onChange={(e) => {
                       const name = e.target.value;
-                      setDraft((d) => ({ ...d, name }));
+                      commit((d) => ({ ...d, name }));
                       if (name.trim()) setHint((h) => (h === "name" ? null : h));
                     }}
                   />
@@ -432,7 +449,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
                     onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                     onChange={(e) => {
                       const email = e.target.value;
-                      setDraft((d) => ({ ...d, email }));
+                      commit((d) => ({ ...d, email }));
                       if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) setHint((h) => (h === "email" ? null : h));
                     }}
                   />
@@ -447,7 +464,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
                     onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                     onChange={(e) => {
                       const phone = e.target.value;
-                      setDraft((d) => ({ ...d, phone }));
+                      commit((d) => ({ ...d, phone }));
                       if (normalizePhone(phone).ok) setHint((h) => (h === "phone" ? null : h));
                     }}
                   />
@@ -457,7 +474,7 @@ export function ContactForm({ lang }: { lang: Locale }) {
                 <label className="cw-float">
                   <textarea
                     name="note" rows={3} placeholder=" " enterKeyHint="send" value={draft.note}
-                    onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
+                    onChange={(e) => commit((d) => ({ ...d, note: e.target.value }))}
                   />
                   <span className="cw-lab">{c.note}</span>
                 </label>

@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ShopPage } from "@/components/pages/shop-page";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta } from "@/lib/seo";
 import { getShopProducts } from "@/lib/shop";
 
-export const metadata: Metadata = {
-  title: "Shop · CTRL®",
-  description: "Oggetti e strumenti CTRL®. Scopri le card per raccogliere recensioni con NFC e QR code.",
-  alternates: alternates("/shop", "it"),
-  openGraph: openGraph("it", { images: ["/images/shop/hero.webp"] }),
-};
+export const metadata: Metadata = publicMeta("it", {
+  title: "Shop di Aosta: le card NFC per le recensioni | CTRL®",
+  description: "Card NFC e QR per invitare i clienti a una recensione Google. Lo shop di CTRL®, agenzia web ad Aosta, in Valle d'Aosta. Realizzata su ordinazione.",
+  itPath: "/shop",
+  images: ["/images/shop/hero.webp"],
+});
 
 export default function Page() {
   // Products are cached ("use cache" in lib/shop), so this is prerendered into the static shell; the boundary only matters on a cold cache miss.

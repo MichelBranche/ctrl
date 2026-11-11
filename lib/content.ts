@@ -12,6 +12,43 @@ export const studio = {
   email: CONTACT_EMAIL,
 };
 
+/**
+ * Studio address. Nominatim has no civic number for this street, so the point is the
+ * Esri World Geocoder PointAddress for Corso Saint-Martin-de-Corléans 179, 11100 Aosta
+ * (45.733991379726, 7.297648176224). The Google listing feature id is a different pin,
+ * in the historic center, and stays only on the "open in Google Maps" link.
+ */
+const STUDIO_ADDRESS = "Via St. Martin de Corléans 179, 11100 Aosta";
+const STUDIO_LATITUDE = 45.733991379726;
+const STUDIO_LONGITUDE = 7.297648176224;
+const STUDIO_FEATURE_ID = "0x478921b7884a51df:0x8402eb2a8a05baa2";
+/** Camera of the Google Business listing. Not the street address. */
+const LISTING_LATITUDE = 45.7374637;
+const LISTING_LONGITUDE = 7.3197432;
+
+export const STUDIO_PLACE = {
+  address: {
+    it: STUDIO_ADDRESS,
+    en: STUDIO_ADDRESS,
+  },
+  latitude: STUDIO_LATITUDE,
+  longitude: STUDIO_LONGITUDE,
+  /** Feature id from the Google Business listing. */
+  featureId: STUDIO_FEATURE_ID,
+  mapsUrl: `https://www.google.com/maps/place/CTRL+Agency/@${LISTING_LATITUDE},${LISTING_LONGITUDE},17z/data=!4m2!3m1!1s${STUDIO_FEATURE_ID}`,
+  reviewUrl: "https://g.page/r/CaK6BYoq6wKEEBM/review",
+} as const;
+
+/** Embedded Google map centred on the street address, not the listing pin. */
+export function studioMapEmbedUrl(lang: Locale): string {
+  const url = new URL("https://www.google.com/maps");
+  url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude} (${STUDIO_PLACE.address.it})`);
+  url.searchParams.set("z", "17");
+  url.searchParams.set("hl", lang === "en" ? "en" : "it");
+  url.searchParams.set("output", "embed");
+  return url.toString();
+}
+
 /* ------------------------------------------------------------------ */
 /* Projects: categories (the /projects index) and the works inside them. */
 /* ------------------------------------------------------------------ */
@@ -39,8 +76,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Siti web", "per aziende"], en: ["Websites", "for businesses"] },
     text: { it: "Esperienze digitali su misura per il tuo business.", en: "Custom digital experiences for your business." },
     intro: {
-      it: "Siti istituzionali, vetrine e piattaforme editoriali progettati e sviluppati su misura, veloci e facili da gestire.",
-      en: "Corporate sites, showcases and editorial platforms, designed and built to measure, fast and easy to manage.",
+      it: "Siti istituzionali, vetrine e piattaforme editoriali progettati e sviluppati su misura ad Aosta, veloci e facili da gestire.",
+      en: "Corporate sites, showcases and editorial platforms, designed and built to measure in Aosta, fast and easy to manage.",
     },
     image: "/images/projects/websites.webp",
   },
@@ -62,8 +99,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Software", "su misura"], en: ["Custom", "software"] },
     text: { it: "Soluzioni software pensate per i tuoi processi.", en: "Software solutions designed around your processes." },
     intro: {
-      it: "Strumenti interni, automazioni e integrazioni pensati attorno al modo in cui lavora il tuo team.",
-      en: "Internal tools, automations and integrations designed around the way your team works.",
+      it: "Strumenti interni, automazioni e integrazioni pensati attorno al modo in cui lavora il tuo team, dallo studio di Aosta.",
+      en: "Internal tools, automations and integrations designed around the way your team works, from the Aosta studio.",
     },
     image: "/images/projects/software.webp",
   },
@@ -73,8 +110,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Brand", "che durano"], en: ["Brands", "that last"] },
     text: { it: "Identità visiva e strategia per distinguerti.", en: "Visual identity and strategy to stand out." },
     intro: {
-      it: "Logo, sistema visivo e linee guida per un'identità coerente su ogni punto di contatto.",
-      en: "Logo, visual system and guidelines for an identity that holds together at every touchpoint.",
+      it: "Logo, sistema visivo e linee guida per un'identità coerente, progettati ad Aosta per attività e hotel.",
+      en: "Logo, visual system and guidelines for an identity that holds together, designed in Aosta for businesses and hotels.",
     },
     image: "/images/projects/brand-identity.webp",
   },
@@ -97,8 +134,8 @@ export const projectCategories: ProjectCategory[] = [
     title: { it: ["Video", "che coinvolgono"], en: ["Videos", "that engage"] },
     text: { it: "Motion design e video per raccontare il tuo brand.", en: "Motion design and video to tell your brand's story." },
     intro: {
-      it: "Motion design, spot e contenuti brevi per social e lanci, pensati per raccontare il brand in pochi secondi.",
-      en: "Motion design, spots and short-form content for social and launches, made to tell the brand in seconds.",
+      it: "Motion design, spot e contenuti brevi per social e lanci, realizzati dallo studio CTRL® ad Aosta.",
+      en: "Motion design, spots and short-form content for social and launches, made by the CTRL® studio in Aosta.",
     },
     image: "/images/projects/promo-videos.webp",
   },

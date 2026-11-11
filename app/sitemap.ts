@@ -4,33 +4,100 @@ import { getPublishedPosts } from "@/lib/journal";
 import { getShopProducts } from "@/lib/shop";
 
 const siteUrl = "https://www.ctrlagency.dev";
-const publicPaths = [
-  "/", "/projects", "/services", "/team", "/journal", "/shop", "/contact", "/privacy", "/cookie",
+/** Day the public titles, descriptions and structured data were revised. */
+const UPDATED = new Date("2026-11-11T00:00:00.000Z");
+
+function enPath(itPath: string): string {
+  if (itPath === "/") return "/en";
+  if (itPath === "/cookie") return "/en/cookies";
+  return `/en${itPath}`;
+}
+
+function priorityFor(path: string): number {
+  if (path === "/" || path === "/en") return 1;
+  if (path.includes("agenzia-web")) return 0.9;
+  if (path.includes("residence-le-vele") || path.includes("/services")) return 0.8;
+  return 0.7;
+}
+
+function frequencyFor(path: string): "weekly" | "monthly" {
+  return path.includes("/journal") ? "weekly" : "monthly";
+}
+
+function entry(path: string, lastModified: Date, languages: Record<string, string>): MetadataRoute.Sitemap[number] {
+  return {
+    url: `${siteUrl}${path}`,
+    lastModified,
+    changeFrequency: frequencyFor(path),
+    priority: priorityFor(path),
+    alternates: { languages },
+  };
+}
+
+function paired(itPath: string, lastModified: Date): MetadataRoute.Sitemap {
+  const en = enPath(itPath);
+  const languages = { "it-IT": `${siteUrl}${itPath}`, "en-US": `${siteUrl}${en}` };
+  return [entry(itPath, lastModified, languages), entry(en, lastModified, languages)];
+}
+
+function dated(value: string | undefined): Date {
+  const parsed = value ? new Date(value) : UPDATED;
+  return Number.isNaN(parsed.getTime()) ? UPDATED : parsed;
+}
+
+const staticItalianPaths = [
+  "/",
+  "/projects",
+  "/services",
+  "/team",
+  "/journal",
+  "/shop",
+  "/contact",
+  "/privacy",
+  "/cookie",
   "/agenzia-web-valle-d-aosta",
-  "/en", "/en/projects", "/en/services", "/en/team", "/en/journal", "/en/shop", "/en/contact", "/en/privacy", "/en/cookies",
-  "/en/agenzia-web-valle-d-aosta",
-  ...projectCategories.filter((category) => !category.href).flatMap((category) => [`/projects/${category.slug}`, `/en/projects/${category.slug}`]),
-  ...services.flatMap((service) => [`/services/${service.slug}`, `/en/services/${service.slug}`]),
   "/services/webapp",
-  "/en/services/webapp",
   "/services/web-security",
-  "/en/services/web-security",
   "/projects/webapps/agenda-easy",
-  "/en/projects/webapps/agenda-easy",
-  ...websitesInOrder().flatMap((project) => [`/projects/websites/${project.slug}`, `/en/projects/websites/${project.slug}`]),
+  ...projectCategories.filter((category) => !category.href).map((category) => `/projects/${category.slug}`),
+  ...services.map((service) => `/services/${service.slug}`),
+  ...websitesInOrder().map((project) => `/projects/websites/${project.slug}`),
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [italianPosts, englishPosts, shopProducts] = await Promise.all([getPublishedPosts("it"), getPublishedPosts("en"), getShopProducts()]);
-  const articlePaths = [
-    ...italianPosts.map((post) => `/journal/${post.slug}`),
-    ...englishPosts.map((post) => `/en/journal/${post.slug}`),
-  ];
-  const shopPaths = shopProducts.filter((product) => product.published).flatMap((product) => [`/shop/${product.slug}`, `/en/shop/${product.slug}`]);
-  const entries: MetadataRoute.Sitemap = [...new Set([...publicPaths, ...articlePaths, ...shopPaths])].map((path) => ({
-    url: `${siteUrl}${path}`,
-    changeFrequency: path.includes("/journal") ? "weekly" : "monthly",
-    priority: path === "/" || path === "/en" ? 1 : path.includes("agenzia-web") ? 0.9 : path.includes("residence-le-vele") ? 0.8 : 0.7,
-  }));
-  return entries;
+  const englishBySlug = new Map(englishPosts.map((post) => [post.slug, post]));
+  const italianSlugs = new Set(italianPosts.map((post) => post.slug));
+
+  const journal: MetadataRoute.Sitemap = [];
+  for (const post of italianPosts) {
+    const when = dated(post.published_at);
+    const english = englishBySlug.get(post.slug);
+    const itUrl = `${siteUrl}/journal/${post.slug}`;
+    const enUrl = `${siteUrl}/en/journal/${post.slug}`;
+    const languages: Record<string, string> = { "it-IT": itUrl };
+    if (english) languages["en-US"] = enUrl;
+    journal.push(entry(`/journal/${post.slug}`, when, languages));
+    if (english) journal.push(entry(`/en/journal/${post.slug}`, dated(english.published_at), languages));
+  }
+  for (const post of englishPosts) {
+    if (italianSlugs.has(post.slug)) continue;
+    const enUrl = `${siteUrl}/en/journal/${post.slug}`;
+    journal.push(entry(`/en/journal/${post.slug}`, dated(post.published_at), { "en-US": enUrl }));
+  }
+
+  const shop: MetadataRoute.Sitemap = shopProducts
+    .filter((product) => product.published)
+    .flatMap((product) => {
+      const created = dated(product.createdAt);
+      return paired(`/shop/${product.slug}`, created > UPDATED ? created : UPDATED);
+    });
+
+  const pages = staticItalianPaths.flatMap((path) => paired(path, UPDATED));
+  const seen = new Set<string>();
+  return [...pages, ...journal, ...shop].filter((item) => {
+    if (seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
 }

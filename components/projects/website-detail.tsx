@@ -11,7 +11,7 @@ import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { websiteGroups, websitesInOrder } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, openGraph } from "@/lib/seo";
+import { projectDocumentDescription, projectDocumentTitle, publicMeta } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
 
@@ -23,12 +23,9 @@ export function websiteMetadata(slug: string, lang: Locale): Metadata {
   const p = websitesInOrder().find((w) => w.slug === slug);
   if (!p) return {};
   const path = `/projects/websites/${p.slug}`;
-  return {
-    title: `${p.title[lang]} · ${projectsCopy[lang].sites.back}`,
-    description: p.description?.[lang],
-    alternates: alternates(path, lang),
-    openGraph: openGraph(lang, { title: `${p.title[lang]} · ${projectsCopy[lang].sites.back}`, description: p.description?.[lang], images: [p.image as string] }),
-  };
+  const title = projectDocumentTitle(p.title[lang], lang);
+  const description = projectDocumentDescription(p.description?.[lang] ?? p.title[lang], lang);
+  return publicMeta(lang, { title, description, itPath: path, images: [p.image as string] });
 }
 
 export function WebsiteDetail({ slug, lang }: { slug: string; lang: Locale }) {

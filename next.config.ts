@@ -10,7 +10,7 @@ const CSP = [
   "font-src 'self' data:",
   "connect-src 'self' https://va.vercel-scripts.com",
   "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
-  "frame-src 'self' https://www.youtube-nocookie.com",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "object-src 'none'",

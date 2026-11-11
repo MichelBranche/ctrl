@@ -18,8 +18,8 @@ export const agendaCopy: Record<Locale, {
   ctaKicker: string; ctaTitle: string; ctaText: string; ctaButton: string;
 }> = {
   it: {
-    metaTitle: "Agenda Easy, webapp per appuntamenti",
-    metaDescription: "Agenda Easy è la webapp di CTRL® per gestire appuntamenti, clienti e servizi. Disponibile ora per studi e attività professionali, da 9,90 €/mese.",
+    metaTitle: "Agenda Easy, webapp per appuntamenti ad Aosta | CTRL®",
+    metaDescription: "Agenda Easy è la webapp di CTRL® per appuntamenti, clienti e servizi. Per studi e attività, da 9,90 € al mese, sviluppata ad Aosta. Attivala ora.",
     crumbs: ["Progetti", "Agenda Easy"],
     back: "Tutti i progetti",
     tag: "Webapp",
@@ -58,8 +58,8 @@ export const agendaCopy: Record<Locale, {
     ctaButton: "Contattaci",
   },
   en: {
-    metaTitle: "Agenda Easy, appointment web app",
-    metaDescription: "Agenda Easy is the CTRL® web app to manage appointments, clients and services. Available now for studios and professional practices, from €9.90/month.",
+    metaTitle: "Agenda Easy, appointment web app from Aosta | CTRL®",
+    metaDescription: "Agenda Easy is the CTRL® web app for appointments, clients and services. For studios and practices, from €9.90 a month, built in Aosta. Switch it on.",
     crumbs: ["Projects", "Agenda Easy"],
     back: "All projects",
     tag: "Web app",
