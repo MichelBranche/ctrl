@@ -12,6 +12,38 @@ export const studio = {
   email: CONTACT_EMAIL,
 };
 
+/**
+ * CTRL Agency on Google Maps. The address line, the pin and the Maps link all come from here.
+ * Reverse geocoding this pin only returns the town hall on the square, not a street for the studio,
+ * so the visible line stays the city.
+ */
+const STUDIO_LATITUDE = 45.7374637;
+const STUDIO_LONGITUDE = 7.3197432;
+const STUDIO_FEATURE_ID = "0x478921b7884a51df:0x8402eb2a8a05baa2";
+
+export const STUDIO_PLACE = {
+  address: {
+    it: "Aosta, Valle d'Aosta",
+    en: "Aosta, Aosta Valley",
+  },
+  latitude: STUDIO_LATITUDE,
+  longitude: STUDIO_LONGITUDE,
+  /** Feature id from the Google Business listing. */
+  featureId: STUDIO_FEATURE_ID,
+  mapsUrl: `https://www.google.com/maps/place/CTRL+Agency/@${STUDIO_LATITUDE},${STUDIO_LONGITUDE},17z/data=!4m2!3m1!1s${STUDIO_FEATURE_ID}`,
+  reviewUrl: "https://g.page/r/CaK6BYoq6wKEEBM/review",
+} as const;
+
+/** Embedded Google map centred on the CTRL Agency listing. */
+export function studioMapEmbedUrl(lang: Locale): string {
+  const url = new URL("https://www.google.com/maps");
+  url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude}`);
+  url.searchParams.set("z", "17");
+  url.searchParams.set("hl", lang === "en" ? "en" : "it");
+  url.searchParams.set("output", "embed");
+  return url.toString();
+}
+
 /* ------------------------------------------------------------------ */
 /* Projects: categories (the /projects index) and the works inside them. */
 /* ------------------------------------------------------------------ */
