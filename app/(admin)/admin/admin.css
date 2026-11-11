@@ -18,7 +18,7 @@
   --adm-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .adm { min-height: 100svh; background: var(--adm-bg); color: var(--adm-fg); font-size: 0.95rem; }
-.adm-main { max-width: 84rem; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+.adm-main { width: 100%; max-width: none; margin: 0; padding: 2rem 40px 6rem; box-sizing: border-box; }
 .adm-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2rem; }
 .adm-top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; }
 .adm-kicker { margin: 0; color: var(--adm-dim); font-size: 0.8rem; }
@@ -138,7 +138,7 @@
 .adm-menu-email { margin: 0; padding: 0.5rem 0.6rem; color: var(--adm-dim); font-size: 0.8rem; border-bottom: 1px solid var(--adm-rule); overflow-wrap: anywhere; }
 .adm-menu-item { display: flex; width: 100%; align-items: center; height: 2.25rem; padding: 0 0.6rem; border: 0; border-radius: 0.3rem; background: none; color: var(--adm-fg); font: inherit; text-decoration: none; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
 .adm-menu-item:hover, .adm-menu-item:focus-visible { background: var(--adm-raise); }
-.adm-content { flex: 1; }
+.adm-content { flex: 1; min-width: 0; }
 @media (prefers-reduced-motion: no-preference) {
   .adm-nav-link:hover { transform: translateX(2px); }
   .adm-btn:hover { transform: translateY(-1px); }
@@ -922,7 +922,7 @@ a.adm-stat:hover::after { opacity: 1; }
 .crm-maps-icon:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; }
 
 /* CRM sections: header, five-section bar, Oggi dashboard, follow-up rows */
-.crm-main { max-width: 92rem; }
+.crm-main { max-width: none; }
 .crm-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; }
 .crm-eyebrow { margin: 0; color: var(--adm-dim); font-size: 0.8rem; }
 .crm-head .adm-h1 { margin-top: 0.15rem; font-size: 1.9rem; }
@@ -1309,7 +1309,7 @@ html.crm-roll-play .crm-roll-digit > span,
 .crm-rubrica { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .crm-rubrica[data-panel] { grid-template-columns: minmax(0, 1fr) var(--crm-panel-w, 400px); }
 .crm-rubrica-main { min-width: 0; }
-.crm-main-rubrica { max-width: 104rem; }
+.crm-main-rubrica { max-width: none; }
 .crm-kpis.crm-kpis-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .crm-kpis-5 .crm-kpi { min-height: 5.4rem; grid-template-areas: "icon icon" "num num" "label label"; }
 .crm-kpis-5 .crm-kpi-num { font-size: 1.7rem; }
@@ -1487,7 +1487,7 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 }
 
 /* CRM contact email view (/admin/crm/<id>/email): contact header + tabs, the contact's mail on the left, reading/composing on the right. */
-.crm-mail-main { max-width: 104rem; }
+.crm-mail-main { max-width: none; }
 .crm-mail-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--adm-rule); }
 .crm-mail-top .crm-avatar { width: 3rem; height: 3rem; font-size: 1rem; }
 .crm-mail-who-head { min-width: 0; }
