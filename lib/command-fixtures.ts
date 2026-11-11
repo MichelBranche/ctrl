@@ -37,6 +37,8 @@ export function fixtureCommand(range: CommandRange, dateLabel: string, empty: bo
   return {
     range,
     dateLabel,
+    greeting: "",
+    lead: "",
     denied: false,
     systems: empty
       ? { tone: "muted", label: "Sistemi non verificati", title: "Stato produzione non disponibile", href: "/admin/status" }
@@ -88,10 +90,10 @@ export function fixtureCommand(range: CommandRange, dateLabel: string, empty: bo
           href: "/admin/audit",
           error: false,
           items: [
-            { id: "a1", tone: "crm", title: "Nuovo contatto da /contact", href: "/admin/requests", at: new Date().toISOString(), ago: "2 h fa" },
-            { id: "a2", tone: "shop", title: "Prodotto pubblicato: Card recensioni Google", href: "/admin/shop?tab=prodotti", at: new Date().toISOString(), ago: "4 h fa" },
-            { id: "a3", tone: "post", title: "Articolo aggiornato", href: "/admin/journal", at: new Date().toISOString(), ago: "1 g fa" },
-            { id: "a4", tone: "crm", title: "Opportunità aggiornata", href: "/admin/crm/pipeline", at: new Date().toISOString(), ago: "1 g fa" },
+            { id: "a1", tone: "crm", mark: "mail", title: "Nuovo contatto da /contact", href: "/admin/requests", at: new Date().toISOString(), ago: "2 h fa" },
+            { id: "a2", tone: "shop", mark: "bag", title: "Prodotto pubblicato: Card recensioni Google", href: "/admin/shop?tab=prodotti", at: new Date().toISOString(), ago: "4 h fa" },
+            { id: "a3", tone: "post", mark: "doc", title: "Articolo aggiornato", href: "/admin/journal", at: new Date().toISOString(), ago: "1 g fa" },
+            { id: "a4", tone: "crm", mark: "users", title: "Opportunità aggiornata", href: "/admin/crm/pipeline", at: new Date().toISOString(), ago: "1 g fa" },
           ],
         },
     pages: empty ? [] : [
