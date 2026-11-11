@@ -8,6 +8,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { CtrlMark } from "@/components/letter-hover";
+import { MaskedLine } from "@/components/masked-line";
 import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
@@ -74,7 +75,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
         const title = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
         let split: SplitText | undefined;
         if (title) {
-          split = SplitText.create(title, { type: "words", wordsClass: "h-word" });
+          split = SplitText.create(title, { type: "words", wordsClass: "h-word", aria: "none" });
           gsap.set(title, { y: "0%" });
           gsap.fromTo(
             split.words,
@@ -171,9 +172,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
         </p>
       </div>
       <h2 className="h-close-title">
-        <span className="line-mask">
-          <span data-mask="footer">{h.closeTitle}</span>
-        </span>
+        <MaskedLine text={h.closeTitle} mask="footer" />
       </h2>
       <i className="h-vline" aria-hidden="true" />
       <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>

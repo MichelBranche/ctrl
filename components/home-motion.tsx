@@ -36,10 +36,11 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
 
           /* ---------- HERO ---------- */
           const heroChars = all(scope, "[data-mask='hero']").map((line) => {
-            const split = SplitText.create(line, { type: "words,chars", charsClass: "h-char" });
+            const split = SplitText.create(line, { type: "words,chars", charsClass: "h-char", aria: "none" });
             splits.push(split);
             return split.chars;
           });
+          const mobile = window.matchMedia("(max-width: 900px)").matches;
 
           const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
           intro
@@ -55,7 +56,12 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
             );
           });
           intro
-            .fromTo("[data-load='lead']", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9 }, 0.6)
+            .fromTo(
+              "[data-load='lead']",
+              mobile ? { y: 24 } : { y: 24, opacity: 0 },
+              mobile ? { y: 0, duration: 0.9 } : { y: 0, opacity: 1, duration: 0.9 },
+              0.6,
+            )
             .fromTo("[data-load='cta']", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.75)
             .fromTo(".h-hero .h-tag span", { yPercent: 100, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.7, stagger: 0.05 }, 0.8);
 
@@ -75,7 +81,7 @@ export function HomeMotion({ children }: { children: React.ReactNode }) {
 
           /* ---------- HEADINGS: masked lines + word stagger ---------- */
           all(scope, "[data-mask='scroll']").forEach((el) => {
-            const split = SplitText.create(el, { type: "words", wordsClass: "h-word" });
+            const split = SplitText.create(el, { type: "words", wordsClass: "h-word", aria: "none" });
             splits.push(split);
             gsap.set(el, { y: "0%" });
             gsap.fromTo(

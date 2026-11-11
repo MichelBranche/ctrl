@@ -4,24 +4,40 @@
 
 CTRL® progetta e sviluppa prodotti digitali. La sede è ad Aosta. Il primo territorio è la Valle d'Aosta. Poi le nicchie nel Nord Italia, in particolare hospitality. Poi il resto d'Italia, progetto per progetto. Non esistono pagine doorway per singole città.
 
-Lingue del sito: italiano (https://www.ctrlagency.dev/) e inglese (https://www.ctrlagency.dev/en).
+Lingue del sito: italiano ([home](https://www.ctrlagency.dev/)) e inglese ([home](https://www.ctrlagency.dev/en)).
 
 ## Pagine
 
-- https://www.ctrlagency.dev/ : home, agenzia web ad Aosta
-- https://www.ctrlagency.dev/agenzia-web-valle-d-aosta : agenzia web in Valle d'Aosta
-- https://www.ctrlagency.dev/services : servizi
-- https://www.ctrlagency.dev/services/visual-communication : siti web su misura, rifacimenti, e-commerce, siti per hotel
-- https://www.ctrlagency.dev/services/brand-identity : grafica e brand identity
-- https://www.ctrlagency.dev/services/product-development : web app e prodotti digitali
-- https://www.ctrlagency.dev/services/webapp : webapp
-- https://www.ctrlagency.dev/services/software-ai : software, gestionali e AI
-- https://www.ctrlagency.dev/services/growth-support : SEO e posizionamento Google
-- https://www.ctrlagency.dev/projects/websites/residence-le-vele : caso Residence Le Vele, 14 prenotazioni e 11947 euro nel primo mese, 0 euro di ads. Sito: https://www.residencelevelestintino.it
-- https://www.ctrlagency.dev/projects/websites : siti, filtro hospitality
-- https://www.ctrlagency.dev/contact : contatti, Aosta
-- https://www.ctrlagency.dev/journal : journal
-- https://www.ctrlagency.dev/team : team, Michel Branche e Kallebe Gallo
+- [Home](https://www.ctrlagency.dev/): agenzia web ad Aosta
+- [Agenzia web in Valle d'Aosta](https://www.ctrlagency.dev/agenzia-web-valle-d-aosta): territorio e servizi locali
+- [Servizi](https://www.ctrlagency.dev/services): elenco dei servizi
+- [Siti web su misura](https://www.ctrlagency.dev/services/visual-communication): siti, rifacimenti, e-commerce, siti per hotel
+- [Brand identity](https://www.ctrlagency.dev/services/brand-identity): grafica e identità
+- [Sviluppo prodotto](https://www.ctrlagency.dev/services/product-development): web app e prodotti digitali
+- [Webapp](https://www.ctrlagency.dev/services/webapp): applicazioni web
+- [Software e AI](https://www.ctrlagency.dev/services/software-ai): software, gestionali e AI
+- [SEO e posizionamento](https://www.ctrlagency.dev/services/growth-support): posizionamento su Google
+- [Sicurezza web](https://www.ctrlagency.dev/services/web-security): gestione e protezione dei siti
+- [Progetti](https://www.ctrlagency.dev/projects): lavori selezionati
+- [Siti web](https://www.ctrlagency.dev/projects/websites): progetti di siti, filtro hospitality
+- [Residence Le Vele](https://www.ctrlagency.dev/projects/websites/residence-le-vele): 14 prenotazioni e 11947 euro nel primo mese, 0 euro di ads. Sito: [residencelevelestintino.it](https://www.residencelevelestintino.it)
+- [Contatti](https://www.ctrlagency.dev/contact): Aosta
+- [Journal](https://www.ctrlagency.dev/journal): note e articoli
+- [Team](https://www.ctrlagency.dev/team): Michel Branche e Kallebe Gallo
+- [Shop](https://www.ctrlagency.dev/shop): shop
+- [Privacy](https://www.ctrlagency.dev/privacy): informativa privacy
+- [Cookie](https://www.ctrlagency.dev/cookie): informativa cookie
+
+## English
+
+- [Home](https://www.ctrlagency.dev/en): English home
+- [Services](https://www.ctrlagency.dev/en/services): services
+- [Websites](https://www.ctrlagency.dev/en/projects/websites): website projects
+- [Residence Le Vele](https://www.ctrlagency.dev/en/projects/websites/residence-le-vele): case study
+- [Contact](https://www.ctrlagency.dev/en/contact): contact
+- [Journal](https://www.ctrlagency.dev/en/journal): journal
+- [Team](https://www.ctrlagency.dev/en/team): team
+- [Privacy](https://www.ctrlagency.dev/en/privacy): privacy policy
 
 ## Fatti verificati
 
