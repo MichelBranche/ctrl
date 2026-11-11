@@ -10,18 +10,13 @@ import { Newsletter } from "@/components/journal/newsletter";
 import { Crumbs } from "@/components/seo/crumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, openGraph } from "@/lib/seo";
+import { breadcrumbNode, publicMeta } from "@/lib/seo";
 import { getPublishedPosts } from "@/lib/journal";
 import "./journal.css";
 
 export function journalMetadata(lang: Locale): Metadata {
   const c = journalCopy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: alternates("/journal", lang),
-    openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }),
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/journal" });
 }
 
 async function JournalPosts({ lang, copy }: { lang: Locale; copy: (typeof journalCopy)[Locale] }) {

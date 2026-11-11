@@ -9,7 +9,7 @@ import { Crumbs } from "@/components/seo/crumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CONTACT_EMAIL } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
-import { alternates, breadcrumbNode, openGraph } from "@/lib/seo";
+import { breadcrumbNode, publicMeta } from "@/lib/seo";
 import { getSocialLinks } from "@/lib/settings";
 import "./contact.css";
 
@@ -17,7 +17,7 @@ const MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Aosta%2C+Valle
 
 export function contactMetadata(lang: Locale): Metadata {
   const c = contactCopy[lang];
-  return { title: c.metaTitle, description: c.metaDescription, alternates: alternates("/contact", lang), openGraph: openGraph(lang, { title: c.metaTitle, description: c.metaDescription }) };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/contact" });
 }
 
 function Arrow({ className = "c-arrow" }: { className?: string }) {

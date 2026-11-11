@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ShopProductPage } from "@/components/pages/shop-product-page";
-import { alternates, openGraph } from "@/lib/seo";
+import { publicMeta, shopDocumentDescription, shopDocumentTitle } from "@/lib/seo";
 import { getShopProduct, getShopProducts } from "@/lib/shop";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -16,8 +16,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getShopProduct(slug);
-  if (!product) return { title: "Product not found · CTRL®" };
-  return { title: `${product.titleEn} · CTRL® Shop`, description: product.descriptionEn, alternates: alternates(`/shop/${product.slug}`, "en"), openGraph: openGraph("en", { images: [product.images[0] || "/images/shop/hero.webp"] }) };
+  if (!product) return { title: { absolute: "Product not found | CTRL®" }, robots: { index: false, follow: false } };
+  return publicMeta("en", {
+    title: shopDocumentTitle(product.titleEn, "en"),
+    description: shopDocumentDescription(product.descriptionEn, "en"),
+    itPath: `/shop/${product.slug}`,
+    images: [product.images[0] || "/images/shop/hero.webp"],
+  });
 }
 
 export default function Page({ params }: Props) {
