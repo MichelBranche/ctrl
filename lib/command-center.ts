@@ -19,7 +19,48 @@ import type { SearchHit } from "@/lib/search-types";
 export type { CommandModel, CommandNotice } from "@/lib/command-types";
 export { commandFixturesOn, fixtureSearch };
 
-type Person = Perms & { id: string };
+type Person = Perms & { id: string; name: string };
+
+const countFmt = new Intl.NumberFormat("it-IT");
+
+/** Greeting for the Europe/Rome clock: morning, afternoon, evening. */
+export function romeGreeting(name: string, now = new Date()): string {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "numeric", hourCycle: "h23" }).format(now));
+  const hello = hour >= 5 && hour < 13 ? "Buongiorno" : hour >= 13 && hour < 18 ? "Buon pomeriggio" : "Buonasera";
+  const first = name.trim().split(/\s+/).filter(Boolean)[0];
+  return first ? `${hello}, ${first}.` : `${hello}.`;
+}
+
+/** One operational line. Null metrics are omitted. Zero and one get their own wording. */
+export function commandLead(input: { todos: number | null; deals: number | null; views: number | null; range: number }): string {
+  const bits: string[] = [];
+  if (input.todos !== null) {
+    bits.push(input.todos === 0 ? "Niente da fare oggi" : input.todos === 1 ? "1 cosa da fare oggi" : `${countFmt.format(input.todos)} cose da fare oggi`);
+  }
+  if (input.deals !== null) {
+    bits.push(input.deals === 0 ? "Nessuna opportunità aperta" : input.deals === 1 ? "1 opportunità aperta" : `${countFmt.format(input.deals)} opportunità aperte`);
+  }
+  if (input.views !== null) {
+    const span = `negli ultimi ${input.range} giorni`;
+    bits.push(input.views === 0 ? `Nessuna visita ${span}` : input.views === 1 ? `1 visita ${span}` : `${countFmt.format(input.views)} visite ${span}`);
+  }
+  return bits.join(" · ");
+}
+
+function withVoice(model: CommandModel, name: string): CommandModel {
+  const views = model.kpis.find((card) => card.id === "views");
+  const deals = model.kpis.find((card) => card.id === "deals");
+  return {
+    ...model,
+    greeting: romeGreeting(name),
+    lead: commandLead({
+      todos: model.todos.total,
+      deals: deals && !deals.unavailable ? deals.value : null,
+      views: views && !views.unavailable ? views.value : null,
+      range: model.range,
+    }),
+  };
+}
 
 const region = new Intl.DisplayNames(["it"], { type: "region" });
 
@@ -336,20 +377,20 @@ function crmFeed(event: CrmEvent): CommandActivity | null {
   const base = { id: `crm-${event.id}`, tone: "crm" as const, href, at: event.at, ago: shortAgo(event.at) };
   switch (event.action) {
     case "crm.contact_create":
-      return { ...base, title: who ? `Nuovo contatto: ${who}` : "Nuovo contatto" };
+      return { ...base, mark: "mail", title: who ? `Nuovo contatto: ${who}` : "Nuovo contatto" };
     case "crm.opportunity_create":
-      return { ...base, title: who ? `Opportunità aperta: ${who}` : "Opportunità aperta" };
+      return { ...base, mark: "users", title: who ? `Opportunità aperta: ${who}` : "Opportunità aperta" };
     case "crm.opportunity_stage":
     case "crm.opportunity_update":
-      return { ...base, title: who ? `Opportunità aggiornata: ${who}` : "Opportunità aggiornata" };
+      return { ...base, mark: "users", title: who ? `Opportunità aggiornata: ${who}` : "Opportunità aggiornata" };
     case "crm.stage":
-      return { ...base, title: who ? `Fase aggiornata: ${who}` : "Fase aggiornata" };
+      return { ...base, mark: "users", title: who ? `Fase aggiornata: ${who}` : "Fase aggiornata" };
     case "crm.activity_done":
-      return { ...base, title: who ? `Attività completata: ${who}` : "Attività completata" };
+      return { ...base, mark: "doc", title: who ? `Attività completata: ${who}` : "Attività completata" };
     case "crm.draft_sent":
-      return { ...base, title: "Email inviata da Radar" };
+      return { ...base, mark: "mail", title: "Email inviata da Radar" };
     case "crm.ingest":
-      return { ...base, title: "Prospect da Radar", href: "/admin/crm/radar" };
+      return { ...base, mark: "mail", title: "Prospect da Radar", href: "/admin/crm/radar" };
     default:
       return null;
   }
@@ -375,7 +416,7 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
     try {
       const rows = await db().execute("SELECT id, name, created_at FROM contact_requests ORDER BY created_at DESC LIMIT 4");
       for (const row of rows.rows) {
-        items.push({ id: `req-${row.id}`, tone: "crm", title: `Nuovo contatto da /contact: ${row.name}`, href: `/admin/requests?open=${row.id}`, at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
+        items.push({ id: `req-${row.id}`, tone: "crm", mark: "mail", title: `Nuovo contatto da /contact: ${row.name}`, href: `/admin/requests?open=${row.id}`, at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
       }
     } catch {
       error = true;
@@ -388,7 +429,7 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
         const published = Number(row.published) === 1;
         const fresh = row.created_at === row.updated_at;
         items.push({
-          id: `post-${row.id}`, tone: "post",
+          id: `post-${row.id}`, tone: "post", mark: "doc",
           title: fresh && published ? `Articolo pubblicato: ${row.title}` : `Articolo aggiornato: ${row.title}`,
           href: `/admin/edit?id=${row.id}`, at: String(row.updated_at), ago: shortAgo(String(row.updated_at)),
         });
@@ -402,7 +443,7 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
       const rows = await db().execute("SELECT email, created_at, unsubscribed_at FROM subscribers ORDER BY created_at DESC LIMIT 3");
       for (const row of rows.rows) {
         items.push({
-          id: `sub-${row.email}`, tone: "newsletter",
+          id: `sub-${row.email}`, tone: "newsletter", mark: "mail",
           title: row.unsubscribed_at ? `Iscrizione chiusa: ${row.email}` : `Nuovo iscritto: ${row.email}`,
           href: "/admin/newsletter", at: String(row.created_at), ago: shortAgo(String(row.created_at)),
         });
@@ -419,10 +460,10 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
         db().execute("SELECT slug, title_it, updated_at FROM shop_products WHERE published = 1 ORDER BY updated_at DESC LIMIT 3"),
       ]);
       for (const row of orders.rows) {
-        items.push({ id: `ord-${row.number}`, tone: "shop", title: `Ordine #${row.number} · ${row.customer_name}`, href: "/admin/shop?tab=ordini", at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
+        items.push({ id: `ord-${row.number}`, tone: "shop", mark: "bag", title: `Ordine #${row.number} · ${row.customer_name}`, href: "/admin/shop?tab=ordini", at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
       }
       for (const row of products.rows) {
-        items.push({ id: `prod-${row.slug}`, tone: "shop", title: `Prodotto pubblicato: ${row.title_it}`, href: "/admin/shop?tab=prodotti", at: String(row.updated_at), ago: shortAgo(String(row.updated_at)) });
+        items.push({ id: `prod-${row.slug}`, tone: "shop", mark: "bag", title: `Prodotto pubblicato: ${row.title_it}`, href: "/admin/shop?tab=prodotti", at: String(row.updated_at), ago: shortAgo(String(row.updated_at)) });
       }
     } catch {
       error = true;
@@ -446,7 +487,7 @@ function shortcuts(me: Person, range: CommandRange): CommandShortcut[] {
 
 export async function loadCommandCenter(me: Person, range: CommandRange, denied: boolean, emptyFixture = false): Promise<CommandModel> {
   const dateLabel = commandDateLabel();
-  if (commandFixturesOn()) return { ...fixtureCommand(range, dateLabel, emptyFixture), denied };
+  if (commandFixturesOn()) return withVoice({ ...fixtureCommand(range, dateLabel, emptyFixture), denied }, me.name);
   const [status, stats, deals, shop] = await Promise.all([
     systems(me),
     analyticsBlock(me, range),
@@ -460,12 +501,12 @@ export async function loadCommandCenter(me: Person, range: CommandRange, denied:
   const kpis = [...stats.kpis];
   if (shop) kpis.push(shop.kpi);
   if (deals) kpis.push(deals);
-  return {
-    range, dateLabel, denied, systems: status, kpis,
+  return withVoice({
+    range, dateLabel, greeting: "", lead: "", denied, systems: status, kpis,
     traffic: stats.traffic, todos, shortcuts: shortcuts(me, range), activity,
     pages: stats.pages, pagesEmpty: stats.pagesEmpty, countries: stats.countries, countriesEmpty: stats.countriesEmpty,
     statsHref: stats.statsHref,
-  };
+  }, me.name);
 }
 
 export async function commandNotices(me: Person): Promise<CommandNotice[]> {

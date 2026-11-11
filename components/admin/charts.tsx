@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, motion, useReducedMotion } from "motion/react";
+import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 /* Hand-rolled SVG charts animated with Motion (already a site dependency, so no new bundle weight).
@@ -52,40 +52,26 @@ export function CountUp({ value, className, money = false }: { value: number; cl
 }
 
 export function Sparkline({ data, label }: { data: number[]; label: string }) {
-  const reduce = useReducedMotion();
   const gid = useId();
-  const W = 120;
-  const H = 32;
-  if (data.length < 2) return <span className="adm-spark adm-spark-empty" aria-hidden="true" />;
-  if (data.every((v) => v === 0)) {
-    return (
-      <svg className="adm-spark is-flat" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label}>
-        <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="rgba(242,240,234,0.38)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-      </svg>
-    );
-  }
-  const max = Math.max(...data);
-  const pts = data.map((v, i): [number, number] => [(i / (data.length - 1)) * W, H - 2 - (v / max) * (H - 4)]);
+  const W = 128;
+  const H = 40;
+  const series = data.length > 1 ? data : [0, 0, 0, 0];
+  const flat = series.every((v) => v === 0);
+  const values = flat ? series.map((_, i) => 0.18 + Math.sin(i * 0.85) * 0.025) : series;
+  const max = flat ? 1 : Math.max(...values, 0.01);
+  const pts = values.map((v, i): [number, number] => [(i / (values.length - 1)) * W, H - 3 - (v / max) * (H - 8)]);
   const line = smooth(pts, H - 2);
+  const tone = flat ? "rgba(242,240,234,0.55)" : "var(--adm-accent)";
   return (
-    <svg className="adm-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label}>
+    <svg className={`adm-spark${flat ? " is-flat" : ""}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label}>
       <defs>
         <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="var(--adm-accent)" stopOpacity="0.35" />
-          <stop offset="1" stopColor="var(--adm-accent)" stopOpacity="0" />
+          <stop offset="0" stopColor={flat ? "#f2f0ea" : "var(--adm-accent)"} stopOpacity={flat ? 0.16 : 0.55} />
+          <stop offset="1" stopColor={flat ? "#f2f0ea" : "var(--adm-accent)"} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <motion.path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${gid})`} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }} />
-      <motion.path
-        d={line}
-        fill="none"
-        stroke="var(--adm-accent)"
-        strokeWidth="1.5"
-        vectorEffect="non-scaling-stroke"
-        initial={reduce ? false : { pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1, ease: EASE }}
-      />
+      <path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${gid})`} />
+      <path className="adm-spark-line" d={line} fill="none" stroke={tone} strokeWidth="2" pathLength={1} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

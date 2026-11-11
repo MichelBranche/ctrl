@@ -16,9 +16,12 @@ export type CommandTodo = {
     | null;
 };
 
+export type ActivityMark = "mail" | "bag" | "doc" | "users";
+
 export type CommandActivity = {
   id: string;
   tone: "crm" | "shop" | "post" | "newsletter";
+  mark: ActivityMark;
   title: string;
   href: string;
   at: string;
@@ -50,6 +53,8 @@ export type CommandShortcut = {
 export type CommandModel = {
   range: CommandRange;
   dateLabel: string;
+  greeting: string;
+  lead: string;
   denied: boolean;
   systems: { tone: "ok" | "busy" | "bad" | "muted"; label: string; title: string; href: string };
   kpis: CommandKpi[];
