@@ -13,6 +13,53 @@ export const studio = {
 };
 
 /**
+ * Public booking links for /bookings (English: /en/bookings).
+ *
+ * BOOKING_URL is the short link. The page uses it for "open in a new tab".
+ * It redirects to the appointment schedule in BOOKING_EMBED_URL.
+ *
+ * BOOKING_EMBED_URL is the iframe. Paste the full
+ * https://calendar.google.com/calendar/appointments/schedules/... URL
+ * (follow the short link's redirect). The page adds ?gv=true when it is missing.
+ * Leave BOOKING_EMBED_URL empty to show the "presto disponibile" state
+ * instead of an iframe.
+ */
+export const BOOKING_URL = "https://calendar.app.google/QgxthZAYRDa2y556A";
+export const BOOKING_EMBED_URL =
+  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1aWWo5zc0795b8u0vgeSwtCUtVhlKeTrvg2a9Swra1pmBE8qrW1HUBsrBHzwkV8-yaJmiTfVc2";
+
+const BOOKING_EMBED_HOST = "calendar.google.com";
+const BOOKING_OPEN_HOSTS = new Set(["calendar.app.google", "calendar.google.com"]);
+
+/** Iframe src for the appointment schedule, or null while BOOKING_EMBED_URL is empty or not a Calendar https URL. */
+export function bookingEmbedUrl(raw = BOOKING_EMBED_URL): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname !== BOOKING_EMBED_HOST) return null;
+    if (!url.pathname.includes("/appointments/schedules/")) return null;
+    if (!url.searchParams.has("gv")) url.searchParams.set("gv", "true");
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Short booking link for a new tab, or null while BOOKING_URL is empty or not an https Calendar host. */
+export function bookingOpenUrl(raw = BOOKING_URL): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !BOOKING_OPEN_HOSTS.has(url.hostname)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Studio address. Nominatim has no civic number for this street, so the point is the
  * Esri World Geocoder PointAddress for Corso Saint-Martin-de-Corléans 179, 11100 Aosta
  * (45.733991379726, 7.297648176224). The Google listing feature id is a different pin,

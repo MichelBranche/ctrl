@@ -114,6 +114,25 @@ export const dict = {
       description:
         "CTRL® è l'agenzia web di Aosta. Siti su misura, hotel con prenotazione diretta, e-commerce, web app e software per la Valle d'Aosta e il Nord Italia.",
     },
+    bookings: {
+      nav: "Prenota",
+      metaTitle: "Prenota una call con l'agenzia web ad Aosta | CTRL®",
+      metaDescription:
+        "Call introduttiva gratuita, circa 20-30 minuti su Google Meet, con CTRL® ad Aosta. Scegli un orario o scrivi dal modulo contatti.",
+      tag: "Prenota",
+      title: "Parliamone in call.",
+      lead: [
+        "Una call introduttiva gratuita, circa 20-30 minuti, su Google Meet.",
+        "Ci racconti il progetto e vediamo insieme come proseguire.",
+      ],
+      bookCta: "Scegli un orario",
+      frameTitle: "Prenota una call su Google Calendar",
+      open: "Apri in una nuova scheda",
+      fallback: "Preferisci scrivere? Usa il modulo contatti",
+      soon: "Presto disponibile",
+      soonText: "La prenotazione online non è ancora attiva. Nel frattempo puoi scriverci dal modulo.",
+      fromContact: "Preferisci una call? Prenota un'introduzione.",
+    },
   },
   en: {
     nav: { work: "Work", team: "Team", services: "Services", journal: "Journal", shop: "Shop", contact: "Contact" },
@@ -188,6 +207,25 @@ export const dict = {
       title: "Custom websites from our web agency in Aosta | CTRL®",
       description:
         "CTRL® is the web agency in Aosta, Valle d'Aosta. Custom websites, hotel sites, online shops, web apps and software, then across Northern Italy.",
+    },
+    bookings: {
+      nav: "Book",
+      metaTitle: "Book a call with the web agency in Aosta | CTRL®",
+      metaDescription:
+        "A free intro call, about 20-30 minutes on Google Meet, with CTRL® in Aosta. Pick a time, or write through the contact form.",
+      tag: "Book",
+      title: "Let's talk on a call.",
+      lead: [
+        "A free intro call, about 20-30 minutes, on Google Meet.",
+        "Tell us about the project and we will see how to move forward.",
+      ],
+      bookCta: "Pick a time",
+      frameTitle: "Book a call on Google Calendar",
+      open: "Open in a new tab",
+      fallback: "Prefer to write? Use the contact form",
+      soon: "Available soon",
+      soonText: "Online booking is not active yet. In the meantime you can write to us through the form.",
+      fromContact: "Prefer a call? Book an introduction.",
     },
   },
 } as const;

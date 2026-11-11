@@ -82,6 +82,18 @@
       ]
     },
     {
+      "identifier": "urn:air:www.ctrlagency.dev:pages:bookings",
+      "displayName": "Book a call with CTRL",
+      "description": "Free intro call of about 20-30 minutes on Google Meet. Italian page, with an English version at /en/bookings.",
+      "type": "application/web-page+html",
+      "url": "https://www.ctrlagency.dev/bookings",
+      "representativeQueries": [
+        "Book a call with CTRL",
+        "Prenota una call CTRL",
+        "CTRL intro call Google Meet"
+      ]
+    },
+    {
       "identifier": "urn:air:www.ctrlagency.dev:pages:contact",
       "displayName": "CTRL contact",
       "description": "Contact page for the Aosta studio.",

@@ -1,6 +1,7 @@
 import { CtaLink } from "@/components/cta-link";
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { contactCopy } from "@/components/pages/contact-copy";
@@ -11,7 +12,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { CONTACT_EMAIL, STUDIO_PLACE, studioMapEmbedUrl } from "@/lib/content";
 import { formatRating } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
-import { localize, type Locale } from "@/lib/i18n";
+import { dict, localize, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, publicMeta } from "@/lib/seo";
 import { getSocialLinks } from "@/lib/settings";
 import "./contact.css";
@@ -59,6 +60,9 @@ export async function ContactView({ lang }: { lang: Locale }) {
             <CtaLink href="#scrivi" className="c-write">
               {c.write}
             </CtaLink>
+            <Link href={localize("/bookings", lang) as Route} className="c-book">
+              {dict[lang].bookings.fromContact}
+            </Link>
           </div>
         </section>
 

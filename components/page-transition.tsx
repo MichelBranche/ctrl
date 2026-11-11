@@ -70,6 +70,7 @@ function labelFor(path: string) {
     journal: nav.journal,
     shop: nav.shop,
     contact: nav.contact,
+    bookings: dict[lang].bookings.nav,
   };
   return map[seg] ?? "CTRL®";
 }

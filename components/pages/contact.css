@@ -113,6 +113,15 @@
 }
 .c-arrow { width: 1.1rem; height: 1.1rem; flex: none; transition: transform 0.45s var(--c-ease); }
 .c-write:hover .c-arrow { transform: translateY(3px) rotate(90deg); }
+.c-book {
+  margin-top: 1.5rem;
+  color: var(--c-fg);
+  font-size: 0.95rem;
+  text-decoration: none;
+  border-bottom: 1px solid var(--c-accent);
+  padding-bottom: 0.12rem;
+}
+.c-book:hover { color: var(--c-accent); }
 
 /* 2. INFO STRIP. Hairlines come from the 1px gap, so every cell shares the same edges. */
 .c-info {

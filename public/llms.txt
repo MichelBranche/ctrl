@@ -27,6 +27,7 @@ Lingue del sito: italiano ([home](https://www.ctrlagency.dev/)) e inglese ([home
 - [Shop](https://www.ctrlagency.dev/shop): shop, card NFC e QR per recensioni Google
 - [Card recensioni Google](https://www.ctrlagency.dev/shop/google-review-card): card recensioni Google
 - [Contatti](https://www.ctrlagency.dev/contact): contatti, Aosta. Risposta entro 24 ore
+- [Prenota una call](https://www.ctrlagency.dev/bookings): call introduttiva gratuita, circa 20-30 minuti su Google Meet. Inglese: [book a call](https://www.ctrlagency.dev/en/bookings)
 - [Journal](https://www.ctrlagency.dev/journal): journal su siti, design e SEO
 - [Team](https://www.ctrlagency.dev/team): team
 - [Privacy](https://www.ctrlagency.dev/privacy): informativa privacy
