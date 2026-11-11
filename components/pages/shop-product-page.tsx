@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShopIcon } from "@/components/shop/shop-icons";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductActions } from "@/components/shop/product-actions";
+import { ProductManual } from "@/components/shop/product-manual";
 import { SHOP_CATEGORY_LABEL, type ShopProduct } from "@/lib/shop-data";
 import { localize, type Locale } from "@/lib/i18n";
 import "./shop.css";
@@ -55,6 +56,7 @@ export function ShopProductPage({ lang, product }: { lang: Locale; product: Shop
           <div className="sp-benefit-grid">{details.benefits.map(([heading, text], index) => <article key={`${heading}-${index}`}><BenefitIcon index={index} /><h3>{heading}</h3>{text ? <p>{text}</p> : null}</article>)}</div>
         </div>
       </section> : null}
+      {product.slug === "google-review-card" ? <ProductManual lang={lang} /> : null}
       <section className="sp-reviews">
         <div className="sp-reviews-copy"><p className="sp-category">{t.reviewKicker}<i /></p><h2>{t.reviewTitle[0]}<br />{t.reviewTitle[1]}</h2><p>{t.reviewEmpty}</p></div>
         <div className="sp-review-placeholder"><span className="sp-review-mark" aria-hidden="true">CTRL®</span><p>{t.reviewEmpty}</p></div>
