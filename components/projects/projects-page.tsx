@@ -7,17 +7,15 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { ProjectsBrowser, type CategoryCard } from "@/components/projects/projects-browser";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
-import { projectCategories } from "@/lib/content";
+import { SecuritySection } from "@/components/security/security-section";
+import { categoryPath, projectCategories } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
+import { publicMeta } from "@/lib/seo";
 import "./projects.css";
 
 export function projectsMetadata(lang: Locale): Metadata {
   const c = projectsCopy[lang];
-  return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    alternates: { canonical: localize("/projects", lang), languages: { it: "/projects", en: "/en/projects" } },
-  };
+  return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/projects" });
 }
 
 export function ProjectsView({ lang }: { lang: Locale }) {
@@ -28,7 +26,7 @@ export function ProjectsView({ lang }: { lang: Locale }) {
     title: cat.title[lang],
     text: cat.text[lang],
     image: cat.image,
-    href: localize(`/projects/${cat.slug}`, lang),
+    href: localize(categoryPath(cat), lang),
   }));
 
   return (
@@ -58,6 +56,7 @@ export function ProjectsView({ lang }: { lang: Locale }) {
           copy={{ all: c.all, filterLabel: c.filterLabel, filterAll: c.filterAll, viewLabel: c.viewLabel, gridView: c.gridView, listView: c.listView, open: c.open }}
         />
         <ProjectsCta copy={c} href={localize("/contact", lang)} />
+        <SecuritySection lang={lang} variant="projects" />
         <ProjectsMotion />
       </main>
       <SiteFooter />

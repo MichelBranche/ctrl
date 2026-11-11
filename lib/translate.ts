@@ -74,3 +74,14 @@ export async function translatePost(p: PostText): Promise<PostText> {
   const body_md = body.map((b) => (b.translate ? result[j++] : b.text)).join("");
   return { title: result[0], excerpt: result[1], cover_alt: result[2], body_md };
 }
+
+/** Italian -> English for short plain texts (shop product fields). Empty strings pass through. Throws on missing key or API failure. */
+export async function translateTexts(texts: string[]): Promise<string[]> {
+  if (!translationConfigured()) throw new Error("DEEPL_API_KEY missing");
+  const idx = texts.map((t, i) => (t.trim() ? i : -1)).filter((i) => i >= 0);
+  if (!idx.length) return [...texts];
+  const done = await deepl(idx.map((i) => protect(texts[i])));
+  const out = [...texts];
+  idx.forEach((i, k) => (out[i] = restore(done[k])));
+  return out;
+}

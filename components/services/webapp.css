@@ -1,0 +1,65 @@
+/* /services/webapp: service page from Michel's mockup. Builds on the .p- projects system. */
+.wa-hero { min-height: min(92svh, 44rem); }
+.wa-hero-frame { inset: 0 0 0 30%; mask-image: linear-gradient(90deg, transparent 0%, black 42%); }
+.wa-hero-img { object-position: 62% 40%; }
+.wa-crumbs { gap: 0.8rem; }
+.wa-crumbs a { color: inherit; text-decoration: none; transition: color 0.3s ease; }
+.wa-crumbs a:hover, .wa-crumb-here { color: var(--p-fg); }
+.wa-crumb-back { display: inline-flex; }
+
+.wa-wrap { width: 100%; max-width: var(--p-max); margin: 0 auto; padding: 0 var(--gutter); }
+.wa-h2 { margin: 1.1rem 0 0; font-family: var(--p-display-face); font-size: clamp(2.1rem, 4vw, 3.6rem); font-weight: 600; line-height: 1.02; letter-spacing: -0.035em; }
+.wa-h2 > span { display: block; }
+
+.wa-service { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem clamp(2rem, 8vw, 9rem); align-items: start; padding-top: clamp(3rem, 6vw, 5rem); }
+.wa-service-copy p { margin: 0 0 1.8rem; max-width: 34rem; color: var(--p-dim); font-size: clamp(1rem, 1.1vw, 1.1rem); line-height: 1.6; text-wrap: pretty; }
+
+.wa-features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; margin: clamp(3rem, 6vw, 4.5rem) auto; list-style: none; }
+.wa-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border: 1px solid var(--p-rule-hi); border-radius: 0.6rem; color: var(--p-fg); }
+.wa-icon svg { width: 1.3rem; height: 1.3rem; }
+.wa-feature-title { margin: 1.3rem 0 0.5rem; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.wa-feature-text { margin: 0; max-width: 17rem; color: var(--p-dim); font-size: 0.9rem; line-height: 1.55; }
+
+.wa-carousel { position: relative; padding: 0 clamp(0rem, 3vw, 3rem); }
+.wa-card { display: grid; grid-template-columns: 1.15fr 1fr; overflow: hidden; border: 1px solid var(--p-rule); border-radius: 0.6rem; background: var(--p-card); }
+.wa-card-media { position: relative; min-height: clamp(15rem, 28vw, 22rem); }
+.wa-card-img { object-fit: cover; object-position: 45% 50%; }
+.wa-card-body { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: clamp(1.8rem, 4vw, 3.5rem); }
+.wa-card-kicker { color: var(--p-fg); }
+.wa-card-title { margin: 0.9rem 0 0.9rem; font-family: var(--p-display-face); font-size: clamp(1.8rem, 2.8vw, 2.6rem); font-weight: 500; letter-spacing: -0.03em; }
+.wa-card-text { margin: 0 0 1.8rem; max-width: 26rem; color: var(--p-dim); line-height: 1.6; text-wrap: pretty; }
+.wa-card-cta { display: inline-flex; align-items: center; gap: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--p-fg); color: var(--p-fg); text-decoration: none; }
+.wa-card-cta:hover .p-arrow { transform: translateX(5px); }
+.wa-card-cta:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 6px; }
+.wa-nav { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; translate: 0 -50%; border: 1px solid var(--p-rule-hi); border-radius: 50%; background: var(--p-bg); color: var(--p-fg); cursor: pointer; }
+.wa-nav-prev { left: 0; }
+.wa-nav-next { right: 0; }
+.wa-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+.wa-dot { width: 0.4rem; height: 0.4rem; padding: 0; border: 0; border-radius: 50%; background: var(--p-rule-hi); cursor: pointer; }
+.wa-dot[aria-current] { background: var(--p-accent); }
+
+.wa-process { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr); gap: 3rem; align-items: start; padding-top: clamp(3.5rem, 7vw, 6rem); padding-bottom: clamp(4rem, 8vw, 7rem); }
+.wa-steps { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 0; padding: 0; list-style: none; }
+.wa-steps::before { content: ""; position: absolute; top: 0.75rem; left: 0.75rem; right: 12%; height: 1px; background: var(--p-rule-hi); }
+.wa-step { position: relative; }
+.wa-step-dot { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-bottom: 1rem; border: 1px solid var(--p-rule-hi); border-radius: 50%; background: var(--p-bg); }
+.wa-step-dot::after { content: ""; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--p-fg); }
+.wa-step-n { color: var(--p-faint); }
+.wa-step-title { margin: 0.4rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
+.wa-step-text { margin: 0; color: var(--p-dim); font-size: 0.88rem; line-height: 1.5; }
+
+@media (max-width: 60rem) {
+  .wa-service, .wa-process { grid-template-columns: minmax(0, 1fr); }
+  .wa-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wa-card { grid-template-columns: minmax(0, 1fr); }
+  .wa-carousel { padding: 0; }
+  .wa-nav { top: 8rem; }
+}
+@media (max-width: 40rem) {
+  .wa-hero-frame { inset: 0; opacity: 0.55; mask-image: linear-gradient(180deg, black 30%, transparent 95%); }
+  .wa-features { grid-template-columns: minmax(0, 1fr); }
+  .wa-steps { grid-template-columns: minmax(0, 1fr); gap: 1.8rem; padding-left: 0; }
+  .wa-steps::before { top: 0.75rem; bottom: 1rem; left: 0.75rem; right: auto; width: 1px; height: auto; }
+  .wa-step { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); column-gap: 1rem; }
+  .wa-step-dot { grid-row: span 3; margin: 0; }
+}

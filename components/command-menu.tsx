@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CONTACT_EMAIL, projectCategories, services } from "@/lib/content";
+import { CONTACT_EMAIL, LE_VELE, categoryPath, projectCategories, services } from "@/lib/content";
+import { LOCAL_PATH } from "@/lib/seo";
 import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
 
 type Item = { id: string; group: string; label: string; run: () => void };
@@ -35,11 +36,12 @@ export function CommandMenu() {
       { id: "team", group: "Nav", label: nav.team, run: () => go(localize("/team", lang)) },
       { id: "journal", group: "Nav", label: nav.journal, run: () => go(localize("/journal", lang)) },
       { id: "shop", group: "Nav", label: nav.shop, run: () => go(localize("/shop", lang)) },
+      { id: "bookings", group: "Nav", label: t.bookings.nav, run: () => go(localize("/bookings", lang)) },
       ...projectCategories.map((c) => ({
         id: `p-${c.slug}`,
         group: nav.work,
         label: c.label[lang],
-        run: () => go(localize(`/projects/${c.slug}`, lang)),
+        run: () => go(localize(categoryPath(c), lang)),
       })),
       ...services.map((s) => ({
         id: `s-${s.slug}`,
@@ -47,6 +49,24 @@ export function CommandMenu() {
         label: s.title[lang],
         run: () => go(localize(`/services/${s.slug}`, lang)),
       })),
+      {
+        id: "local",
+        group: nav.services,
+        label: lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
+        run: () => go(localize(LOCAL_PATH, lang)),
+      },
+      {
+        id: "le-vele",
+        group: nav.work,
+        label: "Residence Le Vele",
+        run: () => go(localize(LE_VELE.path, lang)),
+      },
+      {
+        id: "s-webapp",
+        group: nav.services,
+        label: lang === "en" ? "Scalable web apps" : "Webapp scalabili",
+        run: () => go(localize("/services/webapp", lang)),
+      },
       {
         id: "mail",
         group: "CTRL®",

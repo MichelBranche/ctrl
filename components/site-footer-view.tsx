@@ -1,13 +1,18 @@
 "use client";
 
+import Link from "next/link";
+import type { Route } from "next";
 import { useRef, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { CtrlMark } from "@/components/letter-hover";
+import { MaskedLine } from "@/components/masked-line";
 import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
+import { localize } from "@/lib/i18n";
+import { LOCAL_PATH } from "@/lib/seo";
 import { CONTACT_EMAIL } from "@/lib/content";
 import type { SocialKey, SocialLink } from "@/lib/settings-types";
 import "./site-footer.css";
@@ -70,7 +75,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
         const title = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
         let split: SplitText | undefined;
         if (title) {
-          split = SplitText.create(title, { type: "words", wordsClass: "h-word" });
+          split = SplitText.create(title, { type: "words", wordsClass: "h-word", aria: "none" });
           gsap.set(title, { y: "0%" });
           gsap.fromTo(
             split.words,
@@ -134,6 +139,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
     <footer className="h-close" id="contact" ref={root}>
       <i className="h-dot" aria-hidden="true" />
       <CtrlMark className="h-mark" />
+      <FooterNewsletter lang={lang} />
       <div className="h-close-info">
         <p className="h-small h-close-kicker">
           <span>{h.closeKicker[0]}</span>
@@ -141,7 +147,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
         </p>
         <p className="h-close-lead">{h.closeLead}</p>
         <p className="h-small h-close-kicker">
-          <span>{h.location}</span>
+          <Link href={localize(LOCAL_PATH, lang) as Route}>{h.location}</Link>
           <span>© 2026 CTRL®</span>
         </p>
         {footerSocials.length ? (
@@ -160,16 +166,14 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
             ))}
           </ul>
         ) : null}
-        <FooterNewsletter lang={lang} />
         <p className="h-small h-legal">
+          <Link href={localize("/bookings", lang) as Route}>{t.bookings.nav}</Link>
           <a href={lang === "en" ? "/en/privacy" : "/privacy"}>Privacy</a>
           <a href={lang === "en" ? "/en/cookies" : "/cookie"}>Cookie</a>
         </p>
       </div>
       <h2 className="h-close-title">
-        <span className="line-mask">
-          <span data-mask="footer">{h.closeTitle}</span>
-        </span>
+        <MaskedLine text={h.closeTitle} mask="footer" />
       </h2>
       <i className="h-vline" aria-hidden="true" />
       <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>

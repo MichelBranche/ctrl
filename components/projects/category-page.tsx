@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,8 +9,9 @@ import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { WebsitesBrowser, type SiteRow } from "@/components/projects/websites-browser";
-import { getProjectCategory, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
+import { categoryPath, getProjectCategory, LE_VELE, LE_VELE_MEDIA, projectCategories, projectsIn, websiteGroups, websitesInOrder, type Project } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
+import { publicMeta } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
 
@@ -18,12 +19,10 @@ export function categoryMetadata(slug: string, lang: Locale): Metadata {
   const cat = getProjectCategory(slug);
   if (!cat) return {};
   const path = `/projects/${cat.slug}`;
-  return {
-    title: projectsCopy[lang].categoryMeta(cat.label[lang]),
-    description: cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang],
-    alternates: { canonical: localize(path, lang), languages: { it: path, en: `/en${path}` } },
-    openGraph: { images: [cat.image] },
-  };
+  const seo = projectsCopy[lang].categorySeo[cat.slug];
+  const title = seo?.title ?? projectsCopy[lang].categoryMeta(cat.label[lang]);
+  const description = seo?.description ?? (cat.slug === "websites" ? projectsCopy[lang].sites.metaDescription : cat.intro[lang]);
+  return publicMeta(lang, { title, description, itPath: path, images: [cat.image] });
 }
 
 function WorkCard({ work, lang }: { work: Project; lang: Locale }) {
@@ -82,6 +81,15 @@ function WebsitesSection({ lang }: { lang: Locale }) {
     place: w.place?.[lang] ?? w.client,
     year: w.year,
     image: w.image as string,
+    film: w.slug === LE_VELE.slug
+      ? {
+          webm: LE_VELE_MEDIA.desktop.webm,
+          mp4: LE_VELE_MEDIA.desktop.mp4,
+          poster: LE_VELE_MEDIA.desktop.poster,
+          label: lang === "it" ? "Scorrimento del sito Residence Le Vele" : "Scroll-through of the Residence Le Vele website",
+          play: lang === "it" ? "Riproduci il video" : "Play the video",
+        }
+      : undefined,
     author: w.author,
   }));
   const groups = websiteGroups.filter((g) => items.some((i) => i.group === g.slug)).map((g) => ({ slug: g.slug, label: g.label[lang] }));
@@ -162,7 +170,7 @@ export function CategoryView({ slug, lang }: { slug: string; lang: Locale }) {
           <ul className="p-others-grid">
             {others.map((item) => (
               <li key={item.slug}>
-                <Link href={localize(`/projects/${item.slug}`, lang)} className="p-other" data-p-card>
+                <Link href={localize(categoryPath(item), lang) as Route} className="p-other" data-p-card>
                   <span className="p-other-media" aria-hidden="true">
                     <Image className="p-img" src={item.image} alt="" fill sizes="(max-width: 760px) 50vw, 20vw" />
                   </span>

@@ -96,9 +96,9 @@
   background: var(--p-card);
 }
 .w-preview-img { position: absolute; inset: 0; clip-path: inset(100% 0 0 0); transition: clip-path 0.55s var(--p-ease); }
-.w-preview-img img { object-fit: cover; transform: scale(1.15); transition: transform 0.9s var(--p-ease); }
+.w-preview-img img, .w-preview-img .lv-stage { object-fit: cover; transform: scale(1.15); transition: transform 0.9s var(--p-ease); }
 .w-preview-img[data-on] { z-index: 1; clip-path: inset(0 0 0 0); }
-.w-preview-img[data-on] img { transform: scale(1); }
+.w-preview-img[data-on] img, .w-preview-img[data-on] .lv-stage { transform: scale(1); }
 @media (hover: none), (pointer: coarse) { .w-preview { display: none; } }
 
 /* Touch and narrow screens: a small thumbnail stands in for the hover image */
@@ -180,6 +180,107 @@
 .wd-shot.wd-shot-mobile img { object-fit: contain; object-position: center; padding: clamp(1rem, 2.4vw, 2rem) 0; }
 .wd-shot img { object-fit: cover; object-position: top; }
 .wd-cap { position: absolute; left: 0.8rem; bottom: 0.8rem; z-index: 1; padding: 0.3rem 0.5rem; background: var(--p-shade); color: var(--p-dim); }
+
+/* Residence Le Vele: same frame and spacing as the website gallery, with a playing film. */
+.lv-reel {
+  max-width: var(--p-max);
+  margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.25rem);
+}
+.lv-figure { margin: 0; }
+.lv-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--p-rule);
+  background: var(--p-card);
+  aspect-ratio: 390 / 844;
+}
+.lv-video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0b0b0b;
+}
+.lv-stage { position: absolute; inset: 0; }
+.lv-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+.lv-stage[data-playing] .lv-still { opacity: 0; pointer-events: none; }
+.lv-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  translate: -50% -50%;
+  border: 1px solid var(--p-rule-hi);
+  border-radius: 50%;
+  background: var(--p-shade);
+  color: var(--p-fg);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+}
+.lv-play svg { width: 1rem; height: 1rem; margin-left: 0.12rem; }
+.lv-stage[data-blocked] .lv-play { opacity: 1; pointer-events: auto; }
+.lv-stage[data-playing] .lv-play { opacity: 0; pointer-events: none; }
+.lv-play:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 4px; }
+.lv-stage-fill { position: absolute; inset: 0; }
+.w-thumb .lv-play, .w-preview-img .lv-play { width: 2.4rem; height: 2.4rem; }
+.w-preview .lv-play { pointer-events: auto; }
+.lv-cap {
+  margin: 0.85rem 0 0;
+  color: var(--p-faint);
+}
+.lv-story, .lv-faq {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: start;
+  max-width: var(--p-max);
+  margin: clamp(3.5rem, 8vw, 6rem) auto 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.25rem);
+}
+.lv-story-title {
+  margin: 0;
+  font-family: var(--p-display-face);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.lv-story p, .lv-faq p {
+  margin: 0 0 1rem;
+  max-width: 40rem;
+  color: var(--p-dim);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.lv-faq-list { border-top: 1px solid var(--p-rule); }
+.lv-faq details { border-bottom: 1px solid var(--p-rule); }
+.lv-faq summary { padding: 1rem 0; font-weight: 600; cursor: pointer; }
+.lv-faq summary:focus-visible { outline: 1px solid var(--p-accent); outline-offset: 3px; }
+@media (min-width: 780px) {
+  .lv-frame { aspect-ratio: 16 / 9; }
+}
+@media (max-width: 900px) {
+  .lv-story, .lv-faq { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv-still { transition: none; }
+}
 
 .wd-video {
   max-width: 72rem;

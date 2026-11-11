@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/app/admin/*": ["./app/(admin)/admin/*"],
       "@/*": ["./*"]
     }
   },

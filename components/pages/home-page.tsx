@@ -1,11 +1,16 @@
 import { CtaLink } from "@/components/cta-link";
 import Image from "next/image";
 import Link from "next/link";
+import { HeroReviews } from "@/components/hero-reviews";
+import { HomeFilm } from "@/components/home-film";
 import { HomeMotion } from "@/components/home-motion";
+import { MaskedLine } from "@/components/masked-line";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HoverProjects } from "@/components/hover-projects";
-import { homeFeatured, services } from "@/lib/content";
+import { homeFeatured, LE_VELE, services } from "@/lib/content";
+import { presentReviews } from "@/lib/google-reviews-core";
+import { getGoogleReviews } from "@/lib/google-reviews";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import "./home.css";
 
@@ -18,8 +23,10 @@ function Arrow({ className = "" }: { className?: string }) {
 }
 
 
-export function HomePage({ lang }: { lang: Locale }) {
+export async function HomePage({ lang }: { lang: Locale }) {
   const h = dict[lang].home;
+  const reviews = await getGoogleReviews();
+  const reviewStrip = reviews?.reviews.length ? presentReviews(reviews, lang) : null;
 
   return (
     <>
@@ -27,7 +34,7 @@ export function HomePage({ lang }: { lang: Locale }) {
       <HomeMotion>
         <main className="h-root">
           {/* 1. HERO */}
-          <section className="h-hero" data-hero id="top">
+          <section className="h-hero" data-hero id="top" data-reviews={reviewStrip ? "" : undefined}>
             <div className="h-hero-copy">
               <p className="h-label" data-load="kicker">
                 <span>{h.kicker[0]}</span>
@@ -36,9 +43,7 @@ export function HomePage({ lang }: { lang: Locale }) {
               </p>
               <h1 className="h-hero-title">
                 {h.title.map((line) => (
-                  <span className="line-mask" key={line}>
-                    <span data-mask="hero">{line}</span>
-                  </span>
+                  <MaskedLine key={line} text={line} mask="hero" />
                 ))}
               </h1>
               <p className="h-hero-lead" data-load="lead">
@@ -59,7 +64,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                   fill
                   priority
                   sizes="100vw"
-                  quality={90}
+                  quality={75}
                   className="h-img h-img-hero"
                 />
               </div>
@@ -74,6 +79,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 ))}
               </p>
             </div>
+            {reviewStrip ? <HeroReviews data={reviewStrip} /> : null}
           </section>
 
           {/* 2. COSA FACCIAMO */}
@@ -97,9 +103,7 @@ export function HomePage({ lang }: { lang: Locale }) {
                 </p>
                 <h2 className="h-h2">
                   {h.servicesTitle.map((line) => (
-                    <span className="line-mask" key={line}>
-                      <span data-mask="scroll">{line}</span>
-                    </span>
+                    <MaskedLine key={line} text={line} mask="scroll" />
                   ))}
                 </h2>
               </div>
@@ -140,16 +144,10 @@ export function HomePage({ lang }: { lang: Locale }) {
                 {lang === "it" ? "Guarda su YouTube" : "Watch on YouTube"} <Arrow />
               </a>
             </div>
-            <div className="h-film-frame">
-              <iframe
-                src="https://www.youtube-nocookie.com/embed/upTqsodkdo4?rel=0"
-                title={lang === "it" ? "Presentazione di CTRL®" : "Introducing CTRL®"}
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-              />
-            </div>
+            <HomeFilm
+              title={lang === "it" ? "Presentazione di CTRL®" : "Introducing CTRL®"}
+              play={lang === "it" ? "Riproduci il video" : "Play the video"}
+            />
           </section>
           {/* 3. PROGETTI RECENTI */}
           <section className="h-work" id="work">
@@ -176,6 +174,19 @@ export function HomePage({ lang }: { lang: Locale }) {
                 tint: item.tint,
               }))}
             />
+            <aside className="h-proof" aria-labelledby="h-proof-title">
+              <p className="h-label">
+                <span>{h.proofKicker}</span>
+                <i className="h-bar" aria-hidden="true" />
+              </p>
+              <div className="h-proof-copy">
+                <h2 className="h-proof-title" id="h-proof-title">{h.proofTitle}</h2>
+                <p>{h.proofText}</p>
+                <Link href={localize(LE_VELE.path, lang)} className="h-small h-link">
+                  {h.proofCta} <Arrow />
+                </Link>
+              </div>
+            </aside>
           </section>
 
           {/* 4. PERCHE CTRL */}
@@ -190,9 +201,7 @@ export function HomePage({ lang }: { lang: Locale }) {
               </p>
               <h2 className="h-why-words">
                 {h.whyWords.map((w) => (
-                  <span className="line-mask" key={w}>
-                    <span data-mask="scroll">{w}</span>
-                  </span>
+                  <MaskedLine key={w} text={w} mask="scroll" />
                 ))}
               </h2>
             </div>

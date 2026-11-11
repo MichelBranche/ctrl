@@ -79,7 +79,7 @@ export async function dailyCounts(days: Range): Promise<DailyCounts | null> {
   }
 }
 
-export type Activity = { kind: "post" | "request" | "subscriber"; at: string; title: string; href: string; detail: string };
+export type Activity = { kind: "post" | "request" | "subscriber" | "order"; at: string; title: string; href: string; detail: string };
 
 export async function recentActivity(limit = 8): Promise<Activity[] | null> {
   try {
@@ -102,6 +102,12 @@ export async function recentActivity(limit = 8): Promise<Activity[] | null> {
       ...r.rows.map((x) => ({ kind: "request" as const, at: String(x.created_at), title: String(x.name), href: `/admin/requests?open=${x.id}`, detail: `Nuova richiesta · ${x.subject}` })),
       ...s.rows.map((x) => ({ kind: "subscriber" as const, at: String(x.created_at), title: String(x.email), href: "/admin/newsletter", detail: x.unsubscribed_at ? "Iscritto, poi disiscritto" : "Nuovo iscritto newsletter" })),
     ];
+    // Shop orders in their own query: the shop tables may not exist yet on a fresh database.
+    try {
+      const o = await db().execute({ sql: "SELECT number, customer_name, status, total, created_at FROM shop_orders ORDER BY created_at DESC LIMIT ?", args: [limit] });
+      const money = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+      for (const x of o.rows) items.push({ kind: "order", at: String(x.created_at), title: `Ordine #${x.number} · ${x.customer_name}`, href: "/admin/shop?tab=ordini", detail: `Richiesta d’ordine · ${money.format(Number(x.total))}` });
+    } catch {}
     return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
   } catch {
     return null;

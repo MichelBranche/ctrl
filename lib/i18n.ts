@@ -58,7 +58,7 @@ export const dict = {
     home: {
       kicker: ["Studio indipendente", "di creative technology"],
       title: ["Dall'identità", "al prodotto.", "Un unico", "partner."],
-      lead: "Uno studio creativo e tecnologico che trasforma idee in esperienze digitali e prodotti che lasciano il segno.",
+      lead: "Agenzia web ad Aosta: siti su misura, hotel, software e brand per la Valle d'Aosta e il Nord Italia.",
       approach: "Scopri il nostro approccio",
       heroAlt: "Architettura brutalista in cemento aperta su un lago e sulle montagne",
       heroTags: ["Idee", "Tecnologia", "Esperienze"],
@@ -66,7 +66,7 @@ export const dict = {
       servicesKicker: "Cosa facciamo",
       servicesTitle: ["Più di un sito.", "Una presenza digitale", "che cresce con il brand."],
       servicesLead:
-        "Progettiamo esperienze digitali, prodotti e contenuti che rafforzano l'identità del brand, unendo tecnologia, design e strategia. Dall'idea al prodotto, con un approccio su misura, concreto e orientato ai risultati.",
+        "Dall'agenzia web di Aosta: siti, identità, web app e software su misura, per attività in Valle d'Aosta e nel Nord Italia.",
       portraitAlt: "Ritratto di profilo in bianco e nero",
       workKicker: "Progetti recenti",
       allProjects: "Tutti i progetti",
@@ -75,7 +75,8 @@ export const dict = {
       whyWords: ["Strategia.", "Design.", "Tecnologia.", "Risultati."],
       whyLead: "Un approccio integrato per trasformare idee complesse in soluzioni semplici, belle e performanti.",
       stats: [
-        { value: "2", label: ["Aree", "Design e AI"] },
+        // Six offers already claimed on the site: websites, direct-booking hotels, e-commerce, web apps, software, brand.
+        { value: "6", label: ["Aree", "Dal sito al software"] },
         { value: "5", label: ["Lingue", "Parlate dal team"] },
         { value: "100%", label: ["Su misura", "Nessun template"] },
         { value: "∞", label: ["Curiosità", "Per il futuro"] },
@@ -85,6 +86,10 @@ export const dict = {
       closeLead: "Raccontaci il tuo brand, il prodotto o il problema da risolvere. Siamo pronti a costruire qualcosa di grande, insieme.",
       closeCta: "Scrivici una email",
       location: "Aosta, Valle d'Aosta",
+      proofKicker: "Caso studio",
+      proofTitle: "Residence Le Vele",
+      proofText: "14 prenotazioni e 11.947 € nel primo mese online, con 0 € spesi in advertising.",
+      proofCta: "Leggi il caso",
     },
     services: {
       back: "Tutti i servizi",
@@ -97,16 +102,36 @@ export const dict = {
       wipOthers: "Altri servizi",
     },
     team: {
-      description: "Le persone di CTRL®: design, sviluppo frontend, AI e sviluppo full stack.",
+      metaTitle: "Team dell'agenzia web ad Aosta, Valle d'Aosta | CTRL®",
+      description: "Michel Branche, Kallebe Gallo e Jacopo Manzalini. Design, sviluppo, AI e commerciale nello studio CTRL® ad Aosta, in Valle d'Aosta. Tre persone.",
       tag: "Team",
       title: ["Persone", "che costruiscono", "idee."],
-      lead: "Un team multidisciplinare, unito dalla passione per il digitale e dalla voglia di spingersi oltre.",
+      lead: "Il team dell'agenzia web ad Aosta: design, sviluppo, AI e vendita.",
       scroll: "Scopri il team",
     },
     meta: {
-      title: "CTRL® | Dall'identità al prodotto. Un unico partner.",
+      title: "Agenzia web ad Aosta: il sito web su misura | CTRL®",
       description:
-        "CTRL® è uno studio indipendente di creative technology che unisce design, sviluppo software e comunicazione visiva: dall'identità del brand ai prodotti digitali.",
+        "CTRL® è l'agenzia web di Aosta. Siti su misura, hotel con prenotazione diretta, e-commerce, web app e software per la Valle d'Aosta e il Nord Italia.",
+    },
+    bookings: {
+      nav: "Prenota",
+      metaTitle: "Prenota una call con l'agenzia web ad Aosta | CTRL®",
+      metaDescription:
+        "Call introduttiva gratuita, circa 20-30 minuti su Google Meet, con CTRL® ad Aosta. Scegli un orario o scrivi dal modulo contatti.",
+      tag: "Prenota",
+      title: "Parliamone in call.",
+      lead: [
+        "Una call introduttiva gratuita, circa 20-30 minuti, su Google Meet.",
+        "Ci racconti il progetto e vediamo insieme come proseguire.",
+      ],
+      bookCta: "Scegli un orario",
+      frameTitle: "Prenota una call su Google Calendar",
+      open: "Apri in una nuova scheda",
+      fallback: "Preferisci scrivere? Usa il modulo contatti",
+      soon: "Presto disponibile",
+      soonText: "La prenotazione online non è ancora attiva. Nel frattempo puoi scriverci dal modulo.",
+      fromContact: "Preferisci una call? Prenota un'introduzione.",
     },
   },
   en: {
@@ -127,7 +152,7 @@ export const dict = {
     home: {
       kicker: ["Independent studio", "of creative technology"],
       title: ["From identity", "to product.", "One single", "partner."],
-      lead: "A creative and technology studio that turns ideas into digital experiences and products that leave a mark.",
+      lead: "Web agency in Aosta: custom websites, hotels, software and brand for Valle d'Aosta and Northern Italy.",
       approach: "Discover our approach",
       heroAlt: "Brutalist concrete architecture opening onto a lake and mountains",
       heroTags: ["Ideas", "Technology", "Experiences"],
@@ -135,7 +160,7 @@ export const dict = {
       servicesKicker: "What we do",
       servicesTitle: ["More than a website.", "A digital presence", "that grows with the brand."],
       servicesLead:
-        "We design digital experiences, products and content that strengthen a brand's identity, bringing technology, design and strategy together. From idea to product, with a tailored, practical and results-driven approach.",
+        "From the web agency in Aosta: custom websites, identity, web apps and software for businesses in Valle d'Aosta and Northern Italy.",
       portraitAlt: "Black and white profile portrait",
       workKicker: "Recent work",
       allProjects: "All projects",
@@ -144,7 +169,8 @@ export const dict = {
       whyWords: ["Strategy.", "Design.", "Technology.", "Results."],
       whyLead: "An integrated approach that turns complex ideas into simple, beautiful, high-performing solutions.",
       stats: [
-        { value: "2", label: ["Areas", "Design and AI"] },
+        // Same six offers as the Italian line.
+        { value: "6", label: ["Areas", "From site to software"] },
         { value: "5", label: ["Languages", "Spoken by the team"] },
         { value: "100%", label: ["Tailored", "No templates"] },
         { value: "∞", label: ["Curiosity", "For the future"] },
@@ -154,6 +180,10 @@ export const dict = {
       closeLead: "Tell us about your brand, your product or the problem to solve. We are ready to build something great, together.",
       closeCta: "Send us an email",
       location: "Aosta, Valle d'Aosta",
+      proofKicker: "Case study",
+      proofTitle: "Residence Le Vele",
+      proofText: "14 bookings and €11,947 in the first month online, with €0 spent on advertising.",
+      proofCta: "Read the case",
     },
     services: {
       back: "All services",
@@ -166,16 +196,36 @@ export const dict = {
       wipOthers: "Other services",
     },
     team: {
-      description: "The people behind CTRL®: design, frontend development, AI and full-stack development.",
+      metaTitle: "Team of the Aosta web agency, Valle d'Aosta | CTRL®",
+      description: "Michel Branche, Kallebe Gallo and Jacopo Manzalini. Design, development, AI and sales at the CTRL® studio in Aosta, Valle d'Aosta. Three people.",
       tag: "Team",
       title: ["People", "who build", "ideas."],
-      lead: "A multidisciplinary team, united by a passion for digital and the drive to push further.",
+      lead: "The Aosta web agency team: design, development, AI and sales.",
       scroll: "Meet the team",
     },
     meta: {
-      title: "CTRL® | From identity to product. One partner.",
+      title: "Custom websites from our web agency in Aosta | CTRL®",
       description:
-        "CTRL® is an independent creative technology studio combining design, software development and visual communication: from brand identity to digital products.",
+        "CTRL® is the web agency in Aosta, Valle d'Aosta. Custom websites, hotel sites, online shops, web apps and software, then across Northern Italy.",
+    },
+    bookings: {
+      nav: "Book",
+      metaTitle: "Book a call with the web agency in Aosta | CTRL®",
+      metaDescription:
+        "A free intro call, about 20-30 minutes on Google Meet, with CTRL® in Aosta. Pick a time, or write through the contact form.",
+      tag: "Book",
+      title: "Let's talk on a call.",
+      lead: [
+        "A free intro call, about 20-30 minutes, on Google Meet.",
+        "Tell us about the project and we will see how to move forward.",
+      ],
+      bookCta: "Pick a time",
+      frameTitle: "Book a call on Google Calendar",
+      open: "Open in a new tab",
+      fallback: "Prefer to write? Use the contact form",
+      soon: "Available soon",
+      soonText: "Online booking is not active yet. In the meantime you can write to us through the form.",
+      fromContact: "Prefer a call? Book an introduction.",
     },
   },
 } as const;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AreaChart, BarList, CountUp, Donut, Sparkline } from "@/components/admin/charts";
-import { breakdowns, dailyCounts, delta, latestDeploy, recentActivity, sum, traffic, RANGES, type Range } from "@/lib/dashboard-data";
+import { breakdowns, type Activity, dailyCounts, delta, latestDeploy, recentActivity, sum, traffic, RANGES, type Range } from "@/lib/dashboard-data";
 import { vercelConfigured } from "@/lib/vercel";
 
 /* Server sections shared by Panoramica and Statistiche. Each section fetches its own data inside its own Suspense
@@ -55,8 +55,15 @@ function Unavailable({ what }: { what: string }) {
   );
 }
 
-export async function StatCards({ range, content }: { range: Range; content?: { pub: number; draft: number; reqNew: number; subs: number } | null }) {
-  const [t, c] = await Promise.all([traffic(range).catch(() => null), dailyCounts(range)]);
+type CardScope = { traffic: boolean; requests: boolean; subscribers: boolean; posts: boolean };
+const ALL: CardScope = { traffic: true, requests: true, subscribers: true, posts: true };
+
+/** `show` limits which numbers are fetched at all (members: only their area, see lib/overview-scope.ts). */
+export async function StatCards({ range, content, show = ALL }: { range: Range; content?: { pub: number; draft: number; reqNew: number; subs: number } | null; show?: CardScope }) {
+  const [t, c] = await Promise.all([
+    show.traffic ? traffic(range).catch(() => null) : null,
+    show.requests || show.subscribers ? dailyCounts(range) : null,
+  ]);
   const pvNow = t ? sum(t.current.map((p) => p.pageviews)) : 0;
   const pvPrev = t ? sum(t.previous.map((p) => p.pageviews)) : 0;
   const viNow = t ? sum(t.current.map((p) => p.visitors)) : 0;
@@ -66,7 +73,7 @@ export async function StatCards({ range, content }: { range: Range; content?: { 
   let i = 0;
   return (
     <section className="adm-stats" aria-label="Riepilogo">
-      {t ? (
+      {!show.traffic ? null : t ? (
         <>
           <Card i={i++} label={`Visualizzazioni, ${range}g`} value={pvNow} now={pvNow} before={pvPrev} spark={t.current.map((p) => p.pageviews)} href={`/admin/stats?range=${range}`} />
           <Card i={i++} label={`Visitatori, ${range}g`} value={viNow} now={viNow} before={viPrev} spark={t.current.map((p) => p.visitors)} href={`/admin/stats?range=${range}`} note="Somma dei visitatori giornalieri" />
@@ -74,15 +81,15 @@ export async function StatCards({ range, content }: { range: Range; content?: { 
       ) : (
         <Unavailable what="Visite" />
       )}
-      {c ? (
+      {!show.requests && !show.subscribers ? null : c ? (
         <>
-          <Card i={i++} label={`Richieste, ${range}g`} value={rq} now={rq} before={c.prevRequests} spark={c.requests} href="/admin/requests" note={content ? `${content.reqNew} da leggere` : undefined} />
-          <Card i={i++} label={`Nuovi iscritti, ${range}g`} value={sb} now={sb} before={c.prevSubscribers} spark={c.subscribers} href="/admin/newsletter" note={content ? `${content.subs} iscritti attivi` : undefined} />
+          {show.requests ? <Card i={i++} label={`Richieste, ${range}g`} value={rq} now={rq} before={c.prevRequests} spark={c.requests} href="/admin/requests" note={content ? `${content.reqNew} da leggere` : undefined} /> : null}
+          {show.subscribers ? <Card i={i++} label={`Nuovi iscritti, ${range}g`} value={sb} now={sb} before={c.prevSubscribers} spark={c.subscribers} href="/admin/newsletter" note={content ? `${content.subs} iscritti attivi` : undefined} /> : null}
         </>
       ) : (
         <p className="adm-error" role="alert">Database non raggiungibile: i conteggi non sono disponibili.</p>
       )}
-      {content ? <Card i={i++} label="Articoli pubblicati" value={content.pub} href="/admin/journal" note={`${content.draft} bozze`} /> : null}
+      {content && show.posts ? <Card i={i++} label="Articoli pubblicati" value={content.pub} href="/admin/journal" note={`${content.draft} bozze`} /> : null}
     </section>
   );
 }
@@ -144,7 +151,7 @@ export async function BreakdownPanels({ range, limit = 6 }: { range: Range; limi
 }
 
 const rel = new Intl.RelativeTimeFormat("it", { numeric: "auto" });
-function ago(isoTs: string) {
+export function ago(isoTs: string) {
   const s = (Date.parse(isoTs) - Date.now()) / 1000;
   const steps: [number, Intl.RelativeTimeFormatUnit][] = [[60, "second"], [60, "minute"], [24, "hour"], [7, "day"], [4.35, "week"], [12, "month"]];
   let v = s;
@@ -155,10 +162,12 @@ function ago(isoTs: string) {
   return rel.format(Math.round(v), "year");
 }
 
-const KIND = { post: "Journal", request: "Richiesta", subscriber: "Newsletter" } as const;
+const KIND = { post: "Journal", request: "Richiesta", subscriber: "Newsletter", order: "Shop" } as const;
 
-export async function ActivityFeed() {
-  const items = await recentActivity(8);
+/** `kinds` limits the feed to what the viewer may open (a member without Shop never sees order customer names). */
+export async function ActivityFeed({ kinds }: { kinds?: Activity["kind"][] } = {}) {
+  const all = await recentActivity(kinds ? 24 : 8);
+  const items = all && kinds ? all.filter((a) => kinds.includes(a.kind)).slice(0, 8) : all;
   return (
     <section className="adm-panel adm-rise" aria-labelledby="act-h">
       <h2 id="act-h" className="adm-h2">Attività recente</h2>

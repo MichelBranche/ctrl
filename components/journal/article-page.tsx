@@ -10,19 +10,28 @@ import { JournalMotion } from "@/components/journal/journal-motion";
 import { PostBody } from "@/components/journal/markdown";
 import { PostCard } from "@/components/journal/post-card";
 import { localize, type Locale } from "@/lib/i18n";
+import { publicMeta } from "@/lib/seo";
 import { getPublishedPost, getPublishedPosts } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate } from "@/lib/journal-types";
 import "./journal.css";
 
 export async function articleMetadata(lang: Locale, slug: string): Promise<Metadata> {
   const post = await getPublishedPost(lang, slug);
-  if (!post) return { title: journalCopy[lang].metaTitle, robots: { index: false } };
-  return {
-    title: post.title,
-    description: post.excerpt || journalCopy[lang].metaDescription,
-    alternates: { canonical: localize(`/journal/${post.slug}`, lang) },
-    openGraph: { type: "article", title: post.title, description: post.excerpt, publishedTime: post.published_at, images: post.cover_url ? [post.cover_url] : undefined },
-  };
+  if (!post) return { title: { absolute: journalCopy[lang].metaTitle }, robots: { index: false, follow: false } };
+  const other = lang === "it" ? "en" : "it";
+  const counterpart = await getPublishedPost(other, post.slug);
+  const title = post.title.includes("CTRL") ? post.title : `${post.title} | CTRL®`;
+  const excerpt = post.excerpt.trim();
+  const description = excerpt || journalCopy[lang].metaDescription;
+  return publicMeta(lang, {
+    title,
+    description,
+    itPath: `/journal/${post.slug}`,
+    paired: Boolean(counterpart),
+    type: "article",
+    publishedTime: post.published_at,
+    ...(post.cover_url ? { images: [post.cover_url] } : {}),
+  });
 }
 
 function readingMinutes(md: string) {

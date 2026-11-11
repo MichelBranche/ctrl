@@ -1,0 +1,32 @@
+.sd-prose { margin: 0; max-width: 38rem; color: var(--p-dim); font-size: 1.02rem; line-height: 1.65; text-wrap: pretty; }
+.sd-prose + .sd-prose { margin-top: 1rem; }
+.sd-split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 2rem 4rem; align-items: start; padding-top: clamp(3rem, 6vw, 5rem); }
+.sd-for { margin: 1rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.7rem; }
+.sd-for li { padding-top: 0.7rem; border-top: 1px solid var(--p-rule); color: var(--p-dim); line-height: 1.5; }
+.sd-included { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; margin: 1.4rem 0 0; padding: 0; list-style: none; }
+.sd-included h3 { margin: 0 0 0.35rem; font-size: 1.02rem; }
+.sd-included p { margin: 0; color: var(--p-dim); font-size: 0.92rem; line-height: 1.5; }
+.sd-note { margin: 1rem 0 0; max-width: 38rem; color: var(--p-dim); line-height: 1.6; }
+.sd-links { display: flex; flex-wrap: wrap; gap: 0.8rem 1.4rem; margin-top: 1.4rem; }
+.sd-links a { color: inherit; }
+.sd-faq { padding-top: clamp(2.5rem, 5vw, 4rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
+.sd-faq-list { margin-top: 1.6rem; border-top: 1px solid var(--p-rule); }
+.sd-details { border-bottom: 1px solid var(--p-rule); }
+.sd-details summary { padding: 1rem 0; font-weight: 600; letter-spacing: -0.01em; cursor: pointer; }
+.sd-details summary:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
+.sd-details p { margin: 0 0 1.1rem; max-width: 42rem; color: var(--p-dim); line-height: 1.6; text-wrap: pretty; }
+/* Le Vele: the film stays painted. display:none before play() never starts the element. */
+.lv-video { display: block; opacity: 1; }
+.sd-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
+.sd-stats li { padding: 1.1rem 0 0; border-top: 1px solid var(--p-rule); }
+.sd-stats strong { display: block; font-family: var(--p-display-face); font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 500; letter-spacing: -0.03em; }
+.sd-stats span { display: block; margin-top: 0.35rem; color: var(--p-dim); font-size: 0.92rem; line-height: 1.4; }
+.sd-service-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 1.2rem 0 0; padding: 0; list-style: none; border-top: 1px solid var(--p-rule); }
+.sd-service-links a { display: block; padding: 1.1rem 1rem 1.1rem 0; color: inherit; text-decoration: none; border-bottom: 1px solid var(--p-rule); }
+.sd-service-links a:hover .sd-service-label, .sd-service-links a:focus-visible .sd-service-label { text-decoration: underline; }
+.sd-service-links a:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+.sd-service-kicker { display: block; margin-bottom: 0.25rem; color: var(--p-faint); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.sd-service-label { font-size: 1.05rem; }
+@media (max-width: 60rem) {
+  .sd-split, .sd-included, .sd-stats, .sd-service-links { grid-template-columns: minmax(0, 1fr); }
+}

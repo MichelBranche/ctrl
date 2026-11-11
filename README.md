@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment
+
+Copy `.env.example` when you need the optional integrations. The public site still builds if they are empty.
+
+Google reviews on the home hero use Places API (New) Place Details (`rating`, `userRatingCount`, `reviews`, `googleMapsUri`). Set both variables on Vercel, then redeploy:
+
+- `GOOGLE_PLACES_API_KEY`
+- `GOOGLE_PLACE_ID` (the Place ID only, for example `ChIJ...`)
+
+The existing daily cron (`/api/purge`) refreshes them at most once a day and keeps the last good response in the database. A failed call does not clear the page. Place Details returns at most five reviews. Without the variables, or when none of those reviews have text, the strip is omitted.
+
+`GOOGLE_REVIEWS_FIXTURE=1` shows clearly marked sample cards for local layout checks. It is ignored when `NODE_ENV` is `production`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

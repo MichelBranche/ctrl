@@ -29,6 +29,7 @@ export type ProjectsCopy = {
   others: string;
   count: (n: number) => string;
   categoryMeta: (label: string) => string;
+  categorySeo: Record<string, { title: string; description: string }>;
   sites: {
     metaDescription: string;
     filterLabel: string;
@@ -48,11 +49,11 @@ export type ProjectsCopy = {
 
 export const projectsCopy: Record<Locale, ProjectsCopy> = {
   it: {
-    metaTitle: "Progetti",
-    metaDescription: "Siti web, webapp, software, brand, mockup commerciali e video promozionali: i lavori di CTRL® divisi per categoria.",
+    metaTitle: "Progetti web ad Aosta: siti, webapp e software | CTRL®",
+    metaDescription: "Siti web, webapp, software, brand e video dello studio CTRL® ad Aosta, più la sicurezza web e i certificati SSL/TLS gestiti. Guarda i lavori.",
     tag: "Progetti",
     title: "Progetti.",
-    lead: ["Idee, soluzioni e risultati concreti.", "Scopri alcuni dei nostri lavori."],
+    lead: ["Siti, webapp e software fatti ad Aosta.", "Lavori dello studio CTRL®."],
     all: "Tutti i progetti",
     filterLabel: "Filtra per categoria",
     filterAll: "Tutti",
@@ -76,8 +77,26 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
     others: "Altre categorie",
     count: (n) => (n === 1 ? "1 progetto" : `${n} progetti`),
     categoryMeta: (label) => `${label} | Progetti`,
+    categorySeo: {
+      websites: {
+        title: "Siti web realizzati ad Aosta: casi e demo live | CTRL®",
+        description: "Siti per hospitality, food, cultura e brand, progettati ad Aosta da CTRL® con Next.js, React e GSAP. Include il caso Residence Le Vele. In Italia.",
+      },
+      software: {
+        title: "Progetti software su misura dello studio ad Aosta | CTRL®",
+        description: "Strumenti interni, automazioni e integrazioni sul modo di lavorare del team. Progetti software di CTRL®, agenzia web con sede ad Aosta. In Italia.",
+      },
+      "brand-identity": {
+        title: "Progetti di brand identity dello studio ad Aosta | CTRL®",
+        description: "Logo, sistemi visivi e linee guida dello studio CTRL® ad Aosta. Identità pensate per restare coerenti su sito, social e stampa. Guarda i lavori.",
+      },
+      "promo-videos": {
+        title: "Video promozionali dello studio web ad Aosta | CTRL®",
+        description: "Motion, spot e video brevi per social e lanci, realizzati da CTRL® ad Aosta. La categoria raccoglie i lavori video dello studio in valle. In Italia.",
+      },
+    },
     sites: {
-      metaDescription: "Siti web per hospitality, food & wine, cultura e brand, progettati e sviluppati dal team CTRL®: Next.js, React e GSAP.",
+      metaDescription: "Siti per hospitality, food, cultura e brand, progettati ad Aosta da CTRL® con Next.js, React e GSAP. Include il caso Residence Le Vele. In Italia.",
       filterLabel: "Filtra i siti per settore",
       madeBy: "Realizzato da",
       portfolioTab: "(portfolio dell'autore, si apre in una nuova scheda)",
@@ -93,11 +112,11 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
     },
   },
   en: {
-    metaTitle: "Projects",
-    metaDescription: "Websites, web apps, software, brand, commercial mockups and promo videos: CTRL® work grouped by category.",
+    metaTitle: "Web projects from Aosta: sites, apps, software | CTRL®",
+    metaDescription: "Websites, web apps, software, brand and promo videos from the CTRL® studio in Aosta, plus managed web security and SSL/TLS certificates. See the work.",
     tag: "Projects",
     title: "Projects.",
-    lead: ["Ideas, solutions and concrete results.", "Explore some of our work."],
+    lead: ["Websites, apps and software made in Aosta.", "Work from the CTRL® studio."],
     all: "All projects",
     filterLabel: "Filter by category",
     filterAll: "All",
@@ -121,8 +140,26 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
     others: "Other categories",
     count: (n) => (n === 1 ? "1 project" : `${n} projects`),
     categoryMeta: (label) => `${label} | Projects`,
+    categorySeo: {
+      websites: {
+        title: "Websites built in Aosta: case studies and demos | CTRL®",
+        description: "Sites for hospitality, food, culture and brands, designed in Aosta by CTRL® with Next.js, React and GSAP. Includes the Residence Le Vele case.",
+      },
+      software: {
+        title: "Custom software projects from the Aosta studio | CTRL®",
+        description: "Internal tools, automations and integrations shaped around how a team works. Software projects by CTRL®, the web studio based in Aosta. See the work.",
+      },
+      "brand-identity": {
+        title: "Brand identity projects from the Aosta studio | CTRL®",
+        description: "Logos, visual systems and guidelines from the CTRL® studio in Aosta. Identities built to stay consistent on the site, on social and in print.",
+      },
+      "promo-videos": {
+        title: "Promo videos from our own web studio in Aosta | CTRL®",
+        description: "Motion, spots and short videos for social and launches, made by CTRL® in Aosta. This category collects the studio's video work in the valley.",
+      },
+    },
     sites: {
-      metaDescription: "Websites for hospitality, food & wine, culture and brands, designed and built by the CTRL® team: Next.js, React and GSAP.",
+      metaDescription: "Sites for hospitality, food, culture and brands, designed in Aosta by CTRL® with Next.js, React and GSAP. Includes the Residence Le Vele case.",
       filterLabel: "Filter sites by sector",
       madeBy: "Made by",
       portfolioTab: "(author's portfolio, opens in a new tab)",

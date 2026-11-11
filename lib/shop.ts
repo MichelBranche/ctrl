@@ -1,100 +1,89 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
+import type { Row } from "@libsql/client";
 import { db, dbConfigured } from "@/lib/db";
-import { readSettings } from "@/lib/settings";
+import { ensureShopSchema } from "@/lib/migrate";
+import { DEFAULT_SHOP_PRODUCT, GOOGLE_CARD_DETAILS, isShopCategory, parseDetails, type ShopProduct, type ShopProductAdmin } from "@/lib/shop-data";
 
+export type { ShopProduct, ShopProductAdmin } from "@/lib/shop-data";
+export { DEFAULT_SHOP_PRODUCT } from "@/lib/shop-data";
 export const SHOP_PRODUCT_TAG = "shop-products";
-export type ShopProduct = {
-  id: string;
-  slug: string;
-  titleIt: string;
-  titleEn: string;
-  descriptionIt: string;
-  descriptionEn: string;
-  price: string;
-  images: string[];
-  published: boolean;
-  sortOrder: number;
-};
 
-export const DEFAULT_SHOP_PRODUCT: ShopProduct = {
-  id: "google-review-card",
-  slug: "google-review-card",
-  published: true,
-  titleIt: "Card recensioni Google",
-  titleEn: "Google Review Card",
-  descriptionIt: "Invita i clienti a lasciare una recensione con un semplice tap NFC o una scansione del QR code.",
-  descriptionEn: "Invite customers to leave a review with a quick NFC tap or a scan of the QR code.",
-  price: "19.90",
-  images: ["/images/shop/review-card-hero.webp", "/images/shop/review-card.webp", "/images/shop/review-card-detail.webp"],
-  sortOrder: 0,
-};
+const PUBLIC_COLUMNS = "id, slug, category, title_it, title_en, description_it, description_en, price, images_json, published, sort_order, created_at, details_json";
 
-const LEGACY_KEYS = [
-  "shop.product.published", "shop.product.title.it", "shop.product.title.en",
-  "shop.product.description.it", "shop.product.description.en", "shop.product.price",
-];
-let shopSchemaReady: Promise<void> | null = null;
-
-export async function ensureShopSchema() {
-  if (!dbConfigured) return;
-  shopSchemaReady ??= (async () => {
-    await db().batch([
-      { sql: `CREATE TABLE IF NOT EXISTS shop_products (
-        id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, title_it TEXT NOT NULL, title_en TEXT NOT NULL,
-        description_it TEXT NOT NULL, description_en TEXT NOT NULL, price TEXT NOT NULL,
-        images_json TEXT NOT NULL DEFAULT '[]', published INTEGER NOT NULL DEFAULT 0,
-        sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-      )` },
-      { sql: "CREATE TABLE IF NOT EXISTS shop_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)" },
-    ], "write");
-    const seeded = await db().execute({ sql: "INSERT OR IGNORE INTO shop_meta (key, value) VALUES ('legacy-product-seeded', '1')" });
-    if (seeded.rowsAffected > 0) {
-      const legacy = await readSettings(LEGACY_KEYS).catch((): Record<string, string> => ({}));
-      const product = {
-        ...DEFAULT_SHOP_PRODUCT,
-        published: legacy["shop.product.published"] === undefined ? DEFAULT_SHOP_PRODUCT.published : legacy["shop.product.published"] === "true",
-        titleIt: legacy["shop.product.title.it"] ?? DEFAULT_SHOP_PRODUCT.titleIt,
-        titleEn: legacy["shop.product.title.en"] ?? DEFAULT_SHOP_PRODUCT.titleEn,
-        descriptionIt: legacy["shop.product.description.it"] ?? DEFAULT_SHOP_PRODUCT.descriptionIt,
-        descriptionEn: legacy["shop.product.description.en"] ?? DEFAULT_SHOP_PRODUCT.descriptionEn,
-        price: legacy["shop.product.price"] ?? DEFAULT_SHOP_PRODUCT.price,
-      };
-      await db().execute({
-        sql: `INSERT OR IGNORE INTO shop_products (id, slug, title_it, title_en, description_it, description_en, price, images_json, published, sort_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [product.id, product.slug, product.titleIt, product.titleEn, product.descriptionIt, product.descriptionEn, product.price, JSON.stringify(product.images), product.published ? 1 : 0, product.sortOrder],
-      });
-    }
-  })().catch((error) => { shopSchemaReady = null; throw error; });
-  return shopSchemaReady;
+function toProduct(row: Row): ShopProduct {
+  let images: unknown = [];
+  try { images = JSON.parse(String(row.images_json)); } catch { images = []; }
+  const details = parseDetails(row.details_json);
+  // The Google card keeps its original copy until the admin writes its own.
+  if (String(row.id) === DEFAULT_SHOP_PRODUCT.id) {
+    if (!details.it.benefits.length && !details.it.highlights.length) details.it = GOOGLE_CARD_DETAILS.it;
+    if (!details.en.benefits.length && !details.en.highlights.length) details.en = GOOGLE_CARD_DETAILS.en;
+  }
+  return {
+    id: String(row.id), slug: String(row.slug), category: isShopCategory(row.category) ? row.category : "tech",
+    titleIt: String(row.title_it), titleEn: String(row.title_en),
+    descriptionIt: String(row.description_it), descriptionEn: String(row.description_en), price: String(row.price),
+    images: Array.isArray(images) ? images.filter((image): image is string => typeof image === "string") : [],
+    published: Number(row.published) === 1, sortOrder: Number(row.sort_order) || 0,
+    createdAt: String(row.created_at ?? ""), details,
+  };
 }
 
 async function queryShopProducts(): Promise<ShopProduct[]> {
   "use cache";
   cacheTag(SHOP_PRODUCT_TAG);
-  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 * 7 });
-  const result = await db().execute("SELECT * FROM shop_products ORDER BY sort_order, created_at");
-  return result.rows.map((row) => {
-    let images: string[] = [];
-    try { images = JSON.parse(String(row.images_json)); } catch { images = []; }
-    return {
-      id: String(row.id), slug: String(row.slug), titleIt: String(row.title_it), titleEn: String(row.title_en),
-      descriptionIt: String(row.description_it), descriptionEn: String(row.description_en), price: String(row.price),
-      images: Array.isArray(images) ? images.filter((image): image is string => typeof image === "string") : [],
-      published: Number(row.published) === 1, sortOrder: Number(row.sort_order) || 0,
-    };
-  });
+  // Short client stale time: admin edits invalidate the tag/paths at once, so a long browser router cache is the only thing that could still show an old price.
+  cacheLife({ stale: 30, revalidate: 3600, expire: 86400 * 7 });
+  // The schema check is DB I/O too: keep it inside the cache scope so prerendering /shop does no uncached data access.
+  await ensureShopSchema();
+  const result = await db().execute(`SELECT ${PUBLIC_COLUMNS} FROM shop_products ORDER BY sort_order, created_at`);
+  return result.rows.map(toProduct);
 }
 
+/** Public catalogue (published and hidden; pages filter on `published`). Never contains supplier data. */
 export async function getShopProducts(): Promise<ShopProduct[]> {
-  await ensureShopSchema();
   if (!dbConfigured) return [DEFAULT_SHOP_PRODUCT];
   return queryShopProducts();
 }
 
-export async function getShopProduct(slug = DEFAULT_SHOP_PRODUCT.slug): Promise<ShopProduct | null> {
+export async function getShopProduct(slug: string): Promise<ShopProduct | null> {
   const products = await getShopProducts();
   return products.find((product) => product.slug === slug) ?? null;
+}
+
+/** Admin only (uncached): includes the translation flag and dropshipping supplier fields. */
+export async function getShopProductsAdmin(): Promise<ShopProductAdmin[]> {
+  if (!dbConfigured) return [{ ...DEFAULT_SHOP_PRODUCT, updatedAt: "", enAuto: true, supplierName: "", supplierProductUrl: "", supplierSku: "", supplierCost: "" }];
+  await ensureShopSchema();
+  const result = await db().execute("SELECT * FROM shop_products ORDER BY sort_order, created_at");
+  return result.rows.map((row) => ({
+    ...toProduct(row),
+    updatedAt: String(row.updated_at ?? ""),
+    enAuto: Number(row.en_auto) === 1,
+    supplierName: String(row.supplier_name ?? ""),
+    supplierProductUrl: String(row.supplier_product_url ?? ""),
+    supplierSku: String(row.supplier_sku ?? ""),
+    supplierCost: row.supplier_cost == null ? "" : String(row.supplier_cost),
+  }));
+}
+
+export type CartLineInput = { slug: string; quantity: number };
+export type CartQuote = { lines: { slug: string; title: string; unitPrice: number; quantity: number; total: number }[]; subtotal: number };
+
+/**
+ * Prices a cart on the server from the database. The browser cart (localStorage) only carries slug + quantity that matter here:
+ * any price, title or image it holds is display-only and MUST NOT be used to charge. A future payment route (e.g. Stripe Checkout)
+ * must build its line items from this function's output, never from the request body.
+ */
+export async function quoteCart(input: CartLineInput[], lang: "it" | "en"): Promise<CartQuote> {
+  const products = await getShopProducts();
+  const lines = input.slice(0, 50).flatMap((line) => {
+    const product = products.find((p) => p.published && p.slug === line.slug);
+    const quantity = Math.min(99, Math.max(0, Math.floor(Number(line.quantity) || 0)));
+    if (!product || !quantity) return [];
+    const unitPrice = Math.round(Number(product.price) * 100) / 100;
+    return [{ slug: product.slug, title: lang === "it" ? product.titleIt : product.titleEn, unitPrice, quantity, total: Math.round(unitPrice * quantity * 100) / 100 }];
+  });
+  return { lines, subtotal: Math.round(lines.reduce((s, l) => s + l.total, 0) * 100) / 100 };
 }

@@ -1,0 +1,94 @@
+import { Suspense } from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import { notFound } from "next/navigation";
+import { archiveAction, stageFormAction } from "@/app/admin/crm-actions";
+import { ContactForm } from "@/components/admin/crm/contact-form";
+import { composeHref, CrmTabs, day, eur, MapsLink, meetHref, romeToday, ScoreBadge, siteHref, telHref } from "@/components/admin/crm/crm-ui";
+import { DraftEditor } from "@/components/admin/crm/draft-editor";
+import { requireSection } from "@/lib/admin";
+import { crmOwners, getContact, listDrafts, listNotes } from "@/lib/crm";
+import { SOURCE_LABEL, STAGES, STAGE_LABEL, websiteDomain } from "@/lib/crm-core";
+import { NoteForm } from "@/components/admin/crm/note-form";
+import { RUBRICA } from "@/lib/crm-nav";
+import { canAccess } from "@/lib/team-types";
+
+/** Build-time placeholder only (an invalid id renders notFound inside Suspense); real ids render on request. */
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
+export default function ContactPage({ params }: { params: Promise<{ id: string }> }) {
+  return <main className="adm-main crm-main"><Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento…</p>}><Body params={params} /></Suspense></main>;
+}
+
+const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+async function Body({ params }: { params: Promise<{ id: string }> }) {
+  const me = await requireSection("crm");
+  const { id } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const c = await getContact(id);
+  if (!c) notFound();
+  const [notes, drafts, owners] = await Promise.all([listNotes(id), listDrafts([id]), crmOwners()]);
+  const today = romeToday();
+  const mail = canAccess(me, "email"), meetings = canAccess(me, "meetings");
+  const mailSearch = c.email ?? websiteDomain(c.website);
+  const meet = meetHref(c);
+  const href = siteHref(c.website);
+  return (
+    <>
+      <header className="adm-top">
+        <div><p className="adm-muted"><Link href={RUBRICA as Route}>Rubrica</Link> · {SOURCE_LABEL[c.source]}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} /></h1></div>
+        <div className="adm-row-actions">
+          <MapsLink contact={c} />
+          {meetings ? <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link> : null}
+          {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
+          {mail && c.email ? <Link className="adm-btn adm-btn-sm" href={composeHref(c.email) as Route}>Scrivi email</Link> : null}
+          {mail && mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
+        </div>
+      </header>
+      <CrmTabs current={RUBRICA} />
+      <div className="adm-grid2">
+        <section className="adm-panel">
+          <div className="adm-panel-head"><h2 className="adm-h2">Riepilogo</h2><span className="adm-badge">{STAGE_LABEL[c.stage]}</span></div>
+          <dl className="crm-dl">
+            {c.contactName ? <><dt>Referente</dt><dd>{c.contactName}</dd></> : null}
+            {c.email ? <><dt>Email</dt><dd><a href={`mailto:${c.email}`}>{c.email}</a></dd></> : null}
+            {c.phone ? <><dt>Telefono</dt><dd><a href={telHref(c.phone)!}>{c.phone}</a></dd></> : null}
+            {href ? <><dt>Sito</dt><dd><a href={href} target="_blank" rel="noopener noreferrer nofollow">{c.website}</a></dd></> : null}
+            {c.city || c.address ? <><dt>Luogo</dt><dd>{[c.address, c.city, c.region].filter(Boolean).join(", ")}</dd></> : null}
+            {c.valueEur !== null ? <><dt>Valore</dt><dd>{eur(c.valueEur)}</dd></> : null}
+            <dt>Prossima azione</dt><dd className={c.nextActionAt && c.nextActionAt.slice(0, 10) < today ? "adm-error" : undefined}>{c.nextAction ?? "Da definire"}{c.nextActionAt ? ` · ${day(c.nextActionAt)}` : ""}</dd>
+            {c.ownerUserId ? <><dt>Responsabile</dt><dd>{c.ownerName ?? "Account eliminato"}{c.ownerActive === false ? <span className="adm-badge crm-ex">ex membro</span> : null}</dd></> : null}
+            <dt>Creato</dt><dd>{when(c.createdAt)}</dd>
+          </dl>
+          {c.scoreReasons.length ? <ul className="crm-reasons">{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul> : null}
+          <form action={stageFormAction} className="crm-filters">
+            <input type="hidden" name="id" value={c.id} /><input type="hidden" name="version" value={c.version} />
+            <select className="adm-input" name="stage" defaultValue={c.stage} aria-label="Fase">{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
+            <button className="adm-btn adm-btn-sm">Cambia fase</button>
+          </form>
+          <form action={archiveAction}>
+            <input type="hidden" name="id" value={c.id} /><input type="hidden" name="archived" value={c.archived ? "0" : "1"} />
+            <button className={c.archived ? "adm-btn adm-btn-sm" : "adm-btn adm-btn-sm adm-btn-danger"}>{c.archived ? "Ripristina" : "Archivia"}</button>
+          </form>
+        </section>
+        <section className="adm-panel">
+          <div className="adm-panel-head"><h2 className="adm-h2">Note</h2><span className="adm-muted">{notes.length}</span></div>
+          <NoteForm contactId={c.id} />
+          <ol className="desk-list crm-timeline">
+            {notes.map((n) => <li key={n.id} className="desk-item"><div className="desk-item-head"><strong>{n.author ?? "Sistema"}</strong><span className="adm-muted">{when(n.createdAt)}</span></div><p className="desk-note-body">{n.body}</p></li>)}
+            {c.notes ? <li className="desk-item"><div className="desk-item-head"><strong>Note iniziali</strong></div><p className="desk-note-body">{c.notes}</p></li> : null}
+          </ol>
+        </section>
+      </div>
+      {drafts.length ? (
+        <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">Bozze email</h2></div>
+          {drafts.map((d) => <details key={d.id} open={d.status === "bozza"}><summary>{d.subject} <span className="adm-badge">{d.status}</span></summary><DraftEditor draft={d} to={c.email} canSend={mail} /></details>)}
+        </section>
+      ) : null}
+      <section className="adm-panel"><details><summary className="adm-h2">Modifica contatto</summary><ContactForm key={`${c.id}:${c.version}`} contact={c} owners={owners} /></details></section>
+    </>
+  );
+}
