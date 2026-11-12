@@ -485,9 +485,9 @@ function shortcuts(me: Person, range: CommandRange): CommandShortcut[] {
   }));
 }
 
-export async function loadCommandCenter(me: Person, range: CommandRange, denied: boolean, emptyFixture = false): Promise<CommandModel> {
+export async function loadCommandCenter(me: Person, range: CommandRange, denied: boolean, emptyFixture = false, liveFixture = false): Promise<CommandModel> {
   const dateLabel = commandDateLabel();
-  if (commandFixturesOn()) return withVoice({ ...fixtureCommand(range, dateLabel, emptyFixture), denied }, me.name);
+  if (commandFixturesOn()) return withVoice({ ...fixtureCommand(range, dateLabel, emptyFixture, liveFixture), denied }, me.name);
   const [status, stats, deals, shop] = await Promise.all([
     systems(me),
     analyticsBlock(me, range),

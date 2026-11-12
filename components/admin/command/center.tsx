@@ -106,12 +106,15 @@ export function CommandCenter({ model }: { model: CommandModel }) {
       gsap.from("[data-cc-hero] > *", { y: 14, autoAlpha: 0, duration: 0.65, stagger: 0.07, ease: "power3.out" });
       gsap.utils.toArray<HTMLElement>("[data-cc-block]").forEach((block) => {
         const kids = block.querySelectorAll<HTMLElement>(":scope > *");
+        const row = block.matches(".cc-kpis, .cc-shortcuts");
         gsap.from(kids.length ? kids : block, {
-          y: 16,
+          ...(row ? {} : { y: 16 }),
           autoAlpha: 0,
           duration: 0.6,
           stagger: 0.06,
           ease: "power3.out",
+          clearProps: "transform",
+          onComplete() { block.querySelectorAll<HTMLElement>(":scope > *").forEach((el) => { el.style.transform = ""; }); },
           scrollTrigger: { trigger: block, start: "top 92%", once: true },
         });
       });
@@ -150,16 +153,18 @@ export function CommandCenter({ model }: { model: CommandModel }) {
             </span>
             <span className="cc-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={`Andamento ${card.label}`} /></span>
             {card.unavailable ? (
-              <span className="cc-kpi-note">{card.unavailable}</span>
+              <span className="cc-kpi-num cc-kpi-note">{card.unavailable}</span>
             ) : (
               <CountUp value={card.value} className="cc-kpi-num" money={card.money} />
             )}
-            {card.delta ? (
-              <span className={`cc-kpi-delta${card.tone ? ` is-${card.tone}` : ""}`}>
-                {card.tone === "up" ? <Icon d="M6 14l6-6 6 6" /> : card.tone === "down" ? <Icon d="M6 10l6 6 6-6" /> : null}
-                {card.delta}
-              </span>
-            ) : card.note ? <span className="cc-kpi-note">{card.note}</span> : null}
+            <span className={`cc-kpi-delta${card.tone ? ` is-${card.tone}` : ""}`}>
+              {card.delta ? (
+                <>
+                  {card.tone === "up" ? <Icon d="M6 14l6-6 6 6" /> : card.tone === "down" ? <Icon d="M6 10l6 6 6-6" /> : null}
+                  {card.delta}
+                </>
+              ) : card.note ?? ""}
+            </span>
           </Link>
         ))}
       </section>

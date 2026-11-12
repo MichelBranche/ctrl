@@ -98,6 +98,7 @@
   gap: var(--cc-gap);
   align-items: stretch;
   min-width: 0;
+  overflow-x: clip;
 }
 .cc-hero {
   position: relative;
@@ -105,32 +106,27 @@
   padding: calc(4.35rem + 12px) var(--cc-pad) 4px;
   min-height: 15rem;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 .cc-hero-art {
   position: absolute;
   z-index: 0;
-  top: 0;
-  right: -22vw;
-  left: 28%;
-  height: 100%;
+  top: -2.5rem;
+  right: -30vw;
+  bottom: -3rem;
+  left: 8%;
+  height: auto;
   margin: 0;
   pointer-events: none;
   user-select: none;
-  -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.2) 18%, #000 46%),
-    linear-gradient(to bottom, transparent 0%, #000 18%, #000 52%, transparent 100%);
-  -webkit-mask-composite: source-in;
+  -webkit-mask-image: radial-gradient(ellipse 72% 68% at 86% 38%, #000 0%, rgb(0 0 0 / 0.55) 28%, transparent 64%);
+  mask-image: radial-gradient(ellipse 72% 68% at 86% 38%, #000 0%, rgb(0 0 0 / 0.55) 28%, transparent 64%);
   -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-image:
-    linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.2) 18%, #000 46%),
-    linear-gradient(to bottom, transparent 0%, #000 18%, #000 52%, transparent 100%);
-  mask-composite: intersect;
   mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
-.cc-hero-art img { width: 100%; height: 100%; object-fit: cover; object-position: 62% center; }
+.cc-hero-art img { width: 100%; height: 100%; object-fit: cover; object-position: 82% 36%; }
 .cc-hero-copy { position: relative; z-index: 1; max-width: 100%; min-width: 0; }
 .cc-date {
   margin: 0 0 0.85rem;
@@ -215,7 +211,8 @@
 .cc-split { grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.9fr); }
 .cc-split:not(:has(.cc-chart)) { grid-template-columns: minmax(0, 28rem); }
 .cc-split > .cc-card, .cc-bottom > .cc-card { display: flex; flex-direction: column; }
-.cc-shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cc-shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+.cc-shortcuts > .cc-card { height: 100%; min-height: 9.4rem; }
 .cc-bottom { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .cc-card {
@@ -229,7 +226,18 @@
   box-sizing: border-box;
 }
 a.cc-card { display: block; text-decoration: none; }
-a.cc-card.cc-kpi { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
+a.cc-card.cc-kpi {
+  position: relative;
+  display: grid;
+  grid-template-rows: 28px 2.15rem 1.25rem;
+  align-content: start;
+  align-items: stretch;
+  row-gap: 0.7rem;
+  height: 8.75rem;
+  min-height: 8.75rem;
+  max-height: 8.75rem;
+  overflow: hidden;
+}
 a.cc-card.cc-shortcut { display: grid; }
 .cc-kpi-num, .cc-kpi-note, .cc-kpi-delta { width: 100%; }
 .cc-card-head, .cc-kpi-top {
@@ -272,11 +280,10 @@ a.cc-card.cc-shortcut { display: grid; }
 .cc-dot.is-visitors { background: rgb(244 241 234 / 0.45); }
 .cc-empty { margin: 1.4rem 0 0.6rem; color: rgb(244 241 234 / 0.5); text-align: center; }
 
-.cc-kpi { display: flex; flex-direction: column; min-height: 8.75rem; }
 .cc-kpi-top { justify-content: flex-start; color: rgb(244 241 234 / 0.62); overflow: hidden; }
 .cc-kpi-top svg { width: 1rem; height: 1rem; flex: none; }
 .cc-kpi-label { font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cc-kpi-num { padding-right: 6.5rem; min-height: 2.15rem; }
+.cc-kpi-num { padding-right: 6.5rem; height: 2.15rem; min-height: 2.15rem; max-height: 2.15rem; overflow: hidden; }
 .cc-kpi-spark {
   position: absolute;
   right: 16px;
@@ -288,21 +295,28 @@ a.cc-card.cc-shortcut { display: grid; }
 }
 .cc-kpi-spark .adm-spark { width: 100%; height: 100%; display: block; }
 .cc-kpi-num {
-  margin-top: 0.85rem;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 2.15rem;
   font-weight: 600;
   letter-spacing: -0.045em;
-  line-height: 1;
+  line-height: 2.15rem;
   font-variant-numeric: tabular-nums;
 }
 .cc-kpi-delta, .cc-kpi-note {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.28rem;
-  margin-top: 0.55rem;
+  height: 1.25rem;
+  min-height: 1.25rem;
+  max-height: 1.25rem;
+  margin: 0;
+  overflow: hidden;
   color: rgb(244 241 234 / 0.48);
   font-size: 0.8rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .cc-kpi-delta svg { width: 0.85rem; height: 0.85rem; }
 .cc-kpi-delta.is-up { color: #3ddc97; }
@@ -386,7 +400,16 @@ a.cc-card.cc-shortcut { display: grid; }
 .cc-shortcut-icon svg, .cc-go svg { width: 1.15rem; height: 1.15rem; }
 .cc-go { grid-area: go; color: rgb(244 241 234 / 0.4); }
 .cc-shortcut h3 { grid-area: title; margin: 0.55rem 0 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; }
-.cc-shortcut p { grid-area: text; margin: 0; color: rgb(244 241 234 / 0.52); font-size: 0.84rem; line-height: 1.45; }
+.cc-shortcut p {
+  grid-area: text;
+  margin: 0;
+  min-height: calc(1.45em * 2);
+  max-height: calc(1.45em * 2);
+  overflow: hidden;
+  color: rgb(244 241 234 / 0.52);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
 
 .cc-pages .adm-barlist { gap: 0.4rem; margin-top: 0.85rem; }
 .cc-pages .adm-barlist li { min-height: 1.9rem; align-items: center; padding: 0.15rem 0.6rem; }
@@ -432,7 +455,7 @@ a.cc-card.cc-shortcut { display: grid; }
   .cc.adm-main { --cc-pad: 16px; padding-inline: var(--cc-pad); }
   .cc-hero { margin-top: 0; padding-top: 12px; min-height: 11rem; }
   .cc-hero h1, .cc-lead { white-space: normal; text-overflow: unset; }
-  .cc-hero-art { left: 46%; right: -36vw; }
+  .cc-hero-art { left: 22%; right: -42vw; top: -1rem; bottom: -2rem; }
   .cc-kpi-spark { width: 72px; height: 28px; }
   .cc-kpi-num { padding-right: 5rem; }
 }
