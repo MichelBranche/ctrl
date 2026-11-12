@@ -1,5 +1,5 @@
 "use client";
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
@@ -31,6 +31,8 @@ const CLOCK = "M12 8v5l3 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z";
 const CHAT = "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z";
 const TRAY = "M4 8h16v10H4zM4 8l8 6 8-6";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+/** When the last board drag ended: the click that follows a drop must not open the card link. */
+let draggedAt = 0;
 const money = (cents: number | null) => (cents === null ? "" : eur(cents / 100));
 
 /** Search submits the same form, about 200 ms after the last keystroke. */
@@ -167,6 +169,7 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
 
   const onDragStart = (event: DragStartEvent) => setActiveId(String(event.active.id));
   const onDragEnd = (event: DragEndEvent) => {
+    draggedAt = Date.now();
     setActiveId(null);
     const stage = event.over ? String(event.over.id) : "";
     if (!(STAGES as readonly string[]).includes(stage)) return;
@@ -228,7 +231,7 @@ export function ContactBoard({ cards: initial, vista }: { cards: ContactCard[]; 
     <>
       {toast}
       {confirm}
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
+      <DndContext id="crm-contact-board" sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => { draggedAt = Date.now(); setActiveId(null); }}>
         <div className="crm-board" ref={boardRef}>
           {STAGES.map((stage) => (
             <Column key={stage} stage={stage} cards={grouped[stage]} shown={more[stage] ?? PAGE} hand={hand}
@@ -278,16 +281,32 @@ function Card({ card, hand, onMove, onShift }: {
   card: ContactCard; hand: boolean; onMove: (card: ContactCard, stage: Stage) => void; onShift: (card: ContactCard, dir: -1 | 1) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id, disabled: hand });
+  // The whole card starts a drag (8 px of movement first, so a click still opens the panel).
+  // The grip keeps the keyboard drag (Space, arrows, Space) for screen readers.
+  const pointer = hand ? undefined : (listeners?.onPointerDown as ((e: ReactPointerEvent<HTMLLIElement>) => void) | undefined);
+  const keyDrag = listeners?.onKeyDown as ((e: ReactKeyboardEvent<HTMLButtonElement>) => void) | undefined;
   return (
     <li ref={setNodeRef} className="crm-card" data-card={card.id} data-active={card.active || undefined} data-dragging={isDragging || undefined}
+      data-draggable={hand ? undefined : "1"}
       tabIndex={0} aria-keyshortcuts="ArrowLeft ArrowRight"
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest("select, .crm-move")) return;
+        pointer?.(e);
+      }}
+      // Links and images inside the card must not start a native drag: it would cancel the board drag.
+      onDragStart={(e) => e.preventDefault()}
+      onClickCapture={(e) => {
+        if (!draggedAt || Date.now() - draggedAt > 300) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
         if (e.key === "ArrowRight") { e.preventDefault(); onShift(card, 1); }
         if (e.key === "ArrowLeft") { e.preventDefault(); onShift(card, -1); }
       }}>
       <CardView card={card} />
-      {hand ? null : <button type="button" className="crm-grip" aria-label={`Trascina ${card.name}`} {...listeners} {...attributes} />}
+      {hand ? null : <button type="button" className="crm-grip" aria-label={`Trascina ${card.name}`} onKeyDown={keyDrag} {...attributes} />}
       <label className="crm-move">
         <select className="adm-input" aria-label={`Sposta ${card.name} in`} value={card.stage} onChange={(e) => onMove(card, e.target.value as Stage)}>
           {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
@@ -302,7 +321,7 @@ const CardView = memo(function CardView({ card, lifted = false }: { card: Contac
   return (
     <div className={lifted ? "crm-card-face is-lifted" : "crm-card-face"}>
       <div className="crm-card-top">
-        <Link href={card.href as Route} data-row-link={card.id}>{card.name}</Link>
+        <Link href={card.href as Route} data-row-link={card.id} draggable={false}>{card.name}</Link>
         <span className="crm-avatar" data-hue={avatarHue(card.name)} aria-hidden="true">{initials(card.name)}</span>
       </div>
       <p className="crm-card-sub">{[card.city, card.source].filter(Boolean).join(" · ") || "Senza città"}</p>
@@ -318,8 +337,8 @@ const CardView = memo(function CardView({ card, lifted = false }: { card: Contac
         <strong key={`${who.label}:${who.name}`} className="crm-pipe-bit">{who.name}</strong>
       </p>
       <p className="crm-card-links">
-        <Link className="crm-chip" href={card.historyHref as Route}><CrmIcon d={CLOCK} />Storico</Link>
-        {card.emailHref ? <Link className="crm-chip" href={card.emailHref as Route}><CrmIcon d={CHAT} />Conversazione</Link> : null}
+        <Link className="crm-chip" href={card.historyHref as Route} draggable={false}><CrmIcon d={CLOCK} />Storico</Link>
+        {card.emailHref ? <Link className="crm-chip" href={card.emailHref as Route} draggable={false}><CrmIcon d={CHAT} />Conversazione</Link> : null}
       </p>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
-import { createContext, useActionState, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, useActionState, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { panelFollowUpAction, panelOwnerAction, panelStageAction, setEstimateAction, setKindAction, type CrmState } from "@/app/admin/crm-actions";
@@ -116,7 +117,7 @@ export function PanelShell({ contactId, closeHref, labelId, children }: { contac
   );
 }
 
-export function CopyButton({ text, label }: { text: string; label: string }) {
+export function CopyButton({ text, label, done: doneText = "Email copiata" }: { text: string; label: string; done?: string }) {
   const [done, setDone] = useState(false);
   useEffect(() => {
     if (!done) return;
@@ -129,8 +130,93 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {done ? <path d="M5 12l5 5 9-10" /> : <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>}
       </svg>
-      <span className="adm-sr" role="status">{done ? "Email copiata" : ""}</span>
+      <span className="adm-sr" role="status">{done ? doneText : ""}</span>
     </button>
+  );
+}
+
+const GAP = 6;
+const EDGE = 8;
+
+/**
+ * «Altre azioni» of the panel. The list is portaled to the body with fixed coordinates, so the panel's own scroll
+ * never clips it: it opens under the button and leftwards, flips above when there is no room, and stays in the viewport.
+ */
+export function PanelMoreMenu({ children, label = "Altre azioni" }: { children: ReactNode; label?: string }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const place = useCallback(() => {
+    const b = button.current, m = list.current;
+    if (!b || !m) return;
+    const r = b.getBoundingClientRect();
+    const w = m.offsetWidth, h = m.offsetHeight;
+    const vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    const up = r.bottom + GAP + h > vh - EDGE && r.top - GAP - h >= EDGE;
+    const top = up ? r.top - GAP - h : Math.max(EDGE, Math.min(r.bottom + GAP, vh - EDGE - h));
+    const left = Math.max(EDGE, Math.min(r.right - w, vw - EDGE - w));
+    setPos({ top, left, up });
+  }, []);
+  const close = useCallback((focus = true) => {
+    setOpen(false);
+    setPos(null);
+    if (focus) button.current?.focus({ preventScroll: true });
+  }, []);
+
+  useLayoutEffect(() => { if (open) place(); }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return;
+    list.current?.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (list.current?.contains(t) || button.current?.contains(t)) return;
+      close(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); return; }
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Tab") return;
+      const items = [...(list.current?.querySelectorAll<HTMLElement>("a, button") ?? [])];
+      if (!items.length) return;
+      if (e.key === "Tab") { close(false); return; }
+      e.preventDefault();
+      const at = items.indexOf(document.activeElement as HTMLElement);
+      const next = e.key === "ArrowDown" ? (at + 1) % items.length : (at - 1 + items.length) % items.length;
+      items[next].focus();
+    };
+    // Any scroll (the panel or the page) or resize would leave the list floating away from the button.
+    const onMove = (e: Event) => { if (!list.current?.contains(e.target as Node)) place(); };
+    window.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, close, place]);
+
+  return (
+    <>
+      <button ref={button} type="button" className="adm-btn adm-btn-sm crm-more-btn" aria-label={label} title={label}
+        aria-expanded={open} aria-controls={open ? listId : undefined} onClick={() => (open ? close(false) : setOpen(true))}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.9" /><circle cx="12" cy="12" r="1.9" /><circle cx="19" cy="12" r="1.9" />
+        </svg>
+      </button>
+      {open ? createPortal(
+        <div ref={list} id={listId} className="crm-menu-list crm-more-list" aria-label={label} data-up={pos?.up || undefined}
+          style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: "hidden" }}
+          onClick={(e) => { if ((e.target as HTMLElement).closest("a, button")) close(false); }}>
+          {children}
+        </div>,
+        document.body,
+      ) : null}
+    </>
   );
 }
 

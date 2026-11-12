@@ -179,7 +179,7 @@ export function OpportunityBoard({ cards: initial, showLost, expandLost, addHref
                     }}
                     onPointerCancel={(e) => { touch.current = null; delete e.currentTarget.dataset.dragging; setOver(null); }}>
                     <div className="crm-card-head">
-                      <Link href={c.href as Route} data-row-link={c.contactId}>{c.name}</Link>
+                      <Link href={c.href as Route} data-row-link={c.contactId} draggable={false}>{c.name}</Link>
                       {c.score !== null ? <span className="adm-badge crm-score" data-level={level(c.score)} title="Punteggio del contatto, non della trattativa">{c.score}</span> : null}
                     </div>
                     {c.title !== c.name ? <p>{c.title}</p> : null}
