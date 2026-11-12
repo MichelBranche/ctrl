@@ -30,8 +30,16 @@ function points(range: CommandRange) {
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
-export function fixtureCommand(range: CommandRange, dateLabel: string, empty: boolean): CommandModel {
+export function fixtureCommand(range: CommandRange, dateLabel: string, empty: boolean, live = false): CommandModel {
   const series = empty ? points(range).map((row) => ({ ...row, pageviews: 0, visitors: 0 })) : points(range);
+  if (live && range === 7) {
+    const views = [22, 28, 18, 24, 36, 58, 42];
+    const visitors = [8, 10, 6, 8, 10, 14, 10];
+    series.forEach((row, i) => {
+      row.pageviews = views[i] ?? row.pageviews;
+      row.visitors = visitors[i] ?? row.visitors;
+    });
+  }
   const views = sum(series.map((row) => row.pageviews));
   const visitors = sum(series.map((row) => row.visitors));
   return {
@@ -46,12 +54,12 @@ export function fixtureCommand(range: CommandRange, dateLabel: string, empty: bo
     kpis: [
       {
         id: "views", label: "Visualizzazioni sito", href: `/admin/stats?range=${range}`, value: views, money: false,
-        delta: empty ? null : `+64% vs ${range} giorni prec.`, tone: empty ? null : "up", note: null,
+        delta: empty ? null : live ? `−67% vs ${range} giorni prec.` : `+64% vs ${range} giorni prec.`, tone: empty ? null : live ? "down" : "up", note: null,
         spark: series.map((row) => row.pageviews), unavailable: null,
       },
       {
         id: "visitors", label: "Visitatori unici", href: `/admin/stats?range=${range}`, value: visitors, money: false,
-        delta: empty ? null : `+37% vs ${range} giorni prec.`, tone: empty ? null : "up", note: null,
+        delta: empty ? null : live ? `−44% vs ${range} giorni prec.` : `+37% vs ${range} giorni prec.`, tone: empty ? null : live ? "down" : "up", note: null,
         spark: series.map((row) => row.visitors), unavailable: null,
       },
       {
@@ -60,14 +68,16 @@ export function fixtureCommand(range: CommandRange, dateLabel: string, empty: bo
         spark: Array.from({ length: range }, () => 0), unavailable: null,
       },
       {
-        id: "deals", label: "Opportunità attive", href: "/admin/crm/pipeline", value: empty ? 0 : 7, money: false,
-        delta: empty ? null : "+2 rispetto alla settimana prec.", tone: empty ? null : "up", note: null,
-        spark: empty ? [] : [3, 3, 4, 4, 5, 6, 7], unavailable: null,
+        id: "deals", label: "Opportunità attive", href: "/admin/crm/pipeline", value: empty || live ? 0 : 7, money: false,
+        delta: empty ? null : live ? "invariato rispetto alla settimana prec." : "+2 rispetto alla settimana prec.", tone: empty ? null : live ? "flat" : "up", note: null,
+        spark: empty || live ? [] : [3, 3, 4, 4, 5, 6, 7], unavailable: null,
       },
     ],
     traffic: { points: series, empty: empty ? `Nessuna visita negli ultimi ${range} giorni.` : null },
     todos: empty
       ? { total: 0, items: [], href: "/admin/crm" }
+      : live
+      ? { total: 1, href: "/admin/crm", items: [{ id: "new", title: "Rispondi a 254 nuovi contatti", tag: "CRM", href: "/admin/crm/rubrica?fase=nuovo", done: false, check: null }] }
       : {
           total: 4,
           href: "/admin/crm",

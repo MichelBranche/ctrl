@@ -28,6 +28,7 @@ async function Body({ searchParams }: { searchParams: PageProps<"/admin">["searc
   const [me, sp] = await Promise.all([requireSection("overview"), searchParams]);
   const range = parseRange(sp.range);
   const empty = commandFixturesOn() && sp.stato === "vuoto";
-  const model = await loadCommandCenter(me, range, Boolean(sp.negato), empty);
+  const live = commandFixturesOn() && sp.stato === "reale";
+  const model = await loadCommandCenter(me, range, Boolean(sp.negato), empty, live);
   return <CommandCenter model={model} />;
 }
