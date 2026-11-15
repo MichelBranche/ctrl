@@ -15,120 +15,109 @@ import { canAccess, isFounder, type Perms } from "@/lib/team-types";
 import type { CommandActivity, CommandKpi, CommandModel, CommandNotice, CommandRange, CommandShortcut, CommandTodo, CommandTone, SeriesPoint } from "@/lib/command-types";
 import { commandFixturesOn, fixtureCommand, fixtureNotices, fixtureSearch } from "@/lib/command-fixtures";
 import type { SearchHit } from "@/lib/search-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { formatAdminCountry, formatAdminDateLabel, formatAdminNumber, formatAdminShortAgo, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 export type { CommandModel, CommandNotice } from "@/lib/command-types";
 export { commandFixturesOn, fixtureSearch };
 
 type Person = Perms & { id: string; name: string };
-
-const countFmt = new Intl.NumberFormat("it-IT");
+type Copy = { lang: AdminLocale; t: AdminDict };
 
 /** Greeting for the Europe/Rome clock: morning, afternoon, evening. */
-export function romeGreeting(name: string, now = new Date()): string {
+export function romeGreeting(name: string, t: AdminDict, now = new Date()): string {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "numeric", hourCycle: "h23" }).format(now));
-  const hello = hour >= 5 && hour < 13 ? "Buongiorno" : hour >= 13 && hour < 18 ? "Buon pomeriggio" : "Buonasera";
+  const hello = hour >= 5 && hour < 13 ? t.command.helloMorning : hour >= 13 && hour < 18 ? t.command.helloAfternoon : t.command.helloEvening;
   const first = name.trim().split(/\s+/).filter(Boolean)[0];
   return first ? `${hello}, ${first}.` : `${hello}.`;
 }
 
+function countWord(n: number, zero: string, one: string, many: string, lang: AdminLocale): string {
+  if (n === 0) return zero;
+  if (n === 1) return one;
+  return interpolate(many, { n: formatAdminNumber(n, lang) });
+}
+
 /** One operational line. Null metrics are omitted. Zero and one get their own wording. */
-export function commandLead(input: { todos: number | null; deals: number | null; views: number | null; range: number }): string {
+export function commandLead(input: { todos: number | null; deals: number | null; views: number | null; range: number }, t: AdminDict, lang: AdminLocale): string {
   const bits: string[] = [];
   if (input.todos !== null) {
-    bits.push(input.todos === 0 ? "Niente da fare oggi" : input.todos === 1 ? "1 cosa da fare oggi" : `${countFmt.format(input.todos)} cose da fare oggi`);
+    bits.push(countWord(input.todos, t.command.leadTodos0, t.command.leadTodos1, t.command.leadTodosN, lang));
   }
   if (input.deals !== null) {
-    bits.push(input.deals === 0 ? "Nessuna opportunità aperta" : input.deals === 1 ? "1 opportunità aperta" : `${countFmt.format(input.deals)} opportunità aperte`);
+    bits.push(countWord(input.deals, t.command.leadDeals0, t.command.leadDeals1, t.command.leadDealsN, lang));
   }
   if (input.views !== null) {
-    const span = `negli ultimi ${input.range} giorni`;
-    bits.push(input.views === 0 ? `Nessuna visita ${span}` : input.views === 1 ? `1 visita ${span}` : `${countFmt.format(input.views)} visite ${span}`);
+    const span = interpolate(t.command.leadSpan, { n: input.range });
+    bits.push(countWord(input.views, interpolate(t.command.leadViews0, { span }), interpolate(t.command.leadViews1, { span }), interpolate(t.command.leadViewsN, { span }), lang));
   }
   return bits.join(" · ");
 }
 
-function withVoice(model: CommandModel, name: string): CommandModel {
+function withVoice(model: CommandModel, name: string, copy: Copy): CommandModel {
   const views = model.kpis.find((card) => card.id === "views");
   const deals = model.kpis.find((card) => card.id === "deals");
   return {
     ...model,
-    greeting: romeGreeting(name),
+    greeting: romeGreeting(name, copy.t),
     lead: commandLead({
       todos: model.todos.total,
       deals: deals && !deals.unavailable ? deals.value : null,
       views: views && !views.unavailable ? views.value : null,
       range: model.range,
-    }),
+    }, copy.t, copy.lang),
   };
 }
 
-const region = new Intl.DisplayNames(["it"], { type: "region" });
-
-export function commandDateLabel(now = new Date()) {
-  return new Intl.DateTimeFormat("it-IT", {
-    timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long", year: "numeric",
-  }).format(now).toLocaleUpperCase("it-IT");
+export function commandDateLabel(now: Date, lang: AdminLocale) {
+  return formatAdminDateLabel(now, lang);
 }
 
-export function shortAgo(iso: string, now = Date.now()) {
-  const min = Math.round((now - Date.parse(iso)) / 60_000);
-  if (!Number.isFinite(min)) return "";
-  const m = Math.max(0, min);
-  if (m < 1) return "ora";
-  if (m < 60) return `${m} min fa`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} h fa`;
-  const d = Math.round(h / 24);
-  if (d < 14) return `${d} g fa`;
-  return new Date(iso).toLocaleDateString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short" });
+export function shortAgo(iso: string, lang: AdminLocale, now = Date.now()) {
+  return formatAdminShortAgo(iso, lang, now);
 }
 
-function percentDelta(now: number, before: number, range: number): { text: string; tone: CommandTone } | null {
-  if (before <= 0) return now > 0 ? { text: "nuovo rispetto al periodo prec.", tone: "up" } : null;
+function percentDelta(now: number, before: number, range: number, t: AdminDict): { text: string; tone: CommandTone } | null {
+  if (before <= 0) return now > 0 ? { text: t.command.deltaNew, tone: "up" } : null;
   const d = delta(now, before);
-  if (d === null || d === 0) return { text: `invariato vs ${range} giorni prec.`, tone: "flat" };
+  if (d === null || d === 0) return { text: interpolate(t.command.deltaFlat, { n: range }), tone: "flat" };
   const n = Math.round(d * 100);
   const sign = n > 0 ? "+" : "−";
-  return { text: `${sign}${Math.abs(n)}% vs ${range} giorni prec.`, tone: n > 0 ? "up" : "down" };
+  return { text: interpolate(t.command.deltaPct, { sign, n: Math.abs(n), range }), tone: n > 0 ? "up" : "down" };
 }
 
-function weekText(now: number | null, then: number | null): { text: string; tone: CommandTone } | null {
+function weekText(now: number | null, then: number | null, t: AdminDict): { text: string; tone: CommandTone } | null {
   if (now === null || then === null) return null;
   const d = now - then;
-  if (d === 0) return { text: "invariato rispetto alla settimana prec.", tone: "flat" };
-  return { text: `${d > 0 ? "+" : "−"}${Math.abs(d)} rispetto alla settimana prec.`, tone: d > 0 ? "up" : "down" };
+  if (d === 0) return { text: t.command.weekFlat, tone: "flat" };
+  return { text: interpolate(t.command.weekDelta, { sign: d > 0 ? "+" : "−", n: Math.abs(d) }), tone: d > 0 ? "up" : "down" };
 }
 
 const DAY = 86_400_000;
 const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
 
-function countryLabel(code: string) {
-  if (code === "altri") return "Altri";
-  try {
-    return region.of(code) ?? code;
-  } catch {
-    return code;
-  }
+function countryLabel(code: string, lang: AdminLocale, t: AdminDict) {
+  return formatAdminCountry(code, lang, t.command.otherCountries);
 }
 
-async function systems(me: Person): Promise<CommandModel["systems"]> {
+async function systems(me: Person, t: AdminDict): Promise<CommandModel["systems"]> {
   const href = canAccess(me, "status") ? "/admin/status" : "/admin/settings";
-  if (!vercelConfigured()) return { tone: "muted", label: "Sistemi non verificati", title: "Vercel non è configurato", href };
+  if (!vercelConfigured()) return { tone: "muted", label: t.command.systemsUnchecked, title: t.command.vercelMissing, href };
   const deploy = await latestDeploy();
-  if (!deploy) return { tone: "muted", label: "Sistemi non verificati", title: "Nessun deploy di produzione trovato", href };
+  if (!deploy) return { tone: "muted", label: t.command.systemsUnchecked, title: t.command.noProductionDeploy, href };
   switch (deploy.state) {
     case "READY":
-      return { tone: "ok", label: "Sistemi operativi", title: "Produzione online", href };
+      return { tone: "ok", label: t.command.systemsOk, title: t.command.productionOnline, href };
     case "ERROR":
-      return { tone: "bad", label: "Sistemi in errore", title: deploy.message || "L'ultimo deploy di produzione è in errore", href };
+      return { tone: "bad", label: t.command.systemsError, title: deploy.message || t.command.productionError, href };
     case "CANCELED":
-      return { tone: "muted", label: "Deploy annullato", title: "L'ultimo deploy di produzione è stato annullato", href };
+      return { tone: "muted", label: t.command.deployCanceled, title: t.command.productionCanceled, href };
     case "BUILDING":
     case "QUEUED":
     case "INITIALIZING":
-      return { tone: "busy", label: "Sistemi in aggiornamento", title: "Un deploy di produzione è in corso", href };
+      return { tone: "busy", label: t.command.systemsUpdating, title: t.command.productionBuilding, href };
     default:
-      return { tone: "muted", label: "Sistemi non verificati", title: deploy.state || "Stato produzione sconosciuto", href };
+      return { tone: "muted", label: t.command.systemsUnchecked, title: deploy.state || t.command.productionUnknown, href };
   }
 }
 
@@ -160,16 +149,16 @@ function kpi(partial: Omit<CommandKpi, "money" | "unavailable" | "note" | "delta
   return { money: false, unavailable: null, note: null, delta: null, tone: null, ...partial };
 }
 
-async function analyticsBlock(me: Person, range: Range) {
+async function analyticsBlock(me: Person, range: Range, copy: Copy) {
   const emptyStats = { kpis: [] as CommandKpi[], traffic: null, pages: [] as CommandModel["pages"], pagesEmpty: null as string | null, countries: [] as CommandModel["countries"], countriesEmpty: null as string | null, statsHref: null as string | null };
   if (!canAccess(me, "stats")) return emptyStats;
   const statsHref = `/admin/stats?range=${range}#analisi`;
   const configured = vercelConfigured();
-  const missing = configured ? "Dati non disponibili" : "Statistiche non configurate";
+  const missing = configured ? copy.t.command.statsMissing : copy.t.command.statsUnconfigured;
   if (!configured) {
     return { ...emptyStats, kpis: [
-      kpi({ id: "views", label: "Visualizzazioni sito", href: "/admin/settings", value: 0, unavailable: missing, spark: [] }),
-      kpi({ id: "visitors", label: "Visitatori unici", href: "/admin/settings", value: 0, unavailable: missing, spark: [] }),
+      kpi({ id: "views", label: copy.t.command.kpiViews, href: "/admin/settings", value: 0, unavailable: missing, spark: [] }),
+      kpi({ id: "visitors", label: copy.t.command.kpiVisitors, href: "/admin/settings", value: 0, unavailable: missing, spark: [] }),
     ], traffic: { points: [], empty: missing }, pagesEmpty: missing, countriesEmpty: missing, statsHref };
   }
   let series: { current: SeriesPoint[]; previous: SeriesPoint[] } | null = null;
@@ -185,13 +174,13 @@ async function analyticsBlock(me: Person, range: Range) {
   const viewsPrev = previous.reduce((a, p) => a + p.pageviews, 0);
   const visNow = current.reduce((a, p) => a + p.visitors, 0);
   const visPrev = previous.reduce((a, p) => a + p.visitors, 0);
-  const viewDelta = series ? percentDelta(viewsNow, viewsPrev, range) : null;
-  const visDelta = series ? percentDelta(visNow, visPrev, range) : null;
+  const viewDelta = series ? percentDelta(viewsNow, viewsPrev, range, copy.t) : null;
+  const visDelta = series ? percentDelta(visNow, visPrev, range, copy.t) : null;
   const kpis: CommandKpi[] = [
-    kpi({ id: "views", label: "Visualizzazioni sito", href: statsHref, value: viewsNow, delta: viewDelta?.text ?? null, tone: viewDelta?.tone ?? null, spark: current.map((p) => p.pageviews), unavailable: viewsUnavailable }),
-    kpi({ id: "visitors", label: "Visitatori unici", href: statsHref, value: visNow, delta: visDelta?.text ?? null, tone: visDelta?.tone ?? null, spark: current.map((p) => p.visitors), unavailable: viewsUnavailable }),
+    kpi({ id: "views", label: copy.t.command.kpiViews, href: statsHref, value: viewsNow, delta: viewDelta?.text ?? null, tone: viewDelta?.tone ?? null, spark: current.map((p) => p.pageviews), unavailable: viewsUnavailable }),
+    kpi({ id: "visitors", label: copy.t.command.kpiVisitors, href: statsHref, value: visNow, delta: visDelta?.text ?? null, tone: visDelta?.tone ?? null, spark: current.map((p) => p.visitors), unavailable: viewsUnavailable }),
   ];
-  const quietChart = !series ? missing : current.every((p) => p.pageviews === 0 && p.visitors === 0) ? `Nessuna visita negli ultimi ${range} giorni.` : null;
+  const quietChart = !series ? missing : current.every((p) => p.pageviews === 0 && p.visitors === 0) ? interpolate(copy.t.command.noVisitsRange, { n: range }) : null;
   let pages: CommandModel["pages"] = [];
   let countries: CommandModel["countries"] = [];
   let broke = !series && !configured ? false : !series;
@@ -202,11 +191,11 @@ async function analyticsBlock(me: Person, range: Range) {
         analytics("country", range, 12),
       ]);
       pages = (pageRows ?? []).filter((row) => row.key);
-      const named = (countryRows ?? []).filter((row) => row.key).map((row) => ({ ...row, label: countryLabel(row.key) }));
+      const named = (countryRows ?? []).filter((row) => row.key).map((row) => ({ ...row, label: countryLabel(row.key, copy.lang, copy.t) }));
       const top = named.slice(0, 3);
       const rest = named.slice(3);
       countries = rest.length
-        ? [...top, { key: "altri", label: "Altri", pageviews: rest.reduce((a, r) => a + r.pageviews, 0), visitors: rest.reduce((a, r) => a + r.visitors, 0) }]
+        ? [...top, { key: "altri", label: copy.t.command.otherCountries, pageviews: rest.reduce((a, r) => a + r.pageviews, 0), visitors: rest.reduce((a, r) => a + r.visitors, 0) }]
         : top;
       broke = false;
     } catch {
@@ -217,14 +206,14 @@ async function analyticsBlock(me: Person, range: Range) {
     kpis,
     traffic: { points: current, empty: quietChart },
     pages,
-    pagesEmpty: pages.length ? null : broke ? missing : "Nessuna pagina vista nel periodo.",
+    pagesEmpty: pages.length ? null : broke ? missing : copy.t.command.pagesEmpty,
     countries,
-    countriesEmpty: countries.length ? null : broke ? missing : "Nessun dato sui paesi.",
+    countriesEmpty: countries.length ? null : broke ? missing : copy.t.command.countriesEmpty,
     statsHref,
   };
 }
 
-async function dealKpi(me: Person): Promise<CommandKpi | null> {
+async function dealKpi(me: Person, t: AdminDict): Promise<CommandKpi | null> {
   if (!canAccess(me, "crm")) return null;
   const href = "/admin/crm/pipeline";
   try {
@@ -240,38 +229,38 @@ async function dealKpi(me: Person): Promise<CommandKpi | null> {
       if (!row || row.value === null || row.value === undefined) return null;
       return Number(row.value);
     };
-    const week = weekText(cell(today), cell(then));
+    const week = weekText(cell(today), cell(then), t);
     const series = await kpiSeries("opportunities_active", today, 14).catch(() => []);
     return kpi({
-      id: "deals", label: "Opportunità attive", href, value: counts.opportunitiesActive, money: false,
+      id: "deals", label: t.command.kpiDeals, href, value: counts.opportunitiesActive, money: false,
       delta: week?.text ?? null, tone: week?.tone ?? null, spark: series.map((point) => point.v),
     });
   } catch {
-    return kpi({ id: "deals", label: "Opportunità attive", href, value: 0, unavailable: "CRM non disponibile", spark: [] });
+    return kpi({ id: "deals", label: t.command.kpiDeals, href, value: 0, unavailable: t.command.crmUnavailable, spark: [] });
   }
 }
 
-async function revenueKpi(me: Person, range: CommandRange): Promise<{ kpi: CommandKpi; pending: number } | null> {
+async function revenueKpi(me: Person, range: CommandRange, t: AdminDict): Promise<{ kpi: CommandKpi; pending: number } | null> {
   if (!canAccess(me, "shop")) return null;
   const href = "/admin/shop";
   try {
     const shop = await shopRevenue(range);
-    if (!shop) return { kpi: kpi({ id: "revenue", label: "Fatturato (shop)", href, value: 0, money: true, unavailable: "Shop non disponibile", spark: [] }), pending: 0 };
-    const change = shop.confirmed > 0 ? percentDelta(shop.value, shop.prev, range) : null;
+    if (!shop) return { kpi: kpi({ id: "revenue", label: t.command.kpiRevenue, href, value: 0, money: true, unavailable: t.command.shopUnavailable, spark: [] }), pending: 0 };
+    const change = shop.confirmed > 0 ? percentDelta(shop.value, shop.prev, range, t) : null;
     return {
       pending: shop.pending,
       kpi: kpi({
-        id: "revenue", label: "Fatturato (shop)", href, value: shop.value, money: true, spark: shop.spark,
+        id: "revenue", label: t.command.kpiRevenue, href, value: shop.value, money: true, spark: shop.spark,
         delta: change?.text ?? null, tone: change?.tone ?? null,
-        note: shop.confirmed === 0 ? "· Nessun ordine confermato" : null,
+        note: shop.confirmed === 0 ? t.command.noConfirmedOrders : null,
       }),
     };
   } catch {
-    return { kpi: kpi({ id: "revenue", label: "Fatturato (shop)", href, value: 0, money: true, unavailable: "Ordini non disponibili", spark: [] }), pending: 0 };
+    return { kpi: kpi({ id: "revenue", label: t.command.kpiRevenue, href, value: 0, money: true, unavailable: t.command.ordersUnavailable, spark: [] }), pending: 0 };
   }
 }
 
-async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["todos"]> {
+async function todosFor(me: Person, pendingShop: number, t: AdminDict): Promise<CommandModel["todos"]> {
   const open: CommandTodo[] = [];
   const done: CommandTodo[] = [];
   const founder = isFounder(me);
@@ -303,27 +292,27 @@ async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["
       ]);
       const freshCount = Number(freshCountRow.rows[0]?.n ?? 0);
       if (freshCount === 1 && fresh.rows[0]) {
-        open.push({ id: `new-${fresh.rows[0].id}`, title: `Rispondi a ${fresh.rows[0].business_name}`, tag: "CRM", href: `/admin/crm/${fresh.rows[0].id}`, done: false, check: null });
+        open.push({ id: `new-${fresh.rows[0].id}`, title: interpolate(t.command.replyToName, { name: fresh.rows[0].business_name }), tag: t.command.tagCrm, href: `/admin/crm/${fresh.rows[0].id}`, done: false, check: null });
       } else if (freshCount > 1) {
-        open.push({ id: "new-contacts", title: `Rispondi a ${freshCount} nuovi contatti`, tag: "CRM", href: "/admin/crm/rubrica?fase=nuovo", done: false, check: null });
+        open.push({ id: "new-contacts", title: interpolate(t.command.replyToContacts, { n: freshCount }), tag: t.command.tagCrm, href: "/admin/crm/rubrica?fase=nuovo", done: false, check: null });
       }
       for (const row of overdue.slice(0, 4)) {
         open.push({
-          id: `act-${row.id}`, title: row.title, tag: row.opportunityId ? "Pipeline" : "CRM",
+          id: `act-${row.id}`, title: row.title, tag: row.opportunityId ? t.command.tagPipeline : t.command.tagCrm,
           href: row.contactId ? `/admin/crm/${row.contactId}` : "/admin/crm/attivita", done: false,
           check: { kind: "activity", id: row.id, version: row.version },
         });
       }
       for (const row of follow.filter((item) => item.nextActionAt.slice(0, 10) <= today).slice(0, 4)) {
         open.push({
-          id: `fu-${row.id}`, title: row.nextAction || `Follow-up: ${row.businessName}`, tag: "CRM",
+          id: `fu-${row.id}`, title: row.nextAction || interpolate(t.command.followUp, { name: row.businessName }), tag: t.command.tagCrm,
           href: `/admin/crm/${row.id}`, done: false, check: { kind: "followup", id: row.id, seenAt: row.nextActionAt },
         });
       }
       for (const row of todayActs.slice(0, 4)) {
         if (open.some((item) => item.id === `act-${row.id}`)) continue;
         open.push({
-          id: `act-${row.id}`, title: row.title, tag: row.opportunityId ? "Pipeline" : "CRM",
+          id: `act-${row.id}`, title: row.title, tag: row.opportunityId ? t.command.tagPipeline : t.command.tagCrm,
           href: row.contactId ? `/admin/crm/${row.contactId}` : "/admin/crm/attivita", done: false,
           check: { kind: "activity", id: row.id, version: row.version },
         });
@@ -331,13 +320,13 @@ async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["
       for (const row of quotes.rows) {
         open.push({
           id: `quote-${row.contact_id}`,
-          title: row.title ? `Completa preventivo: ${row.title}` : `Completa preventivo: ${row.business_name}`,
-          tag: "Pipeline", href: `/admin/crm/${row.contact_id}`, done: false, check: null,
+          title: interpolate(t.command.completeQuote, { name: row.title || row.business_name }),
+          tag: t.command.tagPipeline, href: `/admin/crm/${row.contact_id}`, done: false, check: null,
         });
       }
       for (const row of doneActs.rows) {
         done.push({
-          id: `done-${row.id}`, title: String(row.title), tag: "CRM",
+          id: `done-${row.id}`, title: String(row.title), tag: t.command.tagCrm,
           href: row.contact_id ? `/admin/crm/${row.contact_id}` : "/admin/crm/attivita", done: true,
           check: { kind: "activity", id: String(row.id), version: Number(row.version) },
         });
@@ -349,8 +338,8 @@ async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["
   if (canAccess(me, "shop") && pendingShop > 0) {
     open.push({
       id: "shop-requests",
-      title: pendingShop === 1 ? "Verifica richiesta shop" : `Verifica ${pendingShop} richieste shop`,
-      tag: "Shop", href: "/admin/shop?tab=ordini", done: false, check: null,
+      title: pendingShop === 1 ? t.command.reviewShopOne : interpolate(t.command.reviewShopN, { n: pendingShop }),
+      tag: t.command.tagShop, href: "/admin/shop?tab=ordini", done: false, check: null,
     });
   }
   if (canAccess(me, "journal") && dbConfigured) {
@@ -360,9 +349,9 @@ async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["
       if (n === 1) {
         const one = await db().execute("SELECT id, title FROM posts WHERE published = 0 ORDER BY updated_at DESC LIMIT 1");
         const row = one.rows[0];
-        if (row) open.push({ id: `draft-${row.id}`, title: `Pubblica: ${row.title}`, tag: "Contenuti", href: `/admin/edit?id=${row.id}`, done: false, check: null });
+        if (row) open.push({ id: `draft-${row.id}`, title: interpolate(t.command.publishDraft, { title: row.title }), tag: t.command.tagContent, href: `/admin/edit?id=${row.id}`, done: false, check: null });
       } else if (n > 1) {
-        open.push({ id: "drafts", title: `Pubblica ${n} bozze`, tag: "Contenuti", href: "/admin/journal", done: false, check: null });
+        open.push({ id: "drafts", title: interpolate(t.command.publishDrafts, { n }), tag: t.command.tagContent, href: "/admin/journal", done: false, check: null });
       }
     } catch {
       /* Journal table missing. */
@@ -371,32 +360,32 @@ async function todosFor(me: Person, pendingShop: number): Promise<CommandModel["
   return { total: open.length, items: [...open.slice(0, 6), ...done.slice(0, 2)], href };
 }
 
-function crmFeed(event: CrmEvent): CommandActivity | null {
+function crmFeed(event: CrmEvent, lang: AdminLocale, t: AdminDict): CommandActivity | null {
   const href = event.contactId ? `/admin/crm/${event.contactId}` : "/admin/crm";
   const who = event.contactName;
-  const base = { id: `crm-${event.id}`, tone: "crm" as const, href, at: event.at, ago: shortAgo(event.at) };
+  const base = { id: `crm-${event.id}`, tone: "crm" as const, href, at: event.at, ago: shortAgo(event.at, lang) };
   switch (event.action) {
     case "crm.contact_create":
-      return { ...base, mark: "mail", title: who ? `Nuovo contatto: ${who}` : "Nuovo contatto" };
+      return { ...base, mark: "mail", title: who ? interpolate(t.command.newContactWho, { name: who }) : t.command.newContact };
     case "crm.opportunity_create":
-      return { ...base, mark: "users", title: who ? `Opportunità aperta: ${who}` : "Opportunità aperta" };
+      return { ...base, mark: "users", title: who ? interpolate(t.command.dealOpenedWho, { name: who }) : t.command.dealOpened };
     case "crm.opportunity_stage":
     case "crm.opportunity_update":
-      return { ...base, mark: "users", title: who ? `Opportunità aggiornata: ${who}` : "Opportunità aggiornata" };
+      return { ...base, mark: "users", title: who ? interpolate(t.command.dealUpdatedWho, { name: who }) : t.command.dealUpdated };
     case "crm.stage":
-      return { ...base, mark: "users", title: who ? `Fase aggiornata: ${who}` : "Fase aggiornata" };
+      return { ...base, mark: "users", title: who ? interpolate(t.command.stageUpdatedWho, { name: who }) : t.command.stageUpdated };
     case "crm.activity_done":
-      return { ...base, mark: "doc", title: who ? `Attività completata: ${who}` : "Attività completata" };
+      return { ...base, mark: "doc", title: who ? interpolate(t.command.activityDoneWho, { name: who }) : t.command.activityDone };
     case "crm.draft_sent":
-      return { ...base, mark: "mail", title: "Email inviata da Radar" };
+      return { ...base, mark: "mail", title: t.command.radarEmailSent };
     case "crm.ingest":
-      return { ...base, mark: "mail", title: "Prospect da Radar", href: "/admin/crm/radar" };
+      return { ...base, mark: "mail", title: t.command.radarProspect, href: "/admin/crm/radar" };
     default:
       return null;
   }
 }
 
-async function activityFor(me: Person): Promise<CommandModel["activity"]> {
+async function activityFor(me: Person, lang: AdminLocale, t: AdminDict): Promise<CommandModel["activity"]> {
   const href = canAccess(me, "audit") ? "/admin/audit" : canAccess(me, "crm") ? "/admin/crm" : canAccess(me, "journal") ? "/admin/journal" : canAccess(me, "shop") ? "/admin/shop" : null;
   const items: CommandActivity[] = [];
   let error = false;
@@ -405,7 +394,7 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
     try {
       const events = await recentCrmEvents(8);
       for (const event of events) {
-        const row = crmFeed(event);
+        const row = crmFeed(event, lang, t);
         if (row) items.push(row);
       }
     } catch {
@@ -416,7 +405,7 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
     try {
       const rows = await db().execute("SELECT id, name, created_at FROM contact_requests ORDER BY created_at DESC LIMIT 4");
       for (const row of rows.rows) {
-        items.push({ id: `req-${row.id}`, tone: "crm", mark: "mail", title: `Nuovo contatto da /contact: ${row.name}`, href: `/admin/requests?open=${row.id}`, at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
+        items.push({ id: `req-${row.id}`, tone: "crm", mark: "mail", title: interpolate(t.command.contactFromSite, { name: row.name }), href: `/admin/requests?open=${row.id}`, at: String(row.created_at), ago: shortAgo(String(row.created_at), lang) });
       }
     } catch {
       error = true;
@@ -430,8 +419,8 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
         const fresh = row.created_at === row.updated_at;
         items.push({
           id: `post-${row.id}`, tone: "post", mark: "doc",
-          title: fresh && published ? `Articolo pubblicato: ${row.title}` : `Articolo aggiornato: ${row.title}`,
-          href: `/admin/edit?id=${row.id}`, at: String(row.updated_at), ago: shortAgo(String(row.updated_at)),
+          title: interpolate(fresh && published ? t.command.postPublished : t.command.postUpdated, { title: row.title }),
+          href: `/admin/edit?id=${row.id}`, at: String(row.updated_at), ago: shortAgo(String(row.updated_at), lang),
         });
       }
     } catch {
@@ -444,8 +433,8 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
       for (const row of rows.rows) {
         items.push({
           id: `sub-${row.email}`, tone: "newsletter", mark: "mail",
-          title: row.unsubscribed_at ? `Iscrizione chiusa: ${row.email}` : `Nuovo iscritto: ${row.email}`,
-          href: "/admin/newsletter", at: String(row.created_at), ago: shortAgo(String(row.created_at)),
+          title: interpolate(row.unsubscribed_at ? t.command.subClosed : t.command.subNew, { email: row.email }),
+          href: "/admin/newsletter", at: String(row.created_at), ago: shortAgo(String(row.created_at), lang),
         });
       }
     } catch {
@@ -460,10 +449,10 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
         db().execute("SELECT slug, title_it, updated_at FROM shop_products WHERE published = 1 ORDER BY updated_at DESC LIMIT 3"),
       ]);
       for (const row of orders.rows) {
-        items.push({ id: `ord-${row.number}`, tone: "shop", mark: "bag", title: `Ordine #${row.number} · ${row.customer_name}`, href: "/admin/shop?tab=ordini", at: String(row.created_at), ago: shortAgo(String(row.created_at)) });
+        items.push({ id: `ord-${row.number}`, tone: "shop", mark: "bag", title: interpolate(t.command.orderLine, { number: row.number, name: row.customer_name }), href: "/admin/shop?tab=ordini", at: String(row.created_at), ago: shortAgo(String(row.created_at), lang) });
       }
       for (const row of products.rows) {
-        items.push({ id: `prod-${row.slug}`, tone: "shop", mark: "bag", title: `Prodotto pubblicato: ${row.title_it}`, href: "/admin/shop?tab=prodotti", at: String(row.updated_at), ago: shortAgo(String(row.updated_at)) });
+        items.push({ id: `prod-${row.slug}`, tone: "shop", mark: "bag", title: interpolate(t.command.productPublished, { title: row.title_it }), href: "/admin/shop?tab=prodotti", at: String(row.updated_at), ago: shortAgo(String(row.updated_at), lang) });
       }
     } catch {
       error = true;
@@ -473,12 +462,12 @@ async function activityFor(me: Person): Promise<CommandModel["activity"]> {
   return { items: items.slice(0, 6), href, error: error && items.length === 0 };
 }
 
-function shortcuts(me: Person, range: CommandRange): CommandShortcut[] {
+function shortcuts(me: Person, range: CommandRange, t: AdminDict): CommandShortcut[] {
   const all: (CommandShortcut & { section: "crm" | "shop" | "journal" | "stats" })[] = [
-    { id: "crm", section: "crm", href: "/admin/crm", title: "CRM & Pipeline", text: "Contatti, opportunità e conversazioni in un unico spazio." },
-    { id: "shop", section: "shop", href: "/admin/shop", title: "Shop & Vendite", text: "Ordini, prodotti, fatturato e gestione catalogo." },
-    { id: "content", section: "journal", href: "/admin/journal", title: "Contenuti", text: "Articoli, pagine e media del tuo sito." },
-    { id: "analytics", section: "stats", href: `/admin/stats?range=${range}`, title: "Analytics", text: "Traffico, provenienza, dispositivi e performance." },
+    { id: "crm", section: "crm", href: "/admin/crm", title: t.command.shortcutCrmTitle, text: t.command.shortcutCrmText },
+    { id: "shop", section: "shop", href: "/admin/shop", title: t.command.shortcutShopTitle, text: t.command.shortcutShopText },
+    { id: "content", section: "journal", href: "/admin/journal", title: t.command.shortcutContentTitle, text: t.command.shortcutContentText },
+    { id: "analytics", section: "stats", href: `/admin/stats?range=${range}`, title: t.command.shortcutAnalyticsTitle, text: t.command.shortcutAnalyticsText },
   ];
   return all.filter((item) => canAccess(me, item.section)).map((item) => ({
     id: item.id, href: item.href, title: item.title, text: item.text,
@@ -486,31 +475,33 @@ function shortcuts(me: Person, range: CommandRange): CommandShortcut[] {
 }
 
 export async function loadCommandCenter(me: Person, range: CommandRange, denied: boolean, emptyFixture = false, liveFixture = false): Promise<CommandModel> {
-  const dateLabel = commandDateLabel();
-  if (commandFixturesOn()) return withVoice({ ...fixtureCommand(range, dateLabel, emptyFixture, liveFixture), denied }, me.name);
+  const copy = await getAdminCopy();
+  const dateLabel = commandDateLabel(new Date(), copy.lang);
+  if (commandFixturesOn()) return withVoice({ ...fixtureCommand(range, dateLabel, emptyFixture, liveFixture, copy.t, copy.lang), denied }, me.name, copy);
   const [status, stats, deals, shop] = await Promise.all([
-    systems(me),
-    analyticsBlock(me, range),
-    dealKpi(me),
-    revenueKpi(me, range),
+    systems(me, copy.t),
+    analyticsBlock(me, range, copy),
+    dealKpi(me, copy.t),
+    revenueKpi(me, range, copy.t),
   ]);
   const [todos, activity] = await Promise.all([
-    todosFor(me, shop?.pending ?? 0),
-    activityFor(me),
+    todosFor(me, shop?.pending ?? 0, copy.t),
+    activityFor(me, copy.lang, copy.t),
   ]);
   const kpis = [...stats.kpis];
   if (shop) kpis.push(shop.kpi);
   if (deals) kpis.push(deals);
   return withVoice({
     range, dateLabel, greeting: "", lead: "", denied, systems: status, kpis,
-    traffic: stats.traffic, todos, shortcuts: shortcuts(me, range), activity,
+    traffic: stats.traffic, todos, shortcuts: shortcuts(me, range, copy.t), activity,
     pages: stats.pages, pagesEmpty: stats.pagesEmpty, countries: stats.countries, countriesEmpty: stats.countriesEmpty,
     statsHref: stats.statsHref,
-  }, me.name);
+  }, me.name, copy);
 }
 
 export async function commandNotices(me: Person): Promise<CommandNotice[]> {
-  if (commandFixturesOn()) return fixtureNotices(false);
+  const { t } = await getAdminCopy();
+  if (commandFixturesOn()) return fixtureNotices(false, t);
   if (!canAccess(me, "crm") || !dbConfigured) return [];
   const notices: CommandNotice[] = [];
   const founder = isFounder(me);
@@ -525,14 +516,14 @@ export async function commandNotices(me: Person): Promise<CommandNotice[]> {
       listActivities({ scope: founder ? "team" : "mine", until: shiftDay(today, -1), stato: "aperte" }, viewer).catch(() => []),
     ]);
     for (const row of late.slice(0, 3)) {
-      notices.push({ id: `act-${row.id}`, title: row.title, detail: "In ritardo", href: row.contactId ? `/admin/crm/${row.contactId}` : "/admin/crm/attivita" });
+      notices.push({ id: `act-${row.id}`, title: row.title, detail: t.command.overdue, href: row.contactId ? `/admin/crm/${row.contactId}` : "/admin/crm/attivita" });
     }
     for (const row of due.slice(0, 3)) {
-      notices.push({ id: `fu-${row.id}`, title: row.nextAction || `Follow-up: ${row.businessName}`, detail: row.businessName, href: `/admin/crm/${row.id}` });
+      notices.push({ id: `fu-${row.id}`, title: row.nextAction || interpolate(t.command.followUp, { name: row.businessName }), detail: row.businessName, href: `/admin/crm/${row.id}` });
     }
     const freeN = overview?.unassigned ?? 0;
-    if (freeN > 0) notices.push({ id: "free", title: freeN === 1 ? "1 contatto non assegnato" : `${freeN} contatti non assegnati`, detail: "CRM", href: "/admin/crm" });
-    if (priority.length > 0) notices.push({ id: "prio", title: priority.length === 1 ? "1 contatto prioritario" : `${priority.length} contatti prioritari`, detail: "CRM", href: "/admin/crm" });
+    if (freeN > 0) notices.push({ id: "free", title: freeN === 1 ? t.command.unassigned1 : interpolate(t.command.unassignedN, { n: freeN }), detail: t.command.tagCrm, href: "/admin/crm" });
+    if (priority.length > 0) notices.push({ id: "prio", title: priority.length === 1 ? t.command.priority1 : interpolate(t.command.priorityN, { n: priority.length }), detail: t.command.tagCrm, href: "/admin/crm" });
     if (iris) notices.push({ id: `iris-${iris.id}`, title: irisNoticeText(iris), detail: "Radar", href: "/admin/crm/radar" });
   } catch {
     return notices;

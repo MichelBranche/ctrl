@@ -9,6 +9,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { interpolate } from "@/lib/admin-i18n";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -44,6 +46,7 @@ const SHORTCUT_ICON: Record<CommandShortcut["id"], string> = {
 const MARK_ICON = { mail: MAIL, bag: BAG, doc: DOC, users: PEOPLE } as const;
 
 function PeriodMenu({ range }: { range: CommandRange }) {
+  const { t } = useAdminLocale();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -65,14 +68,14 @@ function PeriodMenu({ range }: { range: CommandRange }) {
     <div className="cc-period" ref={ref}>
       <button type="button" className="cc-chip" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((value) => !value)}>
         <Icon d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" />
-        Ultimi {range} giorni
+        {interpolate(t.command.lastDays, { n: range })}
       </button>
       {open ? (
-        <ul className="cc-period-menu" role="listbox" aria-label="Periodo">
+        <ul className="cc-period-menu" role="listbox" aria-label={t.command.period}>
           {([7, 30, 90] as const).map((item) => (
             <li key={item}>
               <Link href={`/admin?range=${item}`} scroll={false} role="option" aria-selected={item === range} onClick={() => setOpen(false)}>
-                Ultimi {item} giorni
+                {interpolate(t.command.lastDays, { n: item })}
               </Link>
             </li>
           ))}
@@ -98,6 +101,7 @@ function TodoCheck({ item }: { item: CommandTodo }) {
 }
 
 export function CommandCenter({ model }: { model: CommandModel }) {
+  const { t } = useAdminLocale();
   const root = useRef<HTMLElement>(null);
   useGSAP(() => {
     const motion = gsap.matchMedia();
@@ -140,18 +144,18 @@ export function CommandCenter({ model }: { model: CommandModel }) {
             </Link>
             <PeriodMenu range={model.range} />
           </div>
-          {model.denied ? <p className="adm-error" role="status">Questa sezione non rientra nella tua area.</p> : null}
+          {model.denied ? <p className="adm-error" role="status">{t.command.denied}</p> : null}
         </div>
       </header>
 
-      <section className="cc-kpis" aria-label="Indicatori" data-cc-block>
+      <section className="cc-kpis" aria-label={t.command.kpis} data-cc-block>
         {model.kpis.map((card) => (
           <Link key={card.id} href={card.href} className="cc-card cc-kpi">
             <span className="cc-kpi-top">
               <Icon d={KPI_ICON[card.id]} />
               <span className="cc-kpi-label">{card.label}</span>
             </span>
-            <span className="cc-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={`Andamento ${card.label}`} /></span>
+            <span className="cc-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={interpolate(t.command.spark, { label: card.label })} /></span>
             {card.unavailable ? (
               <span className="cc-kpi-num cc-kpi-note">{card.unavailable}</span>
             ) : (
@@ -173,10 +177,10 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         {model.traffic ? (
           <section className="cc-card cc-chart" aria-labelledby="cc-traffic" data-cc-block>
             <div className="cc-card-head">
-              <h2 id="cc-traffic">Traffico del sito</h2>
+              <h2 id="cc-traffic">{t.command.traffic}</h2>
               <span className="cc-legend">
-                <span><i className="cc-dot is-views" /> Visualizzazioni</span>
-                <span><i className="cc-dot is-visitors" /> Visitatori</span>
+                <span><i className="cc-dot is-views" /> {t.command.views}</span>
+                <span><i className="cc-dot is-visitors" /> {t.command.visitors}</span>
               </span>
             </div>
             {model.traffic.empty ? <p className="cc-empty">{model.traffic.empty}</p> : <AreaChart data={model.traffic.points} height={286} />}
@@ -185,13 +189,13 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         <section className="cc-card cc-todo-card" aria-labelledby="cc-todo" data-cc-block>
           <div className="cc-card-head">
             <h2 id="cc-todo">
-              Da fare oggi
+              {t.command.todoTitle}
               {model.todos.total > 0 ? <span className="cc-count">{model.todos.total}</span> : null}
             </h2>
-            <Link href={model.todos.href} className="cc-more">Vedi tutte →</Link>
+            <Link href={model.todos.href} className="cc-more">{t.command.seeAll}</Link>
           </div>
           {model.todos.items.length === 0 ? (
-            <p className="cc-empty">Niente in scadenza oggi.</p>
+            <p className="cc-empty">{t.command.todoEmpty}</p>
           ) : (
             <ul className="cc-todos">
               {model.todos.items.map((item) => (
@@ -207,7 +211,7 @@ export function CommandCenter({ model }: { model: CommandModel }) {
       </div>
 
       {model.shortcuts.length ? (
-        <nav className="cc-shortcuts" aria-label="Collegamenti" data-cc-block>
+        <nav className="cc-shortcuts" aria-label={t.command.shortcuts} data-cc-block>
           {model.shortcuts.map((item) => (
             <Link key={item.id} href={item.href} className="cc-card cc-shortcut">
               <span className="cc-shortcut-icon"><Icon d={SHORTCUT_ICON[item.id]} /></span>
@@ -222,11 +226,11 @@ export function CommandCenter({ model }: { model: CommandModel }) {
       <div className="cc-bottom">
         <section className="cc-card" aria-labelledby="cc-activity" data-cc-block>
           <div className="cc-card-head">
-            <h2 id="cc-activity">Attività recente</h2>
-            {model.activity.href ? <Link href={model.activity.href} className="cc-more">Vedi tutta →</Link> : null}
+            <h2 id="cc-activity">{t.command.activity}</h2>
+            {model.activity.href ? <Link href={model.activity.href} className="cc-more">{t.command.seeAllActivity}</Link> : null}
           </div>
-          {model.activity.error ? <p className="adm-error" role="alert">Attività non disponibile.</p> : null}
-          {model.activity.items.length === 0 && !model.activity.error ? <p className="cc-empty">Ancora nessuna attività.</p> : null}
+          {model.activity.error ? <p className="adm-error" role="alert">{t.command.activityUnavailable}</p> : null}
+          {model.activity.items.length === 0 && !model.activity.error ? <p className="cc-empty">{t.command.activityEmpty}</p> : null}
           {model.activity.items.length ? (
             <ol className="cc-feed">
               {model.activity.items.map((item) => (
@@ -242,18 +246,18 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         {model.statsHref ? (
           <section className="cc-card cc-pages" aria-labelledby="cc-pages" data-cc-block>
             <div className="cc-card-head">
-              <h2 id="cc-pages">Pagine più viste</h2>
-              <Link href={model.statsHref} className="cc-more">Vedi analisi →</Link>
+              <h2 id="cc-pages">{t.command.topPages}</h2>
+              <Link href={model.statsHref} className="cc-more">{t.command.seeAnalytics}</Link>
             </div>
-            <BarList rows={model.pages} empty={model.pagesEmpty ?? "Nessuna pagina vista nel periodo."} />
+            <BarList rows={model.pages} empty={model.pagesEmpty ?? t.command.pagesEmpty} />
           </section>
         ) : null}
         {model.statsHref ? (
           <section className="cc-card cc-donut" aria-labelledby="cc-origin" data-cc-block>
             <div className="cc-card-head">
-              <h2 id="cc-origin">Provenienza</h2>
+              <h2 id="cc-origin">{t.command.origin}</h2>
             </div>
-            <Donut rows={model.countries} empty={model.countriesEmpty ?? "Nessun dato sui paesi."} centerLabel="Visualizzazioni" showShare />
+            <Donut rows={model.countries} empty={model.countriesEmpty ?? t.command.countriesEmpty} centerLabel={t.command.viewsCenter} showShare />
           </section>
         ) : null}
       </div>

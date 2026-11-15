@@ -3,6 +3,7 @@
 import { del } from "@vercel/blob";
 import { revalidatePath, updateTag } from "next/cache";
 import { changePassword, getAdmin, guardSection } from "@/lib/admin";
+import { getAdminCopy } from "@/lib/admin-locale";
 import { searchAdmin } from "@/lib/admin-search";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -112,18 +113,12 @@ export async function saveSocial(_: ActionState, form: FormData): Promise<Action
   return { ok: "Profili salvati. Il footer del sito è aggiornato." };
 }
 
-const PW_MSG = {
-  ok: "Password aggiornata. Le altre sessioni aperte sono state chiuse.",
-  wrong: "La password attuale non è corretta.",
-  weak: "La nuova password deve avere almeno 12 caratteri.",
-  mismatch: "Le due password nuove non coincidono.",
-  locked: "Troppi tentativi. Riprova tra 15 minuti.",
-} as const;
-
 export async function updatePassword(_: ActionState, form: FormData): Promise<ActionState> {
+  const { t } = await getAdminCopy();
   await guard("settings");
   const r = await changePassword(String(form.get("current") ?? ""), String(form.get("next") ?? ""), String(form.get("confirm") ?? ""));
-  return r === "ok" ? { ok: PW_MSG.ok } : { error: PW_MSG[r] };
+  const msg = { ok: t.auth.passwordUpdated, wrong: t.auth.currentWrong, weak: t.auth.passwordWeak, mismatch: t.auth.newMismatch, locked: t.auth.locked };
+  return r === "ok" ? { ok: msg.ok } : { error: msg[r] };
 }
 
 export type { SearchHit } from "@/lib/search-types";

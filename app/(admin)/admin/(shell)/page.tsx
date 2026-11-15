@@ -4,6 +4,7 @@ import { requireSection } from "@/lib/admin";
 import { loadCommandCenter } from "@/lib/command-center";
 import { commandFixturesOn } from "@/lib/command-fixtures";
 import { parseRange } from "@/lib/dashboard-data";
+import { getAdminCopy } from "@/lib/admin-locale";
 
 export default function Overview({ searchParams }: PageProps<"/admin">) {
   return (
@@ -13,9 +14,10 @@ export default function Overview({ searchParams }: PageProps<"/admin">) {
   );
 }
 
-function OverviewSkeleton() {
+async function OverviewSkeleton() {
+  const { t } = await getAdminCopy();
   return (
-    <main className="adm-main cc" aria-busy="true" aria-label="Caricamento della panoramica">
+    <main className="adm-main cc" aria-busy="true" aria-label={t.command.loading}>
       <div className="cc-hero"><div className="adm-skel" style={{ height: "8rem", width: "min(100%, 28rem)" }} /></div>
       <div className="cc-kpis">
         {[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel cc-card" style={{ height: "8.6rem" }} />)}

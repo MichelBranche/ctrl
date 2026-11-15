@@ -6,6 +6,9 @@ import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { signIn, type FormState } from "@/app/admin/actions";
 import { REMEMBER_HOURS, SESSION_HOURS } from "@/lib/session-lifetime";
 import { AuthBackdrop, AuthCursor, ChromeMark, MagneticButton } from "@/components/admin/auth-fx";
+import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { interpolate } from "@/lib/admin-i18n";
 import { RequiredSetup } from "@/components/admin/required-setup";
 import { SecondStepForm } from "@/components/admin/two-factor";
 
@@ -21,18 +24,21 @@ export const item: Variants = {
  * Admin sign-in: password, 2FA code and the mandatory founder setup, all in one glass card switched with Motion.
  * Security stays server-side: the checkbox only requests a 72-hour cookie, and only after the password and 2FA.
  */
-export function LoginScreen({ initialStep = "password", notice }: { initialStep?: Step; notice?: string }) {
+export function LoginScreen({ initialStep = "password", notice, noticeKey }: { initialStep?: Step; notice?: string; noticeKey?: "founderNotice" }) {
+  const { t } = useAdminLocale();
+  const banner = noticeKey ? t.login[noticeKey] : notice;
   const [step, setStep] = useState<Step>(initialStep);
   const reduce = useReducedMotion();
   const slide = reduce
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
     : { initial: { opacity: 0, x: 32, filter: "blur(6px)" }, animate: { opacity: 1, x: 0, filter: "blur(0px)" }, exit: { opacity: 0, x: -32, filter: "blur(6px)" } };
   const back = initialStep === "password"
-    ? <button type="button" className="adm-otp-alt" onClick={() => setStep("password")}>Torna all’accesso</button>
-    : <Link className="adm-otp-alt" href="/admin/login">Torna all’accesso</Link>;
+    ? <button type="button" className="adm-otp-alt" onClick={() => setStep("password")}>{t.login.back}</button>
+    : <Link className="adm-otp-alt" href="/admin/login">{t.login.back}</Link>;
 
   return (
     <main className="adm-auth">
+      <AdminLangSwitch variant="auth" />
       <AuthBackdrop />
       <AuthCursor />
       <motion.div
@@ -51,18 +57,18 @@ export function LoginScreen({ initialStep = "password", notice }: { initialStep?
           <AnimatePresence mode="wait" initial={false}>
             {step === "password" ? (
               <motion.div key="pw" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-                <motion.p variants={item} className="adm-auth-kicker">Area riservata</motion.p>
-                <motion.h1 variants={item} className="adm-auth-title">Bentornato.</motion.h1>
-                <motion.p variants={item} className="adm-auth-sub">Accedi per gestire progetti, journal e team dello studio.</motion.p>
-                {notice ? <motion.p variants={item} className="adm-auth-notice" role="status">{notice}</motion.p> : null}
+                <motion.p variants={item} className="adm-auth-kicker">{t.login.kicker}</motion.p>
+                <motion.h1 variants={item} className="adm-auth-title">{t.login.title}</motion.h1>
+                <motion.p variants={item} className="adm-auth-sub">{t.login.sub}</motion.p>
+                {banner ? <motion.p variants={item} className="adm-auth-notice" role="status">{banner}</motion.p> : null}
                 <PasswordStep onNext={setStep} />
               </motion.div>
             ) : step === "code" ? (
               <motion.div key="code" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-                <p className="adm-auth-kicker">Passo 2 di 2</p>
-                <h1 className="adm-auth-title">Verifica in due passaggi</h1>
-                <p className="adm-auth-sub">Apri l’app di autenticazione e inserisci il codice a 6 cifre.</p>
-                <p className="adm-auth-remember-note">Se hai scelto «Resta collegato», i {REMEMBER_HOURS / 24} giorni partono solo dopo questo codice.</p>
+                <p className="adm-auth-kicker">{t.login.step2kicker}</p>
+                <h1 className="adm-auth-title">{t.login.step2title}</h1>
+                <p className="adm-auth-sub">{t.login.step2sub}</p>
+                <p className="adm-auth-remember-note">{interpolate(t.login.rememberAfterCode, { n: REMEMBER_HOURS / 24 })}</p>
                 <SecondStepForm />
                 {back}
               </motion.div>
@@ -77,7 +83,7 @@ export function LoginScreen({ initialStep = "password", notice }: { initialStep?
       </motion.div>
       <p className="adm-auth-foot">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-        Connessione cifrata · ogni accesso è registrato
+        {t.login.foot}
       </p>
     </main>
   );
@@ -104,6 +110,7 @@ export function FloatField({ id, name, type, label, autoComplete, invalid, value
 }
 
 function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
+  const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<FormState, FormData>(signIn, {});
   const [email, setEmail] = useState("");
   const [show, setShow] = useState(false);
@@ -122,11 +129,11 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
   return (
     <motion.form action={action} animate={shake} className="adm-auth-form">
       <motion.div variants={item}>
-        <FloatField id={`${id}-e`} name="email" type="email" label="Email" autoComplete="username" invalid={bad} value={email} onChange={setEmail} />
+        <FloatField id={`${id}-e`} name="email" type="email" label={t.login.email} autoComplete="username" invalid={bad} value={email} onChange={setEmail} />
       </motion.div>
       <motion.div variants={item}>
-        <FloatField id={`${id}-p`} name="password" type={show ? "text" : "password"} label="Password" autoComplete="current-password" invalid={bad}>
-          <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? "Nascondi password" : "Mostra password"}>
+        <FloatField id={`${id}-p`} name="password" type={show ? "text" : "password"} label={t.login.password} autoComplete="current-password" invalid={bad}>
+          <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? t.login.hidePassword : t.login.showPassword}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.span key={show ? "off" : "on"} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={{ duration: 0.15 }} style={{ display: "grid" }}>
                 {show ? <EyeOff /> : <Eye />}
@@ -138,10 +145,10 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
       <motion.div variants={item}>
         <label className="adm-auth-remember">
           <input id={`${id}-remember`} name="remember" type="checkbox" value="1" aria-describedby={`${id}-remember-note`} />
-          <span>Resta collegato per {REMEMBER_HOURS / 24} giorni su questo dispositivo</span>
+          <span>{interpolate(t.login.remember, { n: REMEMBER_HOURS / 24 })}</span>
         </label>
         <p className="adm-auth-remember-note" id={`${id}-remember-note`}>
-          Se non la spunti, l’accesso dura {SESSION_HOURS} ore. Su un computer condiviso lasciala deselezionata.
+          {interpolate(t.login.rememberNote, { n: SESSION_HOURS })}
         </p>
       </motion.div>
       <AnimatePresence>
@@ -153,7 +160,7 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
       </AnimatePresence>
       <motion.div variants={item}>
         <MagneticButton className="adm-auth-btn" disabled={pending} aria-busy={pending}>
-          {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> Accesso in corso…</> : <>Accedi <Arrow /></>}
+          {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> {t.login.pending}</> : <>{t.login.submit} <Arrow /></>}
         </MagneticButton>
       </motion.div>
     </motion.form>

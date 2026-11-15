@@ -5,11 +5,14 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { OtpInput, type OtpStatus } from "@/components/admin/otp-input";
 import { signInSecondStep, type FormState } from "@/app/admin/actions";
 import { confirmTwoFactor, disableTwoFactor, startTwoFactor, type TwoFactorState } from "@/app/admin/two-factor-actions";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { interpolate } from "@/lib/admin-i18n";
 
 /** Animated 6-digit field that submits its form when complete, plus a link to type a recovery code instead. */
 export function CodeField({ state, pending, form, allowRecovery, autoFocus }: {
   state: { error?: string; ok?: string }; pending: boolean; form: React.RefObject<HTMLFormElement | null>; allowRecovery: boolean; autoFocus?: boolean;
 }) {
+  const { t } = useAdminLocale();
   const [code, setCode] = useState("");
   const [recovery, setRecovery] = useState(false);
   const [status, setStatus] = useState<OtpStatus>("idle");
@@ -29,30 +32,31 @@ export function CodeField({ state, pending, form, allowRecovery, autoFocus }: {
     return (
       <>
         <label className="adm-field">
-          <span>Codice di recupero</span>
-          <input className="adm-input adm-2fa-code" name="code" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={20} required autoFocus placeholder="XXXX-XXXX-XXXX" />
+          <span>{t.twoFactor.recoveryLabel}</span>
+          <input className="adm-input adm-2fa-code" name="code" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={20} required autoFocus placeholder={t.twoFactor.recoveryPlaceholder} />
         </label>
-        <button type="button" className="adm-otp-alt" onClick={() => setRecovery(false)}>Usa il codice dell’app</button>
+        <button type="button" className="adm-otp-alt" onClick={() => setRecovery(false)}>{t.twoFactor.useAppCode}</button>
       </>
     );
   }
   return (
     <>
       <div className="adm-field">
-        <span id="otp-label">Codice a 6 cifre</span>
+        <span id="otp-label">{t.twoFactor.sixDigit}</span>
         <OtpInput
-          name="code" label="Codice a 6 cifre" value={code} status={status} errorKey={errorKey} disabled={pending || status === "success"} autoFocus={autoFocus}
+          name="code" label={t.twoFactor.sixDigit} value={code} status={status} errorKey={errorKey} disabled={pending || status === "success"} autoFocus={autoFocus}
           onChange={(v) => { setCode(v); if (status === "error") setStatus("idle"); }}
           onComplete={() => requestAnimationFrame(() => form.current?.requestSubmit())}
         />
       </div>
-      {allowRecovery ? <button type="button" className="adm-otp-alt" onClick={() => setRecovery(true)}>Non hai il telefono? Usa un codice di recupero</button> : null}
+      {allowRecovery ? <button type="button" className="adm-otp-alt" onClick={() => setRecovery(true)}>{t.twoFactor.useRecovery}</button> : null}
     </>
   );
 }
 
 /** Login step 2: 6-digit code (auto-submit) or recovery code. */
 export function SecondStepForm() {
+  const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<FormState, FormData>(signInSecondStep, {});
   const form = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -64,18 +68,19 @@ export function SecondStepForm() {
   return (
     <form ref={form} action={action} className="adm-form">
       <CodeField state={state} pending={pending} form={form} allowRecovery autoFocus />
-      <p role="status" aria-live="polite" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? (pending ? "Verifica…" : "")}</p>
-      <button className="adm-btn adm-btn-primary" disabled={pending || Boolean(state.ok)}>{pending ? "Verifica…" : "Verifica"}</button>
+      <p role="status" aria-live="polite" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? (pending ? t.twoFactor.verifying : "")}</p>
+      <button className="adm-btn adm-btn-primary" disabled={pending || Boolean(state.ok)}>{pending ? t.twoFactor.verifying : t.twoFactor.verify}</button>
     </form>
   );
 }
 
 /** Settings panel: enable (QR + manual key + confirm) or disable (password + code). */
 export function TwoFactorPanel({ enabled, recoveryLeft, canDisable = true }: { enabled: boolean; recoveryLeft: number; canDisable?: boolean }) {
+  const { t } = useAdminLocale();
   if (enabled && !canDisable) {
     return (
       <p className="adm-muted">
-        Stato: <strong>attiva</strong>. Codici di recupero rimasti: {recoveryLeft} su 10. Come founder non puoi disattivarla: se perdi telefono e codici, un altro founder può azzerarla dal Team e al prossimo accesso la configuri di nuovo.
+        {interpolate(t.twoFactor.founderLocked, { status: t.twoFactor.statusOn, n: recoveryLeft })}
       </p>
     );
   }
@@ -84,6 +89,7 @@ export function TwoFactorPanel({ enabled, recoveryLeft, canDisable = true }: { e
 }
 
 function EnableFlow() {
+  const { t } = useAdminLocale();
   const [setup, setSetup] = useState<TwoFactorState | null>(null);
   const [starting, start] = useTransition();
   const [state, action, pending] = useActionState<TwoFactorState, FormData>(confirmTwoFactor, {});
@@ -98,11 +104,11 @@ function EnableFlow() {
   if (!setup?.setup) {
     return (
       <div className="adm-form">
-        <p className="adm-muted">Stato: <strong>non attiva</strong>. Serve un’app gratuita come Google Authenticator, Aegis, 2FAS o l’app Password di iPhone.</p>
+        <p className="adm-muted">{interpolate(t.twoFactor.offHint, { status: t.twoFactor.statusOff })}</p>
         {setup?.error ? <p className="adm-error" role="alert">{setup.error}</p> : null}
         <div className="adm-row-actions">
           <button type="button" className="adm-btn adm-btn-primary" disabled={starting} onClick={() => start(async () => setSetup(await startTwoFactor()))}>
-            {starting ? "Preparazione…" : "Attiva verifica in due passaggi"}
+            {starting ? t.twoFactor.preparing : t.twoFactor.enable}
           </button>
         </div>
       </div>
@@ -110,52 +116,54 @@ function EnableFlow() {
   }
   return (
     <form ref={form} action={action} className="adm-form">
-      <p className="adm-muted">1. Inquadra il codice QR con l’app di autenticazione.</p>
+      <p className="adm-muted">{t.twoFactor.scanQr}</p>
       {/* QR generated on our server as SVG from the otpauth link; nothing leaves the site. */}
-      <div className="adm-2fa-qr" role="img" aria-label="Codice QR per l’app di autenticazione" dangerouslySetInnerHTML={{ __html: setup.setup.qrSvg }} />
-      <p className="adm-muted">Non riesci a inquadrarlo? Inserisci a mano questa chiave (tipo: basata sul tempo):</p>
+      <div className="adm-2fa-qr" role="img" aria-label={t.twoFactor.qrAria} dangerouslySetInnerHTML={{ __html: setup.setup.qrSvg }} />
+      <p className="adm-muted">{t.twoFactor.manualKey}</p>
       <code className="adm-2fa-secret">{setup.setup.secret}</code>
-      <p className="adm-muted">2. Inserisci il codice a 6 cifre mostrato dall’app.</p>
+      <p className="adm-muted">{t.twoFactor.enterCode}</p>
       <CodeField state={state} pending={pending} form={form} allowRecovery={false} />
       <p role="status" aria-live="polite" className={state.error ? "adm-error" : "adm-ok"}>{state.error ?? state.ok ?? ""}</p>
       <div className="adm-row-actions">
-        <button className="adm-btn adm-btn-primary" disabled={pending}>{pending ? "Verifica…" : "Conferma e attiva"}</button>
-        <button type="button" className="adm-btn" onClick={() => setSetup(null)}>Annulla</button>
+        <button className="adm-btn adm-btn-primary" disabled={pending}>{pending ? t.twoFactor.verifying : t.twoFactor.confirmEnable}</button>
+        <button type="button" className="adm-btn" onClick={() => setSetup(null)}>{t.twoFactor.cancel}</button>
       </div>
     </form>
   );
 }
 
 function RecoveryCodes({ codes }: { codes: string[] }) {
+  const { t } = useAdminLocale();
   const [copied, setCopied] = useState(false);
   return (
     <div className="adm-form">
-      <p className="adm-ok" role="status">Verifica in due passaggi attiva.</p>
-      <p><strong>Salva ora questi 10 codici di recupero.</strong> Ognuno funziona una sola volta, se perdi il telefono. Non li mostreremo più.</p>
+      <p className="adm-ok" role="status">{t.twoFactor.enabledOk}</p>
+      <p><strong>{t.twoFactor.saveCodesTitle}</strong> {t.twoFactor.saveCodesBody}</p>
       <ol className="adm-2fa-codes">{codes.map((c) => <li key={c}><code>{c}</code></li>)}</ol>
       <div className="adm-row-actions">
-        <button type="button" className="adm-btn" onClick={() => navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true))}>{copied ? "Copiati" : "Copia codici"}</button>
+        <button type="button" className="adm-btn" onClick={() => navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true))}>{copied ? t.twoFactor.copied : t.twoFactor.copyCodes}</button>
       </div>
     </div>
   );
 }
 
 function DisableForm({ recoveryLeft }: { recoveryLeft: number }) {
+  const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<TwoFactorState, FormData>(disableTwoFactor, {});
   const form = useRef<HTMLFormElement>(null);
   if (state.ok) return <p className="adm-ok" role="status">{state.ok}</p>;
   return (
     <form ref={form} action={action} className="adm-form">
-      <p className="adm-muted">Stato: <strong>attiva</strong>. Codici di recupero rimasti: {recoveryLeft} su 10.</p>
-      <p className="adm-muted">Per disattivarla servono la password e un codice dell’app (o un codice di recupero).</p>
+      <p className="adm-muted">{interpolate(t.twoFactor.onHint, { status: t.twoFactor.statusOn, n: recoveryLeft })}</p>
+      <p className="adm-muted">{t.twoFactor.disableHint}</p>
       <label className="adm-field">
-        <span>Password attuale</span>
+        <span>{t.twoFactor.currentPassword}</span>
         <input className="adm-input" name="password" type="password" autoComplete="current-password" required />
       </label>
       <DisableCode state={state} pending={pending} form={form} />
       {state.error ? <p className="adm-error" role="alert">{state.error}</p> : null}
       <div className="adm-row-actions">
-        <button className="adm-btn" disabled={pending}>{pending ? "Disattivazione…" : "Disattiva"}</button>
+        <button className="adm-btn" disabled={pending}>{pending ? t.twoFactor.disabling : t.twoFactor.disable}</button>
       </div>
     </form>
   );

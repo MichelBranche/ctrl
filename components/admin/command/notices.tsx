@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { CommandNotice } from "@/lib/command-types";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { interpolate } from "@/lib/admin-i18n";
 
 const BELL = "M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0";
 
 export function NoticeBell({ notices }: { notices: CommandNotice[] }) {
+  const { t } = useAdminLocale();
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(path);
@@ -41,7 +44,7 @@ export function NoticeBell({ notices }: { notices: CommandNotice[] }) {
         className="adm-icon-btn cc-bell-btn"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={count ? `Notifiche, ${count} da vedere` : "Notifiche"}
+        aria-label={count ? interpolate(t.notices.ariaCount, { n: count }) : t.notices.aria}
         onClick={() => setOpen((value) => !value)}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -50,9 +53,9 @@ export function NoticeBell({ notices }: { notices: CommandNotice[] }) {
         {count ? <span className="cc-bell-dot" aria-hidden="true" /> : null}
       </button>
       {open ? (
-        <div className="cc-bell-pop" role="dialog" aria-label="Notifiche CRM">
+        <div className="cc-bell-pop" role="dialog" aria-label={t.notices.dialog}>
           {count === 0 ? (
-            <p className="cc-bell-empty">Nessuna notifica.</p>
+            <p className="cc-bell-empty">{t.notices.empty}</p>
           ) : (
             <ul>
               {notices.map((notice) => (

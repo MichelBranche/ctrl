@@ -138,6 +138,17 @@
 .adm-menu-email { margin: 0; padding: 0.5rem 0.6rem; color: var(--adm-dim); font-size: 0.8rem; border-bottom: 1px solid var(--adm-rule); overflow-wrap: anywhere; }
 .adm-menu-item { display: flex; width: 100%; align-items: center; height: 2.25rem; padding: 0 0.6rem; border: 0; border-radius: 0.3rem; background: none; color: var(--adm-fg); font: inherit; text-decoration: none; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
 .adm-menu-item:hover, .adm-menu-item:focus-visible { background: var(--adm-raise); }
+.adm-lang { display: inline-flex; align-items: center; gap: 0.12rem; padding: 0.14rem; border: 1px solid var(--adm-rule); border-radius: 999px; background: rgb(255 255 255 / 0.03); }
+.adm-lang-btn { min-width: 2.15rem; height: 1.65rem; padding: 0 0.5rem; border: 0; border-radius: 999px; background: transparent; color: var(--adm-dim); font: inherit; font-size: 0.68rem; font-weight: 650; letter-spacing: 0.08em; line-height: 1; cursor: url("/cursors/pointer.svg") 11 1, pointer; }
+.adm-lang-btn:hover { color: var(--adm-fg); }
+.adm-lang-btn[aria-pressed="true"] { background: var(--adm-fg); color: var(--adm-ink); }
+.adm-lang-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2.25rem; padding: 0.35rem 0.6rem; color: var(--adm-dim); font-size: 0.8rem; border-bottom: 1px solid var(--adm-rule); }
+.adm-auth { position: relative; }
+.adm-auth-lang { position: absolute; top: 1.15rem; right: 1.15rem; z-index: 3; }
+@media (max-width: 520px) { .adm-auth-lang { top: 0.75rem; right: 0.75rem; } }
+.adm-settings-lang { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.adm-settings-lang .adm-lang { flex: none; margin-top: 0.2rem; }
+
 .adm-content { flex: 1; min-width: 0; }
 @media (prefers-reduced-motion: no-preference) {
   .adm-nav-link:hover { transform: translateX(2px); }

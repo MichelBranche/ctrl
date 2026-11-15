@@ -9,15 +9,17 @@ import { Arrow, Eye, EyeOff, FloatField, item } from "@/components/admin/login-s
 import { RequiredSetup } from "@/components/admin/required-setup";
 import { TwoFactorPanel } from "@/components/admin/two-factor";
 import { passwordScore } from "@/lib/password-strength";
+import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { interpolate } from "@/lib/admin-i18n";
 
 const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } } };
-const SCORE_LABEL = ["Troppo corta", "Debole", "Discreta", "Buona", "Ottima"] as const;
-
 type Step = "password" | "setup" | "twofactor";
 export type InviteInfo = { state: "valid"; name: string; email: string; roles: string[]; founder: boolean } | { state: "expired" | "invalid" };
 
 /** Invite acceptance card, same glass look as the sign-in: password (+ strength meter), then 2FA. */
 export function InviteScreen({ token, invite: live }: { token: string; invite: InviteInfo }) {
+  const { t } = useAdminLocale();
   // Accepting sets the session cookie, which re-renders the page with the now-consumed token ("invalid").
   // Keep the invite this card opened with, so the flow continues to the 2FA step instead of flipping to the error card.
   const [opened] = useState(live);
@@ -30,6 +32,7 @@ export function InviteScreen({ token, invite: live }: { token: string; invite: I
   const first = invite.state === "valid" ? invite.name.split(/\s+/)[0] : "";
   return (
     <main className="adm-auth">
+      <AdminLangSwitch variant="auth" />
       <AuthBackdrop />
       <AuthCursor />
       <motion.div
@@ -47,23 +50,24 @@ export function InviteScreen({ token, invite: live }: { token: string; invite: I
           </motion.div>
           {invite.state !== "valid" ? (
             <div>
-              <motion.p variants={item} className="adm-auth-kicker">Invito</motion.p>
-              <motion.h1 variants={item} className="adm-auth-title">{invite.state === "expired" ? "Invito scaduto." : "Invito non valido."}</motion.h1>
+              <motion.p variants={item} className="adm-auth-kicker">{t.invite.kickerInvalid}</motion.p>
+              <motion.h1 variants={item} className="adm-auth-title">{invite.state === "expired" ? t.invite.expiredTitle : t.invite.invalidTitle}</motion.h1>
               <motion.p variants={item} className="adm-auth-sub">
-                {invite.state === "expired"
-                  ? "Il link valeva 48 ore. Chiedi al founder di inviartene uno nuovo dalla pagina Team."
-                  : "Il link è già stato usato, è stato revocato o non è corretto. Se hai già scelto la password, accedi normalmente."}
+                {invite.state === "expired" ? t.invite.expiredBody : t.invite.invalidBody}
               </motion.p>
-              <motion.div variants={item}><Link className="adm-otp-alt" href="/admin/login">Vai all’accesso</Link></motion.div>
+              <motion.div variants={item}><Link className="adm-otp-alt" href="/admin/login">{t.invite.goLogin}</Link></motion.div>
             </div>
           ) : (
             <AnimatePresence mode="wait" initial={false}>
               {step === "password" ? (
                 <motion.div key="pw" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-                  <motion.p variants={item} className="adm-auth-kicker">Passo 1 di 2 · Invito nel team</motion.p>
-                  <motion.h1 variants={item} className="adm-auth-title">Benvenuto, {first}.</motion.h1>
+                  <motion.p variants={item} className="adm-auth-kicker">{t.invite.step1kicker}</motion.p>
+                  <motion.h1 variants={item} className="adm-auth-title">{interpolate(t.invite.welcome, { name: first })}</motion.h1>
                   <motion.p variants={item} className="adm-auth-sub">
-                    Entri come <strong>{invite.roles.join(", ")}</strong> con {invite.email}. Scegli la tua password personale: la conosci solo tu.
+                    {t.invite.sub.split("{roles}").flatMap((part, i, arr) => {
+                      const text = interpolate(part, { email: invite.email, name: first });
+                      return i < arr.length - 1 ? [text, <strong key="roles">{invite.roles.join(", ")}</strong>] : [text];
+                    })}
                   </motion.p>
                   <PasswordStep token={token} onNext={setStep} />
                 </motion.div>
@@ -73,11 +77,11 @@ export function InviteScreen({ token, invite: live }: { token: string; invite: I
                 </motion.div>
               ) : (
                 <motion.div key="tfa" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-                  <p className="adm-auth-kicker">Passo 2 di 2 · Facoltativo</p>
-                  <h1 className="adm-auth-title">Proteggi l’account</h1>
-                  <p className="adm-auth-sub">Password salvata, sei dentro. Ti consigliamo la verifica in due passaggi: dopo la password l’accesso chiederà anche un codice dal telefono.</p>
+                  <p className="adm-auth-kicker">{t.invite.step2kicker}</p>
+                  <h1 className="adm-auth-title">{t.invite.protectTitle}</h1>
+                  <p className="adm-auth-sub">{t.invite.protectSub}</p>
                   <div className="adm-invite-tfa"><TwoFactorPanel enabled={false} recoveryLeft={0} /></div>
-                  <Link className="adm-auth-ghost adm-invite-later" href="/admin">Più tardi, vai alla dashboard <Arrow /></Link>
+                  <Link className="adm-auth-ghost adm-invite-later" href="/admin">{t.invite.later} <Arrow /></Link>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -86,13 +90,14 @@ export function InviteScreen({ token, invite: live }: { token: string; invite: I
       </motion.div>
       <p className="adm-auth-foot">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-        Connessione cifrata · il link si usa una sola volta
+        {t.invite.foot}
       </p>
     </main>
   );
 }
 
 function PasswordStep({ token, onNext }: { token: string; onNext: (s: Step) => void }) {
+  const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<InviteState, FormData>(acceptInviteAction.bind(null, token), {});
   const [pw, setPw] = useState("");
   const [again, setAgain] = useState("");
@@ -113,19 +118,19 @@ function PasswordStep({ token, onNext }: { token: string; onNext: (s: Step) => v
   return (
     <motion.form action={action} animate={shake} className="adm-auth-form">
       <motion.div variants={item}>
-        <FloatField id={`${id}-p`} name="password" type={show ? "text" : "password"} label="Nuova password" autoComplete="new-password" invalid={Boolean(state.error)} value={pw} onChange={setPw}>
-          <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? "Nascondi password" : "Mostra password"}>
+        <FloatField id={`${id}-p`} name="password" type={show ? "text" : "password"} label={t.invite.newPassword} autoComplete="new-password" invalid={Boolean(state.error)} value={pw} onChange={setPw}>
+          <button type="button" className="adm-float-eye" onClick={() => setShow((v) => !v)} aria-pressed={show} aria-label={show ? t.login.hidePassword : t.login.showPassword}>
             {show ? <EyeOff /> : <Eye />}
           </button>
         </FloatField>
         <div className="adm-meter" data-score={score} aria-live="polite">
           <span className="adm-meter-bar" aria-hidden><i /><i /><i /><i /></span>
-          <span className="adm-meter-label">{pw ? SCORE_LABEL[score] : "Almeno 12 caratteri. Meglio una frase lunga con numeri e simboli."}</span>
+          <span className="adm-meter-label">{pw ? t.invite.scores[score] : t.invite.scoreHint}</span>
         </div>
       </motion.div>
       <motion.div variants={item}>
-        <FloatField id={`${id}-c`} name="confirm" type={show ? "text" : "password"} label="Conferma password" autoComplete="new-password" invalid={mismatch} value={again} onChange={setAgain} />
-        {mismatch ? <p className="adm-meter-label adm-meter-bad">Le due password non coincidono.</p> : null}
+        <FloatField id={`${id}-c`} name="confirm" type={show ? "text" : "password"} label={t.invite.confirmPassword} autoComplete="new-password" invalid={mismatch} value={again} onChange={setAgain} />
+        {mismatch ? <p className="adm-meter-label adm-meter-bad">{t.invite.mismatch}</p> : null}
       </motion.div>
       <AnimatePresence>
         {state.error ? (
@@ -136,7 +141,7 @@ function PasswordStep({ token, onNext }: { token: string; onNext: (s: Step) => v
       </AnimatePresence>
       <motion.div variants={item}>
         <MagneticButton className="adm-auth-btn" disabled={pending || !ready} aria-busy={pending}>
-          {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> Salvataggio…</> : <>Accetta l’invito <Arrow /></>}
+          {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> {t.invite.saving}</> : <>{t.invite.accept} <Arrow /></>}
         </MagneticButton>
       </motion.div>
     </motion.form>

@@ -2,15 +2,24 @@
 
 import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useAdminLocale } from "@/components/admin/locale-provider";
+import { formatAdminDate, formatAdminNumber, formatAdminCurrency } from "@/lib/admin-i18n";
 
 /* Hand-rolled SVG charts animated with Motion (already a site dependency, so no new bundle weight).
  * Every chart takes real series from the server and renders an explicit empty state instead of zeros dressed up as data. */
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
-const nf = new Intl.NumberFormat("it-IT");
-const eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
-const fmtDay = (d: string, long = false) =>
-  new Date(`${d}T12:00:00Z`).toLocaleDateString("it-IT", long ? { weekday: "short", day: "numeric", month: "short" } : { day: "numeric", month: "short" });
+function useChartFormat() {
+  const { lang, t } = useAdminLocale();
+  return useMemo(() => ({
+    lang,
+    t,
+    nf: (n: number) => formatAdminNumber(n, lang),
+    eur: (n: number) => formatAdminCurrency(n, lang),
+    fmtDay: (d: string, long = false) =>
+      formatAdminDate(`${d}T12:00:00Z`, lang, long ? { weekday: "short", day: "numeric", month: "short" } : { day: "numeric", month: "short" }),
+  }), [lang, t]);
+}
 
 /** Smooth monotone-ish path through points (Catmull-Rom to Bezier, clamped so it never overshoots below zero). */
 function smooth(pts: [number, number][], floor: number) {
@@ -29,20 +38,21 @@ function smooth(pts: [number, number][], floor: number) {
 }
 
 export function CountUp({ value, className, money = false }: { value: number; className?: string; money?: boolean }) {
+  const { nf, eur } = useChartFormat();
   const ref = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
-  const paint = (n: number) => (money ? eur.format(n) : nf.format(Math.round(n)));
+  const paint = (n: number) => (money ? eur(n) : nf(Math.round(n)));
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const draw = (n: number) => (money ? eur.format(n) : nf.format(Math.round(n)));
+    const draw = (n: number) => (money ? eur(n) : nf(Math.round(n)));
     if (reduce) {
       el.textContent = draw(value);
       return;
     }
     const c = animate(0, value, { duration: 1.1, ease: EASE, onUpdate: (v) => (el.textContent = draw(v)) });
     return () => c.stop();
-  }, [value, reduce, money]);
+  }, [value, reduce, money, nf, eur]);
   // Server HTML already holds the final number, so no-JS and screen readers see the real value.
   return (
     <span ref={ref} className={className}>
@@ -79,6 +89,7 @@ export function Sparkline({ data, label }: { data: number[]; label: string }) {
 export type SeriesPoint = { date: string; pageviews: number; visitors: number };
 
 export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?: number }) {
+  const { nf, fmtDay, t } = useChartFormat();
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(960);
   const [hover, setHover] = useState<number | null>(null);
@@ -142,11 +153,11 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
             <stop offset="1" stopColor="var(--adm-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={PAD.l} x2={w - PAD.r} y1={y(t)} y2={y(t)} className="adm-area-grid" />
-            <text x={PAD.l - 8} y={y(t)} className="adm-area-tick" textAnchor="end" dominantBaseline="middle">
-              {nf.format(t)}
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line x1={PAD.l} x2={w - PAD.r} y1={y(tick)} y2={y(tick)} className="adm-area-grid" />
+            <text x={PAD.l - 8} y={y(tick)} className="adm-area-tick" textAnchor="end" dominantBaseline="middle">
+              {nf(tick)}
             </text>
           </g>
         ))}
@@ -174,10 +185,10 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
         <div className="adm-tip" role="status" style={{ left: Math.min(Math.max(x(hover), 90), w - 90), top: PAD.t }}>
           <strong>{fmtDay(h.date, true)}</strong>
           <span>
-            <i className="adm-key" /> {nf.format(h.pageviews)} visualizzazioni
+            <i className="adm-key" /> {nf(h.pageviews)} {t.charts.views}
           </span>
           <span>
-            <i className="adm-key is-alt" /> {nf.format(h.visitors)} visitatori
+            <i className="adm-key is-alt" /> {nf(h.visitors)} {t.charts.visitors}
           </span>
         </div>
       ) : null}
@@ -188,6 +199,7 @@ export function AreaChart({ data, height = 260 }: { data: SeriesPoint[]; height?
 export type Row = { key: string; pageviews: number; visitors: number };
 
 export function BarList({ rows, empty }: { rows: (Row & { label?: string })[]; empty: string }) {
+  const { nf } = useChartFormat();
   if (!rows.length) return <p className="adm-muted adm-empty">{empty}</p>;
   const max = Math.max(...rows.map((r) => r.pageviews), 1);
   return (
@@ -198,7 +210,7 @@ export function BarList({ rows, empty }: { rows: (Row & { label?: string })[]; e
           <span className="adm-barlist-key" title={r.key}>
             {r.label ?? r.key}
           </span>
-          <span className="adm-barlist-num">{nf.format(r.pageviews)}</span>
+          <span className="adm-barlist-num">{nf(r.pageviews)}</span>
         </li>
       ))}
     </ol>
@@ -208,10 +220,13 @@ export function BarList({ rows, empty }: { rows: (Row & { label?: string })[]; e
 const DEVICE: Record<string, string> = { desktop: "Desktop", mobile: "Mobile", tablet: "Tablet" };
 const SHADES = ["var(--adm-accent)", "var(--adm-fg)", "rgba(242,240,234,0.45)", "rgba(242,240,234,0.25)"];
 
-export function Donut({ rows, empty = "Nessun dato sui dispositivi.", centerLabel = "visualizzazioni", showShare = false }: { rows: (Row & { label?: string })[]; empty?: string; centerLabel?: string; showShare?: boolean }) {
+export function Donut({ rows, empty, centerLabel, showShare = false }: { rows: (Row & { label?: string })[]; empty?: string; centerLabel?: string; showShare?: boolean }) {
+  const { nf, t } = useChartFormat();
+  const emptyText = empty ?? t.charts.devicesEmpty;
+  const center = centerLabel ?? t.charts.viewsCenter;
   const [active, setActive] = useState<number | null>(null);
   const total = rows.reduce((a, r) => a + r.pageviews, 0);
-  if (!total) return <p className="adm-muted adm-empty">{empty}</p>;
+  if (!total) return <p className="adm-muted adm-empty">{emptyText}</p>;
   const R = 52;
   const C = 2 * Math.PI * R;
   const offs = rows.map((_, i) => rows.slice(0, i).reduce((a, r) => a + r.pageviews / total, 0));
@@ -243,10 +258,10 @@ export function Donut({ rows, empty = "Nessun dato sui dispositivi.", centerLabe
           );
         })}
         <text x="70" y="66" textAnchor="middle" className="adm-donut-num">
-          {cur ? `${Math.round((cur.pageviews / total) * 100)}%` : nf.format(total)}
+          {cur ? `${Math.round((cur.pageviews / total) * 100)}%` : nf(total)}
         </text>
         <text x="70" y="84" textAnchor="middle" className="adm-donut-label">
-          {cur ? (cur.label ?? DEVICE[cur.key] ?? cur.key) : centerLabel}
+          {cur ? (cur.label ?? DEVICE[cur.key] ?? cur.key) : center}
         </text>
       </svg>
       <ul className="adm-legend">
@@ -254,7 +269,7 @@ export function Donut({ rows, empty = "Nessun dato sui dispositivi.", centerLabe
           <li key={r.key} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)} data-active={active === i || undefined}>
             <i style={{ background: SHADES[i % SHADES.length] }} />
             <span>{r.label ?? DEVICE[r.key] ?? r.key}</span>
-            {showShare ? <span className="adm-barlist-num">{nf.format(r.pageviews)}</span> : null}
+            {showShare ? <span className="adm-barlist-num">{nf(r.pageviews)}</span> : null}
             <span className="adm-barlist-num">{Math.round((r.pageviews / total) * 100)}%</span>
           </li>
         ))}

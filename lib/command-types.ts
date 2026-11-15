@@ -7,7 +7,7 @@ export type CommandTone = "up" | "down" | "flat";
 export type CommandTodo = {
   id: string;
   title: string;
-  tag: "CRM" | "Shop" | "Pipeline" | "Contenuti";
+  tag: string;
   href: string;
   done: boolean;
   check:

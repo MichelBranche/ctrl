@@ -11,57 +11,61 @@ import { POSTS_TAG } from "@/lib/journal";
 import { ensureTranslationSchema } from "@/lib/migrate";
 import { translatePost, translationConfigured } from "@/lib/translate";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
+import { getAdminCopy } from "@/lib/admin-locale";
 
 export type FormState = { error?: string; ok?: string; warning?: string; twoFactor?: boolean; setup?: boolean };
 
 export async function signIn(_: FormState, form: FormData): Promise<FormState> {
+  const { t } = await getAdminCopy();
   const email = String(form.get("email") ?? "").slice(0, 200);
   const password = String(form.get("password") ?? "").slice(0, 500);
-  if (!email || !password) return { error: "Inserisci email e password." };
+  if (!email || !password) return { error: t.auth.missingCredentials };
   // Absent checkbox (the default) is not a remembered device. Only the explicit value "1" opts in.
   const result = await login(email, password, form.get("remember") === "1");
-  if (result === "unconfigured") return { error: "Accesso non configurato sul server." };
-  if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
-  if (result === "invalid") return { error: "Credenziali non valide." };
+  if (result === "unconfigured") return { error: t.auth.unconfigured };
+  if (result === "locked") return { error: t.auth.locked };
+  if (result === "invalid") return { error: t.auth.invalidCredentials };
   // Same card switches to the code step; /admin/login/verifica serves a reload during those 5 minutes.
   if (result === "2fa") return { twoFactor: true };
   if (result === "setup") return { setup: true };
   redirect("/admin");
 }
 
-const SETUP_EXPIRED = "Configurazione scaduta (15 minuti). Torna all’accesso e inserisci di nuovo la password.";
-
 /** Mandatory founder setup, step QR: needs the setup ticket set by signIn, never a session. */
 export async function beginRequiredSetup(): Promise<{ error?: string; setup?: { secret: string; qrSvg: string } }> {
   const r = await startForcedSetup();
-  return r === "expired" ? { error: SETUP_EXPIRED } : { setup: r };
+  if (r === "expired") return { error: (await getAdminCopy()).t.auth.setupExpired };
+  return { setup: r };
 }
 
 export type RequiredSetupState = { error?: string; ok?: string; codes?: string[] };
 export async function confirmRequiredSetup(_: RequiredSetupState, form: FormData): Promise<RequiredSetupState> {
+  const { t } = await getAdminCopy();
   const r = await confirmForcedSetup(String(form.get("code") ?? ""));
-  if (r === "expired") return { error: SETUP_EXPIRED };
-  if (r === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
-  if (r === "invalid") return { error: "Codice non valido. Controlla che l’ora del telefono sia automatica e riprova." };
-  return { codes: r.codes, ok: "Verifica attiva." };
+  if (r === "expired") return { error: t.auth.setupExpired };
+  if (r === "locked") return { error: t.auth.locked };
+  if (r === "invalid") return { error: t.auth.invalidAppCode };
+  return { codes: r.codes, ok: t.auth.setupOk };
 }
 
 export async function finishRequiredSetup(): Promise<{ error?: string; ok?: string }> {
+  const { t } = await getAdminCopy();
   const r = await finishForcedSetup();
-  if (r === "expired") return { error: SETUP_EXPIRED };
-  if (r === "incomplete") return { error: "Prima conferma il codice dell’app." };
-  return { ok: "Account protetto." };
+  if (r === "expired") return { error: t.auth.setupExpired };
+  if (r === "incomplete") return { error: t.auth.setupIncomplete };
+  return { ok: t.auth.accountProtected };
 }
 
 export async function signInSecondStep(_: FormState, form: FormData): Promise<FormState> {
+  const { t } = await getAdminCopy();
   const code = String(form.get("code") ?? "").trim().slice(0, 40);
-  if (!code) return { error: "Inserisci il codice." };
+  if (!code) return { error: t.auth.enterCode };
   const result = await verifySecondStep(code);
-  if (result === "expired") return { error: "Verifica scaduta (5 minuti). Torna all’accesso e inserisci di nuovo la password." };
-  if (result === "locked") return { error: "Troppi tentativi. Riprova tra 15 minuti." };
-  if (result === "invalid") return { error: "Codice non valido o già usato." };
+  if (result === "expired") return { error: t.auth.codeExpired };
+  if (result === "locked") return { error: t.auth.locked };
+  if (result === "invalid") return { error: t.auth.invalidOrUsed };
   // The session cookie is set; the client shows the success animation and then opens /admin.
-  return { ok: "Accesso verificato." };
+  return { ok: t.auth.accessVerified };
 }
 
 export async function signOut() {

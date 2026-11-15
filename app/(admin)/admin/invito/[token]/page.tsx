@@ -2,7 +2,9 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { InviteScreen } from "@/components/admin/invite-screen";
 import { readInvite } from "@/lib/team-invite";
-import { isFounder, ROLE_LABEL } from "@/lib/team-types";
+import { isFounder } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminRoleLabel } from "@/lib/admin-i18n";
 
 /** Build-time placeholder only (an invalid token renders the "link non valido" card); real tokens render on request. */
 export function generateStaticParams() {
@@ -23,11 +25,12 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 async function Invite({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   await connection();
+  const { lang } = await getAdminCopy();
   const view = await readInvite(token).catch(() => ({ state: "invalid" as const }));
   return (
     <InviteScreen
       token={token}
-      invite={view.state === "valid" ? { state: "valid", name: view.name, email: view.email, roles: view.roles.map((r) => ROLE_LABEL[r]), founder: isFounder(view.roles) } : { state: view.state }}
+      invite={view.state === "valid" ? { state: "valid", name: view.name, email: view.email, roles: view.roles.map((r) => adminRoleLabel(lang, r)), founder: isFounder(view.roles) } : { state: view.state }}
     />
   );
 }

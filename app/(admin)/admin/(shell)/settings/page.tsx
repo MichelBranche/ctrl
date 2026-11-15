@@ -1,5 +1,6 @@
 import { UserAvatar } from "@/components/admin/user-avatar";
 import { Suspense } from "react";
+import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { db } from "@/lib/db";
 import { ProfilePhoto } from "@/components/admin/profile-photo";
@@ -9,63 +10,74 @@ import { twoFactorStatus } from "@/lib/two-factor";
 import { canDisableTwoFactor, twoFactorRequired } from "@/lib/two-factor-policy";
 import { requireSection } from "@/lib/admin";
 import { SESSION_HOURS } from "@/lib/session-lifetime";
-import { AREA_LABEL, ROLE_LABEL } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminAreaLabel, adminRoleLabel, formatAdminDateTime, interpolate } from "@/lib/admin-i18n";
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<main className="adm-main" aria-busy="true"><p className="adm-muted">Caricamento…</p></main>}>
+    <Suspense fallback={<SettingsFallback />}>
       <Body />
     </Suspense>
   );
 }
 
-const fmt = (ms: number) => new Date(ms).toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "medium", timeStyle: "short" });
+async function SettingsFallback() {
+  const { t } = await getAdminCopy();
+  return <main className="adm-main" aria-busy="true"><p className="adm-muted">{t.settings.loading}</p></main>;
+}
 
 async function Body() {
+  const { lang, t } = await getAdminCopy();
   const admin = await requireSection("settings");
   const result = await db().execute({ sql: "SELECT last_name, contact_email, phone, website FROM admin_users WHERE id = ?", args: [admin.id] });
   const profile = result.rows[0];
   const twoFactor = await twoFactorStatus(admin.id);
+  const required = twoFactorRequired(admin.roles);
   return (
     <main className="adm-main">
       <header className="adm-top">
-        <div>
-          <h1 className="adm-h1">Impostazioni</h1>
+        <div className="adm-settings-lang">
+          <h1 className="adm-h1">{t.settings.title}</h1>
+          <AdminLangSwitch variant="settings" />
         </div>
       </header>
       <div className="adm-grid2">
         <section className="adm-panel">
-          <h2 className="adm-h2">Il tuo profilo</h2>
-          <p className="adm-muted">Lo staff vedrà questa foto sulle email che apri. Il nome compare passando il mouse sull’avatar.</p>
+          <h2 className="adm-h2">{t.settings.languageTitle}</h2>
+          <p className="adm-muted">{t.settings.languageLead}</p>
+        </section>
+        <section className="adm-panel">
+          <h2 className="adm-h2">{t.settings.profileTitle}</h2>
+          <p className="adm-muted">{t.settings.profileLead}</p>
           <ProfilePhoto current={admin.avatarUrl} name={admin.name} />
           <ProfileForm name={admin.name} lastName={String(profile?.last_name ?? "")} loginEmail={admin.email} contactEmail={String(profile?.contact_email ?? "")} phone={String(profile?.phone ?? "")} website={String(profile?.website ?? "")} />
         </section>
         <section className="adm-panel">
-          <h2 className="adm-h2">Sessione</h2>
+          <h2 className="adm-h2">{t.settings.sessionTitle}</h2>
           {admin ? (
             <dl className="adm-dl">
-              <dt>Account</dt>
+              <dt>{t.settings.account}</dt>
               <dd className="adm-person"><UserAvatar name={admin.name} src={admin.avatarUrl} small />{admin.name} · {admin.email}</dd>
-              <dt>Ruolo</dt>
-              <dd>{admin.roles.map((r) => ROLE_LABEL[r]).join(", ")}{admin.area ? ` · ${AREA_LABEL[admin.area]}` : ""}</dd>
-              <dt>Accesso</dt>
-              <dd className="adm-num">{fmt(admin.issuedAt)}</dd>
-              <dt>Scade</dt>
-              <dd className="adm-num">{fmt(admin.expiresAt)}</dd>
-              <dt>Cookie</dt>
-              <dd>httpOnly, SameSite strict, {admin.expiresAt - admin.issuedAt > SESSION_HOURS * 3_600_000 ? "3 giorni su questo dispositivo" : "12 ore"}</dd>
+              <dt>{t.settings.role}</dt>
+              <dd>{admin.roles.map((r) => adminRoleLabel(lang, r)).join(", ")}{admin.area ? ` · ${adminAreaLabel(lang, admin.area)}` : ""}</dd>
+              <dt>{t.settings.signedIn}</dt>
+              <dd className="adm-num">{formatAdminDateTime(admin.issuedAt, lang)}</dd>
+              <dt>{t.settings.expires}</dt>
+              <dd className="adm-num">{formatAdminDateTime(admin.expiresAt, lang)}</dd>
+              <dt>{t.settings.cookie}</dt>
+              <dd>{admin.expiresAt - admin.issuedAt > SESSION_HOURS * 3_600_000 ? t.settings.cookieRemember : t.settings.cookieSession}</dd>
             </dl>
           ) : null}
         </section>
         <section className="adm-panel">
-          <h2 className="adm-h2">Cambia password</h2>
-          <p className="adm-muted">La password è salvata solo come hash scrypt nel database. Cambiandola chiudi le altre sessioni aperte con questo account.</p>
+          <h2 className="adm-h2">{t.settings.passwordTitle}</h2>
+          <p className="adm-muted">{t.settings.passwordLead}</p>
           <PasswordForm />
         </section>
         <section className="adm-panel">
-          <h2 className="adm-h2">Verifica in due passaggi</h2>
+          <h2 className="adm-h2">{t.settings.twoFactorTitle}</h2>
           <p className="adm-muted">
-            {twoFactorRequired(admin.roles) ? "Obbligatoria per i founder." : "Facoltativa, solo per il tuo account."} Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.
+            {interpolate(t.settings.twoFactorLead, { requirement: required ? t.settings.twoFactorRequired : t.settings.twoFactorOptional })}
           </p>
           <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} canDisable={canDisableTwoFactor(admin.roles)} />
         </section>
