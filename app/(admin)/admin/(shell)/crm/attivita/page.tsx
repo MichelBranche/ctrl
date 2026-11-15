@@ -16,6 +16,8 @@ import {
   type ActivityQuery, type PanelTab,
 } from "@/lib/crm-nav";
 import { canAccess, isFounder } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -43,6 +45,7 @@ function bucket(date: string, today: string): string {
 const GROUP_ORDER = ["In ritardo", "Oggi", "Domani", "Questa settimana", "Più avanti"];
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const sp = await searchParams;
   const founder = isFounder(me);
@@ -111,7 +114,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <ActivityDialog query={query} owners={owners} me={me.id} founder={founder} editing={draft} deals={deals} preset={preset ? { id: preset.id, name: preset.businessName } : null} />
           <Link className="adm-btn" href={(meetings ? "/admin/riunioni" : "#crm-cal") as Route}>{meetings ? "Calendario" : "Calendario del mese"}</Link>
         </CrmHeader>
-        <CrmTabs current={ATTIVITA} />
+        <CrmTabs current={ATTIVITA} t={t} lang={lang} />
         <p className="crm-notice" role="note">
           Le attività di questa pagina sono solo quelle create con «Nuova attività». Un follow-up già sulla scheda resta un follow-up
           (lo vedi qui, non è stato copiato). La scrivania personale non entra in questo elenco.
@@ -129,7 +132,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <section className="crm-card-panel" aria-labelledby="crm-act-h">
             <div className="crm-panel-head">
               <h2 id="crm-act-h" className="adm-h2">{scope === "team" ? "Attività del team" : "Le mie"}</h2>
-              {founder ? <ScopeSwitch base={ATTIVITA} scope={scope} /> : null}
+              {founder ? <ScopeSwitch base={ATTIVITA} scope={scope} t={t} /> : null}
             </div>
             <form className="crm-act-filters" method="get" action={ATTIVITA} role="search">
               {scope === "team" ? <input type="hidden" name="ambito" value="team" /> : null}
@@ -150,7 +153,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               ) : null}
               <select className="adm-input" name="fase" defaultValue={query.fase} aria-label="Fase del contatto">
                 <option value="">Tutte le fasi</option>
-                {(Object.keys(STAGE_LABEL) as Stage[]).map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+                {(Object.keys(STAGE_LABEL) as Stage[]).map((s) => <option key={s} value={s}>{adminCrmStageLabel(lang, s)}</option>)}
               </select>
               <select className="adm-input" name="prio" defaultValue={query.prio} aria-label="Priorità">
                 <option value="">Priorità</option>
@@ -205,11 +208,11 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
 function ActivityRow({ a, today, showAssignee, editHref, openHref }: { a: Activity; today: string; showAssignee: boolean; editHref: string; openHref: string }) {
   const late = !a.doneAt && a.dueDate < today;
-  const badge = a.opportunityStage ? `Pipeline: ${STAGE_LABEL[a.opportunityStage]}` : a.contactStage ? STAGE_LABEL[a.contactStage] : "";
+  const badge = a.opportunityStage ? `Pipeline: ${adminCrmStageLabel(lang, a.opportunityStage)}` : a.contactStage ? adminCrmStageLabel(lang, a.contactStage) : "";
   return (
     <li className="crm-act-row">
       <ActivityCheck id={a.id} version={a.version} done={Boolean(a.doneAt)} label={`${a.doneAt ? "Riapri" : "Completa"} ${a.title}`} />
-      <span className="crm-act-kind" title={ACTIVITY_KIND_LABEL[a.kind]}><CrmIcon d={KIND_ICON[a.kind]} /></span>
+      <span className="crm-act-kind" title={adminCrmActivityKindLabel(lang, a.kind)}><CrmIcon d={KIND_ICON[a.kind]} /></span>
       <div className="crm-todo-text">
         {openHref ? <Link href={openHref as Route} className="crm-todo-title">{a.title}</Link> : <strong className="crm-todo-title">{a.title}</strong>}
         <span className="adm-muted">{[a.contactName, a.city].filter(Boolean).join(" · ") || "Senza contatto"}</span>
@@ -234,7 +237,7 @@ function FollowRow({ f, today, showOwner, openHref }: { f: DueAction; today: str
         <Link href={openHref as Route} className="crm-todo-title">{label}</Link>
         <span className="adm-muted">{f.businessName}{showOwner ? ` · ${f.ownerName ?? "Non assegnato"}` : ""} · follow-up del contatto</span>
       </div>
-      <span className="crm-stage" data-stage={f.stage}>{STAGE_LABEL[f.stage]}</span>
+      <span className="crm-stage" data-stage={f.stage}>{adminCrmStageLabel(lang, f.stage)}</span>
       <time className="crm-due" data-tone={day < today ? "late" : day === today ? "today" : "soon"} dateTime={day}>{day.slice(8).replace(/^0/, "")}/{day.slice(5, 7)}</time>
     </li>
   );

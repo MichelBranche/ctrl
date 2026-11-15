@@ -10,7 +10,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { signOut } from "@/app/admin/actions";
 import type { CommandNotice } from "@/lib/command-types";
-import { CRM_HOME, crmCrumb, RUBRICA } from "@/lib/crm-nav";
+import { CRM_HOME, RUBRICA } from "@/lib/crm-nav";
+import { adminCrmCrumb } from "@/lib/admin-i18n";
 import { SEARCH_GROUPS, type SearchGroup, type SearchHit } from "@/lib/search-types";
 import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
 import { useAdminLocale } from "@/components/admin/locale-provider";
@@ -100,7 +101,7 @@ const isActive = (path: string, href: string) =>
   href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
 
 export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, notices = [], children }: { userId: string; email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; notices?: CommandNotice[]; children: ReactNode }) {
-  const { t } = useAdminLocale();
+  const { t, lang } = useAdminLocale();
   const path = usePathname();
   const command = path === "/admin";
   const nav: Nav[] = NAV.filter((n) => allowed.includes(n.href)).map((n) => ({ href: n.href, label: t.nav[n.key], icon: n.icon, badge: n.badge }));
@@ -142,7 +143,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
   };
 
   const current = nav.find((n) => isActive(path, n.href));
-  const crmTail = current?.href === CRM_HOME ? crmCrumb(path) : null;
+  const crmTail = current?.href === CRM_HOME ? adminCrmCrumb(lang, path) : null;
 
   return (
     <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined} data-command={command ? "" : undefined}>
@@ -240,7 +241,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
 
 type NavCounts = { requests: number; email: number };
 function NavItem({ item, path, collapsed, counts }: { item: Nav; path: string; collapsed: boolean; counts: NavCounts }) {
-  const { t } = useAdminLocale();
+  const { t, lang } = useAdminLocale();
   const count = item.badge ? counts[item.badge] : 0;
   const news = count ? interpolate(t.shell.newCount, { n: count }) : "";
   return <li><Link href={item.href} className="adm-nav-link" aria-current={isActive(path,item.href) ? "page" : undefined} title={collapsed ? item.label : undefined} aria-label={collapsed ? `${item.label}${news ? `, ${news}` : ""}` : undefined}>
@@ -256,7 +257,7 @@ const subscribeGroups = (callback: () => void) => {
 function groupPreferences(raw: string): Record<string, boolean> { try { const value = JSON.parse(raw); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; } catch { return {}; } }
 
 function NavGroup({ id, label, icon, items, path, collapsed, counts }: { id: string; label: string; icon: ReactNode; items: Nav[]; path: string; collapsed: boolean; counts: NavCounts }) {
-  const { t } = useAdminLocale();
+  const { t, lang } = useAdminLocale();
   const saved = useSyncExternalStore(subscribeGroups,readGroups,()=>"{}");
   const [override,setOverride] = useState<boolean | null>(null);
   if (!items.length) return null;

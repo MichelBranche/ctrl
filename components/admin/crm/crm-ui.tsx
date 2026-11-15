@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
 import { CRM_SECTIONS, type CrmSectionHref } from "@/lib/crm-nav";
+import { adminCrmSectionLabel, formatAdminCurrency, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
-export const eur = (v: number | null) => (v === null ? "" : new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v));
-export const day = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric" }) : "");
+export const eur = (v: number | null, lang: AdminLocale = "it") => (v === null ? "" : formatAdminCurrency(v, lang, { maximumFractionDigits: 0 }));
+export const day = (iso: string | null, lang: AdminLocale = "it") => (iso ? formatAdminDate(`${iso.slice(0, 10)}T12:00:00Z`, lang, { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric" }) : "");
 export const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 export function CrmIcon({ d }: { d: string }) {
@@ -19,12 +20,12 @@ export const CRM_ICON: Record<CrmSectionHref, string> = {
 };
 
 /** The five CRM sections. Email is not a section: it opens from a contact. */
-export function CrmTabs({ current }: { current: CrmSectionHref }) {
+export function CrmTabs({ current, t, lang }: { current: CrmSectionHref; t: AdminDict; lang: AdminLocale }) {
   return (
-    <nav className="crm-tabs" aria-label="Sezioni CRM">
-      {CRM_SECTIONS.map(({ href, label }) => (
+    <nav className="crm-tabs" aria-label={t.crm.sectionsAria}>
+      {CRM_SECTIONS.map(({ href }) => (
         <Link key={href} href={href as Route} className="crm-tab" aria-current={href === current ? "page" : undefined}>
-          <CrmIcon d={CRM_ICON[href]} />{label}
+          <CrmIcon d={CRM_ICON[href]} />{adminCrmSectionLabel(lang, href)}
         </Link>
       ))}
     </nav>
@@ -56,10 +57,10 @@ export function CrmTip({ text }: { text: string }) {
   );
 }
 
-export function ScoreBadge({ score }: { score: number | null }) {
+export function ScoreBadge({ score, t }: { score: number | null; t: AdminDict }) {
   if (score === null) return null;
   const level = score >= 70 ? "alto" : score >= 40 ? "medio" : "basso";
-  return <span className="adm-badge crm-score" data-level={level} title={`Punteggio ${score} su 100`}>{score}</span>;
+  return <span className="adm-badge crm-score" data-level={level} title={interpolate(t.crm.scoreOutOf, { score })}>{score}</span>;
 }
 
 type Place = { businessName: string; address: string | null; city: string | null; region: string | null };
@@ -71,10 +72,10 @@ export function MapPin() {
   return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>;
 }
 
-export function MapsLink({ contact, compact = false }: { contact: Place; compact?: boolean }) {
+export function MapsLink({ contact, compact = false, t }: { contact: Place; compact?: boolean; t: AdminDict }) {
   return compact
-    ? <a className="crm-maps-icon" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer" aria-label={`Apri ${contact.businessName} su Google Maps`} title="Apri su Google Maps"><MapPin /></a>
-    : <a className="adm-btn adm-btn-sm" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer"><MapPin /> Apri su Google Maps</a>;
+    ? <a className="crm-maps-icon" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer" aria-label={interpolate(t.crm.openNameInMaps, { name: contact.businessName })} title={t.crm.openInMaps}><MapPin /></a>
+    : <a className="adm-btn adm-btn-sm" href={mapsUrl(contact)} target="_blank" rel="noopener noreferrer"><MapPin /> {t.crm.openInMaps}</a>;
 }
 
 /** Contact links shared by the full contact page and the contact panel. */
@@ -82,8 +83,8 @@ export const siteHref = (website: string | null) => (website ? (/^https?:\/\//i.
 export const telHref = (phone: string | null) => (phone ? `tel:${phone.replace(/[^\d+]/g, "")}` : null);
 /** New message in Comunicazioni with the recipient filled in: the existing editor, nothing is sent until the user does it. */
 export const composeHref = (email: string) => `/admin/email?${new URLSearchParams({ compose: "new", a: email })}`;
-export const meetHref = (c: { businessName: string; email: string | null }) =>
-  `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
+export const meetHref = (c: { businessName: string; email: string | null }, title?: string) =>
+  `/admin/riunioni?${new URLSearchParams({ titolo: (title ?? `Call con ${c.businessName}`).slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
 export const initials = (name: string) => name.split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
 /** Stable 0–5 tint for an initials avatar. No network and no screenshot service. */
 export const avatarHue = (name: string) => {

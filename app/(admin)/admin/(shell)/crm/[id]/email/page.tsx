@@ -11,6 +11,8 @@ import { CONTACT_MAIL_VIEWS, contactEmailPath, contactMailSearch, MAIL_RETURN_LA
 import { agencyAddress, mailProvider } from "@/lib/mail";
 import { contactAddress } from "@/lib/mail/contact";
 import { canAccess } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 /** Build-time placeholder only (an invalid id renders notFound inside Suspense); real ids render on request. */
 export function generateStaticParams() {
@@ -52,6 +54,7 @@ const VIEW_LABEL: Record<ContactMailView, string> = { tutte: "Tutte le email", r
 const ID_RE = /^[0-9a-f-]{36}$/i;
 
 async function Body({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   if (!ID_RE.test(id)) notFound();
@@ -59,7 +62,7 @@ async function Body({ params, searchParams }: { params: Promise<{ id: string }>;
   if (!c) notFound();
   const q = parseContactMailQuery(sp);
   const back = mailReturn(c.id, q);
-  const backLabel = MAIL_RETURN_LABEL[q.origin];
+  const backLabel = adminCrmMailReturnLabel(lang, q.origin);
   const here = (patch: Partial<ContactMailQuery>) => `${contactEmailPath(c.id)}${contactMailSearch(q, patch)}`;
 
   const head = (
@@ -67,8 +70,8 @@ async function Body({ params, searchParams }: { params: Promise<{ id: string }>;
       <Link className="crm-icon-btn crm-mail-return" href={back as Route} aria-label={backLabel}><CrmIcon d="M15 6l-6 6 6 6" /></Link>
       <span className="crm-avatar" aria-hidden="true">{initials(c.businessName)}</span>
       <div className="crm-mail-who-head">
-        <h1 className="adm-h2">{c.businessName} <ScoreBadge score={c.score} /></h1>
-        <p className="adm-muted">{[c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
+        <h1 className="adm-h2">{c.businessName} <ScoreBadge score={c.score} t={t} /></h1>
+        <p className="adm-muted">{[c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || adminCrmSourceLabel(lang, c.source)}</p>
       </div>
       <nav className="crm-mail-tabs" aria-label="Sezioni del contatto">
         {PANEL_TABS.slice(0, 3).map((t) => <Link key={t} href={mailReturn(c.id, q, t) as Route}><CrmIcon d={TAB_ICON[t]} />{TAB_LABEL[t]}</Link>)}

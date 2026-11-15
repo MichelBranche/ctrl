@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { writeClipboard } from "@/lib/crm-prompt";
-
-const LABEL = { idle: "Copia prompt", copied: "Copiato", error: "Copia non riuscita" } as const;
+import { useCrm } from "@/components/admin/crm/use-crm";
 
 function selectCopy(text: string): boolean {
   const area = document.createElement("textarea");
@@ -25,19 +24,21 @@ function selectCopy(text: string): boolean {
 
 /** Copies the prepared prompt. The label itself is the feedback, so it stays visible on a phone. */
 export function CopyPromptButton({ text }: { text: string }) {
-  const [state, setState] = useState<keyof typeof LABEL>("idle");
+  const { t } = useCrm();
+  const labels = { idle: t.crm.copyPrompt, copied: t.crm.copied, error: t.crm.copyFailed } as const;
+  const [state, setState] = useState<keyof typeof labels>("idle");
   return (
     <button
       type="button"
       className={`adm-btn adm-btn-sm crm-copy-prompt${state === "idle" ? "" : ` crm-copy-prompt-${state}`}`}
       aria-live="polite"
-      aria-label={state === "error" ? "Copia non riuscita. Il testo non è negli appunti." : LABEL[state]}
+      aria-label={state === "error" ? t.crm.copyFailedClipboard : labels[state]}
       onClick={() => {
         void writeClipboard(text, typeof navigator === "undefined" ? null : navigator.clipboard, () => selectCopy(text))
           .then((result) => setState(result === "copied" ? "copied" : "error"));
       }}
     >
-      {LABEL[state]}
+      {labels[state]}
     </button>
   );
 }

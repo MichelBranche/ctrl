@@ -19,6 +19,8 @@ import {
   rubricaSearch, type PanelTab, type RubricaQuery, type RubricaSort,
 } from "@/lib/crm-nav";
 import { canAccess, isFounder } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -54,6 +56,7 @@ const NEW_CONTACT = `${RUBRICA}?nuovo=1#nuovo`;
 const ASC_FIRST: RubricaSort[] = ["nome", "citta", "azione"];
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const sp = await searchParams;
   const query = parseRubricaQuery(sp);
@@ -116,7 +119,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <Link className="adm-btn adm-btn-primary" href={NEW_CONTACT as Route}>Nuovo contatto</Link>
         </CrmHeader>
         <NewContactShortcut href={NEW_CONTACT} />
-        <CrmTabs current={RUBRICA} />
+        <CrmTabs current={RUBRICA} t={t} lang={lang} />
         {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
         <RubricaSegments query={view} counts={segments} views={views} founder={founder} />
         <RubricaTools query={view} cities={f.cities} types={f.types} owners={owners} />

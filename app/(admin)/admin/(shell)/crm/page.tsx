@@ -6,10 +6,13 @@ import { CrmIcon, CRM_ICON, CrmTabs, CrmTip, romeToday, ScoreBadge } from "@/com
 import { FollowUpDone, KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
 import { addDays, dueLabel, ScopeSwitch } from "@/components/admin/crm/follow-ups";
 import { AttentionLists } from "@/components/admin/crm/attention-pop";
+import { CrmBusy } from "@/components/admin/crm/crm-busy";
 import { LeavingRow, RollValue } from "@/components/admin/crm/oggi-motion";
 import { requireSection } from "@/lib/admin";
 import { backfillRequests, crmOverview, dueActions, priorityContacts, recentCrmEvents, unassignedContacts, type CrmEvent } from "@/lib/crm";
-import { SOURCE_LABEL, STAGE_LABEL, type Stage } from "@/lib/crm-core";
+import { type Stage } from "@/lib/crm-core";
+import { adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, formatAdminShortAgo, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
+import { getAdminCopy } from "@/lib/admin-locale";
 import { kpiSeries, liveKpiCounts, recordOggiKpis, type SparkPoint } from "@/lib/crm-kpi";
 import { CRM_HOME, followUpScope, PIPELINE, RUBRICA } from "@/lib/crm-nav";
 import { listActivities } from "@/lib/crm-activity";
@@ -27,7 +30,7 @@ export default function OggiPage({ searchParams }: { searchParams: Promise<SP> }
 
 function OggiSkeleton() {
   return (
-    <div className="crm-oggi-page" aria-busy="true" aria-label="Caricamento del CRM">
+    <CrmBusy k="loadingCrm" className="crm-oggi-page">
       <div className="crm-oggi-top">
         <div className="adm-skel crm-skel-kicker" />
         <div className="adm-skel crm-skel-title" />
@@ -38,15 +41,15 @@ function OggiSkeleton() {
       <div className="crm-oggi-split"><div className="adm-skel crm-skel-panel" /><div className="adm-skel crm-skel-panel is-side" /></div>
       <div className="adm-skel crm-skel-wide" />
       <div className="adm-skel crm-skel-wide is-short" />
-    </div>
+    </CrmBusy>
   );
 }
 
 const NEW_CONTACT = `${RUBRICA}?nuovo=1#nuovo`;
 const LIST = 4;
 
-function romeDateLabel(now = new Date()) {
-  const label = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long" }).format(now);
+function romeDateLabel(lang: AdminLocale, now = new Date()) {
+  const label = formatAdminDate(now, lang, { timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long" });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
@@ -54,12 +57,12 @@ function EmptyNote({ icon, text }: { icon: string; text: string }) {
   return <p className="crm-empty"><CrmIcon d={icon} /><span>{text}</span></p>;
 }
 
-function ScoreRing({ score }: { score: number | null }) {
+function ScoreRing({ score, t }: { score: number | null; t: AdminDict }) {
   if (score === null) return null;
   const level = score >= 70 ? "alto" : score >= 40 ? "medio" : "basso";
   return (
     <span className="crm-score-ring" data-level={level} style={{ ["--p" as string]: score }}>
-      <ScoreBadge score={score} />
+      <ScoreBadge score={score} t={t} />
     </span>
   );
 }
@@ -74,14 +77,14 @@ function clockOf(value: string | null | undefined): string | null {
   return stamp ? `${stamp[1]}:${stamp[2]}` : null;
 }
 
-function ago(iso: string, now = Date.now()) {
+function ago(iso: string, lang: AdminLocale, t: AdminDict, now = Date.now()) {
   const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
-  if (min < 1) return "ora";
-  if (min < 60) return `${min} min fa`;
+  if (min < 1) return t.time.justNow;
+  if (min < 60) return interpolate(t.time.minutesAgo, { n: min });
   const h = Math.round(min / 60);
-  if (h < 24) return `${h} ${h === 1 ? "ora" : "ore"} fa`;
+  if (h < 24) return h === 1 ? t.crm.hoursAgoOne : interpolate(t.crm.hoursAgoN, { n: h });
   const d = Math.round(h / 24);
-  return d === 1 ? "ieri" : `${d} giorni fa`;
+  return d === 1 ? t.crm.yesterday : interpolate(t.crm.daysAgoN, { n: d });
 }
 
 const EVENT_ICON: Record<string, string> = {
@@ -89,33 +92,33 @@ const EVENT_ICON: Record<string, string> = {
   mail: "M3 6h18v12H3zM3 7l9 6 9-6", done: "M5 12.5l4.5 4.5L19 7.5", edit: "M4 20h4L19 9l-4-4L4 16zM14 6l4 4", archive: "M4 5h16v4H4zM6 9v10h12V9M10 13h4",
 };
 type Tone = "ok" | "accent" | "violet";
-function describe(e: CrmEvent): { icon: string; title: string; sub: string; tone?: Tone } | null {
-  const who = e.contactName ?? "Contatto";
+function describe(e: CrmEvent, lang: AdminLocale, t: AdminDict): { icon: string; title: string; sub: string; tone?: Tone } | null {
+  const who = e.contactName ?? t.crm.contact;
   switch (e.action) {
-    case "crm.contact_create": return { icon: EVENT_ICON.add, title: "Contatto aggiunto", sub: who, tone: "ok" };
-    case "crm.contact_update": return { icon: EVENT_ICON.edit, title: "Contatto aggiornato", sub: who };
+    case "crm.contact_create": return { icon: EVENT_ICON.add, title: t.crm.event.contactAdded, sub: who, tone: "ok" };
+    case "crm.contact_update": return { icon: EVENT_ICON.edit, title: t.crm.event.contactUpdated, sub: who };
     case "crm.stage": {
-      const to = typeof e.details.to === "string" && e.details.to in STAGE_LABEL ? STAGE_LABEL[e.details.to as Stage] : null;
-      return { icon: EVENT_ICON.stage, title: "Fase aggiornata", sub: to ? `${who} → ${to}` : who, tone: "accent" };
+      const to = typeof e.details.to === "string" && e.details.to in t.crm.stage ? adminCrmStageLabel(lang, e.details.to as Stage) : null;
+      return { icon: EVENT_ICON.stage, title: t.crm.event.stageUpdated, sub: to ? `${who} → ${to}` : who, tone: "accent" };
     }
-    case "crm.note": return { icon: EVENT_ICON.note, title: "Nota aggiunta", sub: who, tone: "ok" };
-    case "crm.followup_done": return { icon: EVENT_ICON.done, title: "Follow-up completato", sub: who, tone: "ok" };
-    case "crm.draft_sent": return { icon: EVENT_ICON.mail, title: "Email inviata da Radar", sub: typeof e.details.contact === "string" ? "Bozza Radar" : who };
-    case "crm.contact_archive": return { icon: EVENT_ICON.archive, title: "Contatto archiviato", sub: who };
-    case "crm.contact_restore": return { icon: EVENT_ICON.archive, title: "Contatto ripristinato", sub: who };
-    case "crm.opportunity_create": return { icon: EVENT_ICON.add, title: "Opportunità aperta", sub: who, tone: "accent" };
-    case "crm.opportunity_update": return { icon: EVENT_ICON.edit, title: "Trattativa aggiornata", sub: who };
+    case "crm.note": return { icon: EVENT_ICON.note, title: t.crm.event.noteAdded, sub: who, tone: "ok" };
+    case "crm.followup_done": return { icon: EVENT_ICON.done, title: t.crm.event.followUpDone, sub: who, tone: "ok" };
+    case "crm.draft_sent": return { icon: EVENT_ICON.mail, title: t.crm.event.radarEmailSent, sub: typeof e.details.contact === "string" ? t.crm.radarDraft : who };
+    case "crm.contact_archive": return { icon: EVENT_ICON.archive, title: t.crm.event.contactArchived, sub: who };
+    case "crm.contact_restore": return { icon: EVENT_ICON.archive, title: t.crm.event.contactRestored, sub: who };
+    case "crm.opportunity_create": return { icon: EVENT_ICON.add, title: t.crm.event.dealOpened, sub: who, tone: "accent" };
+    case "crm.opportunity_update": return { icon: EVENT_ICON.edit, title: t.crm.event.dealUpdated, sub: who };
     case "crm.opportunity_stage": {
-      const to = typeof e.details.to === "string" && e.details.to in STAGE_LABEL ? STAGE_LABEL[e.details.to as Stage] : null;
-      return { icon: EVENT_ICON.stage, title: "Fase della trattativa", sub: to ? `${who} → ${to}` : who, tone: "accent" };
+      const to = typeof e.details.to === "string" && e.details.to in t.crm.stage ? adminCrmStageLabel(lang, e.details.to as Stage) : null;
+      return { icon: EVENT_ICON.stage, title: t.crm.event.dealStage, sub: to ? `${who} → ${to}` : who, tone: "accent" };
     }
-    case "crm.activity_create": return { icon: EVENT_ICON.add, title: "Attività creata", sub: e.contactId ? who : "Senza contatto" };
-    case "crm.activity_update": return { icon: EVENT_ICON.edit, title: "Attività aggiornata", sub: e.contactId ? who : "Senza contatto" };
-    case "crm.activity_done": return { icon: EVENT_ICON.done, title: "Attività completata", sub: e.contactId ? who : "Senza contatto", tone: "ok" };
-    case "crm.activity_reopen": return { icon: EVENT_ICON.edit, title: "Attività riaperta", sub: e.contactId ? who : "Senza contatto" };
+    case "crm.activity_create": return { icon: EVENT_ICON.add, title: t.crm.event.activityCreated, sub: e.contactId ? who : t.crm.noContact };
+    case "crm.activity_update": return { icon: EVENT_ICON.edit, title: t.crm.event.activityUpdated, sub: e.contactId ? who : t.crm.noContact };
+    case "crm.activity_done": return { icon: EVENT_ICON.done, title: t.crm.event.activityDone, sub: e.contactId ? who : t.crm.noContact, tone: "ok" };
+    case "crm.activity_reopen": return { icon: EVENT_ICON.edit, title: t.crm.event.activityReopened, sub: e.contactId ? who : t.crm.noContact };
     case "crm.ingest": {
       const n = Number(e.details.inserted ?? 0), d = Number(e.details.duplicates ?? 0);
-      return { icon: EVENT_ICON.radar, title: "Prospect da Iris", sub: `${n} nuovi${d ? `, ${d} già presenti` : ""}`, tone: "violet" };
+      return { icon: EVENT_ICON.radar, title: t.crm.event.irisProspect, sub: `${interpolate(t.crm.ingestNew, { n })}${d ? `, ${interpolate(t.crm.ingestAlsoPresent, { n: d })}` : ""}`, tone: "violet" };
     }
     default: return null;
   }
@@ -153,6 +156,7 @@ function Sparkline({ points, tone }: { points: SparkPoint[]; tone: "quiet" | "ac
 }
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const sp = await searchParams;
   await backfillRequests().catch(() => {});
@@ -171,27 +175,25 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   ]);
   const [contactsLine, assignedLine, dealsLine, todoLine] = series;
   const pipelineStages: Stage[] = ["nuovo", "contattato", "call", "preventivo", "vinto", "perso"];
-  const feed = events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
+  const feed = events.map((e) => ({ e, d: describe(e, lang, t) })).filter((x) => x.d);
   const followShown = due.slice(0, LIST);
   const actShown = openActs.slice(0, LIST - followShown.length);
   const month = ov.newThisMonth > 0
-    ? { text: `+${ov.newThisMonth} questo mese`, tone: "ok" as const }
-    : { text: "Nessuno questo mese", tone: "quiet" as const };
+    ? { text: interpolate(t.crm.newThisMonth, { n: ov.newThisMonth }), tone: "ok" as const }
+    : { text: t.crm.noneThisMonth, tone: "quiet" as const };
   const freeLine = ov.unassigned === 0
-    ? { text: "Nessuno da assegnare", tone: "quiet" as const }
-    : { text: ov.unassigned === 1 ? "1 da assegnare" : `${ov.unassigned} da assegnare`, tone: "warn" as const };
+    ? { text: t.crm.noneToAssign, tone: "quiet" as const }
+    : { text: ov.unassigned === 1 ? t.crm.oneToAssign : interpolate(t.crm.toAssignN, { n: ov.unassigned }), tone: "warn" as const };
   const dealStatus = kpi.opportunitiesActive === 0
-    ? "Nessuna attiva"
-    : kpi.opportunitiesActive === 1 ? "1 attiva" : `${kpi.opportunitiesActive} attive`;
+    ? t.crm.noneActive
+    : kpi.opportunitiesActive === 1 ? t.crm.oneActive : interpolate(t.crm.nActive, { n: kpi.opportunitiesActive });
   const isLate = (day: string) => day.slice(0, 10) < today;
   const todoCount = due.length + openActs.length;
   const overdueCount = due.filter((a) => isLate(a.nextActionAt)).length + openActs.filter((a) => isLate(a.dueDate)).length;
   const urgent = overdueCount === 0
-    ? { text: "Nessuna urgente", tone: "quiet" as const }
-    : { text: overdueCount === 1 ? "1 urgente" : `${overdueCount} urgenti`, tone: "late" as const };
-  const todoTip = scope === "team"
-    ? "Il numero è il da fare del team, come la lista sotto: follow-up e attività in scadenza fino a domani. La linea è il totale dell'agenzia."
-    : "Il numero è il tuo da fare, come la lista sotto: follow-up e attività in scadenza fino a domani. La linea è il totale dell'agenzia, perché lo storico non si divide per persona.";
+    ? { text: t.crm.noneUrgent, tone: "quiet" as const }
+    : { text: overdueCount === 1 ? t.crm.oneUrgent : interpolate(t.crm.nUrgent, { n: overdueCount }), tone: "late" as const };
+  const todoTip = scope === "team" ? t.crm.todoTipTeam : t.crm.todoTipMine;
 
   return (
     <>
@@ -199,47 +201,47 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       <KeyShortcut href={`${PIPELINE}?nuova=1`} keyName="o" />
       <div className="crm-oggi-page">
         <header className="crm-oggi-top">
-          <p className="crm-oggi-eye">CRM / Overview</p>
+          <p className="crm-oggi-eye">{t.crm.eyebrow} / Overview</p>
           <div className="crm-oggi-title">
-            <h1 className="adm-h1">Oggi</h1>
-            <p className="crm-oggi-sub">{romeDateLabel()} · Panoramica operativa</p>
+            <h1 className="adm-h1">{t.crm.oggi}</h1>
+            <p className="crm-oggi-sub">{romeDateLabel(lang)} · {t.crm.operationalOverview}</p>
           </div>
           <div className="crm-oggi-actions">
-            <Link href={NEW_CONTACT as Route} className="crm-oggi-new"><CrmIcon d={EVENT_ICON.add} /><span>Nuovo contatto</span><kbd>N</kbd></Link>
+            <Link href={NEW_CONTACT as Route} className="crm-oggi-new"><CrmIcon d={EVENT_ICON.add} /><span>{t.crm.addContact}</span><kbd>N</kbd></Link>
             <details className="crm-oggi-menu">
-              <summary aria-label="Altre azioni"><CrmIcon d="M6 9l6 6 6-6" /></summary>
+              <summary aria-label={t.crm.moreActions}><CrmIcon d="M6 9l6 6 6-6" /></summary>
               <div className="crm-oggi-menu-list">
-                <Link href={`${PIPELINE}?nuova=1` as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><kbd>O</kbd></Link>
-                <Link href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span></Link>
-                <Link href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span></Link>
+                <Link href={`${PIPELINE}?nuova=1` as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>{t.crm.addDeal}</span><kbd>O</kbd></Link>
+                <Link href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>{t.crm.importContacts}</span></Link>
+                <Link href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>{t.crm.radarProspects}</span></Link>
               </div>
             </details>
           </div>
-          <CrmTabs current={CRM_HOME} />
+          <CrmTabs current={CRM_HOME} t={t} lang={lang} />
         </header>
 
         <div hidden><script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} /></div>
-        <section className="crm-oggi-kpis" aria-label="Numeri del CRM">
+        <section className="crm-oggi-kpis" aria-label={t.crm.crmNumbers}>
           <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /> Contatti</span>
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /> {t.crm.contacts}</span>
             <span className="crm-kpi-num"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
             <span className="crm-kpi-meta" data-tone={month.tone}><i />{month.text}</span>
             <Sparkline points={contactsLine} tone="quiet" />
           </article>
           <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11l2 2 4-4" /> Assegnati</span>
+            <span className="crm-kpi-label"><CrmIcon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11l2 2 4-4" /> {t.crm.assigned}</span>
             <span className="crm-kpi-num"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
             <span className="crm-kpi-meta" data-tone={freeLine.tone}><i />{freeLine.text}</span>
             <Sparkline points={assignedLine} tone="quiet" />
           </article>
           <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Opportunità</span>
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> {t.crm.deals}</span>
             <span className="crm-kpi-num"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
             <span className="crm-kpi-meta" data-tone="quiet"><i />{dealStatus}</span>
             <Sparkline points={dealsLine} tone="quiet" />
           </article>
           <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare <CrmTip text={todoTip} /></span>
+            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> {t.crm.toDo} <CrmTip text={todoTip} /></span>
             <span className="crm-kpi-num"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
             <span className="crm-kpi-meta" data-tone={urgent.tone}><i />{urgent.text}</span>
             <Sparkline points={todoLine} tone="accent" />
@@ -250,34 +252,34 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <section className="crm-card-panel" aria-labelledby="crm-todo-h">
             <div className="crm-panel-head">
               <h2 id="crm-todo-h" className="adm-h2">
-                <CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi
-                <CrmTip text="I follow-up si pianificano dalla scheda. Le attività si creano nella sezione Attività." />
+                <CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> {t.crm.toDoToday}
+                <CrmTip text={t.crm.followUpsFromCard} />
               </h2>
               <div className="crm-head-actions">
-                {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} /> : null}
-                <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Tutte le attività →</Link>
+                {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} t={t} /> : null}
+                <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>{t.crm.allActivities}</Link>
               </div>
             </div>
             <div className="crm-card-body">
               {followShown.length || actShown.length ? (
                 <ul className="crm-todo">
                   {followShown.map((a) => {
-                    const due = dueLabel(a.nextActionAt, today);
+                    const due = dueLabel(a.nextActionAt, today, lang, t);
                     const time = clockOf(a.nextActionAt);
                     return (
                       <li key={a.id} className="crm-todo-row">
                         <FollowUpDone id={a.id} seenAt={a.nextActionAt} label={`${a.nextAction || "Prossima azione"}, ${a.businessName}`} />
                         <div className="crm-todo-text">
                           <Link href={`${CRM_HOME}/${a.id}` as Route} className="crm-todo-title">{a.nextAction || "Prossima azione da definire"}</Link>
-                          <span className="adm-muted">{a.businessName}{scope === "team" ? ` · ${a.ownerName ?? "Non assegnato"}` : ""}</span>
+                          <span className="adm-muted">{a.businessName}{scope === "team" ? ` · ${a.ownerName ?? t.crm.unassigned}` : ""}</span>
                         </div>
                         <span className="crm-due" data-tone={due.tone}>{due.text}</span>
-                        <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                        <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> {t.crm.timeNotSet}</span>}</span>
                       </li>
                     );
                   })}
                   {actShown.map((a) => {
-                    const due = dueLabel(a.dueDate, today);
+                    const due = dueLabel(a.dueDate, today, lang, t);
                     const time = clockOf(a.dueTime);
                     return (
                       <LeavingRow key={a.id}>
@@ -285,10 +287,10 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                           <ActivityCheck id={a.id} version={a.version} done={false} label={`Completa ${a.title}`} />
                           <div className="crm-todo-text">
                             <Link href={`/admin/crm/attivita?a=${a.id}${scope === "team" ? "&ambito=team" : ""}` as Route} className="crm-todo-title">{a.title}</Link>
-                            <span className="adm-muted">{a.contactName ?? "Senza contatto"}</span>
+                            <span className="adm-muted">{a.contactName ?? t.crm.noContact}</span>
                           </div>
                           <span className="crm-due" data-tone={due.tone}>{due.text}</span>
-                          <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                          <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> {t.crm.timeNotSet}</span>}</span>
                         </div>
                       </LeavingRow>
                     );
@@ -301,7 +303,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <section className="crm-card-panel" aria-labelledby="crm-attn-h">
             <div className="crm-panel-head">
               <h2 id="crm-attn-h" className="adm-h2">
-                <CrmIcon d="M12 9v4M12 17h.01M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z" /> Richiedono attenzione
+                <CrmIcon d="M12 9v4M12 17h.01M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z" /> {t.crm.needsAttention}
               </h2>
             </div>
             <div className="crm-card-body">
@@ -315,12 +317,12 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                         {unassigned.map((c) => (
                           <li key={c.id}>
                             <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
-                            <span className="adm-muted">{SOURCE_LABEL[c.source]}</span>
+                            <span className="adm-muted">{adminCrmSourceLabel(lang, c.source)}</span>
                           </li>
                         ))}
                       </ul>
-                    ) : <p className="crm-empty">Nessun contatto senza responsabile.</p>}
-                    <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
+                    ) : <p className="crm-empty">{t.crm.noUnassignedContacts}</p>}
+                    <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>{t.crm.filteredList}</Link>
                   </>
                 )}
                 prioPanel={(
@@ -330,29 +332,29 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                         {priority.map((c) => (
                           <li key={c.id}>
                             <Link href={`${CRM_HOME}/${c.id}` as Route}>{c.businessName}</Link>
-                            <ScoreRing score={c.score} />
+                            <ScoreRing score={c.score} t={t} />
                           </li>
                         ))}
                       </ul>
-                    ) : <p className="crm-empty">Nessun contatto con punteggio.</p>}
-                    <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
+                    ) : <p className="crm-empty">{t.crm.noScoredContacts}</p>}
+                    <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>{t.crm.listByScore}</Link>
                   </>
                 )}
               />
             </div>
-            <p className="crm-card-foot"><Link className="crm-more is-accent" href={RUBRICA as Route}>Apri la rubrica →</Link></p>
+            <p className="crm-card-foot"><Link className="crm-more is-accent" href={RUBRICA as Route}>{t.crm.openRubrica}</Link></p>
           </section>
         </div>
 
         <section className="crm-card-panel" aria-labelledby="crm-pipe-h">
           <div className="crm-panel-head">
             <h2 id="crm-pipe-h" className="adm-h2">
-              <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Pipeline commerciale
-              <CrmTip text="Conta i contatti, non le trattative. La fase non viene azzerata e non apre un'opportunità." />
+              <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> {t.crm.salesPipeline}
+              <CrmTip text={t.crm.pipelineCountsContacts} />
             </h2>
-            <Link className="crm-more" href={PIPELINE as Route}>Apri pipeline →</Link>
+            <Link className="crm-more" href={PIPELINE as Route}>{t.crm.openPipeline}</Link>
           </div>
-          <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}`).join(", ")}>
+          <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${adminCrmStageLabel(lang, s)} ${ov.byStage[s]}`).join(", ")}>
             <div className="crm-bar-fill">
               {ov.total
                 ? pipelineStages.map((s) => (ov.byStage[s] ? <span key={s} data-stage={s} style={{ flexGrow: ov.byStage[s] }} /> : null))
@@ -362,7 +364,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <ol className="crm-pipe-cols">
             {pipelineStages.map((s) => (
               <li key={s}>
-                <span>{STAGE_LABEL[s]}</span>
+                <span>{adminCrmStageLabel(lang, s)}</span>
                 <strong>{ov.byStage[s]}</strong>
               </li>
             ))}
@@ -371,8 +373,8 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
         <section className="crm-card-panel" aria-labelledby="crm-feed-h">
           <div className="crm-panel-head">
-            <h2 id="crm-feed-h" className="adm-h2"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> Attività recenti</h2>
-            {founder ? <Link className="crm-more" href={"/admin/audit" as Route}>Vedi tutte →</Link> : null}
+            <h2 id="crm-feed-h" className="adm-h2"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> {t.crm.recentActivity}</h2>
+            {founder ? <Link className="crm-more" href={"/admin/audit" as Route}>{t.crm.seeAll}</Link> : null}
           </div>
           {feed.length ? (
             <ul className="crm-feed">
@@ -383,11 +385,11 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                     {e.contactId ? <Link href={`${CRM_HOME}/${e.contactId}` as Route}>{d!.title}</Link> : <strong>{d!.title}</strong>}
                     <span className="adm-muted">{d!.sub}{e.actor ? ` · ${e.actor}` : ""}</span>
                   </span>
-                  <time className="crm-ago" dateTime={e.at}>{ago(e.at)}</time>
+                  <time className="crm-ago" dateTime={e.at}>{ago(e.at, lang, t)}</time>
                 </li>
               ))}
             </ul>
-          ) : <EmptyNote icon="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" text="Nessuna attività recente." />}
+          ) : <EmptyNote icon="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" text={t.crm.noRecentActivity} />}
         </section>
       </div>
     </>

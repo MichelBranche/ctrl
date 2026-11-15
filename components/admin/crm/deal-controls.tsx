@@ -2,7 +2,8 @@
 import { useActionState, useState } from "react";
 import { panelDealOwnerAction, panelDealPriorityAction, panelDealStageAction, panelDealValueAction } from "@/app/admin/crm-opportunity-actions";
 import type { CrmState } from "@/app/admin/crm-actions";
-import { DEAL_PRIORITIES, DEAL_PRIORITY_LABEL, STAGES, STAGE_LABEL, type DealPriority, type Stage } from "@/lib/crm-core";
+import { DEAL_PRIORITIES, STAGES, type DealPriority, type Stage } from "@/lib/crm-core";
+import { useCrm } from "@/components/admin/crm/use-crm";
 
 type Deal = {
   id: string; version: number; stage: Stage; title: string; valueEur: number | null;
@@ -18,6 +19,7 @@ function useDealForm(fn: (s: CrmState, f: FormData) => Promise<CrmState>) {
 export function DealControls({ deal, owners, former }: {
   deal: Deal; owners: { id: string; name: string }[]; former: string | null;
 }) {
+  const { t, stage: stageLabel, priority: prioLabel } = useCrm();
   const stage = useDealForm(panelDealStageAction);
   const owner = useDealForm(panelDealOwnerAction);
   const priority = useDealForm(panelDealPriorityAction);
@@ -30,34 +32,34 @@ export function DealControls({ deal, owners, former }: {
     <div className="crm-deal-controls">
       <form action={stage.action} className="crm-quick-field">
         <input type="hidden" name="id" value={deal.id} /><input type="hidden" name="version" value={deal.version} />
-        <label htmlFor="crm-deal-stage">Fase commerciale</label>
+        <label htmlFor="crm-deal-stage">{t.crm.commercialStage}</label>
         <span className="crm-select-dot" data-stage={deal.stage}>
           <select id="crm-deal-stage" className="adm-input" name="stage" defaultValue={deal.stage} disabled={stage.pending} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
-            {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+            {STAGES.map((s) => <option key={s} value={s}>{stageLabel(s)}</option>)}
           </select>
         </span>
       </form>
       <form action={value.action} className="crm-deal-value">
         <input type="hidden" name="id" value={deal.id} /><input type="hidden" name="version" value={deal.version} />
-        <label htmlFor="crm-deal-title">Trattativa</label>
+        <label htmlFor="crm-deal-title">{t.crm.deal}</label>
         <input id="crm-deal-title" className="adm-input" name="title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
-        <label htmlFor="crm-deal-value">Valore stimato</label>
-        <input id="crm-deal-value" className="adm-input" name="value_eur" inputMode="decimal" value={euros} placeholder="Euro, se lo conosci" onChange={(e) => setEuros(e.target.value)} />
-        <button className="adm-btn adm-btn-sm" disabled={value.pending}>{value.pending ? "Salvo…" : "Salva trattativa"}</button>
+        <label htmlFor="crm-deal-value">{t.crm.estimatedValue}</label>
+        <input id="crm-deal-value" className="adm-input" name="value_eur" inputMode="decimal" value={euros} placeholder={t.crm.euroIfKnown} onChange={(e) => setEuros(e.target.value)} />
+        <button className="adm-btn adm-btn-sm" disabled={value.pending}>{value.pending ? t.crm.saving : t.crm.saveDeal}</button>
       </form>
       <form action={priority.action} className="crm-quick-field">
         <input type="hidden" name="id" value={deal.id} /><input type="hidden" name="version" value={deal.version} />
-        <label htmlFor="crm-deal-prio">Priorità</label>
+        <label htmlFor="crm-deal-prio">{t.crm.priority}</label>
         <select id="crm-deal-prio" className="adm-input" name="priority" defaultValue={deal.priority ?? ""} disabled={priority.pending} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
-          <option value="">Nessuna</option>
-          {DEAL_PRIORITIES.map((p) => <option key={p} value={p}>{DEAL_PRIORITY_LABEL[p]}</option>)}
+          <option value="">{t.crm.noneOption}</option>
+          {DEAL_PRIORITIES.map((p) => <option key={p} value={p}>{prioLabel(p)}</option>)}
         </select>
       </form>
       <form action={owner.action} className="crm-quick-field">
         <input type="hidden" name="id" value={deal.id} /><input type="hidden" name="version" value={deal.version} />
-        <label htmlFor="crm-deal-owner">Responsabile della trattativa</label>
+        <label htmlFor="crm-deal-owner">{t.crm.dealOwner}</label>
         <select id="crm-deal-owner" className="adm-input" name="owner_user_id" defaultValue={deal.ownerUserId ?? ""} disabled={owner.pending} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
-          <option value="">Non assegnato</option>
+          <option value="">{t.crm.unassigned}</option>
           {former && deal.ownerUserId ? <option value={deal.ownerUserId}>{former}</option> : null}
           {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>

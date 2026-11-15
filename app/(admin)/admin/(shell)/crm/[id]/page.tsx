@@ -12,6 +12,8 @@ import { SOURCE_LABEL, STAGES, STAGE_LABEL, websiteDomain } from "@/lib/crm-core
 import { NoteForm } from "@/components/admin/crm/note-form";
 import { RUBRICA } from "@/lib/crm-nav";
 import { canAccess } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 /** Build-time placeholder only (an invalid id renders notFound inside Suspense); real ids render on request. */
 export function generateStaticParams() {
@@ -25,6 +27,7 @@ export default function ContactPage({ params }: { params: Promise<{ id: string }
 const when = (iso: string) => new Date(iso).toLocaleString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 async function Body({ params }: { params: Promise<{ id: string }> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
@@ -39,19 +42,19 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className="adm-top">
-        <div><p className="adm-muted"><Link href={RUBRICA as Route}>Rubrica</Link> · {SOURCE_LABEL[c.source]}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} /></h1></div>
+        <div><p className="adm-muted"><Link href={RUBRICA as Route}>Rubrica</Link> · {adminCrmSourceLabel(lang, c.source)}{c.archived ? " · Archiviato" : ""}</p><h1 className="adm-h1">{c.businessName} <ScoreBadge score={c.score} t={t} /></h1></div>
         <div className="adm-row-actions">
-          <MapsLink contact={c} />
+          <MapsLink contact={c} t={t} />
           {meetings ? <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link> : null}
           {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
           {mail && c.email ? <Link className="adm-btn adm-btn-sm" href={composeHref(c.email) as Route}>Scrivi email</Link> : null}
           {mail && mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
         </div>
       </header>
-      <CrmTabs current={RUBRICA} />
+      <CrmTabs current={RUBRICA} t={t} lang={lang} />
       <div className="adm-grid2">
         <section className="adm-panel">
-          <div className="adm-panel-head"><h2 className="adm-h2">Riepilogo</h2><span className="adm-badge">{STAGE_LABEL[c.stage]}</span></div>
+          <div className="adm-panel-head"><h2 className="adm-h2">Riepilogo</h2><span className="adm-badge">{adminCrmStageLabel(lang, c.stage)}</span></div>
           <dl className="crm-dl">
             {c.contactName ? <><dt>Referente</dt><dd>{c.contactName}</dd></> : null}
             {c.email ? <><dt>Email</dt><dd><a href={`mailto:${c.email}`}>{c.email}</a></dd></> : null}
@@ -66,7 +69,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
           {c.scoreReasons.length ? <ul className="crm-reasons">{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul> : null}
           <form action={stageFormAction} className="crm-filters">
             <input type="hidden" name="id" value={c.id} /><input type="hidden" name="version" value={c.version} />
-            <select className="adm-input" name="stage" defaultValue={c.stage} aria-label="Fase">{STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}</select>
+            <select className="adm-input" name="stage" defaultValue={c.stage} aria-label="Fase">{STAGES.map((s) => <option key={s} value={s}>{adminCrmStageLabel(lang, s)}</option>)}</select>
             <button className="adm-btn adm-btn-sm">Cambia fase</button>
           </form>
           <form action={archiveAction}>

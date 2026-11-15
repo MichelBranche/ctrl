@@ -18,6 +18,8 @@ import { IrisRequestDialog } from "@/components/admin/crm/iris-request-dialog";
 import { currentIrisNotice, listIrisRequests, type IrisHistoryItem } from "@/lib/crm-iris";
 import { irisNoticeText } from "@/lib/crm-iris-core";
 import { canAccess, isFounder } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -77,6 +79,7 @@ const PHASE_LABEL: Record<IrisHistoryItem["phase"], string> = {
 };
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const founder = isFounder(me);
   const sp = await searchParams;
@@ -109,7 +112,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     const mine = drafts.filter((d) => d.contactId === c.id);
     return {
       id: c.id, version: c.version, name: c.businessName, type: c.type, stage: c.stage, city: c.city, address: c.address, region: c.region,
-      source: SOURCE_LABEL[c.source], score: c.score, nextAction: c.nextAction, nextActionAt: c.nextActionAt, href: href({ c: c.id }),
+      source: adminCrmSourceLabel(lang, c.source), score: c.score, nextAction: c.nextAction, nextActionAt: c.nextActionAt, href: href({ c: c.id }),
       reasons: c.scoreReasons, drafts: { ready: mine.filter((d) => d.status === "bozza").length, sent: mine.filter((d) => d.status === "inviata").length },
       fromIris: Boolean(c.irisRequestId),
     };
@@ -134,7 +137,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           {founder ? <IrisRequestDialog notice={notice} /> : null}
           <span className="crm-import"><ImportDialog /></span>
         </CrmHeader>
-        <CrmTabs current={RADAR} />
+        <CrmTabs current={RADAR} t={t} lang={lang} />
         {founder && notice ? (
           <div className="crm-iris-banner" role="status">
             <p>{irisNoticeText(notice)}</p>
@@ -205,11 +208,11 @@ async function IrisAnalysis({ contact: c, canSend }: { contact: Contact; canSend
       <section className="crm-iris crm-iris-analysis" aria-labelledby={`iris-${c.id}`}>
         <div className="crm-iris-top">
           <h3 id={`iris-${c.id}`}><CrmIcon d={I.spark} />Analisi di Iris</h3>
-          <span className="adm-muted">{c.source === "radar" ? `Ricevuta il ${day(c.createdAt)}` : SOURCE_LABEL[c.source]}</span>
+          <span className="adm-muted">{c.source === "radar" ? `Ricevuta il ${day(c.createdAt)}` : adminCrmSourceLabel(lang, c.source)}</span>
         </div>
         {c.score === null
           ? <p className="adm-muted">Iris non ha inviato un punteggio per questo prospect.</p>
-          : <p className="crm-iris-score"><ScoreBadge score={c.score} /><strong>{LEVEL(c.score)}</strong><span className="adm-muted">punteggio commerciale di Iris, su 100</span></p>}
+          : <p className="crm-iris-score"><ScoreBadge score={c.score} t={t} /><strong>{LEVEL(c.score)}</strong><span className="adm-muted">punteggio commerciale di Iris, su 100</span></p>}
         <h4>Motivi indicati da Iris</h4>
         {c.scoreReasons.length
           ? <ul className="crm-iris-points">{c.scoreReasons.map((r, i) => <li key={i}>{r}</li>)}</ul>

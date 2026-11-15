@@ -17,6 +17,8 @@ import {
 } from "@/lib/crm-nav";
 import { getOpportunity, listOpportunities, openDealAmounts, opportunityTotals, type DealFilter } from "@/lib/crm-opportunity";
 import { canAccess } from "@/lib/team-types";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { adminCrmActivityKindLabel, adminCrmMailReturnLabel, adminCrmPriorityLabel, adminCrmSourceLabel, adminCrmStageLabel, formatAdminDate, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
 
 type SP = Record<string, string | string[] | undefined>;
 const BOARD_LIMIT = 500;
@@ -40,6 +42,7 @@ const touchLabel = (touch: { at: string; name: string | null } | undefined) => {
 };
 
 async function Body({ searchParams }: { searchParams: Promise<SP> }) {
+  const { lang, t } = await getAdminCopy();
   const me = await requireSection("crm");
   const query = parsePipelineQuery(await searchParams);
   const contactsMode = query.tipo === "contatti";
@@ -100,7 +103,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     active: c.id === query.c,
     owner: c.ownerName ? (c.ownerActive === false ? `${c.ownerName} (non più nel team)` : c.ownerName) : "Non assegnato",
     touch: touchLabel(touches.get(c.id)),
-    source: SOURCE_LABEL[c.source],
+    source: adminCrmSourceLabel(lang, c.source),
     valueCents: shown(c).cents,
     valueKind: shown(c).kind,
   }));
@@ -153,7 +156,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             <Link href={href({ vista: "lista" }) as Route} aria-current={view.vista === "lista" ? "page" : undefined}>Lista</Link>
           </div>
         </div>
-        <CrmTabs current={PIPELINE} />
+        <CrmTabs current={PIPELINE} t={t} lang={lang} />
 
         <PipelineSearch action={PIPELINE}>
           <label className="crm-search">
@@ -171,7 +174,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <Filter label="Responsabile" current={query.resp === "me" ? "I miei" : query.resp === "none" ? "Non assegnato" : owners.find((o) => o.id === query.resp)?.name ?? "Tutti"} options={[
             ["", "Tutti i responsabili"], ["me", "I miei"], ["none", "Non assegnato"], ...owners.map((o) => [o.id, o.name] as [string, string]),
           ]} href={(resp) => href({ resp })} />
-          <Filter label="Fonte" current={isSource(query.fonte) ? SOURCE_LABEL[query.fonte] : "Tutte"} options={[
+          <Filter label="Fonte" current={isSource(query.fonte) ? adminCrmSourceLabel(lang, query.fonte) : "Tutte"} options={[
             ["", "Tutte le fonti"], ["radar", "Radar"], ["sito", "Sito"], ["manuale", "Manuale"],
           ]} href={(fonte) => href({ fonte })} />
           {!contactsMode ? (
