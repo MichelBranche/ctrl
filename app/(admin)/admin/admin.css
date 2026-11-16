@@ -2117,3 +2117,10 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
   .crm-ai-launcher { transition: none; }
 }
 
+
+/* Password reset (login-screen.tsx forgot/sent steps, reset-screen.tsx) */
+.adm-auth-forgot { display: block; margin: .5rem 0 0 auto; padding: .2rem 0; border: 0; background: none; color: var(--dim); font: inherit; font-size: .82rem; text-decoration: underline; text-decoration-color: rgba(255,255,255,.2); text-underline-offset: 3px; cursor: pointer; transition: color .2s, text-decoration-color .2s; }
+.adm-auth-forgot:hover, .adm-auth-forgot:focus-visible { color: var(--fg); text-decoration-color: var(--o); }
+.adm-auth-sent-mark { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; margin-bottom: 1.1rem; border-radius: 14px; border: 1px solid rgba(255,74,28,.3); background: rgba(255,74,28,.1); color: var(--o); }
+.adm-auth-sent-back { margin-top: 1.4rem; }
+.adm-auth .adm-auth-reset-new { display: inline-flex; margin-top: 1.2rem; }

@@ -23,8 +23,8 @@ export function proxy(req: NextRequest) {
     const response = legacy ? NextResponse.redirect(new URL(legacy, req.url), 307) : NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Cache-Control", "private, no-store");
-    // The invite link carries a single-use token in the path: never leak it in a Referer header.
-    if (pathname.startsWith("/admin/invito/")) response.headers.set("Referrer-Policy", "no-referrer");
+    // Invite and password reset links carry a single-use token in the URL: never leak it in a Referer header.
+    if (pathname.startsWith("/admin/invito/") || pathname === "/admin/login/reimposta") response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   }
 

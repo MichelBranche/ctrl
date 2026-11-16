@@ -190,18 +190,19 @@ export async function changePassword(current: string, next: string, confirm: str
   return "ok";
 }
 
-async function clientKey() {
+export async function clientKey() {
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
   return `ip:${ip}`;
 }
 
-async function isLocked(key: string) {
+export async function isLocked(key: string) {
   const res = await db().execute({ sql: "SELECT locked_til FROM login_attempts WHERE key = ?", args: [key] });
   return Number(res.rows[0]?.locked_til ?? 0) > Date.now();
 }
 
-async function recordFailure(key: string, max = MAX_FAILURES) {
+/** Counts one attempt for `key`; at `max` within `windowMs` the key is locked for `lockMs`. Also used as a plain rate limiter (password reset requests). */
+export async function recordFailure(key: string, max = MAX_FAILURES, windowMs = WINDOW_MS, lockMs = LOCK_MS) {
   const now = Date.now();
   await db().execute({
     sql: `INSERT INTO login_attempts (key, failures, first_at, locked_til) VALUES (?1, 1, ?2, 0)
@@ -209,7 +210,7 @@ async function recordFailure(key: string, max = MAX_FAILURES) {
             failures = CASE WHEN first_at < ?2 - ?3 THEN 1 ELSE failures + 1 END,
             first_at = CASE WHEN first_at < ?2 - ?3 THEN ?2 ELSE first_at END,
             locked_til = CASE WHEN first_at >= ?2 - ?3 AND failures + 1 >= ?4 THEN ?2 + ?5 ELSE locked_til END`,
-    args: [key, now, WINDOW_MS, max, LOCK_MS],
+    args: [key, now, windowMs, max, lockMs],
   });
 }
 

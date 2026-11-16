@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useAnimationControls, useReducedMotion, type V
 import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { signIn, type FormState } from "@/app/admin/actions";
+import { requestResetAction, type ForgotState } from "@/app/admin/reset-actions";
 import { REMEMBER_HOURS, SESSION_HOURS } from "@/lib/session-lifetime";
 import { AuthBackdrop, AuthCursor, ChromeMark, MagneticButton } from "@/components/admin/auth-fx";
 import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
@@ -12,7 +13,7 @@ import { interpolate } from "@/lib/admin-i18n";
 import { RequiredSetup } from "@/components/admin/required-setup";
 import { SecondStepForm } from "@/components/admin/two-factor";
 
-type Step = "password" | "code" | "setup";
+type Step = "password" | "code" | "setup" | "forgot" | "sent";
 
 const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } } };
 export const item: Variants = {
@@ -24,10 +25,12 @@ export const item: Variants = {
  * Admin sign-in: password, 2FA code and the mandatory founder setup, all in one glass card switched with Motion.
  * Security stays server-side: the checkbox only requests a 72-hour cookie, and only after the password and 2FA.
  */
-export function LoginScreen({ initialStep = "password", notice, noticeKey }: { initialStep?: Step; notice?: string; noticeKey?: "founderNotice" }) {
+export function LoginScreen({ initialStep = "password", notice, noticeKey }: { initialStep?: Step; notice?: string; noticeKey?: "founderNotice" | "resetDone" }) {
   const { t } = useAdminLocale();
   const banner = noticeKey ? t.login[noticeKey] : notice;
   const [step, setStep] = useState<Step>(initialStep);
+  // Typed once, reused: the forgot step starts with the address already entered on the sign-in form.
+  const [email, setEmail] = useState("");
   const reduce = useReducedMotion();
   const slide = reduce
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
@@ -61,7 +64,24 @@ export function LoginScreen({ initialStep = "password", notice, noticeKey }: { i
                 <motion.h1 variants={item} className="adm-auth-title">{t.login.title}</motion.h1>
                 <motion.p variants={item} className="adm-auth-sub">{t.login.sub}</motion.p>
                 {banner ? <motion.p variants={item} className="adm-auth-notice" role="status">{banner}</motion.p> : null}
-                <PasswordStep onNext={setStep} />
+                <PasswordStep onNext={setStep} email={email} setEmail={setEmail} />
+              </motion.div>
+            ) : step === "forgot" ? (
+              <motion.div key="forgot" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="adm-auth-kicker">{t.reset.forgotKicker}</p>
+                <h1 className="adm-auth-title">{t.reset.forgotTitle}</h1>
+                <p className="adm-auth-sub">{t.reset.forgotSub}</p>
+                <ForgotStep onSent={() => setStep("sent")} email={email} setEmail={setEmail} />
+                <button type="button" className="adm-otp-alt" onClick={() => setStep("password")}>{t.login.back}</button>
+              </motion.div>
+            ) : step === "sent" ? (
+              <motion.div key="sent" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+                <SentMark />
+                <p className="adm-auth-kicker">{t.reset.sentKicker}</p>
+                <h1 className="adm-auth-title">{t.reset.sentTitle}</h1>
+                <p className="adm-auth-sub">{t.reset.sentBody}</p>
+                <p className="adm-auth-remember-note">{t.reset.sentHint}</p>
+                <button type="button" className="adm-auth-ghost adm-auth-sent-back" onClick={() => setStep("password")}>{t.login.back} <Arrow /></button>
               </motion.div>
             ) : step === "code" ? (
               <motion.div key="code" {...slide} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
@@ -98,7 +118,7 @@ export function FloatField({ id, name, type, label, autoComplete, invalid, value
     <div className={`adm-float${children ? " has-eye" : ""}`}>
       <input
         id={id} name={name} type={type} autoComplete={autoComplete} required placeholder=" " value={value}
-        data-filled={filled || undefined} aria-invalid={invalid || undefined}
+        data-filled={filled || Boolean(value) || undefined} aria-invalid={invalid || undefined}
         onChange={(e) => { onChange?.(e.target.value); setFilled(e.target.value !== ""); }}
         // Chrome fires this when it autofills (CSS animation on :-webkit-autofill), before the value is exposed to JS.
         onAnimationStart={(e) => { if (e.animationName === "adm-autofill") setFilled(true); }}
@@ -109,10 +129,9 @@ export function FloatField({ id, name, type, label, autoComplete, invalid, value
   );
 }
 
-function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
+function PasswordStep({ onNext, email, setEmail }: { onNext: (s: Step) => void; email: string; setEmail: (v: string) => void }) {
   const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<FormState, FormData>(signIn, {});
-  const [email, setEmail] = useState("");
   const [show, setShow] = useState(false);
   const shake = useAnimationControls();
   const reduce = useReducedMotion();
@@ -141,6 +160,7 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
             </AnimatePresence>
           </button>
         </FloatField>
+        <button type="button" className="adm-auth-forgot" onClick={() => onNext("forgot")}>{t.login.forgot}</button>
       </motion.div>
       <motion.div variants={item}>
         <label className="adm-auth-remember">
@@ -166,6 +186,43 @@ function PasswordStep({ onNext }: { onNext: (s: Step) => void }) {
     </motion.form>
   );
 }
+
+/** Request step: always the same neutral answer (the server never says whether the address exists). */
+function ForgotStep({ onSent, email, setEmail }: { onSent: () => void; email: string; setEmail: (v: string) => void }) {
+  const { t } = useAdminLocale();
+  const [state, action, pending] = useActionState<ForgotState, FormData>(requestResetAction, {});
+  const shake = useAnimationControls();
+  const reduce = useReducedMotion();
+  const seen = useRef(state);
+  const id = useId();
+  useEffect(() => {
+    if (seen.current === state) return;
+    seen.current = state;
+    if (state.sent) onSent();
+    else if (state.error && !reduce) void shake.start({ x: [0, -10, 9, -6, 4, -2, 0], transition: { duration: 0.45 } });
+  }, [state, onSent, reduce, shake]);
+  return (
+    <motion.form action={action} animate={shake} className="adm-auth-form">
+      <FloatField id={`${id}-e`} name="email" type="email" label={t.login.email} autoComplete="username" invalid={Boolean(state.error)} value={email} onChange={setEmail} />
+      <AnimatePresence>
+        {state.error ? (
+          <motion.p key={state.error} className="adm-auth-error" role="alert" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+            {state.error}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
+      <MagneticButton className="adm-auth-btn" disabled={pending} aria-busy={pending}>
+        {pending ? <><span className="adm-auth-spin" aria-hidden="true" /> {t.reset.sending}</> : <>{t.reset.send} <Arrow /></>}
+      </MagneticButton>
+    </motion.form>
+  );
+}
+
+const SentMark = () => (
+  <motion.span className="adm-auth-sent-mark" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 320, damping: 22, delay: 0.08 }} aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></svg>
+  </motion.span>
+);
 
 export const Arrow = () => (
   <svg className="arrow" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>

@@ -444,3 +444,17 @@ export function ensureClientMeetSchema(): Promise<void> {
   }).catch((error) => { clientMeetReady = null; throw error; });
   return clientMeetReady;
 }
+
+let passwordResetReady: Promise<void> | null = null;
+/** Password reset links (see db/022_password_resets.sql). Additive. Only the SHA-256 of the token is stored. Rollback: DROP TABLE admin_password_resets. */
+export function ensurePasswordResetSchema(): Promise<void> {
+  passwordResetReady ??= retryBusy(async () => { await ensureTeamSchema(); await db().batch([
+    { sql: `CREATE TABLE IF NOT EXISTS admin_password_resets (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+      created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, used_at INTEGER
+    )` },
+    { sql: "CREATE INDEX IF NOT EXISTS admin_password_resets_user ON admin_password_resets (user_id)" },
+  ], "write"); }).catch((error) => { passwordResetReady = null; throw error; });
+  return passwordResetReady;
+}
