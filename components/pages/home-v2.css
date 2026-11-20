@@ -126,8 +126,8 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   background: var(--hv-glass);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: var(--hv-fg);
 }
 .hv-pill-light { background: rgba(255, 255, 255, 0.12); }
@@ -699,8 +699,8 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: calc(var(--hv-r) - 8px);
   background: rgba(20, 20, 20, 0.45);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 .hv-stat dt {
   font-variant-numeric: tabular-nums;
@@ -806,8 +806,8 @@
 .hn-bar {
   box-sizing: border-box;
   background: rgba(20, 20, 20, 0);
-  backdrop-filter: blur(0px) saturate(1);
   -webkit-backdrop-filter: blur(0px) saturate(1);
+  backdrop-filter: blur(0px) saturate(1);
   width: 100%;
   height: 55px;
   padding: 0;
@@ -828,8 +828,8 @@
   padding: 5px;
   /* Darker than the reference (rgba(51,51,51,.25), blur 10) so the items stay readable over bright or busy areas. */
   background: rgba(20, 20, 20, 0.76);
-  backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
 }
 .hn-row {
   display: grid;
@@ -909,9 +909,10 @@
   padding: 0;
   list-style: none;
   border-radius: 10px;
-  background: rgba(51, 51, 51, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* Same idea as the pill but more opaque (reference: rgba(51,51,51,.25), blur 10): page text must not read through. */
+  background: rgba(20, 20, 20, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
 }
 .hn-sub-item {
   box-sizing: border-box;
