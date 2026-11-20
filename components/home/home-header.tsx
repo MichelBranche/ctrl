@@ -8,6 +8,7 @@ import { Wordmark } from "@/components/wordmark";
 import { LangSwitch } from "@/components/lang-switch";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { useLocale } from "@/components/use-locale";
+import { SHOP_ENABLED } from "@/lib/features";
 import { localize } from "@/lib/i18n";
 import { UI_SPRING, springLinear } from "./springs";
 
@@ -63,7 +64,7 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
   const pendingHref = useRef<string | null>(null);
 
   const simple = [
-    { href: localize("/shop", lang), label: t.nav.shop },
+    ...(SHOP_ENABLED ? [{ href: localize("/shop", lang), label: t.nav.shop }] : []),
     { href: localize("/team", lang), label: t.nav.team },
   ];
 
@@ -242,9 +243,11 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
 
         <div className="hn-end">
           <LangSwitch className="hn-lang" />
-          <span className="hn-cart">
-            <CartDrawer lang={lang} />
-          </span>
+          {SHOP_ENABLED ? (
+            <span className="hn-cart">
+              <CartDrawer lang={lang} />
+            </span>
+          ) : null}
           <button
             type="button"
             className="hn-toggle"

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { projectCategories, services, websitesInOrder } from "@/lib/content";
 import { getPublishedPosts } from "@/lib/journal";
 import { getShopProducts } from "@/lib/shop";
+import { SHOP_ENABLED } from "@/lib/features";
 
 const siteUrl = "https://www.ctrlagency.dev";
 /** Day the public titles, descriptions and structured data were revised. */
@@ -51,7 +52,6 @@ const staticItalianPaths = [
   "/services",
   "/team",
   "/journal",
-  "/shop",
   "/contact",
   "/bookings",
   "/privacy",
@@ -87,8 +87,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     journal.push(entry(`/en/journal/${post.slug}`, dated(post.published_at), { "en-US": enUrl }));
   }
 
+  // Shop hidden (lib/features): neither /shop nor product pages go in the sitemap.
+  const shopPages: MetadataRoute.Sitemap = SHOP_ENABLED ? paired("/shop", UPDATED) : [];
   const shop: MetadataRoute.Sitemap = shopProducts
-    .filter((product) => product.published)
+    .filter((product) => SHOP_ENABLED && product.published)
     .flatMap((product) => {
       const created = dated(product.createdAt);
       return paired(`/shop/${product.slug}`, created > UPDATED ? created : UPDATED);
@@ -96,7 +98,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const pages = staticItalianPaths.flatMap((path) => paired(path, UPDATED));
   const seen = new Set<string>();
-  return [...pages, ...journal, ...shop].filter((item) => {
+  return [...pages, ...shopPages, ...journal, ...shop].filter((item) => {
     if (seen.has(item.url)) return false;
     seen.add(item.url);
     return true;
