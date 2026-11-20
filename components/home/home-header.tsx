@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { SwapText } from "@/components/swap-text";
 import { Wordmark } from "@/components/wordmark";
 import { LangSwitch } from "@/components/lang-switch";
@@ -56,6 +57,10 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
   const [menu, setMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const closeTimer = useRef<number | undefined>(undefined);
+  const router = useRouter();
+  const pathname = usePathname();
+  /** Link tapped in the mobile menu: followed once the menu's history entry is popped. */
+  const pendingHref = useRef<string | null>(null);
 
   const simple = [
     { href: localize("/shop", lang), label: t.nav.shop },
@@ -80,10 +85,57 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
     };
   }, []);
 
+  // Mobile menu. Opening pushes a history entry so the back gesture closes it; the X, Esc and
+  // link taps pop that entry. While open the page does not scroll (html.nav-open + Lenis stop).
+  const openMobile = useCallback(() => {
+    window.history.pushState({ ...window.history.state, hnMenu: true }, "");
+    setOpen(true);
+  }, []);
+  const closeMobile = useCallback(() => {
+    if (window.history.state?.hnMenu) window.history.back();
+    else setOpen(false);
+  }, []);
+  const followFromMenu = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (!window.history.state?.hnMenu) {
+      setOpen(false);
+      router.push(href);
+      return;
+    }
+    pendingHref.current = href;
+    window.history.back();
+  };
+
   useEffect(() => {
-    document.documentElement.classList.toggle("nav-open", open);
-    return () => document.documentElement.classList.remove("nav-open");
-  }, [open]);
+    if (!open) return;
+    const html = document.documentElement;
+    const lenis = (window as unknown as { __lenis?: { stop: () => void; start: () => void } }).__lenis;
+    html.classList.add("nav-open");
+    lenis?.stop();
+    const onPop = () => {
+      setOpen(false);
+      const href = pendingHref.current;
+      pendingHref.current = null;
+      if (href) router.push(href);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMobile();
+    };
+    window.addEventListener("popstate", onPop);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      html.classList.remove("nav-open");
+      lenis?.start();
+      window.removeEventListener("popstate", onPop);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, closeMobile, router]);
+
+  // Any route change (language switch, links) closes the menu.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   const close = useCallback((focusButton = false) => {
     setMenu((current) => {
@@ -196,36 +248,56 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
           <button
             type="button"
             className="hn-toggle"
+            data-open={open ? "" : undefined}
             aria-expanded={open}
             aria-controls="hn-mobile"
-            onClick={() => setOpen((value) => !value)}
+            aria-label={open ? t.close : t.menu}
+            onClick={() => (open ? closeMobile() : openMobile())}
           >
-            {open ? t.close : t.menu}
+            <span className="hn-toggle-label" aria-hidden="true">
+              {open ? t.close : t.menu}
+            </span>
+            <span className="hn-toggle-icon" aria-hidden="true">
+              <i />
+              <i />
+            </span>
           </button>
         </div>
         </div>
       </div>
 
-      {open ? (
-        <nav id="hn-mobile" className="nav-mobile hn-mobile" aria-label="Mobile">
-          {menus.map((m) => (
-            <div key={m.id} className="hn-mobile-group">
+      {/* Always mounted (no mount cost on tap); hidden and inert until opened. Only transform/opacity animate. */}
+      <nav
+        id="hn-mobile"
+        className="hn-mobile"
+        aria-label="Mobile"
+        data-open={open ? "" : undefined}
+        inert={!open}
+        data-lenis-prevent
+      >
+        <div className="hn-mobile-inner">
+          {menus.map((m, gi) => (
+            <div key={m.id} className="hn-mobile-group" style={{ "--i": gi } as React.CSSProperties}>
               <p className="hn-mobile-label">{m.label}</p>
               {m.groups.flat().map((item) => (
-                <Link key={item.href} href={item.href} className="hn-mobile-sub" onClick={() => setOpen(false)}>
+                <Link key={item.href} href={item.href} className="hn-mobile-sub" onClick={(e) => followFromMenu(e, item.href)}>
                   {item.label}
                 </Link>
               ))}
             </div>
           ))}
-          {simple.map((link) => (
-            <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
-              {link.label}
-            </Link>
-          ))}
-          <LangSwitch className="hn-mobile-lang" />
-        </nav>
-      ) : null}
+          <div className="hn-mobile-group hn-mobile-simple" style={{ "--i": menus.length } as React.CSSProperties}>
+            {simple.map((link) => (
+              <Link key={link.href} href={link.href} className="hn-mobile-main" onClick={(e) => followFromMenu(e, link.href)}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="hn-mobile-group" style={{ "--i": menus.length + 1 } as React.CSSProperties}>
+            <LangSwitch className="hn-mobile-lang" />
+          </div>
+        </div>
+      </nav>
     </header>
   );
 }

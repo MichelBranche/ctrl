@@ -16,7 +16,9 @@
 }
 
 /* Header */
-.tm-hd { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+/* Only the 5.0 score shows; kicker and title stay for screen readers (section label). */
+.tm-hd { display: flex; justify-content: flex-end; align-items: center; gap: 20px; }
+.tm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .tm-hd-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .tm-kicker {
   display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 5px 11px 5px 9px;
@@ -181,8 +183,7 @@
 @media (max-width: 809.98px) {
   .tm-card { min-height: 0; padding: 72px 16px 18px; gap: 18px; }
   .tm-controls { padding: 0 60px 0 50px; }
-  .tm-hd { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .tm-faces { display: none; }
+  .tm-hd { justify-content: flex-start; }
   .tm-title { font-size: 24px; }
   .tm-page { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: minmax(302px, auto); }
   .tm-bed { grid-area: auto !important; }

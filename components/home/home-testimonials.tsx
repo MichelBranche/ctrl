@@ -16,15 +16,8 @@ type Kind = "quote" | "feature" | "cover";
 /** seq: entrance order (the reference brings the big card in first). */
 type Slot = { area: string; kind: Kind; tone: string; seq: number };
 
-/** Desktop layouts (reference page A then page B), cycled per page. */
+/** Desktop layouts, cycled per page: the tall photo layout (reference page B) opens the carousel. */
 const LAYOUTS: Slot[][] = [
-  [
-    { area: "1 / 1 / 2 / 8", kind: "quote", tone: "accent", seq: 0 },
-    { area: "1 / 8 / 2 / 13", kind: "feature", tone: "paper", seq: 1 },
-    { area: "2 / 1 / 3 / 5", kind: "quote", tone: "grey", seq: 2 },
-    { area: "2 / 5 / 3 / 9", kind: "cover", tone: "ink", seq: 3 },
-    { area: "2 / 9 / 3 / 13", kind: "quote", tone: "char", seq: 4 },
-  ],
   [
     { area: "1 / 5 / 2 / 9", kind: "feature", tone: "paper", seq: 1 },
     { area: "1 / 1 / 3 / 5", kind: "cover", tone: "ink", seq: 0 },
@@ -32,7 +25,16 @@ const LAYOUTS: Slot[][] = [
     { area: "2 / 5 / 3 / 9", kind: "quote", tone: "grey", seq: 3 },
     { area: "2 / 9 / 3 / 13", kind: "quote", tone: "char", seq: 4 },
   ],
+  [
+    { area: "1 / 1 / 2 / 8", kind: "quote", tone: "accent", seq: 0 },
+    { area: "1 / 8 / 2 / 13", kind: "feature", tone: "paper", seq: 1 },
+    { area: "2 / 1 / 3 / 5", kind: "quote", tone: "grey", seq: 2 },
+    { area: "2 / 5 / 3 / 9", kind: "cover", tone: "ink", seq: 3 },
+    { area: "2 / 9 / 3 / 13", kind: "quote", tone: "char", seq: 4 },
+  ],
 ];
+/** Display order: reviews 6-10 first, so the page with the big headphones photo (Valentina) loads first, on mobile too. */
+const ORDERED = [...TESTIMONIALS.slice(5), ...TESTIMONIALS.slice(0, 5)];
 const MOBILE_TONES = ["accent", "paper", "grey", "char"];
 const PER_PAGE = { desktop: 5, mobile: 2 };
 /** Reference timings (ms). */
@@ -184,7 +186,7 @@ export function HomeTestimonials() {
   const [reduce, setReduce] = useState(false);
 
   const per = mobile ? PER_PAGE.mobile : PER_PAGE.desktop;
-  const pages = Array.from({ length: Math.ceil(TESTIMONIALS.length / per) }, (_, p) => TESTIMONIALS.slice(p * per, p * per + per));
+  const pages = Array.from({ length: Math.ceil(ORDERED.length / per) }, (_, p) => ORDERED.slice(p * per, p * per + per));
   const count = pages.length;
   const avg = TESTIMONIALS.reduce((sum, t) => sum + t.stars, 0) / TESTIMONIALS.length;
 
@@ -256,7 +258,7 @@ export function HomeTestimonials() {
     >
       <div className="hv-card tm-card">
         <header className="tm-hd">
-          <div className="tm-hd-left">
+          <div className="tm-hd-left tm-sr">
             <p className="tm-kicker">
               <i aria-hidden="true" />
               {c.kicker}
@@ -267,7 +269,7 @@ export function HomeTestimonials() {
           </div>
           <div className="tm-score">
             <span className="tm-faces" aria-hidden="true">
-              {TESTIMONIALS.filter((t) => t.avatar).slice(0, 4).map((t) => (
+              {ORDERED.filter((t) => t.avatar).slice(0, 4).map((t) => (
                 <Avatar key={t.name} item={t} size={30} />
               ))}
             </span>

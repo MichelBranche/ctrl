@@ -4,7 +4,7 @@
  * To add or edit a review: change the entries below. `quote` is the client's
  * text exactly as sent (no quotation marks: the card adds them); `mark` must
  * be a phrase that appears word for word inside `quote`, it gets the animated
- * highlight. Pages hold 5 reviews each on desktop (entries 1-5, then 6-10),
+ * highlight. Pages hold 5 reviews each on desktop (the carousel shows entries 6-10 first, then 1-5),
  * 2 each on mobile. `avatar` is optional (initials otherwise); `cover` puts a
  * photo behind the review (entries 4 and 7 sit in the photo slots on desktop).
  *
