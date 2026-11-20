@@ -741,6 +741,8 @@ export const TEAM_PHOTOS: Record<string, string> = {
   "michel-branche": "/team/photo-b.webp",
   "kallebe-gallo": "/team/photo-a.webp",
   "jacopo-manzalini": "/team/photo-c.webp",
+  "matteo-riva": "/team/matteo-riva.webp",
+  "giulia-moretti": "/team/giulia-moretti.webp",
 };
 
 /** Studio team. Add new members here; the Team page renders them in order. */
@@ -778,6 +780,24 @@ export const team: TeamMember[] = [
       website: "https://portafoglio-alpha.vercel.app/",
       github: "https://github.com/kallebesiqueira-dev",
     },
+  },
+  {
+    slug: "matteo-riva",
+    name: "Matteo Riva",
+    role: { it: "Sales Representative", en: "Sales Representative" },
+    bio: { it: "", en: "" },
+    skills: [],
+    photo: TEAM_PHOTOS["matteo-riva"],
+    socials: {},
+  },
+  {
+    slug: "giulia-moretti",
+    name: "Giulia Moretti",
+    role: { it: "Sales Representative", en: "Sales Representative" },
+    bio: { it: "", en: "" },
+    skills: [],
+    photo: TEAM_PHOTOS["giulia-moretti"],
+    socials: {},
   },
   {
     slug: "jacopo-manzalini",
