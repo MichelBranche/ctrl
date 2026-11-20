@@ -6,9 +6,7 @@ import { useRef, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
 import { CtrlMark } from "@/components/letter-hover";
-import { MaskedLine } from "@/components/masked-line";
 import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
@@ -17,15 +15,7 @@ import { CONTACT_EMAIL } from "@/lib/content";
 import type { SocialKey, SocialLink } from "@/lib/settings-types";
 import "./site-footer.css";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
-
-function Arrow() {
-  return (
-    <svg className="h-arrow" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
-}
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const DEFAULT_FOOTER_SOCIALS: SocialLink[] = [
   { key: "linkedin", label: "LinkedIn", url: "https://www.linkedin.com/company/ctrl%C2%AE/" },
@@ -67,58 +57,12 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
       if (!scope) return;
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
-        gsap.set(scope.querySelectorAll("[data-mask]"), { y: "0%" });
-      });
-
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const title = scope.querySelector<HTMLElement>(".h-close-title [data-mask]");
-        let split: SplitText | undefined;
-        if (title) {
-          split = SplitText.create(title, { type: "words", wordsClass: "h-word", aria: "none" });
-          gsap.set(title, { y: "0%" });
-          gsap.fromTo(
-            split.words,
-            { yPercent: 115, rotate: 3 },
-            {
-              yPercent: 0,
-              rotate: 0,
-              duration: 1.1,
-              stagger: 0.06,
-              ease: "power4.out",
-              scrollTrigger: { trigger: title, start: "top 90%" },
-            },
-          );
-          gsap.fromTo(split.words, { opacity: 0.15 }, {
-            opacity: 1,
-            stagger: 0.1,
-            ease: "none",
-            scrollTrigger: { trigger: scope, start: "top 75%", end: "top 30%", scrub: true },
-          });
-        }
-
-        const vline = scope.querySelector(".h-vline");
-        if (vline) {
-          gsap.fromTo(vline, { scaleY: 0 }, {
-            scaleY: 1,
-            transformOrigin: "50% 0",
-            ease: "none",
-            scrollTrigger: { trigger: vline, start: "top 85%", end: "bottom 60%", scrub: true },
-          });
-        }
-
         gsap.fromTo(".h-mark", { yPercent: 25, opacity: 0 }, {
           yPercent: 0,
           opacity: 1,
           ease: "none",
           scrollTrigger: { trigger: scope, start: "top 90%", end: "top 40%", scrub: true },
-        });
-        gsap.fromTo(".h-circle-lg", { scale: 0.4, rotate: -90 }, {
-          scale: 1,
-          rotate: 0,
-          ease: "back.out(1.6)",
-          duration: 1.1,
-          scrollTrigger: { trigger: ".h-circle-lg", start: "top 92%" },
         });
         gsap.fromTo(".h-socials li", { y: 20, opacity: 0 }, {
           y: 0,
@@ -129,7 +73,6 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
           scrollTrigger: { trigger: ".h-socials", start: "top 95%" },
         });
 
-        return () => split?.revert();
       });
     },
     { scope: root },
@@ -141,17 +84,23 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
       <CtrlMark className="h-mark" />
       <FooterNewsletter lang={lang} />
       <div className="h-close-info">
-        <p className="h-small h-close-kicker">
-          <span>{h.closeKicker[0]}</span>
-          <span>{h.closeKicker[1]}</span>
-        </p>
-        <p className="h-close-lead">{h.closeLead}</p>
-        <p className="h-small h-close-kicker">
-          <Link href={localize(LOCAL_PATH, lang) as Route}>{h.location}</Link>
-          <span>© 2026 CTRL®</span>
-        </p>
+        <div className="h-close-col h-close-about">
+          <p className="h-small h-close-kicker">
+            <span>{h.closeKicker[0]}</span>
+            <span>{h.closeKicker[1]}</span>
+          </p>
+          <p className="h-close-lead">{h.closeLead}</p>
+        </div>
+        <div className="h-close-col h-close-contact">
+          <a className="h-close-mail" href={`mailto:${CONTACT_EMAIL}`}>
+            {CONTACT_EMAIL}
+          </a>
+          <Link className="h-small h-close-place" href={localize(LOCAL_PATH, lang) as Route}>
+            {h.location}
+          </Link>
+        </div>
         {footerSocials.length ? (
-          <ul className="h-socials">
+          <ul className="h-close-col h-socials">
             {footerSocials.map((s) => (
               <li key={s.key}>
                 <a className="h-small" href={s.url} target="_blank" rel="noopener noreferrer me">
@@ -166,19 +115,13 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
             ))}
           </ul>
         ) : null}
-        <p className="h-small h-legal">
+        <p className="h-close-col h-small h-legal">
           <Link href={localize("/bookings", lang) as Route}>{t.bookings.nav}</Link>
           <a href={lang === "en" ? "/en/privacy" : "/privacy"}>Privacy</a>
           <a href={lang === "en" ? "/en/cookies" : "/cookie"}>Cookie</a>
         </p>
+        <p className="h-close-col h-small h-close-copy">© 2026 CTRL®</p>
       </div>
-      <h2 className="h-close-title">
-        <MaskedLine text={h.closeTitle} mask="footer" />
-      </h2>
-      <i className="h-vline" aria-hidden="true" />
-      <a href={`mailto:${CONTACT_EMAIL}`} className="h-circle h-circle-lg" aria-label={h.closeCta}>
-        <Arrow />
-      </a>
     </footer>
   );
 }
