@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroReviews } from "@/components/hero-reviews";
 import { HomeFilm } from "@/components/home-film";
+import { HomeEcosystem } from "@/components/home/home-ecosystem";
 import { HomeHeader } from "@/components/home/home-header";
 import { HomeMotionV2 } from "@/components/home/home-motion-v2";
 import { HomePlates } from "@/components/home/home-plates";
@@ -151,6 +152,18 @@ export async function HomePage({ lang }: { lang: Locale }) {
               <p className="hv-services-note">{h.lead}</p>
             </div>
           </section>
+
+          {/* 3b. ECOSISTEMA CTRL: software di CTRL (dati in lib/ecosystem.ts) */}
+          <HomeEcosystem
+            lang={lang}
+            copy={{
+              kicker: h.ecoKicker,
+              title: h.ecoTitle,
+              lead: h.ecoLead,
+              subs: { quotes: h.ecoQuotes, agenda: h.ecoAgenda },
+              open: h.ecoOpen,
+            }}
+          />
 
           {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
           {/* No visible title: the player and its poster speak for themselves; the name stays for screen readers. */}
