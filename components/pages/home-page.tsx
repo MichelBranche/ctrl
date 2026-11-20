@@ -58,7 +58,36 @@ export async function HomePage({ lang }: { lang: Locale }) {
 
   return (
     <>
-      <HomeHeader />
+      <HomeHeader
+        menus={[
+          {
+            id: "work",
+            label: t.nav.work,
+            items: [
+              { label: LE_VELE.client, href: localize(LE_VELE.path, lang) },
+              ...homeFeatured.map((item) => ({ label: item.title[lang], href: localize(item.href, lang) })),
+              { label: h.allProjects, href: localize("/projects", lang) },
+            ],
+          },
+          {
+            id: "services",
+            label: t.nav.services,
+            items: [
+              ...services.map((service) => ({ label: service.title[lang], href: localize(`/services/${service.slug}`, lang) })),
+              { label: h.navAllServices, href: localize("/services", lang) },
+            ],
+          },
+          {
+            id: "more",
+            label: h.navMore,
+            items: [
+              { label: t.nav.journal, href: localize("/journal", lang) },
+              { label: t.nav.contact, href: localize("/contact", lang) },
+              { label: h.navTalk, href: localize("/bookings", lang) },
+            ],
+          },
+        ]}
+      />
       <HomeMotionV2>
         <main className="hv">
           {/* 1. HERO */}
@@ -78,9 +107,6 @@ export async function HomePage({ lang }: { lang: Locale }) {
               </div>
 
               <div className="hv-hero-bottom">
-                <p className="hv-hero-lead" data-hv-fade>
-                  {h.lead}
-                </p>
                 <div className="hv-pill" data-hv-pill>
                   <span className="hv-pill-name">{h.heroPill}</span>
                   <a href="#work" className="hv-cta">
@@ -103,19 +129,18 @@ export async function HomePage({ lang }: { lang: Locale }) {
                 <h2 className="hv-h2" data-hv-title>
                   {h.servicesTitle[0]}
                 </h2>
-                <div className="hv-services-side" data-hv-rise>
-                  <p className="hv-services-sub">
-                    {h.servicesTitle[1]} {h.servicesTitle[2]}
-                  </p>
-                  <p className="hv-services-lead">{h.servicesLead}</p>
-                </div>
+                <p className="hv-services-sub" data-hv-rise>
+                  {h.servicesIntro}
+                </p>
               </div>
               <ul className="hv-services-grid" data-hv-stagger>
                 {services.map((service) => (
                   <li key={service.slug}>
                     <Link href={localize(`/services/${service.slug}`, lang)} className="hv-service">
-                      <span className="hv-service-num">{service.index}</span>
-                      <h3>{service.title[lang]}</h3>
+                      <h3>
+                        {service.title[lang]}
+                        <ArrowUpRight />
+                      </h3>
                       <p>{service.text[lang]}</p>
                       <span className="hv-service-more">
                         {h.servicesMore}
@@ -125,6 +150,8 @@ export async function HomePage({ lang }: { lang: Locale }) {
                   </li>
                 ))}
               </ul>
+              {/* SEO line that used to sit in the hero: same words, now under the services. */}
+              <p className="hv-services-note">{h.lead}</p>
             </div>
           </section>
 
