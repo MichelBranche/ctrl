@@ -2,40 +2,51 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
 import { SwapText } from "@/components/swap-text";
 import { Wordmark } from "@/components/wordmark";
 import { LangSwitch } from "@/components/lang-switch";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
+import { UI_SPRING, springLinear } from "./springs";
 
-/** Scroll distance (px) after which the full-width bar turns into the floating pill. */
-const PILL_AT = 96;
+/** Scroll distance (px) after which the bar turns into the floating pill (reference: ~5-10px). */
+const PILL_AT = 8;
+/** Hover intent before a dropdown opens and grace before it closes (reference: ~50ms each). */
+const OPEN_DELAY = 50;
+const CLOSE_DELAY = 50;
+/** Row stagger (s): every row drops 100ms after the previous one, across blocks; a block starts with its first row. */
+const ROW_STAGGER = 0.1;
+
+const SPRING_CSS = springLinear(UI_SPRING);
 
 export type NavItem = { label: string; href: string };
-export type NavMenu = { id: string; label: string; href?: string; items: NavItem[] };
-
-/**
- * Submenu motion. The Work Louder mirror only ships the SSR markup, not the
- * runtime that animates its dropdown, so these numbers are estimated from the
- * reference capture: separate pills dropping in with a short stagger.
- */
-const MENU_IN = { duration: 0.45, stagger: 0.035, y: -10, blur: 6, ease: "back.out(1.4)" };
+export type NavMenu = { id: string; label: string; groups: NavItem[][] };
 
 function Arrow() {
   return (
-    <svg className="hn-sub-arrow" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <svg className="hn-sub-arrow" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M4 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
     </svg>
   );
 }
 
+/** Distance from the arrow's resting spot (after the label) to the row's right edge. */
+function measureShift(row: HTMLElement) {
+  const label = row.querySelector<HTMLElement>(".hn-sub-label");
+  const arrow = row.querySelector<HTMLElement>(".hn-sub-arrow");
+  if (!label || !arrow) return;
+  const style = getComputedStyle(row);
+  const inner = row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const used = label.offsetWidth + parseFloat(style.columnGap || "0") + arrow.getBoundingClientRect().width;
+  row.style.setProperty("--hn-shift", `${Math.max(0, inner - used)}px`);
+}
+
 /**
- * Home-only header. A clean bar over the hero that becomes a floating, blurred
- * pill once the visitor scrolls. Progetti, Servizi and Altro open a stack of
- * separate pills under the bar (hover, click or keyboard; Esc closes).
- * Inner pages keep SiteHeader untouched.
+ * Home-only header. A transparent bar inside the hero card that springs into a
+ * centred, blurred pill after the first pixels of scroll and stays fixed.
+ * Progetti, Servizi and Altro open stacked blocks that drop in one after the
+ * other (hover, click or keyboard; Esc closes). Inner pages keep SiteHeader.
  */
 export function HomeHeader({ menus }: { menus: NavMenu[] }) {
   const { lang, t } = useLocale();
@@ -95,28 +106,13 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
     };
   }, [menu, close]);
 
-  // Pills drop in one after the other.
-  useEffect(() => {
-    if (!menu) return;
-    const items = navRef.current?.querySelectorAll<HTMLElement>(`#hn-sub-${menu} .hn-sub-item`);
-    if (!items?.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const tween = gsap.fromTo(
-      items,
-      { opacity: 0, y: MENU_IN.y, filter: `blur(${MENU_IN.blur}px)` },
-      { opacity: 1, y: 0, filter: "blur(0px)", duration: MENU_IN.duration, stagger: MENU_IN.stagger, ease: MENU_IN.ease, clearProps: "filter,transform" },
-    );
-    return () => {
-      tween.kill();
-    };
-  }, [menu]);
-
   const enter = (id: string) => {
     window.clearTimeout(closeTimer.current);
-    setMenu(id);
+    closeTimer.current = window.setTimeout(() => setMenu(id), OPEN_DELAY);
   };
   const leave = () => {
     window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setMenu(null), 140);
+    closeTimer.current = window.setTimeout(() => setMenu(null), CLOSE_DELAY);
   };
   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
 
@@ -134,22 +130,48 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
           <path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
         </svg>
       </button>
-      <ul id={`hn-sub-${m.id}`} className="hn-sub" hidden={menu !== m.id}>
-        {m.items.map((item) => (
-          <li key={item.href}>
-            <Link href={item.href} className="hn-sub-item" onClick={() => setMenu(null)}>
-              <span>{item.label}</span>
-              <Arrow />
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div
+        id={`hn-sub-${m.id}`}
+        className="hn-sub"
+        data-open={menu === m.id ? "" : undefined}
+        inert={menu !== m.id}
+        onPointerOver={(event) => {
+          const row = (event.target as HTMLElement).closest<HTMLElement>(".hn-sub-item");
+          if (row) measureShift(row);
+        }}
+        onFocus={(event) => {
+          const row = (event.target as HTMLElement).closest<HTMLElement>(".hn-sub-item");
+          if (row) measureShift(row);
+        }}
+      >
+        {m.groups.map((group, index) => {
+          const first = m.groups.slice(0, index).reduce((sum, g) => sum + g.length, 0);
+          return (
+            <ul key={index} className="hn-group" style={{ "--d": `${first * ROW_STAGGER}s` } as React.CSSProperties}>
+              {group.map((item, row) => (
+                <li key={item.href} style={{ "--d": `${(first + row) * ROW_STAGGER}s` } as React.CSSProperties}>
+                  <Link href={item.href} className="hn-sub-item" onClick={() => setMenu(null)}>
+                    <span className="hn-sub-label">{item.label}</span>
+                    <Arrow />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          );
+        })}
+      </div>
     </div>
   );
 
   return (
-    <header className="hn" data-pill={pill ? "" : undefined} data-header>
+    <header
+      className="hn"
+      data-pill={pill ? "" : undefined}
+      data-header
+      style={{ "--hn-spring": SPRING_CSS } as React.CSSProperties}
+    >
       <div className="hn-bar">
+        <div className="hn-row">
         <Link href={localize("/", lang)} className="hn-logo" aria-label="CTRL home">
           <Wordmark />
         </Link>
@@ -179,6 +201,7 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
             {open ? t.close : t.menu}
           </button>
         </div>
+        </div>
       </div>
 
       {open ? (
@@ -186,7 +209,7 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
           {menus.map((m) => (
             <div key={m.id} className="hn-mobile-group">
               <p className="hn-mobile-label">{m.label}</p>
-              {m.items.map((item) => (
+              {m.groups.flat().map((item) => (
                 <Link key={item.href} href={item.href} className="hn-mobile-sub" onClick={() => setOpen(false)}>
                   {item.label}
                 </Link>

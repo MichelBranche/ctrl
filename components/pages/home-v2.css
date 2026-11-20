@@ -169,13 +169,14 @@
 .hv-hero {
   height: 100svh;
   min-height: 34rem;
-  padding: calc(var(--hv-frame) + 3.6rem) var(--hv-frame) var(--hv-frame);
+  padding: var(--hv-frame);
 }
 .hv-hero-card {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   height: 100%;
-  padding: clamp(1.75rem, 2.4vw, 2.5rem) var(--hv-pad) clamp(1.25rem, 2vw, 1.75rem);
+  /* Card starts at the 10px frame; the transparent nav sits inside it and the title clears it by ~70px (reference: h1 at y135). */
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.25rem, 2vw, 1.75rem);
   /* Grey studio: the floor of the render, lit from the upper right, vignetted at the corners. */
   background:
     radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.42) 100%),
@@ -845,6 +846,9 @@
 .hv-talk-actions .hv-cta:hover { background: var(--hv-ink); color: var(--hv-fg); }
 
 /* ---------- HEADER ---------- */
+/* Geometry from the reference at 1440x900: top bar 20px from the top, 50px from the sides, 55px tall,
+   content centred at 1100px (150 / centre / 150). Scrolled: centred 900x45 pill, 5px padding,
+   rgba(51,51,51,.25) + blur(10px). Size and position spring (--hn-spring, 400ms), colour switches at once. */
 .hn {
   position: fixed;
   z-index: 60;
@@ -853,99 +857,132 @@
   right: 0;
   display: flex;
   justify-content: center;
-  padding: calc(var(--hv-frame) + 0.5rem) calc(var(--hv-frame) + 0.75rem) 0;
+  padding: 20px 50px 0;
   color: var(--hv-fg);
   pointer-events: none;
 }
 .hn-bar {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 1.5rem;
+  box-sizing: border-box;
   width: 100%;
-  max-width: calc(var(--hv-max) - 2rem);
-  padding: 0.55rem 0.55rem 0.55rem 1.25rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  height: 55px;
+  padding: 0;
+  border-radius: 1000px;
   pointer-events: auto;
   transition:
-    max-width 0.6s var(--hv-ease),
-    background-color 0.45s ease,
-    border-color 0.45s ease,
-    backdrop-filter 0.45s ease,
-    transform 0.6s var(--hv-ease);
+    width 0.4s var(--hn-spring),
+    height 0.4s var(--hn-spring),
+    padding 0.4s var(--hn-spring);
 }
 .hn[data-pill] .hn-bar {
-  max-width: 48rem;
-  background: rgba(16, 16, 16, 0.8);
-  border-color: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transform: translateY(0.25rem);
+  width: 900px;
+  height: 45px;
+  padding: 5px;
+  background: rgba(51, 51, 51, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-.hn-logo { justify-self: start; color: inherit; font-size: 1.2rem; text-decoration: none; }
-.hn-links { display: flex; align-items: center; gap: 0.25rem; }
+.hn-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 150px;
+  align-items: center;
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  margin: 0 auto;
+}
+.hn-logo { justify-self: start; display: inline-flex; align-items: center; height: 35px; padding: 0 12px; color: inherit; font-size: 1.2rem; text-decoration: none; }
+.hn-links { display: flex; justify-content: center; align-items: center; gap: 3px; }
 .hn-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.8rem;
+  gap: 3px;
+  height: 35px;
+  padding: 8px 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 1000px;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.25s ease;
+  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
 }
 .hn-link:hover,
-.hn-more-btn[aria-expanded="true"] { background: rgba(255, 255, 255, 0.08); }
-.hn-more-btn svg { width: 0.75rem; height: 0.75rem; transition: transform 0.3s var(--hv-ease); }
+.hn-more-btn[aria-expanded="true"] { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
+.hn-more-btn svg { width: 0.75rem; height: 0.75rem; transition: transform 0.4s var(--hn-spring); }
 .hn-more-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
 .hn-more { position: relative; }
-.hn-more::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0.75rem; }
-/* Submenu: a stack of separate pills under the bar, heavy blur behind each. */
+/* Hover bridge across the 10px gap between trigger and panel. */
+.hn-more::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 10px; }
+/* Dropdown: stacked blocks, left aligned with the trigger, 10px below it, 380px wide, 5px apart.
+   Every block and every row drops 150px and fades in with the UI spring; rows stagger 100ms across blocks
+   and a block starts with its first row (the two translations add up), on open and on close. */
 .hn-sub {
   position: absolute;
-  top: calc(100% + 0.7rem);
+  top: calc(100% + 10px);
   left: 0;
   display: grid;
-  gap: 0.3rem;
-  min-width: 15rem;
+  gap: 5px;
+  width: 380px;
+  pointer-events: none;
+}
+.hn-sub[data-open] { pointer-events: auto; }
+.hn-group,
+.hn-group > li {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-150px);
+  transition:
+    transform 0.4s var(--hn-spring) var(--d, 0s),
+    opacity 0.4s var(--hn-spring) var(--d, 0s),
+    visibility 0s linear calc(var(--d, 0s) + 0.4s);
+}
+.hn-sub[data-open] .hn-group,
+.hn-sub[data-open] .hn-group > li {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: var(--d, 0s), var(--d, 0s), var(--d, 0s);
+}
+.hn-group {
+  display: grid;
+  gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
+  border-radius: 10px;
+  background: rgba(51, 51, 51, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-.hn-sub[hidden] { display: none; }
 .hn-sub-item {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0.9rem;
-  border-radius: 0.65rem;
-  background: rgba(22, 22, 22, 0.72);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  gap: 5px;
+  height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
   color: var(--hv-fg);
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
   white-space: nowrap;
   text-decoration: none;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
 }
 .hn-sub-item:hover,
-.hn-sub-item:focus-visible { background: rgba(24, 24, 24, 0.78); color: var(--hv-accent); }
-.hn-sub-arrow { width: 0.95em; height: 0.95em; flex: none; transition: transform 0.35s var(--hv-ease); }
-.hn-sub-item:hover .hn-sub-arrow { transform: translateX(3px); }
-.hn-sub li:last-child .hn-sub-item { margin-top: 0.3rem; background: rgba(255, 74, 28, 0.85); color: var(--hv-accent-ink); }
-.hn-sub li:last-child .hn-sub-item:hover { background: var(--hv-fg); }
-.hn-end { justify-self: end; display: flex; align-items: center; gap: 0.9rem; }
+.hn-sub-item:focus-visible { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
+/* Arrow: sits after the label; on hover it springs to the right edge and turns into an up-right arrow. */
+.hn-sub-arrow { flex: none; width: 20px; height: 20px; transition: transform 0.4s var(--hn-spring); }
+.hn-sub-item:hover .hn-sub-arrow,
+.hn-sub-item:focus-visible .hn-sub-arrow { transform: translateX(var(--hn-shift, 0px)) rotate(-45deg); }
+.hn-end { justify-self: end; display: flex; align-items: center; gap: 8px; }
 .hn-lang { font-size: 0.8rem; }
 .hn-talk {
   display: inline-flex;
@@ -963,9 +1000,9 @@
 .hn-talk:hover { background: var(--hv-fg); }
 .hn-cart .header-cart {
   width: auto;
-  min-width: 3.4rem;
-  height: 2.3rem;
-  padding: 0 1rem;
+  min-width: 0;
+  height: 35px;
+  padding: 8px 12px;
   border-radius: 999px;
   background: var(--hv-accent);
   color: var(--hv-accent-ink);
@@ -993,7 +1030,7 @@
 .hn-mobile-label { margin: 0 0 0.2rem; color: var(--hv-accent); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .hn-mobile .hn-mobile-sub { font-size: 1.15rem; line-height: 1.35; }
 .hn-mobile-lang { margin-top: auto; font-size: 0.9rem; }
-html.nav-open .hn-bar { background: transparent; border-color: transparent; backdrop-filter: none; }
+html.nav-open .hn-bar { background: transparent; backdrop-filter: none; }
 html.nav-open .hn { z-index: 61; }
 
 /* ---------- Responsive ---------- */
@@ -1013,16 +1050,16 @@ html.nav-open .hn { z-index: 61; }
   .hn-lang,
   .hn-talk { display: none; }
   .hn-toggle { display: inline-flex; }
-  .hn-bar { grid-template-columns: 1fr auto; }
-  .hn[data-pill] .hn-bar { max-width: 100%; }
+  .hn { padding: 14px 20px 0; }
+  .hn-row { grid-template-columns: 1fr auto; }
+  .hn[data-pill] .hn-bar { width: 100%; }
 }
 
 @media (max-width: 809.98px) {
   .hv,
   .hn { --hv-r: 30px; --hv-pad: 1.25rem; }
   .hv-hero { height: 100svh; min-height: 40rem; }
-  .hv-hero { padding-top: calc(var(--hv-frame) + 3.4rem); }
-  .hv-hero-card { padding-top: 1.5rem; }
+  .hv-hero-card { padding-top: 100px; }
   .hv-hero-top { flex-direction: column; gap: 0.9rem; }
   .hv-hero-title { font-size: clamp(2.6rem, 12vw, 3.6rem); }
   .hv-hero-line { margin: 0; max-width: 20rem; font-size: 1.05rem; text-align: left; }
@@ -1062,6 +1099,10 @@ html.nav-open .hn { z-index: 61; }
   .hv-ghost,
   .hv-service,
   .hn-bar,
+  .hn-group,
+  .hn-group > li,
+  .hn-sub-item,
+  .hn-sub-arrow,
   .hn-link,
   .hn-talk,
   .hn-more-btn svg,

@@ -63,27 +63,31 @@ export async function HomePage({ lang }: { lang: Locale }) {
           {
             id: "work",
             label: t.nav.work,
-            items: [
-              { label: LE_VELE.client, href: localize(LE_VELE.path, lang) },
-              ...homeFeatured.map((item) => ({ label: item.title[lang], href: localize(item.href, lang) })),
-              { label: h.allProjects, href: localize("/projects", lang) },
+            groups: [
+              [
+                { label: LE_VELE.client, href: localize(LE_VELE.path, lang) },
+                ...homeFeatured.map((item) => ({ label: item.title[lang], href: localize(item.href, lang) })),
+              ],
+              [{ label: h.allProjects, href: localize("/projects", lang) }],
             ],
           },
           {
             id: "services",
             label: t.nav.services,
-            items: [
-              ...services.map((service) => ({ label: service.title[lang], href: localize(`/services/${service.slug}`, lang) })),
-              { label: h.navAllServices, href: localize("/services", lang) },
+            groups: [
+              services.map((service) => ({ label: service.title[lang], href: localize(`/services/${service.slug}`, lang) })),
+              [{ label: h.navAllServices, href: localize("/services", lang) }],
             ],
           },
           {
             id: "more",
             label: h.navMore,
-            items: [
-              { label: t.nav.journal, href: localize("/journal", lang) },
-              { label: t.nav.contact, href: localize("/contact", lang) },
-              { label: h.navTalk, href: localize("/bookings", lang) },
+            groups: [
+              [
+                { label: t.nav.journal, href: localize("/journal", lang) },
+                { label: t.nav.contact, href: localize("/contact", lang) },
+              ],
+              [{ label: h.navTalk, href: localize("/bookings", lang) }],
             ],
           },
         ]}

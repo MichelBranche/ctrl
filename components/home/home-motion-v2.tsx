@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { scheduleRefresh } from "@/lib/refresh";
+import { TEXT_SPRING, springEase } from "./springs";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -54,7 +55,8 @@ export function HomeMotionV2({ children }: { children: React.ReactNode }) {
           gsap.set(glass, { z: Z.closed.glass * u });
           const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
           intro
-            .fromTo(words, { opacity: 0, y: 40, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2, stagger: 0.06, clearProps: "filter" }, 0.3)
+            // Reference title reveal: per word, opacity and blur(10px) on a 2s critically damped spring, 50ms apart.
+            .fromTo(words, { opacity: 0.001, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: TEXT_SPRING.duration, stagger: 0.05, ease: springEase(TEXT_SPRING), clearProps: "filter" }, 0.3)
             .fromTo(q("[data-hv-fade]"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, stagger: 0.08 }, 0.6)
             .fromTo(q("[data-plates]"), { y: 80 * u, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6 }, 0.25)
             .to(brand, { z: Z.open.brand * u, duration: 1.9, ease: "elastic.out(1, 0.75)", clearProps: "transform" }, 0.95)
