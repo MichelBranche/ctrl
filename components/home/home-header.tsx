@@ -10,8 +10,9 @@ import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
 import { UI_SPRING, springLinear } from "./springs";
 
-/** Scroll distance (px) after which the bar turns into the floating pill (reference: ~5-10px). */
-const PILL_AT = 8;
+/** Pill thresholds with hysteresis: in past 12px, back to the bar only under 4px, so it never flickers around one value. */
+const PILL_IN = 12;
+const PILL_OUT = 4;
 /** Hover intent before a dropdown opens and grace before it closes (reference: ~50ms each). */
 const OPEN_DELAY = 50;
 const CLOSE_DELAY = 50;
@@ -65,7 +66,8 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
     let raf = 0;
     const read = () => {
       raf = 0;
-      setPill(window.scrollY > PILL_AT);
+      const y = window.scrollY;
+      setPill((on) => (on ? y > PILL_OUT : y > PILL_IN));
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(read);
