@@ -1016,8 +1016,16 @@ html.nav-open .hn { z-index: 61; }
   .hv-hero-title { font-size: clamp(2.6rem, 12vw, 3.6rem); }
   .hv-hero-line { margin: 0; max-width: 20rem; font-size: 1.05rem; text-align: left; }
   .hp-scene { --u: clamp(0.45px, min(0.15vw, (100svh - 540px) * 0.0024), 0.9px); }
-  /* Leave the bottom-right corner to the global assistant launcher. */
-  .hv-hero-bottom { justify-content: flex-start; }
+  /* Centred: the assistant launcher stays hidden while the hero is on screen (see below). */
+  .hv-hero-bottom { justify-content: center; }
+  /* Assistant launcher: shows only once the hero is scrolled past, soft fade both ways. */
+  .ca-root { transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0s; }
+  html[data-hv-hero="in"] .ca-root:not(:has(.ca-launcher.is-open)) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.45s;
+  }
   .hv-hero .hv-pill { gap: 0.5rem; padding: 0.35rem 0.35rem 0.35rem 0.95rem; }
   .hv-hero .hv-pill-name { font-size: 0.95rem; }
   .hv-hero .hv-cta { padding: 0.65rem 0.9rem; font-size: 0.88rem; }

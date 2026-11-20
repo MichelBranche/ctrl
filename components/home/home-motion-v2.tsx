@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -23,6 +23,33 @@ const Z = {
  */
 export function HomeMotionV2({ children }: { children: React.ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
+
+  // html[data-hv-hero="in"] while the hero still fills the screen; the mobile CSS hides the
+  // assistant launcher with it. Removed on unmount so other pages never see it.
+  useEffect(() => {
+    const hero = root.current?.querySelector<HTMLElement>("[data-hv-hero]");
+    if (!hero) return;
+    const html = document.documentElement;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const inHero = hero.getBoundingClientRect().bottom > window.innerHeight * 0.2;
+      if (inHero) html.dataset.hvHero = "in";
+      else delete html.dataset.hvHero;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+      delete html.dataset.hvHero;
+    };
+  }, []);
 
   useGSAP(
     (_, contextSafe) => {
