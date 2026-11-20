@@ -512,7 +512,7 @@
   padding: var(--hv-pad);
   background: var(--hv-card);
 }
-.hv-film-head { display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; }
+.hv-film-kicker { margin: 0; }
 .hv-film-frame {
   width: 100%;
   max-width: min(100%, calc((100svh - 16rem) * 16 / 9));
@@ -759,21 +759,12 @@
   gap: 1.25rem;
   min-height: min(62svh, 36rem);
   padding: clamp(3rem, 6vw, 5rem) var(--hv-pad);
+  /* Solid paper, no glow: the orange stays on the call-to-action button. */
   background: var(--hv-paper);
   color: var(--hv-ink);
   text-align: center;
-  isolation: isolate;
 }
 .hv-talk-card .hv-kicker { color: var(--hv-ink-dim); }
-.hv-talk-glow {
-  position: absolute;
-  inset: auto 15% -40% 15%;
-  z-index: -1;
-  height: 70%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 74, 28, 0.38), transparent);
-  filter: blur(30px);
-}
 .hv-talk-title {
   margin: 0;
   font-family: var(--hv-display);
@@ -1120,7 +1111,6 @@ html.nav-open .hn { z-index: 61; }
   .hv-service p { max-width: none; }
   .hv-services-grid { grid-template-columns: minmax(0, 1fr); }
   .hv-pill .hv-pill-name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
-  .hv-film-head { flex-direction: column; align-items: flex-start; }
   .hv .h-film-rail { grid-auto-columns: 62%; }
   .hv .h-film-caption { padding-top: 2.5rem; font-size: 0.8rem; }
   .hv .h-film-play { width: 3.4rem; height: 3.4rem; margin: -1.7rem 0 0 -1.7rem; }

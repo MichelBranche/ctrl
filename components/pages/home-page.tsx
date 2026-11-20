@@ -153,16 +153,10 @@ export async function HomePage({ lang }: { lang: Locale }) {
           </section>
 
           {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
-          <section className="hv-block hv-film" aria-labelledby="hv-film-title">
+          {/* No visible title: the player and its poster speak for themselves; the name stays for screen readers. */}
+          <section className="hv-block hv-film" aria-label={h.filmTitle}>
             <div className="hv-card hv-film-card">
-              <div className="hv-film-head">
-                <div>
-                  <p className="hv-kicker">CTRL® / {h.filmKicker}</p>
-                  <h2 className="hv-h3" id="hv-film-title">
-                    {h.filmTitle}
-                  </h2>
-                </div>
-              </div>
+              <p className="hv-kicker hv-film-kicker">CTRL® / {h.filmKicker}</p>
               <div className="hv-film-frame" data-hv-rise>
                 <HomeFilm lang={lang} />
               </div>
@@ -215,7 +209,6 @@ export async function HomePage({ lang }: { lang: Locale }) {
           <Marquee text={h.talkMarquee} />
           <section className="hv-block hv-talk" aria-labelledby="hv-talk-title">
             <div className="hv-card hv-talk-card">
-              <i className="hv-talk-glow" aria-hidden="true" />
               <p className="hv-kicker">{b.tag}</p>
               <h2 className="hv-talk-title" id="hv-talk-title" data-hv-title>
                 {b.title}
