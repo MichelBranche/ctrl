@@ -152,10 +152,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
             </div>
           </section>
 
-          {/* 4. RECENSIONI: bento a pagine (dati in lib/testimonials.ts) */}
-          {showTestimonials() ? <HomeTestimonials /> : null}
-
-          {/* 6. STUDIO FILM */}
+          {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
           <section className="hv-block hv-film" aria-labelledby="hv-film-title">
             <div className="hv-card hv-film-card">
               <div className="hv-film-head">
@@ -165,16 +162,15 @@ export async function HomePage({ lang }: { lang: Locale }) {
                     {h.filmTitle}
                   </h2>
                 </div>
-                <a href="https://www.youtube.com/watch?v=upTqsodkdo4" target="_blank" rel="noopener noreferrer" className="hv-link">
-                  {lang === "it" ? "Guarda su YouTube" : "Watch on YouTube"}
-                  <ArrowUpRight />
-                </a>
               </div>
               <div className="hv-film-frame" data-hv-rise>
-                <HomeFilm title={h.filmTitle} play={lang === "it" ? "Riproduci il video" : "Play the video"} />
+                <HomeFilm lang={lang} />
               </div>
             </div>
           </section>
+
+          {/* 5. RECENSIONI: bento a pagine (dati in lib/testimonials.ts) */}
+          {showTestimonials() ? <HomeTestimonials /> : null}
 
           {/* 7. PERCHE CTRL */}
           <section className="hv-block hv-why" aria-labelledby="hv-why-title">
