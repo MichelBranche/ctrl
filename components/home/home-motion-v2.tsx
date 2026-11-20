@@ -49,15 +49,18 @@ export function HomeMotionV2({ children }: { children: React.ReactNode }) {
           });
 
           const u = unit();
+          // Closed stack first: set before the timeline so clearProps on the opening tweens cannot skip it.
+          gsap.set(brand, { z: Z.closed.brand * u });
+          gsap.set(glass, { z: Z.closed.glass * u });
           const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
           intro
-            .fromTo(words, { opacity: 0, y: 40, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2, stagger: 0.06, clearProps: "filter" }, 0.05)
-            .fromTo(q("[data-hv-fade]"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, stagger: 0.08 }, 0.35)
-            .fromTo(q("[data-plates]"), { y: 80 * u, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6 }, 0.1)
-            .fromTo(brand, { z: Z.closed.brand * u }, { z: Z.open.brand * u, duration: 1.9, ease: "elastic.out(1, 0.75)", clearProps: "transform" }, 0.75)
-            .fromTo(glass, { z: Z.closed.glass * u }, { z: Z.open.glass * u, duration: 2.1, ease: "elastic.out(1, 0.7)", clearProps: "transform" }, 0.85)
-            .fromTo(shadow, { opacity: 0.95, scale: 0.94 }, { opacity: 0.7, scale: 1.04, duration: 1.8, ease: "power3.out" }, 0.75)
-            .fromTo(q("[data-hv-pill]"), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.1 }, 0.9);
+            .fromTo(words, { opacity: 0, y: 40, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2, stagger: 0.06, clearProps: "filter" }, 0.3)
+            .fromTo(q("[data-hv-fade]"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, stagger: 0.08 }, 0.6)
+            .fromTo(q("[data-plates]"), { y: 80 * u, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6 }, 0.25)
+            .to(brand, { z: Z.open.brand * u, duration: 1.9, ease: "elastic.out(1, 0.75)", clearProps: "transform" }, 0.95)
+            .to(glass, { z: Z.open.glass * u, duration: 2.1, ease: "elastic.out(1, 0.7)", clearProps: "transform" }, 1.05)
+            .fromTo(shadow, { opacity: 0.95, scale: 0.94 }, { opacity: 0.7, scale: 1.04, duration: 1.8, ease: "power3.out" }, 0.95)
+            .fromTo(q("[data-hv-pill]"), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.1 }, 1.1);
 
           // Scrolling out of the hero opens the stack a little further and turns it.
           const out = gsap.timeline({
