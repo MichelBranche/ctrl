@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale } from "@/components/use-locale";
 import { TESTIMONIALS, type Testimonial } from "@/lib/testimonials";
@@ -32,6 +33,7 @@ const LAYOUTS: Slot[][] = [
     { area: "2 / 9 / 3 / 13", kind: "quote", tone: "char", seq: 4 },
   ],
 ];
+const MOBILE_TONES = ["accent", "paper", "grey", "char"];
 const PER_PAGE = { desktop: 5, mobile: 2 };
 /** Reference timings (ms). */
 const IN_STAGGER = 85;
@@ -73,6 +75,16 @@ function Quote({ text, mark }: { text: string; mark: string }) {
   return <>“{body}”</>;
 }
 
+function Avatar({ item, size = 34 }: { item: Testimonial; size?: number }) {
+  return item.avatar ? (
+    <Image className="tm-avatar" src={item.avatar} alt="" width={size} height={size} sizes={`${size}px`} quality={80} />
+  ) : (
+    <span className="tm-avatar" aria-hidden="true">
+      {initials(item.name)}
+    </span>
+  );
+}
+
 function sizeOf(text: string) {
   return text.length > 380 ? "l" : text.length > 200 ? "m" : "s";
 }
@@ -80,11 +92,7 @@ function sizeOf(text: string) {
 function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slot; lang: "it" | "en"; index: number; stars: string }) {
   const quote = item.quote[lang];
   const short = `${item.name.split(" ")[0]} ${item.name.split(" ").slice(-1)[0][0]}.`;
-  const avatar = (
-    <span className="tm-avatar" aria-hidden="true">
-      {initials(item.name)}
-    </span>
-  );
+  const avatar = <Avatar item={item} />;
   const person = (
     <div className="tm-person">
       {avatar}
@@ -97,12 +105,18 @@ function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slo
   return (
     <figure className="tm-bed" data-kind={slot.kind} data-tone={slot.tone} data-size={sizeOf(quote)} style={{ gridArea: slot.area, "--i": index } as React.CSSProperties}>
       <div className="tm-face">
-        {slot.kind === "cover" ? (
-          <div className="tm-cover" aria-hidden="true">
-            <i className="tm-zoom" />
+        {slot.kind === "cover" && item.cover ? (
+          <div className="tm-cover">
+            <Image
+              className="tm-zoom"
+              src={item.cover.src}
+              alt={item.cover.alt[lang]}
+              fill
+              sizes="(max-width: 809px) 100vw, 33vw"
+              quality={72}
+            />
           </div>
         ) : null}
-        <i className="tm-spot" aria-hidden="true" />
         <div className="tm-body">
           {slot.kind === "quote" ? (
             <>
@@ -253,10 +267,8 @@ export function HomeTestimonials() {
           </div>
           <div className="tm-score">
             <span className="tm-faces" aria-hidden="true">
-              {TESTIMONIALS.slice(0, 4).map((t) => (
-                <span key={t.name} className="tm-avatar">
-                  {initials(t.name)}
-                </span>
+              {TESTIMONIALS.filter((t) => t.avatar).slice(0, 4).map((t) => (
+                <Avatar key={t.name} item={t} size={30} />
               ))}
             </span>
             <div className="tm-score-text">
@@ -284,7 +296,10 @@ export function HomeTestimonials() {
                 aria-label={c.page(p + 1)}
               >
                 {items.map((item, i) => {
-                  const slot = mobile ? { ...layout[(p * per + i) % layout.length], area: "auto" } : layout[i];
+                  const n = p * per + i;
+                  const slot: Slot = mobile
+                    ? { area: "auto", kind: item.cover ? "cover" : n % 3 === 1 ? "feature" : "quote", tone: item.cover ? "ink" : MOBILE_TONES[n % MOBILE_TONES.length], seq: i }
+                    : layout[i];
                   return <Card key={item.name} item={item} slot={slot} lang={lang} index={mobile ? i : slot.seq} stars={c.stars(item.stars)} />;
                 })}
               </div>

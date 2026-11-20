@@ -5,7 +5,8 @@
  * text exactly as sent (no quotation marks: the card adds them); `mark` must
  * be a phrase that appears word for word inside `quote`, it gets the animated
  * highlight. Pages hold 5 reviews each on desktop (entries 1-5, then 6-10),
- * 2 each on mobile. Avatars are initials, never photos.
+ * 2 each on mobile. `avatar` is optional (initials otherwise); `cover` puts a
+ * photo behind the review (entries 4 and 7 sit in the photo slots on desktop).
  *
  * TESTIMONIALS_READY: set to false while texts are placeholders. When false the
  * section is rendered everywhere except the production deployment
@@ -16,6 +17,10 @@ export const TESTIMONIALS_READY = true;
 type L = { it: string; en: string };
 export type Testimonial = {
   name: string;
+  /** Square avatar (192px webp) in /public/images/home/reviews; initials when missing. */
+  avatar?: string;
+  /** Card photo for the "cover" cards, with its alt text. */
+  cover?: { src: string; alt: L };
   role: L;
   stars: number;
   quote: L;
@@ -25,6 +30,7 @@ export type Testimonial = {
 export const TESTIMONIALS: Testimonial[] = [
   {
     name: "Giulia Ferri",
+    avatar: "/images/home/reviews/giulia-ferri.webp",
     role: { it: "Fondatrice di uno studio di architettura", en: "Founder of an architecture studio" },
     stars: 5,
     quote: {
@@ -35,6 +41,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Davide Moretti",
+    avatar: "/images/home/reviews/davide-moretti.webp",
     role: { it: "Responsabile commerciale B2B", en: "B2B sales manager" },
     stars: 5,
     quote: {
@@ -55,6 +62,11 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Matteo Galli",
+    avatar: "/images/home/reviews/matteo-galli.webp",
+    cover: {
+      src: "/images/home/reviews/card-media.webp",
+      alt: { it: "Figura con occhiali in movimento, sfocata in toni blu", en: "Figure with goggles in motion, blurred in blue tones" },
+    },
     role: { it: "Titolare di un’officina specializzata", en: "Owner of a specialist workshop" },
     stars: 5,
     quote: {
@@ -65,6 +77,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Sara Benedetti",
+    avatar: "/images/home/reviews/sara-benedetti.webp",
     role: { it: "Fondatrice di un brand di ceramica", en: "Founder of a ceramics brand" },
     stars: 5,
     quote: {
@@ -85,6 +98,11 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Valentina Costa",
+    avatar: "/images/home/reviews/valentina-costa.webp",
+    cover: {
+      src: "/images/home/reviews/card-grande.webp",
+      alt: { it: "Ragazza sorridente con le cuffie, sotto le palme", en: "Smiling woman wearing headphones under palm trees" },
+    },
     role: { it: "Consulente HR indipendente", en: "Independent HR consultant" },
     stars: 5,
     quote: {
@@ -95,6 +113,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Andrea Bellini",
+    avatar: "/images/home/reviews/andrea-bellini.webp",
     role: { it: "Titolare di un e-commerce di arredamento", en: "Owner of a furniture e-commerce" },
     stars: 5,
     quote: {
@@ -115,6 +134,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     name: "Roberto De Santis",
+    avatar: "/images/home/reviews/roberto-de-santis.webp",
     role: { it: "Fondatore di una società di consulenza IT", en: "Founder of an IT consulting firm" },
     stars: 5,
     quote: {
