@@ -8,7 +8,7 @@ import "./quotes-page.css";
 /** Temporary CTRL® Quotes page: kept out of search until the real page is ready. */
 const COPY = {
   it: {
-    meta: "CTRL® Quotes, il software di CTRL® per i preventivi. Pagina in allestimento.",
+    meta: "CTRL® Quotes, la soluzione di CTRL® per i preventivi. Pagina in allestimento.",
     kicker: "Ecosistema CTRL®",
     lead: "Preventivi che convincono.",
     status: "Pagina in allestimento",
@@ -17,7 +17,7 @@ const COPY = {
     home: "Torna alla home",
   },
   en: {
-    meta: "CTRL® Quotes, the CTRL® software for quotes. Page under construction.",
+    meta: "CTRL® Quotes, the CTRL® solution for quotes. Page under construction.",
     kicker: "CTRL® ecosystem",
     lead: "Quotes that win clients.",
     status: "Page under construction",

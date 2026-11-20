@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/i18n";
 
 /**
- * "Ecosistema CTRL®" cards on the home page (software made by CTRL®).
+ * "Ecosistema CTRL®" cards on the home page (solutions made by CTRL®).
  *
  * Images: /public/images/ecosystem/<id>-it.webp and <id>-en.webp, picked by
  * language. Until a file exists the card shows a solid placeholder in `tint`
