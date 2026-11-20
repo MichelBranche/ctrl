@@ -243,6 +243,31 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+/* Desktop fit (>= 810px). The plates live in a size container spanning the title row and the free
+   row, so their scale and position come from the real height left above the CTA pill, at any
+   viewport. Open stack geometry, in plate units (--u): the visible block runs from -11.5u to
+   486.2u from the scene top, i.e. 498u tall. Band: from the content top (well clear of the nav) to
+   48px above the pill (32px minimum + margin for the intro bounce and the scroll spin). The block is scaled to
+   fit the band (capped at 1.5px and 0.078vw) and centred in it. */
+@media (min-width: 810px) {
+  .hv-hero-top { grid-row: 1; grid-column: 1; }
+  .hv-hero-object {
+    grid-row: 1 / 3;
+    grid-column: 1;
+    top: 0;
+    display: block;
+    container-type: size;
+    pointer-events: none;
+  }
+  .hv-hero-object .hp-scene {
+    --u: max(0.35px, min(1.5px, 0.078vw, (100cqh - 48px) / 498));
+    position: absolute;
+    left: 50%;
+    top: calc((100cqh - 48px - var(--u) * 498) / 2 + var(--u) * 11.5);
+    margin-left: calc(var(--u) * -250);
+  }
+}
+
 /* ---------- Plates (CSS 3D) ---------- */
 .hp-scene {
   --u: clamp(0.5px, min((100svh - 380px) * 0.0021, 0.078vw), 1.5px);
@@ -803,14 +828,15 @@
   padding: 0;
   border-radius: 1000px;
   pointer-events: auto;
-  /* Same spring both ways; colour and blur fade over the same 400ms so the return to the top never snaps. */
+  /* Back to the top (pill -> bar): the dark fill and blur fade to fully transparent in 280ms first,
+     and the size spring starts 180ms later, so no dark shape is ever seen widening. Items never fade. */
   transition:
-    width 0.4s var(--hn-spring),
-    height 0.4s var(--hn-spring),
-    padding 0.4s var(--hn-spring),
-    background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    -webkit-backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s var(--hn-spring) 0.18s,
+    height 0.4s var(--hn-spring) 0.18s,
+    padding 0.4s var(--hn-spring) 0.18s;
 }
 .hn[data-pill] .hn-bar {
   width: 900px;
@@ -820,6 +846,14 @@
   background: rgba(20, 20, 20, 0.76);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
   backdrop-filter: blur(20px) saturate(1.2);
+  /* Scrolling down (bar -> pill): unchanged, size and fill together over 400ms. */
+  transition:
+    width 0.4s var(--hn-spring),
+    height 0.4s var(--hn-spring),
+    padding 0.4s var(--hn-spring),
+    background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    -webkit-backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .hn-row {
   display: grid;
@@ -1059,6 +1093,9 @@ html.nav-open .hn { z-index: 61; }
   .hn-mobile, .hn-mobile-group, .hn-toggle-icon i { transition: none !important; }
   .hn-mobile-group { transform: none; }
 }
+
+/* Home footer: same side inset as the section content (10px frame + card padding). */
+html:has(main.hv) .h-close { padding-inline: calc(var(--hv-frame, 10px) + clamp(1.25rem, 2.6vw, 2.75rem)); }
 
 /* ---------- Responsive ---------- */
 @media (min-width: 1800px) {

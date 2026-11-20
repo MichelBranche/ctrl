@@ -71,11 +71,15 @@
   letter-spacing: -0.06em;
 }
 
+/* The ® hangs outside the layout box (zero width), so the four letters CTRL are what gets centred. */
 .h-mark sup {
+  width: 0;
   font-size: 0.22em;
   vertical-align: super;
   letter-spacing: 0;
   margin-left: 0.05em;
+  margin-right: -0.05em;
+  white-space: nowrap;
 }
 
 .h-close-info {
@@ -185,8 +189,10 @@
 
 /* Footer newsletter. On desktop it sits centered under the wordmark. */
 .h-close > .f-news {
-  align-self: stretch;
-  width: auto;
+  align-self: center;
+  /* minmax(0, 1fr): long consent text can't push the block past the right padding. */
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
   max-width: 26rem;
   margin: 1.75rem auto 0;
   text-align: left;
@@ -219,6 +225,8 @@
   .h-close > .f-news .f-news-consent { text-align: left; }
 }
 .f-news-title { margin: 0; opacity: 0.6; }
+/* Same axis as the wordmark on mobile too. */
+.h-close > .f-news .f-news-title { text-align: center; }
 .f-news-row { display: flex; gap: 8px; align-items: stretch; }
 .f-news-input {
   flex: 1; min-width: 0; height: 2.65rem; font: inherit; font-size: 16px; color: #f5f4f1;
