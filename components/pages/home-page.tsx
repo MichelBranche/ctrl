@@ -5,9 +5,10 @@ import { HomeFilm } from "@/components/home-film";
 import { HomeHeader } from "@/components/home/home-header";
 import { HomeMotionV2 } from "@/components/home/home-motion-v2";
 import { HomePlates } from "@/components/home/home-plates";
-import { LeVeleFilm } from "@/components/projects/le-vele-film";
+import { HomeTestimonials } from "@/components/home/home-testimonials";
 import { SiteFooter } from "@/components/site-footer";
-import { homeFeatured, LE_VELE, LE_VELE_MEDIA, services } from "@/lib/content";
+import { homeFeatured, LE_VELE, services } from "@/lib/content";
+import { showTestimonials } from "@/lib/testimonials";
 import { presentReviews } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { dict, localize, type Locale } from "@/lib/i18n";
@@ -20,14 +21,6 @@ function ArrowUpRight() {
     </svg>
   );
 }
-
-/** Brand colour sampled from each featured project's own site: the card's atmosphere. */
-const ATMOS: Record<string, { tint: string; ink: "light" | "dark" }> = {
-  "01": { tint: "#b9d64a", ink: "dark" },
-  "02": { tint: "#8c2a35", ink: "light" },
-  "03": { tint: "#a87a4f", ink: "light" },
-  "04": { tint: "#2f6fe4", ink: "light" },
-};
 
 function Marquee({ text, tone = "dark" }: { text: string; tone?: "dark" | "light" }) {
   const items = Array.from({ length: 6 }, (_, i) => i);
@@ -113,10 +106,10 @@ export async function HomePage({ lang }: { lang: Locale }) {
               <div className="hv-hero-bottom">
                 <div className="hv-pill" data-hv-pill>
                   <span className="hv-pill-name">{h.heroPill}</span>
-                  <a href="#work" className="hv-cta">
+                  <Link href={localize("/projects", lang)} className="hv-cta">
                     {h.heroCta}
                     <ArrowUpRight />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -159,93 +152,8 @@ export async function HomePage({ lang }: { lang: Locale }) {
             </div>
           </section>
 
-          {/* 4. PROGETTI: caso studio Le Vele */}
-          <section className="hv-block hv-work" id="work" aria-labelledby="hv-work-title">
-            <div className="hv-work-head">
-              <p className="hv-kicker">{h.workKicker}</p>
-              <h2 className="hv-h2" id="hv-work-title" data-hv-title>
-                {h.workTitle}
-              </h2>
-              <Link href={localize("/projects", lang)} className="hv-link">
-                {h.allProjects}
-                <ArrowUpRight />
-              </Link>
-            </div>
-
-            <article className="hv-card hv-case" aria-labelledby="hv-case-title">
-              <div className="hv-case-copy">
-                <p className="hv-kicker">{h.proofKicker}</p>
-                <h3 className="hv-case-title" id="hv-case-title" data-hv-title>
-                  {h.proofTitle}
-                </h3>
-                <p className="hv-case-text">{h.proofText}</p>
-                <dl className="hv-case-stats" data-hv-stagger>
-                  {h.proofStats.map((s) => (
-                    <div key={s.value}>
-                      <dt>{s.value}</dt>
-                      <dd>{s.label}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <div className="hv-pill hv-pill-light">
-                  <span className="hv-pill-name">{LE_VELE.client}</span>
-                  <Link href={localize(LE_VELE.path, lang)} className="hv-cta">
-                    {h.proofCta}
-                    <ArrowUpRight />
-                  </Link>
-                </div>
-              </div>
-              <div className="hv-case-media" data-hv-rise>
-                <LeVeleFilm
-                  variant="fill"
-                  fixedCut={LE_VELE_MEDIA.desktop}
-                  labelDesktop={`${LE_VELE.client}: ${lang === "it" ? "anteprima del sito" : "website preview"}`}
-                  labelMobile={`${LE_VELE.client}: ${lang === "it" ? "anteprima del sito" : "website preview"}`}
-                  playLabel={lang === "it" ? "Riproduci il video" : "Play the video"}
-                />
-              </div>
-            </article>
-
-            {/* 5. PROGETTI: quattro lavori, ognuno con la sua tinta */}
-            <div className="hv-projects">
-              {homeFeatured.map((item) => {
-                const atmos = ATMOS[item.index];
-                return (
-                  <article
-                    key={item.index}
-                    className="hv-card hv-project"
-                    data-ink={atmos.ink}
-                    style={{ "--tint": atmos.tint } as React.CSSProperties}
-                  >
-                    {item.image ? (
-                      <div className="hv-project-media" aria-hidden="true">
-                        <div className="hv-project-img" data-hv-parallax>
-                          <Image src={item.image} alt="" fill sizes="(max-width: 900px) 100vw, 50vw" quality={72} />
-                        </div>
-                      </div>
-                    ) : null}
-                    <i className="hv-project-veil" aria-hidden="true" />
-                    <div className="hv-project-top">
-                      <h3 className="hv-project-title">{item.title[lang]}</h3>
-                      <p className="hv-project-cat">
-                        <span>{item.index}</span> {item.category[lang]}
-                      </p>
-                    </div>
-                    <div className="hv-project-bottom">
-                      <p className="hv-project-text">{item.description[lang]}</p>
-                      <div className="hv-pill">
-                        <span className="hv-pill-name">{item.title[lang]}</span>
-                        <Link href={localize(item.href, lang)} className="hv-cta" aria-label={`${h.openProject}: ${item.title[lang]}`}>
-                          {h.openProject}
-                          <ArrowUpRight />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+          {/* 4. RECENSIONI: bento a pagine (dati in lib/testimonials.ts) */}
+          {showTestimonials() ? <HomeTestimonials /> : null}
 
           {/* 6. STUDIO FILM */}
           <section className="hv-block hv-film" aria-labelledby="hv-film-title">
