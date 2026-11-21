@@ -584,61 +584,78 @@
   letter-spacing: -0.045em;
 }
 .hv-eco-lead { max-width: 20rem; margin: 0; font-size: clamp(0.95rem, 1.05vw, 1.1rem); line-height: 1.3; letter-spacing: -0.02em; text-align: left; }
-/* Cards keep a fixed width and the group stays centred; up to four per row, so new products just slot in
-   (add an entry in lib/ecosystem.ts). */
+/* Products as full-width rows (icon, wordmark + one line, arrow) that share the card's height, plus a quiet
+   dashed "coming soon" slot. A new product is one more row (entry in lib/ecosystem.ts). */
+.hv-eco-card { grid-template-rows: auto 1fr; }
 .hv-eco-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 19rem));
-  justify-content: center;
-  gap: clamp(0.75rem, 1.2vw, 1.25rem);
-  max-width: calc(4 * 19rem + 3 * 1.25rem);
-  width: 100%;
-  margin: 0 auto;
+  grid-auto-rows: minmax(clamp(5.5rem, 7vw, 7.5rem), 1fr);
+  gap: clamp(0.5rem, 0.7vw, 0.75rem);
+  min-height: 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
-.hv-eco-item {
-  display: grid;
-  gap: 1.1rem;
-  height: 100%;
-  padding: 1.15rem 1.15rem 1.05rem;
+.hv-eco-grid > li { display: flex; min-width: 0; }
+.hv-eco-item,
+.hv-eco-soon {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 1.4vw, 1.5rem);
+  width: 100%;
+  padding: clamp(0.9rem, 1.3vw, 1.5rem) clamp(1rem, 1.6vw, 1.75rem);
   border: 1px solid var(--hv-faint);
   border-radius: 18px;
+}
+.hv-eco-item {
   background: rgba(255, 255, 255, 0.03);
   color: inherit;
   text-decoration: none;
   transition: transform 0.6s var(--hv-ease), border-color 0.4s var(--hv-ease), background-color 0.4s var(--hv-ease);
 }
-.hv-eco-brand { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
 .hv-eco-icon {
   flex: none;
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: clamp(52px, 4.4vw, 104px);
+  height: clamp(52px, 4.4vw, 104px);
+  border-radius: 24%;
   /* Hairline so the black Quotes icon still reads on the dark card. */
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
+.hv-eco-text { display: grid; gap: 0.45rem; flex: 1; min-width: 0; }
 .hv-eco-wm { display: block; min-width: 0; color: #f2f1ec; }
-.hv-eco-wm-agenda { width: auto; height: 1.55rem; }
+.hv-eco-wm-agenda { width: auto; height: clamp(1.35rem, 1.8vw, 2.6rem); }
 .hv-eco-wm-quotes {
   font-family: var(--hv-display);
-  font-size: 1.6rem;
+  font-size: clamp(1.4rem, 1.85vw, 2.75rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.045em;
   white-space: nowrap;
 }
 .hv-eco-wm-quotes sup { font-size: 0.45em; vertical-align: 0; position: relative; top: -0.95em; margin-left: 0.05em; margin-right: 0.12em; }
-.hv-eco-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.75rem; }
-.hv-eco-sub { color: var(--hv-dim); font-size: clamp(0.85rem, 0.9vw, 0.95rem); line-height: 1.35; }
-.hv-eco-arrow { flex: none; width: 1.2rem; height: 1.2rem; color: var(--hv-accent); transition: transform 0.4s var(--hv-ease); }
-.hv-eco-item:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.22); background-color: rgba(255, 255, 255, 0.05); }
+.hv-eco-sub { color: var(--hv-dim); font-size: clamp(0.85rem, 0.9vw, 1.2rem); line-height: 1.35; }
+.hv-eco-arrow { flex: none; align-self: center; width: 1.35rem; height: 1.35rem; color: var(--hv-accent); transition: transform 0.4s var(--hv-ease); }
+.hv-eco-item:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.22); background-color: rgba(255, 255, 255, 0.05); }
 .hv-eco-item:hover .hv-eco-arrow { transform: translate(2px, -2px); }
 .hv-eco-item:focus-visible { outline: 2px solid var(--hv-accent); outline-offset: 4px; }
+.hv-eco-soon { border-style: dashed; border-color: rgba(255, 255, 255, 0.14); color: var(--hv-dim); }
+.hv-eco-soon-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: clamp(52px, 4.4vw, 104px);
+  height: clamp(52px, 4.4vw, 104px);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 24%;
+  font-size: 1.5rem;
+  font-weight: 300;
+  opacity: 0.7;
+}
+.hv-eco-soon-title { font-family: var(--hv-display); font-size: clamp(1.1rem, 1.3vw, 1.85rem); font-weight: 700; letter-spacing: -0.03em; color: #f2f1ec; opacity: 0.5; }
 @media (max-width: 809.98px) {
   .hv-eco-head { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
-  .hv-eco-grid { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
-  .hv-eco-icon { width: 56px; height: 56px; border-radius: 13px; }
+  .hv-eco-grid { grid-auto-rows: auto; }
+  .hv-eco-icon, .hv-eco-soon-icon { width: 52px; height: 52px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hv-eco-item, .hv-eco-arrow { transition: none; }
@@ -660,17 +677,8 @@
   .hv .hv-pair .h-film-rail { grid-auto-columns: minmax(7.5rem, calc((100% - 3 * 0.6rem) / 4)); gap: 0.6rem; }
   .hv .hv-pair .h-film-thumb-title { font-size: 0.78rem; }
   .hv .hv-pair .h-film-rail-head { margin-top: 0.25rem; }
-  /* Ecosistema: title on top, products centred in the remaining height, two per row. */
-  .hv .hv-pair .hv-eco-card { grid-template-rows: auto 1fr; }
+  /* Ecosistema: title stacked over the intro, rows fill the rest of the card. */
   .hv .hv-pair .hv-eco-head { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
-  .hv .hv-pair .hv-eco-grid {
-    grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
-    align-content: center;
-    max-width: 40rem;
-  }
-}
-@media (min-width: 1024px) and (max-width: 1279.98px) {
-  .hv .hv-pair .hv-eco-grid { grid-template-columns: minmax(0, 1fr); max-width: 22rem; }
 }
 
 .hv-film-card {

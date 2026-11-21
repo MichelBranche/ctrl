@@ -3,6 +3,11 @@ import { EcoWordmark } from "@/components/home/eco-wordmarks";
 import { ECOSYSTEM, ecosystemIcon } from "@/lib/ecosystem";
 import { localize, type Locale } from "@/lib/i18n";
 
+const SOON = {
+  it: { title: "Prossimamente", sub: "Nuovi strumenti CTRL® in arrivo." },
+  en: { title: "Coming soon", sub: "More CTRL® tools on the way." },
+};
+
 type Copy = { kicker: string; title: string; lead: string; subs: Record<string, string>; open: string };
 
 export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
@@ -30,21 +35,27 @@ export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
                   lang={lang}
                   label={item.href.startsWith("http") ? `${item.name}: ${sub} (${copy.open})` : `${item.name}: ${sub}`}
                 >
-                  <span className="hv-eco-brand">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- 128px icon, already optimized webp */}
-                    <img className="hv-eco-icon" src={ecosystemIcon(item.id)} alt="" width={128} height={128} loading="lazy" decoding="async" />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- 128px icon, already optimized webp */}
+                  <img className="hv-eco-icon" src={ecosystemIcon(item.id)} alt="" width={128} height={128} loading="lazy" decoding="async" />
+                  <span className="hv-eco-text">
                     <EcoWordmark id={item.id} />
-                  </span>
-                  <span className="hv-eco-meta">
                     <span className="hv-eco-sub">{sub}</span>
-                    <svg className="hv-eco-arrow" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2" />
-                    </svg>
                   </span>
+                  <svg className="hv-eco-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
                 </EcoLink>
               </li>
             );
           })}
+          {/* Free slot for the next product: a quiet dashed row, not a link. */}
+          <li className="hv-eco-soon" aria-hidden="true">
+            <span className="hv-eco-soon-icon">+</span>
+            <span className="hv-eco-text">
+              <span className="hv-eco-soon-title">{SOON[lang].title}</span>
+              <span className="hv-eco-sub">{SOON[lang].sub}</span>
+            </span>
+          </li>
         </ul>
       </div>
     </section>
