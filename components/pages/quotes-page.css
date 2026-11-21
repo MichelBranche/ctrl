@@ -302,6 +302,9 @@
 .qx-close-card { display: grid; justify-items: center; gap: 1.25rem; padding-block: clamp(3.5rem, 8vw, 7rem); background: var(--qx-violet); color: #fff; text-align: center; }
 .qx-close-title { max-width: 14ch; font-size: clamp(2.4rem, 6.2vw, 6.5rem); }
 .qx-close-lead { max-width: 30rem; margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; line-height: 1.5; }
+.qx-soon { max-width: 34rem; margin: 0.75rem 0 0; color: #fff; font-size: 0.95rem; line-height: 1.5; }
+.qx-soon a { color: var(--qx-lime); font-weight: 600; text-underline-offset: 3px; }
+.qx-soon a:hover { color: #fff; }
 .qx-by { margin: 1rem 0 0; color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em; }
 
 /* Footer inset like the home. */

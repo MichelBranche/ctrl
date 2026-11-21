@@ -60,7 +60,7 @@ export function FooterNewsletter({ lang }: { lang: Locale }) {
   const msg = { idle: "", busy: "", invalid: c.invalid, consent: c.needConsent, done: c.done, rate: c.rate, error: c.error }[state];
 
   return (
-    <form className="f-news" onSubmit={submit} noValidate>
+    <form className="f-news" id="newsletter" onSubmit={submit} noValidate>
       <p className="h-small f-news-title">{c.title}</p>
       <p className="f-news-lead">{c.lead}</p>
       <div className="f-news-row">

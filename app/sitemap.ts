@@ -60,6 +60,7 @@ const staticItalianPaths = [
   "/services/webapp",
   "/services/web-security",
   "/projects/webapps/agenda-easy",
+  "/ctrl-quotes",
   ...projectCategories.filter((category) => !category.href).map((category) => `/projects/${category.slug}`),
   ...services.map((service) => `/services/${service.slug}`),
   ...websitesInOrder().map((project) => `/projects/websites/${project.slug}`),

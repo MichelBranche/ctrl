@@ -9,11 +9,8 @@ import type { Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
 import "./quotes-page.css";
 
-/**
- * Indexing switch. Kept out of search until the owner confirms (the product is still "in arrivo").
- * Set to true to drop noindex and add the page to the sitemap.
- */
-export const QUOTES_INDEXABLE = false;
+/** Indexing switch: when false the page gets noindex (the sitemap lists /ctrl-quotes and /en/ctrl-quotes in app/sitemap.ts). */
+export const QUOTES_INDEXABLE = true;
 
 export function quotesMetadata(lang: Locale): Metadata {
   const c = QUOTES_COPY[lang];
@@ -260,11 +257,15 @@ export function QuotesPage({ lang }: { lang: Locale }) {
               </h2>
               <p className="qx-close-lead">{c.closeLead}</p>
               <div className="qx-actions qx-actions-center">
-                <OfficialLink className="qx-cta qx-cta-lime">quotes.ctrlagency.dev</OfficialLink>
+                <OfficialLink className="qx-cta qx-cta-lime">{c.demo}</OfficialLink>
                 <a href="#video" className="qx-ghost qx-ghost-light">
                   {c.watch}
                 </a>
               </div>
+              {/* Until purchases open on quotes.ctrlagency.dev: points to the existing footer newsletter, no new form. */}
+              <p className="qx-soon">
+                {c.soon} <a href="#newsletter">{c.soonLink}</a>
+              </p>
               <p className="qx-by">{c.by}</p>
             </div>
           </section>
