@@ -143,31 +143,31 @@ export async function HomePage({ lang }: { lang: Locale }) {
             </div>
           </section>
 
-          {/* 3b. ECOSISTEMA CTRL: software di CTRL (dati in lib/ecosystem.ts) */}
-          <HomeEcosystem
-            lang={lang}
-            copy={{
-              kicker: h.ecoKicker,
-              title: h.ecoTitle,
-              lead: h.ecoLead,
-              subs: { quotes: h.ecoQuotes, agenda: h.ecoAgenda },
-              open: h.ecoOpen,
-            }}
-          />
-
-          {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
-          {/* No visible title: the player and its poster speak for themselves; the name stays for screen readers. */}
-          <section className="hv-block hv-film" aria-label={h.filmTitle}>
-            <div className="hv-card hv-film-card">
-              <p className="hv-kicker hv-film-kicker">CTRL® / {h.filmKicker}</p>
-              <div className="hv-film-frame" data-hv-rise>
-                <HomeFilm lang={lang} />
+          {/* 3b + 4. STUDIO FILM and ECOSISTEMA as two half-width cards side by side (stacked under 1024px). */}
+          <div className="hv-pair">
+            {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
+            {/* No visible title: the player and its poster speak for themselves; the name stays for screen readers. */}
+            <section className="hv-block hv-film" aria-label={h.filmTitle}>
+              <div className="hv-card hv-film-card">
+                <p className="hv-kicker hv-film-kicker">CTRL® / {h.filmKicker}</p>
+                <div className="hv-film-frame" data-hv-rise>
+                  <HomeFilm lang={lang} />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* 5. RECENSIONI: bento a pagine (dati in lib/testimonials.ts) */}
-          {showTestimonials() ? <HomeTestimonials /> : null}
+            {/* 3b. ECOSISTEMA CTRL: software di CTRL (dati in lib/ecosystem.ts) */}
+            <HomeEcosystem
+              lang={lang}
+              copy={{
+                kicker: h.ecoKicker,
+                title: h.ecoTitle,
+                lead: h.ecoLead,
+                subs: { quotes: h.ecoQuotes, agenda: h.ecoAgenda },
+                open: h.ecoOpen,
+              }}
+            />
+          </div>
 
           {/* 7. PERCHE CTRL */}
           <section className="hv-block hv-why" aria-labelledby="hv-why-title">
@@ -199,6 +199,9 @@ export async function HomePage({ lang }: { lang: Locale }) {
               </div>
             </div>
           </section>
+
+          {/* 5. RECENSIONI: bento a pagine (dati in lib/testimonials.ts) */}
+          {showTestimonials() ? <HomeTestimonials /> : null}
 
           {reviewStrip ? (
             <section className="hv-block hv-reviews-wrap">

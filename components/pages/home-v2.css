@@ -644,6 +644,35 @@
   .hv-eco-item, .hv-eco-arrow { transition: none; }
 }
 
+/* ---------- 3b + 4. FILM + ECOSISTEMA pair ----------
+   Two half-width cards in one row, same height, 10px apart (the home gap); stacked under 1024px. */
+.hv-pair {
+  display: grid;
+  gap: var(--hv-gap);
+  padding: 0 var(--hv-frame) var(--hv-gap);
+}
+.hv-pair > .hv-block { padding: 0; }
+.hv-pair > .hv-block > .hv-card { height: 100%; }
+@media (min-width: 1024px) {
+  .hv-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Film: the player fills the half card, the thumbnails stay four in a row (scroll for more). */
+  .hv .hv-pair .hv-film-frame { max-width: none; }
+  .hv .hv-pair .h-film-rail { grid-auto-columns: minmax(7.5rem, calc((100% - 3 * 0.6rem) / 4)); gap: 0.6rem; }
+  .hv .hv-pair .h-film-thumb-title { font-size: 0.78rem; }
+  .hv .hv-pair .h-film-rail-head { margin-top: 0.25rem; }
+  /* Ecosistema: title on top, products centred in the remaining height, two per row. */
+  .hv .hv-pair .hv-eco-card { grid-template-rows: auto 1fr; }
+  .hv .hv-pair .hv-eco-head { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
+  .hv .hv-pair .hv-eco-grid {
+    grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+    align-content: center;
+    max-width: 40rem;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .hv .hv-pair .hv-eco-grid { grid-template-columns: minmax(0, 1fr); max-width: 22rem; }
+}
+
 .hv-film-card {
   display: grid;
   gap: 1.5rem;
