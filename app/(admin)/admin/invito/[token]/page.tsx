@@ -30,7 +30,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
   return (
     <InviteScreen
       token={token}
-      invite={view.state === "valid" ? { state: "valid", name: view.name, email: view.email, roles: view.roles.map((r) => adminRoleLabel(lang, r)), founder: isFounder(view.roles) } : { state: view.state }}
+      invite={view.state === "valid" ? { state: "valid", name: view.name, lastName: view.lastName, phone: view.phone, hasPhoto: view.hasPhoto, email: view.email, roles: view.roles.map((r) => adminRoleLabel(lang, r)), founder: isFounder(view.roles) } : { state: view.state }}
     />
   );
 }

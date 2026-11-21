@@ -2124,3 +2124,14 @@ th[aria-sort] .crm-sort { color: var(--adm-fg); }
 .adm-auth-sent-mark { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; margin-bottom: 1.1rem; border-radius: 14px; border: 1px solid rgba(255,74,28,.3); background: rgba(255,74,28,.1); color: var(--o); }
 .adm-auth-sent-back { margin-top: 1.4rem; }
 .adm-auth .adm-auth-reset-new { display: inline-flex; margin-top: 1.2rem; }
+
+/* Invite onboarding, step "Il tuo profilo": optional photo row. */
+.adm-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.adm-invite-photo { display: flex; align-items: center; gap: .9rem; }
+.adm-invite-photo-preview { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); font-size: .8rem; font-weight: 600; color: var(--dim); }
+.adm-invite-photo-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.adm-invite-photo-body { display: grid; gap: .15rem; min-width: 0; }
+.adm-invite-photo-actions { display: flex; gap: 1rem; align-items: baseline; }
+.adm-auth .adm-invite-photo-actions .adm-otp-alt { margin-top: 0; }
+.adm-invite-photo-pick { position: relative; }
+.adm-invite-photo-pick:focus-within { outline: 2px solid var(--fg); outline-offset: 2px; }

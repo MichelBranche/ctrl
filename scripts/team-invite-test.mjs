@@ -85,7 +85,7 @@ try {
     { sql: "INSERT INTO admin_users (id, email, name, password_hash, role, active) VALUES ('n1','n@t.test','Nuovo Membro','!', 'member', 0)", args: [] },
     { sql: "INSERT INTO admin_user_roles (user_id, role) VALUES ('n1','designer'), ('n1','seo')", args: [] },
   ], "write");
-  const inviter = { id: "f1", name: "Fondatore Uno" };
+  const inviter = { id: "f1", name: "Fondatore Uno", roles: ["founder"], avatarUrl: null };
   assert.deepEqual(await I.sendInvite("n1", inviter, "sent"), { ok: true });
   const mail = globalThis.__sent.at(-1);
   assert.deepEqual(mail.to, ["n@t.test"]);
@@ -101,6 +101,24 @@ try {
   const be = brandedEmail("Ciao", { cta: mail.cta });
   assert.ok(be.html.includes(mail.cta.href) && be.html.includes("Accetta l") && be.text.includes(mail.cta.href));
   assert.ok(!brandedEmail("x", { cta: { label: "y", href: "javascript:alert(1)" } }).html.includes("javascript:"), "https-only CTA");
+  // Signature phone: only the sender's own profile phone, never a fixed or shared number.
+  const { CONTACT_PHONE } = await import("../lib/content.ts");
+  const { emailSender } = await import("../lib/mail/sender.ts");
+  for (const out of [be, brandedEmail("x"), brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana", roles: ["commerciale"], avatarUrl: null }) })]) {
+    assert.ok(!out.html.includes(CONTACT_PHONE) && !out.text.includes(CONTACT_PHONE) && !/Tel\./.test(out.html + out.text) && !out.html.includes("tel:"), "no phone without a profile phone");
+    assert.ok(!out.html.includes("<svg") && (out.html.match(/<img\b/g) ?? []).length === 0, "no images without a photo");
+  }
+  const withPhone = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana", roles: ["commerciale"], avatarUrl: null, phone: "+39 333 000 1111" }) });
+  assert.ok(withPhone.html.includes('href="tel:+393330001111"') && withPhone.html.includes("+39 333 000 1111") && withPhone.text.includes("Tel. +39 333 000 1111"), "sender phone shown");
+  const full = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: ["commerciale"], avatarUrl: "/team/ana.webp", phone: null, contactEmail: "ana@private.test" }) });
+  assert.equal((full.html.match(/<img\b/g) ?? []).length, 1, "the photo is the only image");
+  assert.ok(full.html.includes('alt="Ana Bo"') && full.html.includes('href="mailto:hello@ctrlagency.dev"') && !full.html.includes("ana@private.test"), "seller: hello@, never a personal address");
+  assert.ok(brandedEmail("x", { sender: emailSender({ id: "f", name: "Fo", roles: ["founder"], avatarUrl: null }) }).html.includes("mailto:amministrazione@ctrlagency.dev"), "founder: amministrazione@");
+  assert.ok(!full.html.includes("/projects/") && !full.html.includes("agendaeasy"), "minimal footer");
+  assert.ok(brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: [], avatarUrl: null }) }).html.includes(">AB</td>"), "initials without a photo");
+  assert.ok(!/\u2014/.test(full.html + full.text), "no em dash");
+  assert.ok(!withPhone.html.includes(CONTACT_PHONE), "never the fixed number");
+  assert.ok(!brandedEmail("x", { sender: { name: "A", phone: "<b>1</b>" } }).html.includes("<b>1"), "invalid phone dropped");
   assert.equal(await A.login("n@t.test", "anything-at-all-123"), "invalid", "invited user cannot log in");
   assert.equal((await I.sendInvite("n1", inviter, "resent")).ok, false, "resend within 2 minutes refused");
   assert.equal((await I.readInvite(token)).state, "valid");
@@ -127,7 +145,16 @@ try {
   await db().execute("UPDATE admin_users SET invite_sent_at = 0 WHERE id = 'n2'");
   await I.sendInvite("n2", inviter, "resent");
   const t3 = globalThis.__sent.at(-1).cta.href.split("/").pop();
-  const acc2 = await I.acceptInvite(t3, "founder-strong-pass-99");
+  const v3 = await I.readInvite(t3);
+  assert.equal(v3.name, "Socio Nuovo"); assert.equal(v3.lastName, ""); assert.equal(v3.phone, ""); assert.equal(v3.hasPhoto, false);
+  const acc2 = await I.acceptInvite(t3, "founder-strong-pass-99", Date.now(), { name: "Socio", lastName: "Nuovissimo", phone: "+39 02 1234567", photo: null });
+  const p2 = (await db().execute("SELECT name, last_name, phone, avatar_url FROM admin_users WHERE id = 'n2'")).rows[0];
+  assert.deepEqual([p2.name, p2.last_name, p2.phone, p2.avatar_url], ["Socio", "Nuovissimo", "+39 02 1234567", null], "onboarding profile saved with the password");
+  const { profileFieldsError, photoError } = await import("../lib/profile-validate.ts");
+  assert.equal(profileFieldsError({ name: "", lastName: "", phone: "" }), "nameInvalid");
+  assert.equal(profileFieldsError({ name: "A", lastName: "", phone: "abc" }), "phoneInvalid");
+  assert.equal(profileFieldsError({ name: "A", lastName: "", phone: "" }), null, "phone optional");
+  assert.equal(photoError("data:image/png;base64,AAAA"), "photoInvalid");
   assert.equal(await A.signInAfterInvite(acc2), "setup", "founder: forced 2FA before any session");
   assert.equal(await A.getAdmin(), null);
   globalThis.__jar.clear();

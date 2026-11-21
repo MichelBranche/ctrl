@@ -135,6 +135,8 @@ export type AdminUser = {
   roles: TeamRole[];
   area: Area | null;
   avatarUrl: string | null;
+  /** Phone from the user's own profile (Impostazioni), shown only in their email signature. */
+  phone: string | null;
   emailAccess: boolean;
   issuedAt: number;
   expiresAt: number;
@@ -432,7 +434,7 @@ const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: 
     await ensureTeam();
     await ensureTwoFactorSchema();
     const res = await db().execute({
-      sql: `SELECT id, email, name, last_name, role, ${ROLES_SQL}, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
+      sql: `SELECT id, email, name, last_name, phone, role, ${ROLES_SQL}, area, email_access, avatar_url IS NOT NULL AS has_avatar, updated_at, session_version,
               EXISTS (SELECT 1 FROM admin_2fa t WHERE t.user_id = admin_users.id AND t.secret_enc IS NOT NULL) AS tfa
             FROM admin_users WHERE id = ? AND ${CAN_SIGN_IN_SQL}`,
       args: [payload.sub],
@@ -450,6 +452,7 @@ const readSession = cache(async (): Promise<{ admin: AdminUser | null; blocked: 
       roles,
       area: isArea(u.area) ? u.area : null,
       avatarUrl: avatarFor(String(u.id), Number(u.has_avatar) === 1, u.updated_at, String(u.email)),
+      phone: u.phone ? String(u.phone) : null,
       emailAccess: isFounder(roles) || Number(u.email_access) === 1,
       issuedAt: Number(payload.iat ?? 0) * 1000,
       expiresAt: Number(payload.exp ?? 0) * 1000,
