@@ -1,0 +1,192 @@
+/* Team badges: cards hanging from an orange lanyard. Scoped with .tb-. */
+.tb-grid {
+  --tb-w: 250px;          /* card width */
+  --tb-ribbon: 110px;     /* ribbon length, top part fades into the page */
+  --tb-ribbon-w: 30px;
+  --tb-clip-w: 46px;      /* carabiner, visible metal (PNG cropped to its alpha box) */
+  --tb-clip-h: 95px;
+  --tb-slot-top: 16px;
+  --tb-slot-h: 9px;
+  --tb-tuck: 6px;         /* hook length hidden behind the card below the slot */
+  --tb-card-top: calc(var(--tb-ribbon) - 3px + var(--tb-clip-h) - var(--tb-slot-top) - var(--tb-slot-h) - var(--tb-tuck));
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: min(100%, calc(318px * 3 + 2 * var(--gutter)));
+  margin: -1.5rem auto 0;
+  padding: 0 var(--gutter) 7rem;
+  list-style: none;
+  scroll-margin-top: var(--header);
+}
+
+/* Founders centered above the three collaborators, same width for all. */
+.tb { grid-column: span 2; }
+.tb:nth-child(1) { grid-column: 2 / span 2; }
+.tb:nth-child(2) { grid-column: 4 / span 2; }
+.tb:nth-child(n + 3) { margin-top: -2.75rem; }
+/* Earlier badges paint above the next row's ribbons, so a tilted card covers them. */
+.tb:nth-child(1) { z-index: 5; }
+.tb:nth-child(2) { z-index: 4; }
+.tb:nth-child(3) { z-index: 3; }
+.tb:nth-child(4) { z-index: 2; }
+
+.tb {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  pointer-events: none; /* only the resting card rect and the card itself catch the pointer */
+}
+
+/* Stable hover area: the card at rest, never rotated. */
+.tb-hit {
+  position: absolute;
+  top: calc(var(--tb-card-top) - 12px);
+  bottom: -12px;
+  left: 50%;
+  width: calc(min(var(--tb-w), 100%) + 24px);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.tb-swing {
+  position: relative;
+  width: min(var(--tb-w), 100%);
+  padding-top: var(--tb-card-top);
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.tb-ribbon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--tb-ribbon-w);
+  height: var(--tb-ribbon);
+  margin-left: calc(var(--tb-ribbon-w) / -2);
+  z-index: 3;
+  background: #ff4a1c url("/images/team-badge/ribbon.webp") 0 0 / 56px 56px repeat;
+  box-shadow: inset 2px 0 2px rgba(0, 0, 0, 0.18), inset -2px 0 2px rgba(0, 0, 0, 0.18), inset 0 -2px 2px rgba(0, 0, 0, 0.22);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 55%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 55%);
+}
+
+/* Ribbon bottom edge sits on the middle of the D-ring bar; the hook tip tucks behind the slot edge. */
+.tb-clip {
+  position: absolute;
+  top: calc(var(--tb-ribbon) - 3px);
+  left: 50%;
+  width: var(--tb-clip-w);
+  height: var(--tb-clip-h);
+  margin-left: calc(var(--tb-clip-w) / -2);
+  z-index: 2;
+  clip-path: inset(0 0 var(--tb-tuck) 0);
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+
+.tb-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 46px 16px 18px;
+  border-radius: 10px;
+  background: #ece7de;
+  color: #141414;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 2px 6px rgba(0, 0, 0, 0.35), 0 26px 50px -12px rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
+  text-align: left;
+}
+
+.tb-slot {
+  position: absolute;
+  top: var(--tb-slot-top);
+  left: 50%;
+  width: 44px;
+  height: var(--tb-slot-h);
+  margin-left: -22px;
+  border-radius: 99px;
+  background: #0b0b0b;
+  box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.tb-logo {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.tb-logo sup {
+  position: relative;
+  top: -0.6em;
+  margin-left: 1px;
+  font-size: 0.55em;
+  line-height: 0;
+  color: #ff4a1c;
+  vertical-align: baseline;
+}
+
+.tb-photo {
+  position: relative;
+  aspect-ratio: 218 / 200;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #1c1c1c;
+}
+.tb-photo img {
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.06);
+}
+
+.tb-name {
+  margin: 16px 0 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.tb-role {
+  margin: 4px 0 0;
+  min-height: 1.35em;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #3b3934;
+}
+
+/* Contacts: the row keeps its height even when a person has no public links. */
+.tb-links { min-height: 34px; margin-top: 14px; }
+.tb-links .t-socials { justify-content: flex-start; gap: 6px; margin: 0; }
+.tb-links .t-socials a {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  color: #1a1a1a;
+  border: 1.4px solid rgba(20, 20, 20, 0.75);
+}
+.tb-links .t-socials a::after { content: ""; position: absolute; inset: -5px; } /* 44px touch target */
+.tb-links .t-socials svg { width: 16px; height: 16px; }
+.tb-links .t-socials a:hover { color: #ff4a1c; border-color: #ff4a1c; }
+.tb-links .t-socials a:focus-visible { color: #ff4a1c; border-color: #ff4a1c; outline: 2px solid #ff4a1c; outline-offset: 2px; }
+
+/* Tablet: two per row, Jacopo centered on the last row. */
+@media (max-width: 1040px) {
+  .tb-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(100%, calc(300px * 2 + 2 * var(--gutter))); }
+  .tb, .tb:nth-child(1), .tb:nth-child(2) { grid-column: span 2; }
+  .tb:nth-child(5) { grid-column: 2 / span 2; }
+  .tb:nth-child(n + 3) { margin-top: -2.75rem; }
+}
+
+/* Two cards would get too narrow for name, role and contacts: one column. */
+@media (max-width: 620px) {
+  .tb-grid { grid-template-columns: minmax(0, 1fr); width: 100%; margin-top: -1rem; }
+  .tb, .tb:nth-child(n) { grid-column: 1; }
+  .tb:nth-child(n + 2) { margin-top: 0.5rem; }
+  .tb-grid { --tb-w: 270px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-swing { transform: none !important; will-change: auto; }
+}

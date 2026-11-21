@@ -4,10 +4,11 @@ import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { team } from "@/lib/content";
-import { TeamSocials } from "@/components/team-socials";
+import { TeamBadge } from "@/components/team-badge";
 import { dict, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
 import "./team.css";
+import "./team-badge.css";
 
 export function teamMetadata(lang: Locale): Metadata {
   return publicMeta(lang, { title: dict[lang].team.metaTitle, description: dict[lang].team.description, itPath: "/team" });
@@ -42,41 +43,10 @@ export function TeamView({ lang }: { lang: Locale }) {
           </div>
         </section>
 
-        <ul className="t-grid" id="team-grid">
-          {team.map((member) => {
-            const site = member.socials.website;
-            const body = (
-              <>
-                {member.photo ? (
-                  <Image
-                    className="t-photo"
-                    src={member.photo}
-                    alt={member.name}
-                    fill
-                    sizes="(max-width: 700px) min(80vw, 320px), 320px"
-                    quality={90}
-                  />
-                ) : null}
-                <span className="t-grain" aria-hidden="true" />
-                <span className="t-meta">
-                  <span className="t-name">{member.name}</span>
-                  <span className="t-role">{member.role[lang]}</span>
-                </span>
-              </>
-            );
-            return (
-              <li key={member.slug} className="t-card">
-                {site ? (
-                  <a href={site} target="_blank" rel="noreferrer" className="t-card-link">
-                    {body}
-                  </a>
-                ) : (
-                  <div className="t-card-link">{body}</div>
-                )}
-                <TeamSocials socials={member.socials} name={member.name} lang={lang} />
-              </li>
-            );
-          })}
+        <ul className="tb-grid" id="team-grid">
+          {team.map((member, i) => (
+            <TeamBadge key={member.slug} member={member} lang={lang} priority={i < 2} />
+          ))}
         </ul>
       </main>
       <SiteFooter />
