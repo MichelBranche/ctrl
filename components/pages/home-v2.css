@@ -584,47 +584,64 @@
   letter-spacing: -0.045em;
 }
 .hv-eco-lead { max-width: 20rem; margin: 0; font-size: clamp(0.95rem, 1.05vw, 1.1rem); line-height: 1.3; letter-spacing: -0.02em; text-align: left; }
-/* Four slots per row on desktop: the two products today, room for the next ones (add an entry in lib/ecosystem.ts). */
-.hv-eco-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(0.75rem, 1.2vw, 1.25rem); margin: 0; padding: 0; list-style: none; }
+/* Cards keep a fixed width and the group stays centred; up to four per row, so new products just slot in
+   (add an entry in lib/ecosystem.ts). */
+.hv-eco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 19rem));
+  justify-content: center;
+  gap: clamp(0.75rem, 1.2vw, 1.25rem);
+  max-width: calc(4 * 19rem + 3 * 1.25rem);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
 .hv-eco-item {
   display: grid;
-  gap: 0.65rem;
+  gap: 1.1rem;
+  height: 100%;
+  padding: 1.15rem 1.15rem 1.05rem;
+  border: 1px solid var(--hv-faint);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
   color: inherit;
   text-decoration: none;
-  transition: transform 0.6s var(--hv-ease);
+  transition: transform 0.6s var(--hv-ease), border-color 0.4s var(--hv-ease), background-color 0.4s var(--hv-ease);
 }
-.hv-eco-media {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1710 / 919;
-  overflow: clip;
+.hv-eco-brand { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
+.hv-eco-icon {
+  flex: none;
+  width: 60px;
+  height: 60px;
   border-radius: 14px;
-  transition: box-shadow 0.6s var(--hv-ease);
+  /* Hairline so the black Quotes icon still reads on the dark card. */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
-.hv-eco-media img { object-fit: cover; transform: scale(1.02); transition: transform 1.4s var(--hv-ease); }
-.hv-eco-placeholder { font-family: var(--hv-display); font-size: clamp(1.1rem, 1.6vw, 1.5rem); font-weight: 700; letter-spacing: -0.04em; }
-.hv-eco-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; padding: 0 0.15rem; }
-.hv-eco-meta > span { display: grid; gap: 0.2rem; }
-.hv-eco-name { font-family: var(--hv-display); font-size: clamp(1.05rem, 1.3vw, 1.3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
-.hv-eco-sub { color: var(--hv-dim); font-size: clamp(0.82rem, 0.9vw, 0.95rem); }
-.hv-eco-arrow { flex: none; width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; color: var(--hv-accent); transition: transform 0.4s var(--hv-ease); }
-.hv-eco-item:hover { transform: translateY(-4px); }
-.hv-eco-item:hover .hv-eco-media { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35); }
-.hv-eco-item:hover .hv-eco-media img { transform: scale(1.06); }
+.hv-eco-wm { display: block; min-width: 0; color: #f2f1ec; }
+.hv-eco-wm-agenda { width: auto; height: 1.55rem; }
+.hv-eco-wm-quotes {
+  font-family: var(--hv-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+.hv-eco-wm-quotes sup { font-size: 0.45em; vertical-align: 0; position: relative; top: -0.95em; margin-left: 0.05em; margin-right: 0.12em; }
+.hv-eco-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.75rem; }
+.hv-eco-sub { color: var(--hv-dim); font-size: clamp(0.85rem, 0.9vw, 0.95rem); line-height: 1.35; }
+.hv-eco-arrow { flex: none; width: 1.2rem; height: 1.2rem; color: var(--hv-accent); transition: transform 0.4s var(--hv-ease); }
+.hv-eco-item:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.22); background-color: rgba(255, 255, 255, 0.05); }
 .hv-eco-item:hover .hv-eco-arrow { transform: translate(2px, -2px); }
-.hv-eco-item:focus-visible { outline: 2px solid var(--hv-accent); outline-offset: 4px; border-radius: calc(var(--hv-r) - 6px); }
-@media (max-width: 1100px) and (min-width: 810px) {
-  .hv-eco-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
+.hv-eco-item:focus-visible { outline: 2px solid var(--hv-accent); outline-offset: 4px; }
 @media (max-width: 809.98px) {
   .hv-eco-head { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
-  .hv-eco-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 0.6rem; }
-  .hv-eco-name { font-size: 0.98rem; }
-  .hv-eco-sub { font-size: 0.78rem; }
+  .hv-eco-grid { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+  .hv-eco-icon { width: 56px; height: 56px; border-radius: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hv-eco-item, .hv-eco-media, .hv-eco-media img, .hv-eco-arrow { transition: none; }
+  .hv-eco-item, .hv-eco-arrow { transition: none; }
 }
 
 .hv-film-card {

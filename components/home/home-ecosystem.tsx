@@ -1,16 +1,9 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-import Image from "next/image";
 import Link from "next/link";
-import { ECOSYSTEM, ecosystemImage } from "@/lib/ecosystem";
+import { EcoWordmark } from "@/components/home/eco-wordmarks";
+import { ECOSYSTEM, ecosystemIcon } from "@/lib/ecosystem";
 import { localize, type Locale } from "@/lib/i18n";
 
 type Copy = { kicker: string; title: string; lead: string; subs: Record<string, string>; open: string };
-
-/** Checked at build/render time, so a newly copied image shows up without code changes. */
-function hasImage(src: string) {
-  return existsSync(path.join(process.cwd(), "public", src));
-}
 
 export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
   return (
@@ -29,8 +22,6 @@ export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
         </div>
         <ul className="hv-eco-grid" data-hv-stagger>
           {ECOSYSTEM.map((item) => {
-            const src = ecosystemImage(item.id, lang);
-            const ready = hasImage(src);
             const sub = copy.subs[item.id];
             return (
               <li key={item.id}>
@@ -39,18 +30,13 @@ export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
                   lang={lang}
                   label={item.href.startsWith("http") ? `${item.name}: ${sub} (${copy.open})` : `${item.name}: ${sub}`}
                 >
-                  <span className="hv-eco-media" style={{ background: item.tint, color: item.ink }}>
-                    {ready ? (
-                      <Image src={src} alt="" fill sizes="(max-width: 809px) 100vw, 50vw" quality={80} />
-                    ) : (
-                      <span className="hv-eco-placeholder">{item.name}</span>
-                    )}
+                  <span className="hv-eco-brand">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- 128px icon, already optimized webp */}
+                    <img className="hv-eco-icon" src={ecosystemIcon(item.id)} alt="" width={128} height={128} loading="lazy" decoding="async" />
+                    <EcoWordmark id={item.id} />
                   </span>
                   <span className="hv-eco-meta">
-                    <span>
-                      <span className="hv-eco-name">{item.name}</span>
-                      <span className="hv-eco-sub">{sub}</span>
-                    </span>
+                    <span className="hv-eco-sub">{sub}</span>
                     <svg className="hv-eco-arrow" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2" />
                     </svg>

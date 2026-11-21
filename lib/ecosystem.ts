@@ -1,14 +1,11 @@
-import type { Locale } from "@/lib/i18n";
-
 /**
  * "Ecosistema CTRL®" cards on the home page (solutions made by CTRL®).
  *
- * Images: /public/images/ecosystem/<id>-it.webp and <id>-en.webp, picked by
- * language. Until a file exists the card shows a solid placeholder in `tint`
- * with the product name, so new artwork only needs copying in and a push.
- * Quotes links to the temporary /ctrl-quotes page (noindex); the live app is
- * https://quotes.ctrlagency.dev. Agenda Easy links to its public site.
- * Recommended size: 1710x919 (about 1.86:1), webp.
+ * Each product shows its app icon (128x128 webp in /public/images/ecosystem/<id>-icon.webp,
+ * rendered at about 60px) next to its wordmark, written as the brand writes it
+ * (see components/home/eco-wordmarks.tsx). Quotes links to the temporary /ctrl-quotes page
+ * (noindex); the live app is https://quotes.ctrlagency.dev. Agenda Easy links to its public site.
+ * Add a product: one entry here, its icon file, and a wordmark. The grid keeps cards centred.
  * Texts (subtitles, header) live in lib/i18n.ts under home.eco*.
  */
 export type EcosystemItem = {
@@ -16,17 +13,13 @@ export type EcosystemItem = {
   name: string;
   /** Internal path (localized) or an external URL (opens in a new tab). */
   href: string;
-  /** Placeholder background, same colour family as the artwork. */
-  tint: string;
-  /** Placeholder text colour. */
-  ink: string;
 };
 
 export const ECOSYSTEM: EcosystemItem[] = [
-  { id: "quotes", name: "CTRL® Quotes", href: "/ctrl-quotes", tint: "#ff4a1c", ink: "#0c0c0c" },
-  { id: "agenda", name: "Agenda Easy", href: "https://agendaeasy.it", tint: "#e2d6f0", ink: "#3b1f5c" },
+  { id: "quotes", name: "CTRL® Quotes", href: "/ctrl-quotes" },
+  { id: "agenda", name: "Agenda Easy", href: "https://agendaeasy.it" },
 ];
 
-export function ecosystemImage(id: EcosystemItem["id"], lang: Locale) {
-  return `/images/ecosystem/${id}-${lang}.webp`;
+export function ecosystemIcon(id: EcosystemItem["id"]) {
+  return `/images/ecosystem/${id}-icon.webp`;
 }
