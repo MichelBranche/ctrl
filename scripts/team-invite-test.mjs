@@ -110,9 +110,11 @@ try {
   }
   const withPhone = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana", roles: ["commerciale"], avatarUrl: null, phone: "+39 333 000 1111" }) });
   assert.ok(withPhone.html.includes('href="tel:+393330001111"') && withPhone.html.includes("+39 333 000 1111") && withPhone.text.includes("Tel. +39 333 000 1111"), "sender phone shown");
-  const full = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: ["commerciale"], avatarUrl: "/team/ana.webp", phone: null, contactEmail: "ana@ctrlagency.dev" }) });
+  const full = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: ["commerciale"], avatarUrl: "/team/ana.webp", phone: null, contactEmail: "ana@private.test" }) });
   assert.equal((full.html.match(/<img\b/g) ?? []).length, 1, "the photo is the only image");
-  assert.ok(full.html.includes('alt="Ana Bo"') && full.html.includes('href="mailto:ana@ctrlagency.dev"') && full.text.includes("Email ana@ctrlagency.dev"), "photo alt and contact email");
+  assert.ok(full.html.includes('alt="Ana Bo"') && full.html.includes('href="mailto:hello@ctrlagency.dev"') && !full.html.includes("ana@private.test"), "seller: hello@, never a personal address");
+  assert.ok(brandedEmail("x", { sender: emailSender({ id: "f", name: "Fo", roles: ["founder"], avatarUrl: null }) }).html.includes("mailto:amministrazione@ctrlagency.dev"), "founder: amministrazione@");
+  assert.ok(!full.html.includes("/projects/") && !full.html.includes("agendaeasy"), "minimal footer");
   assert.ok(brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: [], avatarUrl: null }) }).html.includes(">AB</td>"), "initials without a photo");
   assert.ok(!/\u2014/.test(full.html + full.text), "no em dash");
   assert.ok(!withPhone.html.includes(CONTACT_PHONE), "never the fixed number");

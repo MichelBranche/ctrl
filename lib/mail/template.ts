@@ -1,10 +1,10 @@
 /*
- * CTRL branded email: white card, message body, two-column signature (CTRL® mark | sender), footer with services.
+ * CTRL branded email: white card, message body, two-column signature (CTRL® mark | sender), minimal footer.
  * Pure and dependency-free so the compose preview (client) and the send path (server) produce byte-identical HTML.
  * Email-client safe: tables, inline styles, no scripts, no SVG. Works with images blocked: the CTRL® mark is a table
  * cell, contact rows use text labels; the only image is the sender photo (absolute https URL, alt = name), and without
  * a photo an initials cell takes its place. A small <style> only stacks the columns on narrow screens.
- * Payoff, services and links come from the public site (lib/i18n.ts home.heroLine, lib/content.ts, lib/ecosystem.ts).
+ * Payoffs come from the public site (lib/i18n.ts home.heroLine and home.title).
  * Everything the user typed is HTML-escaped; only a tiny markdown subset becomes markup.
  */
 const ACCENT = "#ff4a1c";
@@ -16,20 +16,12 @@ const SITE = "www.ctrlagency.dev";
 const PAYOFF = "Brand, siti web e software su misura.";
 /** Site hero title (lib/i18n.ts it.home.title). */
 const FOOTER_PAYOFF = "Dall'identità al prodotto.";
-/** Offers already live on the site (real paths), plus the Ecosistema products. */
-export const FOOTER_LINKS: readonly { label: string; href: string }[] = [
-  { label: "Siti web", href: `${ORIGIN}/projects/websites` },
-  { label: "Webapp", href: `${ORIGIN}/services/webapp` },
-  { label: "Software", href: `${ORIGIN}/projects/software` },
-  { label: "Brand", href: `${ORIGIN}/projects/brand-identity` },
-  { label: "CTRL® Quotes", href: `${ORIGIN}/ctrl-quotes` },
-  { label: "Agenda Easy", href: "https://agendaeasy.it" },
-];
 /** Standard signature delimiter: lets drafts strip the signature before re-editing. */
 export const SIG_DELIM = "\n\n-- \n";
 /**
  * Who is sending, all from the sender's own admin profile: name, roles already joined ("Founder e Designer UI/UX"),
- * optional absolute https photo URL, phone and contact email. A missing field hides its line: never a shared or fixed value.
+ * optional absolute https photo URL and phone (missing phone hides its line). email is the agency mailbox for the
+ * sender's role (see emailSender), never a personal address.
  */
 export type EmailSender = { name: string; role?: string | null; photoUrl?: string | null; phone?: string | null; email?: string | null };
 /** Same rule as the profile form: digits, +, spaces, dots, dashes, parentheses. Anything else is dropped. */
@@ -49,7 +41,7 @@ const contactsText = (sender?: EmailSender | null) => {
 export const signatureText = (sender?: EmailSender | null) =>
   `${sender?.name ? `${sender.name}\n` : ""}${sender?.role ? `${sender.role}\n` : ""}CTRL® Agency · ${PAYOFF}\n\n${contactsText(sender)}`;
 export const SIGNATURE_TEXT = signatureText(null);
-const FOOTER_TEXT = `CTRL® Agency · ${FOOTER_PAYOFF}\n${FOOTER_LINKS.map((l) => `${l.label}: ${l.href}`).join("\n")}`;
+const FOOTER_TEXT = `CTRL® Agency · ${FOOTER_PAYOFF}`;
 const LEGAL = "Hai ricevuto questa email perché sei in contatto con Ctrl Agency. Se non desideri altre comunicazioni, rispondi a questa email e non ti scriveremo più.";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -105,7 +97,7 @@ const a = (href: string, label: string) =>
   `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" style="color:${LINK};text-decoration:underline">${label}</a>`;
 
 /** The CTRL® mark without images: a rounded orange cell with a bold white C (square corners where radius is unsupported). */
-const MARK = `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="${ACCENT}" style="width:40px;height:40px;background:${ACCENT};border-radius:9px;font:900 22px/40px ${FONT};color:#ffffff;text-align:center;mso-line-height-rule:exactly">C</td></tr></table>`;
+const MARK = `<table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0" style="width:40px"><tr><td width="40" height="40" align="center" valign="middle" bgcolor="${ACCENT}" style="width:40px;min-width:40px;height:40px;background:${ACCENT};border-radius:9px;font:900 22px/40px ${FONT};color:#ffffff;text-align:center;mso-line-height-rule:exactly">C</td></tr></table>`;
 
 const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "C";
 
@@ -138,10 +130,12 @@ ${sender.role ? `<p style="margin:2px 0 0;font:13px/1.4 ${FONT};color:#666666">$
 </td></tr></table>`;
 }
 
+/** CTRL® mark beside the name and payoff. */
 function brandHtml() {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="top">${MARK}</td></tr>
-<tr><td style="padding-top:10px;font:700 15px/1.35 ${FONT};color:#111111">CTRL® Agency</td></tr>
-<tr><td style="padding-top:2px;font:13px/1.45 ${FONT};color:#666666">${esc(PAYOFF)}</td></tr></table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="40" valign="middle" style="width:40px">${MARK}</td>
+<td valign="middle" style="padding-left:12px"><p style="margin:0;font:700 15px/1.3 ${FONT};color:#111111;white-space:nowrap">CTRL® Agency</p><p style="margin:3px 0 0;font:12px/1.4 ${FONT};color:#777777">${esc(PAYOFF)}</p></td>
+</tr></table>`;
 }
 
 /** Two columns with a thin vertical divider; stacked on narrow screens (sig-col / sig-div). No sender: brand only. */
@@ -151,21 +145,17 @@ function signatureHtml(sender?: EmailSender | null) {
   }
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;border-top:1px solid #eeeeee"><tr><td style="padding-top:20px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td class="sig-col" width="200" valign="top" style="width:200px;padding-right:20px">${brandHtml()}</td>
+<td class="sig-col" width="185" valign="top" style="width:185px;padding-right:18px">${brandHtml()}</td>
 <td class="sig-div" width="1" bgcolor="#e5e5e5" style="width:1px;background:#e5e5e5;font-size:0;line-height:0">&nbsp;</td>
-<td class="sig-col sig-right" valign="top" style="padding-left:20px">${senderHtml(sender)}</td>
+<td class="sig-col sig-right" valign="top" style="padding-left:18px">${senderHtml(sender)}</td>
 </tr></table>
 </td></tr></table>`;
 }
 
 function footerHtml(legal?: boolean) {
-  const links = FOOTER_LINKS.map((l) => `<span style="white-space:nowrap">${a(l.href, esc(l.label))}</span>`).join(`<span style="color:#c8c8c8"> &nbsp;|&nbsp; </span>`);
-  return `<tr><td class="card-pad" style="padding:16px 28px 20px;border-top:1px solid #eeeeee">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td class="sig-col" valign="top" style="padding:4px 16px 4px 0;font:12px/1.5 ${FONT};color:#666666;white-space:nowrap"><strong style="color:#111111">CTRL® Agency</strong><br>${esc(FOOTER_PAYOFF)}</td>
-<td class="sig-col sig-links" valign="top" align="right" style="padding:4px 0;font:12px/1.8 ${FONT};color:#666666;text-align:right">${links}</td>
-</tr></table>
-${legal ? `<p style="margin:12px 0 0;font:10px/1.5 ${FONT};color:#8a8a8a">${esc(LEGAL)}</p>` : ""}
+  return `<tr><td class="card-pad" style="padding:14px 28px 18px;border-top:1px solid #eeeeee;font:12px/1.5 ${FONT};color:#8a8a8a">
+<strong style="color:#111111">CTRL® Agency</strong> &nbsp;·&nbsp; ${esc(FOOTER_PAYOFF)}
+${legal ? `<p style="margin:10px 0 0;font:10px/1.5 ${FONT};color:#8a8a8a">${esc(LEGAL)}</p>` : ""}
 </td></tr>`;
 }
 
@@ -174,7 +164,6 @@ const RESPONSIVE = `<style>
 .sig-col{display:block!important;width:100%!important;padding-left:0!important;padding-right:0!important;text-align:left!important}
 .sig-div{display:none!important}
 .sig-right{padding-top:18px!important}
-.sig-links{text-align:left!important}
 .card-pad{padding-left:20px!important;padding-right:20px!important}
 }
 </style>`;

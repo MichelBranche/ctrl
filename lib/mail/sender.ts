@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { EmailSender } from "@/lib/mail/template";
-import { ROLE_LABEL, type TeamRole } from "@/lib/team-types";
+import { isFounder, ROLE_LABEL, type TeamRole } from "@/lib/team-types";
 
 /*
  * Per-sender email signature. Identity comes from the signed-in admin session (AdminUser: name, roles, avatarUrl),
@@ -36,7 +36,10 @@ function photoUrl(id: string, avatarUrl: string | null): string | null {
   return null;
 }
 
-/** Signature of the signed-in sender. Phone and email are only theirs (profile contact email, not the login), never a fallback. */
-export function emailSender(u: { id: string; name: string; lastName?: string | null; roles: readonly TeamRole[]; avatarUrl: string | null; phone?: string | null; contactEmail?: string | null }): EmailSender {
-  return { name: [u.name.trim(), u.lastName?.trim()].filter(Boolean).join(" "), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl), phone: u.phone?.trim() || null, email: u.contactEmail?.trim() || null };
+/** Agency mailbox shown in the signature: founders amministrazione@, everyone else hello@. Never a personal address. */
+export const signatureMailbox = (roles: readonly TeamRole[]) => (isFounder(roles) ? "amministrazione@ctrlagency.dev" : "hello@ctrlagency.dev");
+
+/** Signature of the signed-in sender. The phone is only theirs (profile), never a fallback number. */
+export function emailSender(u: { id: string; name: string; lastName?: string | null; roles: readonly TeamRole[]; avatarUrl: string | null; phone?: string | null }): EmailSender {
+  return { name: [u.name.trim(), u.lastName?.trim()].filter(Boolean).join(" "), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl), phone: u.phone?.trim() || null, email: signatureMailbox(u.roles) };
 }
