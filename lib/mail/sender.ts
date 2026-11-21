@@ -36,7 +36,7 @@ function photoUrl(id: string, avatarUrl: string | null): string | null {
   return null;
 }
 
-/** Signature of the signed-in sender. The phone is only theirs (profile), never a fallback number. */
-export function emailSender(u: { id: string; name: string; lastName?: string | null; roles: readonly TeamRole[]; avatarUrl: string | null; phone?: string | null }): EmailSender {
-  return { name: [u.name.trim(), u.lastName?.trim()].filter(Boolean).join(" "), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl), phone: u.phone?.trim() || null };
+/** Signature of the signed-in sender. Phone and email are only theirs (profile contact email, not the login), never a fallback. */
+export function emailSender(u: { id: string; name: string; lastName?: string | null; roles: readonly TeamRole[]; avatarUrl: string | null; phone?: string | null; contactEmail?: string | null }): EmailSender {
+  return { name: [u.name.trim(), u.lastName?.trim()].filter(Boolean).join(" "), role: joinRoles(u.roles) || null, photoUrl: photoUrl(u.id, u.avatarUrl), phone: u.phone?.trim() || null, email: u.contactEmail?.trim() || null };
 }

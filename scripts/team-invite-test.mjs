@@ -105,10 +105,16 @@ try {
   const { CONTACT_PHONE } = await import("../lib/content.ts");
   const { emailSender } = await import("../lib/mail/sender.ts");
   for (const out of [be, brandedEmail("x"), brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana", roles: ["commerciale"], avatarUrl: null }) })]) {
-    assert.ok(!out.html.includes(CONTACT_PHONE) && !out.text.includes(CONTACT_PHONE) && !/Telefono/.test(out.html + out.text), "no phone without a profile phone");
+    assert.ok(!out.html.includes(CONTACT_PHONE) && !out.text.includes(CONTACT_PHONE) && !/Tel\./.test(out.html + out.text) && !out.html.includes("tel:"), "no phone without a profile phone");
+    assert.ok(!out.html.includes("<svg") && (out.html.match(/<img\b/g) ?? []).length === 0, "no images without a photo");
   }
   const withPhone = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana", roles: ["commerciale"], avatarUrl: null, phone: "+39 333 000 1111" }) });
-  assert.ok(withPhone.html.includes('href="tel:+393330001111"') && withPhone.html.includes("+39 333 000 1111") && withPhone.text.includes("Telefono: +39 333 000 1111"), "sender phone shown");
+  assert.ok(withPhone.html.includes('href="tel:+393330001111"') && withPhone.html.includes("+39 333 000 1111") && withPhone.text.includes("Tel. +39 333 000 1111"), "sender phone shown");
+  const full = brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: ["commerciale"], avatarUrl: "/team/ana.webp", phone: null, contactEmail: "ana@ctrlagency.dev" }) });
+  assert.equal((full.html.match(/<img\b/g) ?? []).length, 1, "the photo is the only image");
+  assert.ok(full.html.includes('alt="Ana Bo"') && full.html.includes('href="mailto:ana@ctrlagency.dev"') && full.text.includes("Email ana@ctrlagency.dev"), "photo alt and contact email");
+  assert.ok(brandedEmail("x", { sender: emailSender({ id: "u", name: "Ana Bo", roles: [], avatarUrl: null }) }).html.includes(">AB</td>"), "initials without a photo");
+  assert.ok(!/\u2014/.test(full.html + full.text), "no em dash");
   assert.ok(!withPhone.html.includes(CONTACT_PHONE), "never the fixed number");
   assert.ok(!brandedEmail("x", { sender: { name: "A", phone: "<b>1</b>" } }).html.includes("<b>1"), "invalid phone dropped");
   assert.equal(await A.login("n@t.test", "anything-at-all-123"), "invalid", "invited user cannot log in");

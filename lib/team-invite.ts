@@ -43,7 +43,7 @@ export type InviteResult = { ok: true } | { ok: false; error: string };
  * Sends (or resends) the invite: new token, the previous link stops working. Rate limited per person
  * (2 minutes between emails, 5 per 24 hours). Only for accounts that never accepted (active accounts can't be invited).
  */
-export async function sendInvite(userId: string, inviter: { id: string; name: string; roles: TeamRole[]; avatarUrl: string | null; phone?: string | null }, kind: "sent" | "resent"): Promise<InviteResult> {
+export async function sendInvite(userId: string, inviter: { id: string; name: string; roles: TeamRole[]; avatarUrl: string | null; phone?: string | null; contactEmail?: string | null }, kind: "sent" | "resent"): Promise<InviteResult> {
   await ensureTeam();
   const provider = mailProvider();
   if (!provider && !process.env.RESEND_API_KEY) return { ok: false, error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
