@@ -216,7 +216,11 @@ export function ensureDeskSchema(): Promise<void> {
  message_key TEXT PRIMARY KEY, folder TEXT NOT NULL, uid INTEGER NOT NULL, subject TEXT NOT NULL,
  sender TEXT NOT NULL, message_id TEXT
 )` },
-  ], "write"); }).catch(error => { deskReady = null; throw error; });
+  ], "write");
+  // Which mailbox the message lives in ('hello' default; 'admin' = amministrazione@, founders only). Additive.
+  const cols = await db().execute("PRAGMA table_info(email_references)");
+  if (!cols.rows.some((r) => String(r.name) === "mailbox")) await addColumn("email_references", "mailbox", "TEXT NOT NULL DEFAULT 'hello'");
+  }).catch(error => { deskReady = null; throw error; });
   return deskReady;
 }
 

@@ -33,7 +33,7 @@ const root = pathToFileURL(process.cwd() + "/").href;
 registerHooks({
   resolve(spec, ctx, next) {
     if (spec === "server-only") return { url: "data:text/javascript,", shortCircuit: true };
-    if (spec === "@/lib/mail" && !ctx.parentURL?.includes("/scripts/")) return { url: "data:text/javascript," + encodeURIComponent("export function mailProvider(){return globalThis.__mail ?? null};export const isAgencyAddress=(a)=>!!a&&a.toLowerCase()==='agenzia@example.test';export const agencyAddress=()=>'agenzia@example.test'"), shortCircuit: true };
+    if (spec === "@/lib/mail" && !ctx.parentURL?.includes("/scripts/")) return { url: "data:text/javascript," + encodeURIComponent("export function mailProvider(){return globalThis.__mail ?? null};export const isAgencyAddress=(a)=>!!a&&a.toLowerCase()==='agenzia@example.test';export const agencyAddress=()=>'agenzia@example.test';export const resolveMailbox=(_u,raw)=>(raw===undefined||raw===null||raw===''||raw==='hello')?'hello':null"), shortCircuit: true };
     if (spec === "next/headers") return { url: "data:text/javascript," + encodeURIComponent(headersStub), shortCircuit: true };
     if (spec === "next/server") return { url: "data:text/javascript,export function after(f){return typeof f==='function'?f():f}", shortCircuit: true };
     if (spec === "next/cache") return { url: "data:text/javascript,export const cacheLife=()=>{},cacheTag=()=>{},revalidatePath=()=>{},revalidateTag=()=>{},updateTag=()=>{}", shortCircuit: true };

@@ -12,8 +12,11 @@ import { LIST_FRESH_MS, LIST_STALE_MS, SnapshotCache } from "@/lib/mail/snapshot
 import type { FolderId, MailSummary, MailLabel, MailMutation } from "@/lib/mail/types";
 import { CONTACT_SCAN, CONTACT_SHOWN, involvesAddress, type ContactAddress, type ContactMail } from "@/lib/mail/contact";
 
-/** user/pass authenticate IMAP+SMTP; fromAddress is the visible sender (MAIL_FROM alias, else user). */
-type Creds = { user: string; pass: string; fromName: string; fromAddress: string };
+/**
+ * user/pass authenticate IMAP+SMTP; fromAddress is the visible sender (MAIL_FROM alias, else user).
+ * resendOnly: never fall back to Gmail SMTP (the mailbox has no Gmail "Send mail as" alias for fromAddress).
+ */
+type Creds = { user: string; pass: string; fromName: string; fromAddress: string; resendOnly?: boolean };
 
 const IMAP = { host: "imap.gmail.com", port: 993 };
 const SMTP = { host: "smtp.gmail.com", port: 465 };
@@ -473,6 +476,7 @@ export class ImapProvider implements MailProvider {
     const attachments = await this.outgoingAttachments(mail);
     const viaResend = await this.sendViaResend(mail, attachments);
     if (viaResend) return viaResend;
+    if (this.creds.resendOnly) throw new MailError("unknown", "Invio non riuscito da questa casella: riprova tra poco.");
     const transport = nodemailer.createTransport({
       ...SMTP,
       secure: true,

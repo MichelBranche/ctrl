@@ -1,5 +1,5 @@
 import { getAdmin } from "@/lib/admin";
-import { mailProvider } from "@/lib/mail";
+import { mailProvider, resolveMailbox } from "@/lib/mail";
 import { isFolder } from "@/lib/mail/types";
 import { canAccess } from "@/lib/team-types";
 
@@ -12,9 +12,11 @@ const SAFE_INLINE = /^image\/(png|jpe?g|gif|webp)$/i;
 export async function GET(req: Request) {
   const admin = await getAdmin();
   if (!admin || !canAccess(admin, "email")) return new Response("Non autorizzato", { status: 401 });
-  const p = mailProvider();
-  if (!p) return new Response("Casella non collegata", { status: 503 });
   const q = new URL(req.url).searchParams;
+  const box = resolveMailbox(admin, q.get("box"));
+  if (!box) return new Response("Non autorizzato", { status: 403 });
+  const p = mailProvider(box);
+  if (!p) return new Response("Casella non collegata", { status: 503 });
   const folder = q.get("f");
   const uid = Number(q.get("m"));
   const cid = q.get("cid");
