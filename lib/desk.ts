@@ -4,14 +4,15 @@ import { discordEnabled, noticeInboxMail } from "@/lib/discord-notify";
 import { ensureDeskSchema } from "@/lib/migrate";
 import type { MailboxView } from "@/lib/mail/provider";
 
-export async function rememberMailReferences(view: MailboxView) {
+/** box "admin" (amministrazione@) never triggers the Discord inbox notice: that channel is not founder-only. */
+export async function rememberMailReferences(view: MailboxView, box: "hello" | "admin" = "hello") {
   await ensureDeskSchema();
   const items = [...view.list, ...view.thread, ...(view.open ? [view.open] : [])];
   const unique = [...new Map(items.map(item => [item.key, item])).values()];
   if (!unique.length) return;
   // The first time the mailbox is indexed, remember every row and stay quiet. Later, only a new unseen inbox message is a notice.
   // With the webhook unset these reads are skipped, so opening the mailbox stays as it was.
-  const notify = discordEnabled();
+  const notify = box === "hello" && discordEnabled();
   const prior = notify ? await db().execute("SELECT COUNT(*) AS n FROM email_references") : null;
   const primed = Number(prior?.rows[0]?.n ?? 0) > 0;
   const known = new Set<string>();
@@ -22,9 +23,9 @@ export async function rememberMailReferences(view: MailboxView) {
     });
     for (const row of existing.rows) known.add(String(row.message_key));
   }
-  await db().batch(unique.map(item => ({ sql: `INSERT INTO email_references(message_key,folder,uid,subject,sender,message_id) VALUES(?,?,?,?,?,?)
-    ON CONFLICT(message_key) DO UPDATE SET folder=excluded.folder,uid=excluded.uid,subject=excluded.subject,sender=excluded.sender,message_id=COALESCE(excluded.message_id,email_references.message_id)`,
-    args: [item.key,item.folder,item.uid,item.subject,item.from?.name || item.from?.address || "",view.open?.key===item.key ? view.open.messageId : null] })), "write");
+  await db().batch(unique.map(item => ({ sql: `INSERT INTO email_references(message_key,folder,uid,subject,sender,message_id,mailbox) VALUES(?,?,?,?,?,?,?)
+    ON CONFLICT(message_key) DO UPDATE SET folder=excluded.folder,uid=excluded.uid,subject=excluded.subject,sender=excluded.sender,message_id=COALESCE(excluded.message_id,email_references.message_id),mailbox=excluded.mailbox`,
+    args: [item.key,item.folder,item.uid,item.subject,item.from?.name || item.from?.address || "",view.open?.key===item.key ? view.open.messageId : null,box] })), "write");
   const fresh = notify && primed ? unique.filter((item) => item.folder === "inbox" && !item.seen && !known.has(item.key)) : [];
   if (!fresh.length) return;
   await noticeInboxMail(fresh.map((item) => ({
