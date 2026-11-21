@@ -20,6 +20,7 @@ import { LabelDot, MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, 
 import { MailCatchUp, MailPending, RememberList } from "@/components/admin/email/mail-speed";
 import { labelColor } from "@/lib/mail/label-color";
 import { MailBoxProvider } from "@/components/admin/email/mail-box";
+import { MailboxSwitch, MailSwitchFrame } from "@/components/admin/email/mail-box-switch";
 
 import { MailPeople, MailPeopleProvider, MailTeamStatus } from "@/components/admin/email/mail-people";
 
@@ -93,11 +94,13 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
   return (
     <MailBoxProvider box={box}>
+      <MailSwitchFrame box={box} boxes={boxes}>
       {/* Detail and composer go full width without the page header, like the mockup; auto refresh stays on. */}
       {q.m || q.compose === "new" ? <div className="mail-live-hidden"><MailLive renderedAt={renderStamp()} /></div> : <Header q={q} boxes={boxes} founder={isFounder(me)} />}
       <Suspense fallback={<MailPending userId={me.id} folder={q.f} page={q.p} search={q.search ?? ""} category={q.category ?? ""} />}>
         <Mailbox me={me} q={q} address={address} boxes={boxes} />
       </Suspense>
+      </MailSwitchFrame>
     </MailBoxProvider>
   );
 }
@@ -239,20 +242,10 @@ function Header({ q, boxes, founder }: { q: Q; boxes: MailboxInfo[]; founder: bo
       <div className="mail-head-title">
         <h1 className="adm-h1">Posta</h1>
         <div className="mail-head-sub">
+          <span className="mail-head-desc">{current?.description}</span>
           {boxes.length > 1 ? (
-            <details className="mail-menu mail-box-switch">
-              <summary aria-label="Cambia casella">{current.description} · {current.address}<MailIcon name="chevron" size={14} /></summary>
-              <div className="mail-menu-pop">
-                <strong className="mail-menu-title">Caselle</strong>
-                {boxes.map((b) => (
-                  <Link key={b.id} className="mail-menu-item mail-box-option" aria-current={b.id === q.box ? "true" : undefined} href={href({ box: b.id, f: "inbox" }) as Route}>
-                    <span className="mail-box-mark" aria-hidden="true">{b.label.slice(0, 1)}</span>
-                    <span><strong>{b.label}</strong><small>{b.address}</small></span>
-                  </Link>
-                ))}
-              </div>
-            </details>
-          ) : <span>{current?.description} · {current?.address}</span>}
+            <MailboxSwitch box={q.box} boxes={boxes} hrefs={Object.fromEntries(boxes.map((b) => [b.id, href({ box: b.id, f: "inbox" })]))} />
+          ) : <span className="mail-head-address">{current?.address}</span>}
           <span className="mail-sync-pill"><span aria-hidden="true" />Sincronizzata</span>
         </div>
       </div>
