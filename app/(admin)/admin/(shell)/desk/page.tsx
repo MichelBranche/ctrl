@@ -17,7 +17,7 @@ async function Body(){
   const emailAccess=canAccess(me,"email");
   const [items,mail]=await Promise.all([
     db().execute({sql:"SELECT id,kind,title,body,due,done,pinned FROM desk_items WHERE user_id=? ORDER BY done,pinned DESC,due IS NULL,due,created_at DESC",args:[me.id]}),
-    emailAccess ? db().execute({sql:`SELECT c.message_key,r.subject,r.sender,COALESCE(w.status,'todo') AS status FROM email_claims c LEFT JOIN email_references r ON r.message_key=c.message_key LEFT JOIN email_workflow w ON w.message_key=c.message_key WHERE c.user_id=? ORDER BY c.claimed_at DESC`,args:[me.id]}) : Promise.resolve({rows:[]}),
+    emailAccess ? db().execute({sql:`SELECT c.message_key,r.subject,r.sender,COALESCE(w.status,'todo') AS status FROM email_claims c LEFT JOIN email_references r ON r.message_key=c.message_key LEFT JOIN email_workflow w ON w.message_key=c.message_key WHERE c.user_id=?${isFounder(me)?'':" AND COALESCE(r.mailbox,'hello')='hello'"} ORDER BY c.claimed_at DESC`,args:[me.id]}) : Promise.resolve({rows:[]}),
   ]);
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   // CRM follow-ups due today or overdue: your own, or everyone's for founders. Never breaks the desk.

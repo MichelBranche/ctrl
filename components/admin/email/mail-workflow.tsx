@@ -5,22 +5,24 @@ import { addInternalNote, updateMailStatus } from "@/app/admin/email-workflow-ac
 import { MAIL_STATUSES, type MailStatus, type InternalNote } from "@/lib/mail/workflow-types";
 import { UserAvatar } from "@/components/admin/user-avatar";
 
-export function MailWorkflow({ mkey, status, count }: { mkey: string; status: MailStatus; count: number }) {
+/** "● Da gestire ▾": the shared work status of a message. */
+export function MailStatusSelect({ mkey, status }: { mkey: string; status: MailStatus }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
-  return <div className="mail-workflow">
-    <label className="adm-field"><span>Stato di lavorazione</span><select className="adm-input" value={status} disabled={pending} onChange={event => {
+  return <span className="mail-status-select" data-status={status}>
+    <span className="mail-status-dot" aria-hidden="true" />
+    <select aria-label="Stato di lavorazione" value={status} disabled={pending} onChange={event => {
       const next = event.target.value;
       start(async () => { setError(""); try { const result = await updateMailStatus(mkey,next); if(result.error) setError(result.error); else window.dispatchEvent(new Event("ctrl-mail-changed")); } catch { setError("Stato non salvato. Riprova."); } });
-    }}>{Object.entries(MAIL_STATUSES).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    }}>{Object.entries(MAIL_STATUSES).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
     {pending ? <span role="status" className="adm-muted">Salvataggio…</span> : null}
-    {error ? <p role="alert" className="adm-error">{error}</p> : null}
-    <InternalNotes key={mkey} mkey={mkey} count={count} />
-  </div>;
+    {error ? <span role="alert" className="adm-error">{error}</span> : null}
+  </span>;
 }
 
-function InternalNotes({ mkey, count }: { mkey: string; count: number }) {
-  const [open,setOpen] = useState(false);
+/** The notes panel under the status bar; `open` comes from the "Note interne (N)" button. */
+export function InternalNotes({ mkey, count, open }: { mkey: string; count: number; open: boolean }) {
   const [notes,setNotes] = useState<InternalNote[]>([]);
   const [hasMore,setHasMore] = useState(false);
   const allOlderLoaded = useRef(false);
@@ -48,8 +50,8 @@ function InternalNotes({ mkey, count }: { mkey: string; count: number }) {
     document.addEventListener("visibilitychange",refresh);
     return ()=>{ active=false;controller.abort();clearInterval(timer);document.removeEventListener("visibilitychange",refresh); };
   },[mkey,open,revision,count]);
-  return <details className="mail-internal-notes" onToggle={event=>setOpen(event.currentTarget.open)}>
-    <summary>Note interne <span className="adm-muted">{count || ""} · Solo staff</span></summary>
+  if (!open) return null;
+  return <div className="mail-internal-notes" id={`notes-${mkey}`}>
     {open ? <div className="mail-notes-content">
       <p className="adm-muted">Queste note restano nell’admin e non vengono inviate al cliente.</p>
       <form onSubmit={event=>{ event.preventDefault(); if(!body.trim() || pending) return; requestId.current ??= crypto.randomUUID(); const id=requestId.current;
@@ -63,5 +65,5 @@ function InternalNotes({ mkey, count }: { mkey: string; count: number }) {
       <ul className="mail-notes-list">{notes.map(note=><li key={note.id}><div className="adm-person"><UserAvatar name={note.name} src={note.avatarUrl} small /><strong>{note.name}</strong><time className="adm-muted" dateTime={note.at}>{new Date(note.at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"short",timeStyle:"short"})}</time></div><p>{note.body}</p></li>)}</ul>
       {hasMore ? <button className="adm-btn" disabled={olderPending} onClick={async()=>{setOlderPending(true);try{const response=await fetch(`/admin/email/notes?key=${mkey}&before=${notes.at(-1)?.id}`,{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json() as {notes:InternalNote[];hasMore:boolean};setNotes(old=>[...new Map([...old,...data.notes].map(note=>[note.id,note])).values()].sort((a,b)=>b.id-a.id));allOlderLoaded.current = !data.hasMore;setHasMore(data.hasMore);}catch{setLoadError("Impossibile caricare le note precedenti.");}finally{setOlderPending(false);}}}>{olderPending ? "Caricamento…" : "Note precedenti"}</button> : null}
     </div> : null}
-  </details>;
+  </div>;
 }

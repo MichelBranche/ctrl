@@ -5,7 +5,10 @@ import { emailSender } from "@/lib/mail/sender";
 import { guardSection } from "@/lib/admin";
 import { KEY, finishSend, logSend, markReadBy, sendAllowed, setClaim } from "@/lib/mail/collab";
 import { logAction } from "@/lib/audit";
-import { mailProvider } from "@/lib/mail";
+import { mailProvider, resolveMailbox, type MailboxId } from "@/lib/mail";
+import { db } from "@/lib/db";
+import { ensureEmailSchema } from "@/lib/migrate";
+import { assignableUsers } from "@/lib/mail/assignees";
 import { MailError, type OutgoingFile } from "@/lib/mail/provider";
 import { isFolder, type FolderId, type MailMutation } from "@/lib/mail/types";
 import { beginOutreach, finishOutreach, sendOutcome, UNCERTAIN_MESSAGE } from "@/lib/crm-outreach";
@@ -19,21 +22,26 @@ import { canAccess } from "@/lib/team-types";
 const validRef = (folder: unknown, uid: unknown): { folder: FolderId; uid: number } | null =>
   isFolder(folder) && Number.isInteger(uid) && (uid as number) > 0 ? { folder, uid: uid as number } : null;
 
+/** The mailbox a request targets, re-checked for this user (amministrazione@ founders only). Null: refuse. */
+const boxOf = (me: Parameters<typeof resolveMailbox>[0], raw: unknown): MailboxId | null => resolveMailbox(me, raw);
+
 /** Called when a message is actually opened (not on prefetch): IMAP \Seen + "letta da". */
-export async function markOpened(folder: string, uid: number, key: string): Promise<void> {
+export async function markOpened(folder: string, uid: number, key: string, box?: string): Promise<void> {
   const me = await guardSection("email");
   const ref = validRef(folder, uid);
-  if (!ref || !KEY.test(key)) return;
+  const mb = boxOf(me, box);
+  if (!ref || !KEY.test(key) || !mb) return;
   await Promise.all([
-    mailProvider()?.setSeen(ref.folder, ref.uid, true).catch(() => {}),
+    mailProvider(mb)?.setSeen(ref.folder, ref.uid, true).catch(() => {}),
     markReadBy(key, me.id),
   ]);
 }
 
-export async function markUnread(folder: string, uid: number): Promise<{ ok: boolean }> {
-  await guardSection("email");
+export async function markUnread(folder: string, uid: number, box?: string): Promise<{ ok: boolean }> {
+  const me = await guardSection("email");
   const ref = validRef(folder, uid);
-  const p = mailProvider();
+  const mb = boxOf(me, box);
+  const p = mb ? mailProvider(mb) : null;
   if (!ref || !p) return { ok: false };
   try {
     await p.setSeen(ref.folder, ref.uid, false);
@@ -48,6 +56,29 @@ export async function toggleClaim(key: string, claim: boolean): Promise<{ ok: bo
   if (!KEY.test(key)) return { ok: false };
   await setClaim(key, me.id, claim);
   await logAction(claim ? "email.claim" : "email.unclaim", { type: "email", id: key }, undefined, me);
+  return { ok: true };
+}
+
+/**
+ * "Assegna a…": puts a message in someone's hands (the same email_claims row as "Prendi in carico").
+ * Assignee: active, with the Email permission; for amministrazione@ only founders. null clears the assignment.
+ */
+export async function assignMail(key: string, userId: string | null, box?: string): Promise<{ ok?: boolean; error?: string }> {
+  let me;
+  try { me = await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const mb = boxOf(me, box);
+  if (!KEY.test(key) || !mb) return { error: "Richiesta non valida." };
+  await ensureEmailSchema();
+  if (userId === null) {
+    await db().execute({ sql: "DELETE FROM email_claims WHERE message_key = ?", args: [key] });
+    await logAction("email.unassign", { type: "email", id: key }, undefined, me);
+    return { ok: true };
+  }
+  if (typeof userId !== "string" || userId.length > 64) return { error: "Persona non valida." };
+  const ok = (await assignableUsers(mb)).some((u) => u.id === userId);
+  if (!ok) return { error: "Questa persona non può vedere questa casella." };
+  await setClaim(key, userId, true);
+  await logAction("email.assign", { type: "email", id: key }, { to: userId, mailbox: mb }, me);
   return { ok: true };
 }
 
@@ -72,8 +103,14 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
   } catch {
     return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." };
   }
-  const p = mailProvider();
-  if (!p) return { error: "Casella non collegata." };
+  // "Da": the mailbox that sends (and keeps the copy in Inviati); the source mailbox holds the message being answered.
+  const fromBox = boxOf(me, form.get("box"));
+  const sourceBox = boxOf(me, form.get("sourceBox") ?? form.get("box"));
+  if (!fromBox || !sourceBox) return { error: "Non puoi scrivere da questa casella." };
+  const p = mailProvider(fromBox);
+  const source = mailProvider(sourceBox);
+  if (!p || !source) return { error: "Casella non collegata." };
+  if (fromBox !== sourceBox && form.get("keepOriginal") === "on") return { error: "Per tenere gli allegati originali invia dalla stessa casella del messaggio." };
 
   const to = parseList(form.get("to"));
   const cc = parseList(form.get("cc"));
@@ -95,7 +132,7 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
   const reply = validRef(form.get("replyFolder"), Number(form.get("replyUid")));
   if (reply) {
     try {
-      const ctx = await p.replyContext(reply.folder, reply.uid);
+      const ctx = await source.replyContext(reply.folder, reply.uid);
       if (ctx?.messageId) {
         inReplyTo = ctx.messageId;
         references = [...ctx.references, ctx.messageId].slice(-20);
@@ -146,18 +183,21 @@ export async function sendMail(_: SendState, form: FormData): Promise<SendState>
       revalidatePath(`/admin/crm/${contactId}/email`);
     }
   }
-  await logAction("email.send", { type: "email_send", id }, { recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length, crmAssigned: assigned.length, crmAdvanced: advanced.length }, me);
+  await logAction("email.send", { type: "email_send", id }, { mailbox: fromBox, recipients: to.length + cc.length, reply: Boolean(inReplyTo), attachments: attachments.length, crmAssigned: assigned.length, crmAdvanced: advanced.length }, me);
   const moved = canAccess(me, "crm") && advanced.length ? ` ${advanced.length === 1 ? "Il contatto è passato a Contattato." : `${advanced.length} contatti sono passati a Contattato.`}` : "";
   const draftUid = Number(form.get("draftUid"));
-  if (Number.isSafeInteger(draftUid) && draftUid > 0) await p.mutate?.("drafts", [draftUid], "trash").catch(() => {});
+  if (Number.isSafeInteger(draftUid) && draftUid > 0) await source.mutate?.("drafts", [draftUid], "trash").catch(() => {});
   return { ok: `Inviata a ${to.join(", ")}.${assigned.length ? ` ${assigned.length === 1 ? "Il contatto ora è seguito" : "I contatti ora sono seguiti"} da te.` : ""}${moved}`, at: Date.now() };
 }
 
-export async function organizeMail(folder: string, uids: number[], operation: MailMutation, label?: string): Promise<{ error?: string; ok?: boolean }> {
-  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+export async function organizeMail(folder: string, uids: number[], operation: MailMutation, label?: string, box?: string): Promise<{ error?: string; ok?: boolean }> {
+  let me;
+  try { me = await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const mb = boxOf(me, box);
+  if (!mb) return { error: "Casella non disponibile." };
   const operations: MailMutation[] = ["archive", "trash", "inbox", "spam", "read", "unread", "star", "unstar", "label", "unlabel"];
   if (!isFolder(folder) || !Array.isArray(uids) || !uids.length || uids.length > 30 || !uids.every((uid) => Number.isSafeInteger(uid) && uid > 0) || !operations.includes(operation)) return { error: "Selezione non valida." };
-  const provider = mailProvider();
+  const provider = mailProvider(mb);
   if (!provider?.mutate) return { error: "Organizzazione non disponibile in questa casella." };
   try {
     await provider.mutate(folder, [...new Set(uids)], operation, label);
@@ -166,10 +206,13 @@ export async function organizeMail(folder: string, uids: number[], operation: Ma
 }
 
 export async function createMailLabel(_: { error?: string; ok?: boolean }, form: FormData): Promise<{ error?: string; ok?: boolean }> {
-  try { await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  let me;
+  try { me = await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
+  const mb = boxOf(me, form.get("box"));
+  if (!mb) return { error: "Casella non disponibile." };
   const name = String(form.get("name") ?? "").trim();
   if (!name || name.length > 100 || /[\x00-\x1f\x7f]/.test(name) || name.startsWith("\\") || name.startsWith("[")) return { error: "Scegli un nome valido (massimo 100 caratteri)." };
-  const provider = mailProvider();
+  const provider = mailProvider(mb);
   if (!provider?.createLabel) return { error: "Etichette non disponibili in questa casella." };
   try { await provider.createLabel(name); return { ok: true }; }
   catch { return { error: "Etichetta non creata: il nome potrebbe essere già in uso." }; }
@@ -178,7 +221,9 @@ export async function createMailLabel(_: { error?: string; ok?: boolean }, form:
 export async function saveMailDraft(_: SendState, form: FormData): Promise<SendState> {
   let me;
   try { me = await guardSection("email"); } catch { return { error: "Sessione scaduta o non autorizzata. Accedi di nuovo." }; }
-  const provider = mailProvider();
+  // Drafts live in the mailbox the message is written from.
+  const mb = boxOf(me, form.get("box"));
+  const provider = mb ? mailProvider(mb) : null;
   if (!provider?.saveDraft) return { error: "Salvataggio bozze non disponibile." };
   const to = parseList(form.get("to"));
   const cc = parseList(form.get("cc"));

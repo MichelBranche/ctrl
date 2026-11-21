@@ -130,12 +130,36 @@ const SEEDS: Seed[] = [
     messageId: "<sav-spam@fratellisavigliano.example>", text: "Spam e Cestino non fanno parte della vista del contatto." } },
 ];
 
+const ADMIN = { name: "CTRL® Amministrazione", address: "amministrazione@example.test" };
+/** Founder-only mailbox fixture (ADMIN_MAIL_MOCK=1): invoices, accountant, bank. All fictional. */
+const ADMIN_SEEDS: Seed[] = [
+  { folder: "inbox", seen: false, hoursAgo: 2, mail: { from: '"Studio Commercialista Rossi" <studio@commercialista.example>', to: ADMIN, subject: "Documenti per la dichiarazione trimestrale",
+    messageId: "<adm-1@commercialista.example>", text: "Buongiorno,\nci servono gli estratti conto di ottobre e le fatture passive entro venerdì.\n\nStudio Rossi" } },
+  { folder: "inbox", seen: false, hoursAgo: 6, mail: { from: '"Banca Esempio" <avvisi@banca.example>', to: ADMIN, subject: "Estratto conto di ottobre disponibile",
+    messageId: "<adm-2@banca.example>", text: "Il tuo estratto conto è disponibile nell'area clienti." } },
+  { folder: "inbox", seen: true, hoursAgo: 30, mail: { from: '"Aruba" <noreply@aruba.example>', to: ADMIN, subject: "Fattura n. 2026/51220 disponibile",
+    messageId: "<adm-3@aruba.example>", text: "La fattura è disponibile nella tua area clienti.", attachments: [{ filename: "Fattura-2026-51220.pdf", content: PDF, contentType: "application/pdf" }] } },
+  { folder: "sent", seen: true, hoursAgo: 50, mail: { from: ADMIN, to: '"Studio Commercialista Rossi" <studio@commercialista.example>', subject: "Re: Fatture di settembre",
+    messageId: "<adm-4@ctrl.example>", text: "Buongiorno,\nin allegato le fatture di settembre.\n\nCTRL" } },
+];
+
 const build = (mail: Seed["mail"]) => new MailComposer(mail).compile().build();
 
 type State = { boxes: Stored[]; nextUid: number; labels: string[] };
-const g = globalThis as unknown as { __ctrlMockMail?: Promise<State> };
+type Flavour = "hello" | "admin";
+const g = globalThis as unknown as { __ctrlMockMail?: Promise<State>; __ctrlMockAdmin?: Promise<State> };
 
-function state(): Promise<State> {
+function state(flavour: Flavour = "hello"): Promise<State> {
+  if (flavour === "admin") {
+    g.__ctrlMockAdmin ??= (async () => {
+      const now = Date.now();
+      const boxes: Stored[] = [];
+      let uid = 500;
+      for (const s of ADMIN_SEEDS) boxes.push({ folder: s.folder, uid: uid++, seen: s.seen ?? false, labels: ["Fatture"], threadId: s.thread ?? `a-${uid}`, date: new Date(now - s.hoursAgo * 3600_000), source: await build(s.mail) });
+      return { boxes, nextUid: uid, labels: ["Fatture"] };
+    })();
+    return g.__ctrlMockAdmin;
+  }
   g.__ctrlMockMail ??= (async () => {
     const now = Date.now();
     const boxes: Stored[] = [];
@@ -166,9 +190,12 @@ const pause = () => {
 };
 
 export class MockProvider implements MailProvider {
+  private flavour: Flavour;
+  constructor(opts?: { address?: string; flavour?: Flavour }) { this.flavour = opts?.flavour ?? "hello"; }
+  private state() { return state(this.flavour); }
   async view({ folder, page, open, search, category }: ViewQuery): Promise<MailboxView> {
     await pause();
-    const st = await state();
+    const st = await this.state();
     const folders = (["inbox", "sent", "drafts", "all", "spam", "trash"] as const).map((id) => {
       const msgs = inFolder(st, id);
       return { id, unread: msgs.filter((m) => !m.seen).length, total: msgs.length };
@@ -195,7 +222,7 @@ export class MockProvider implements MailProvider {
     await pause();
     // Local QA of the error state only (the mock never runs on Vercel production).
     if (process.env.AGENCY_MAIL_MOCK_FAIL === "contact") throw new MailError("network", "Impossibile raggiungere Gmail in questo momento.");
-    const all = inFolder(await state(), "all").reverse();
+    const all = inFolder(await this.state(), "all").reverse();
     const matches: MailSummary[] = [];
     let scanned = 0;
     for (const b of all.slice(0, CONTACT_SCAN)) {
@@ -208,7 +235,7 @@ export class MockProvider implements MailProvider {
 
   async message(folder: FolderId, uid: number) {
     await pause();
-    const st = await state();
+    const st = await this.state();
     const hit = find(st, folder, uid);
     if (!hit) return { open: null, thread: [] };
     const open = toMessage(await parseSource(hit.source), {
@@ -219,7 +246,7 @@ export class MockProvider implements MailProvider {
   }
 
   async findByMessageId(messageId: string) {
-    const st = await state();
+    const st = await this.state();
     for (const folder of ["all", "trash", "spam"] as const) {
       for (const b of inFolder(st, folder).reverse()) {
         if ((await parseSource(b.source)).messageId?.replace(/[<>]/g, "") === messageId) return summarize(b, folder);
@@ -228,10 +255,10 @@ export class MockProvider implements MailProvider {
     return null;
   }
 
-  async createLabel(name: string) { const st = await state(); if (st.labels.includes(name)) throw new Error("exists"); st.labels.push(name); }
+  async createLabel(name: string) { const st = await this.state(); if (st.labels.includes(name)) throw new Error("exists"); st.labels.push(name); }
 
   async mutate(folder: FolderId, uids: number[], operation: MailMutation, label?: string) {
-    const st = await state();
+    const st = await this.state();
     for (const uid of uids) {
       const box = find(st, folder, uid); if (!box) continue;
       if (operation === "read" || operation === "unread") box.seen = operation === "read";
@@ -243,36 +270,36 @@ export class MockProvider implements MailProvider {
   }
 
   async saveDraft(mail: OutgoingMail, previousUid?: number) {
-    const st = await state();
+    const st = await this.state();
     const original = mail.attachmentsFrom ? find(st, mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
     const parsed = original ? await parseSource(original.source) : null;
     const uid = st.nextUid++;
-    st.boxes.push({ folder: "drafts", uid, seen: true, date: new Date(), threadId: `draft-${uid}`, source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments: [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])] }) });
+    st.boxes.push({ folder: "drafts", uid, seen: true, date: new Date(), threadId: `draft-${uid}`, source: await build({ from: this.flavour === "admin" ? ADMIN : AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text), attachments: [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])] }) });
     if (previousUid) await this.mutate("drafts", [previousUid], "trash");
     return uid;
   }
 
   async unread() {
-    return inFolder(await state(), "inbox").filter((m) => !m.seen).length;
+    return inFolder(await this.state(), "inbox").filter((m) => !m.seen).length;
   }
 
   async setSeen(folder: FolderId, uid: number, seen: boolean) {
-    const hit = find(await state(), folder, uid);
+    const hit = find(await this.state(), folder, uid);
     if (hit) hit.seen = seen;
   }
 
   async attachment(folder: FolderId, uid: number, pick: { index?: number; cid?: string }) {
-    const hit = find(await state(), folder, uid);
+    const hit = find(await this.state(), folder, uid);
     return hit ? pickAttachment(await parseSource(hit.source), pick) : null;
   }
 
   async replyContext(folder: FolderId, uid: number) {
-    const hit = find(await state(), folder, uid);
+    const hit = find(await this.state(), folder, uid);
     return hit ? replyContextOf(await parseSource(hit.source)) : null;
   }
 
   async send(mail: OutgoingMail) {
-    const st = await state();
+    const st = await this.state();
     const original = mail.attachmentsFrom ? find(st, mail.attachmentsFrom.folder, mail.attachmentsFrom.uid) : null;
     const parsed = original ? await parseSource(original.source) : null;
     const attachments = [...(parsed?.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content, cid: a.cid })) ?? []), ...(mail.attachments ?? [])];
@@ -281,7 +308,7 @@ export class MockProvider implements MailProvider {
     const date = new Date();
     st.boxes.push({
       folder: "sent", uid: st.nextUid++, seen: true, threadId: parent?.threadId ?? `t-${messageId}`, date,
-      source: await build({ from: AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text, { cta: mail.cta, sender: mail.sender }), attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
+      source: await build({ from: this.flavour === "admin" ? ADMIN : AGENCY, to: mail.to, cc: mail.cc, subject: mail.subject, ...brandedEmail(mail.text, { cta: mail.cta, sender: mail.sender }), attachments, messageId, inReplyTo: mail.inReplyTo ?? undefined, references: mail.references, date }),
     });
     return { messageId };
   }

@@ -46,13 +46,13 @@ const LEGAL = "Hai ricevuto questa email perché sei in contatto con Ctrl Agency
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Escaped text with links (http/https, www., emails), **bold**, *italic* and [label](https://url). */
+/** Escaped text with links (http/https, www., emails), **bold**, *italic*, __underline__ and [label](https://url). */
 export function inlineMarkup(raw: string): string {
   const out: string[] = [];
   const re = /\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]{1,500})\)|(https?:\/\/[^\s<>"]{1,500}[^\s<>".,;:!?)\]])|(www\.[^\s<>"]{1,300}[^\s<>".,;:!?)\]])|([A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,200}\.[A-Za-z]{2,24})/g;
   let last = 0;
   const link = (href: string, label: string) => `<a href="${esc(href)}" style="color:${LINK};text-decoration:underline" target="_blank" rel="noopener noreferrer">${label}</a>`;
-  const emph = (s: string) => esc(s).replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
+  const emph = (s: string) => esc(s).replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[\s(*])__([^_\n]+)__(?=[\s).,;:!?*]|$)/g, "$1<u>$2</u>").replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
   for (const m of raw.matchAll(re)) {
     out.push(emph(raw.slice(last, m.index)));
     if (m[1]) out.push(link(m[2], esc(m[1])));
@@ -67,25 +67,27 @@ export function inlineMarkup(raw: string): string {
 
 const P = "margin:0 0 14px;font-size:14px;line-height:1.6;color:#222222";
 
-/** Body text to HTML blocks: paragraphs, line breaks, "- " lists and "> " quoted replies. */
+/** Body text to HTML blocks: paragraphs, line breaks, "- " and "1. " lists and "> " quoted replies. */
 function bodyHtml(text: string): string {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   const blocks: string[] = [];
   let para: string[] = [];
   let list: string[] = [];
+  let ordered = false;
   let quote: string[] = [];
   const flush = () => {
     if (para.length) blocks.push(`<p style="${P}">${para.map(inlineMarkup).join("<br>")}</p>`);
-    if (list.length) blocks.push(`<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.6;color:#222222">${list.map((l) => `<li>${inlineMarkup(l)}</li>`).join("")}</ul>`);
+    if (list.length) { const tag = ordered ? "ol" : "ul"; blocks.push(`<${tag} style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.6;color:#222222">${list.map((l) => `<li>${inlineMarkup(l)}</li>`).join("")}</${tag}>`); }
     if (quote.length) blocks.push(`<blockquote style="margin:0 0 14px;padding:0 0 0 12px;border-left:3px solid #dddddd;color:#666666;font-size:13px;line-height:1.5">${quote.map(inlineMarkup).join("<br>")}</blockquote>`);
     para = []; list = []; quote = [];
   };
   for (const line of lines) {
     const q = /^>\s?(.*)$/.exec(line);
     const li = /^\s*[-*•]\s+(.+)$/.exec(line);
+    const ni = li ? null : /^\s*\d{1,3}[.)]\s+(.+)$/.exec(line);
     if (q) { if (para.length || list.length) { const keep = quote; quote = []; flush(); quote = keep; } quote.push(q[1]); }
     else if (!line.trim()) flush();
-    else if (li) { if (para.length || quote.length) flush(); list.push(li[1]); }
+    else if (li || ni) { if (para.length || quote.length || (list.length && ordered !== Boolean(ni))) flush(); ordered = Boolean(ni); list.push((li ?? ni)![1]); }
     else { if (list.length || quote.length) flush(); para.push(line); }
   }
   flush();
