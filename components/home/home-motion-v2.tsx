@@ -6,7 +6,10 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { scheduleRefresh } from "@/lib/refresh";
-import { TEXT_SPRING, springEase } from "./springs";
+import { TEXT_SPRING, springEase, type Spring } from "./springs";
+
+/** Cloud entrance, fitted on the Work Louder hero capture. */
+const CLOUD_SPRING: Spring = { zeta: 0.8, omega: 2.23, duration: 4 };
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -80,6 +83,16 @@ export function HomeMotionV2({ children }: { children: React.ReactNode }) {
           // Closed stack first: set before the timeline so clearProps on the opening tweens cannot skip it.
           gsap.set(brand, { z: Z.closed.brand * u });
           gsap.set(glass, { z: Z.closed.glass * u });
+          // Clouds slide in from the sides (Work Louder capture: ~80px at 1440 = 8% of the cloud width,
+          // spring zeta 0.8 / omega 2.23, 1.5% overshoot, settled by ~4s) while easing down to their resting opacity.
+          q("[data-hv-cloud]").forEach((cloud) => {
+            const rest = Number(getComputedStyle(cloud).opacity) || 0.5;
+            gsap.fromTo(
+              cloud,
+              { xPercent: cloud.dataset.hvCloud === "left" ? -8 : 8, opacity: Math.min(1, rest + 0.3) },
+              { xPercent: 0, opacity: rest, duration: CLOUD_SPRING.duration, ease: springEase(CLOUD_SPRING), delay: 0.15, clearProps: "transform,opacity" },
+            );
+          });
           const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
           intro
             // Reference title reveal: per word, opacity and blur(10px) on a 2s critically damped spring, 50ms apart.
