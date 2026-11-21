@@ -43,7 +43,7 @@ export type InviteResult = { ok: true } | { ok: false; error: string };
  * Sends (or resends) the invite: new token, the previous link stops working. Rate limited per person
  * (2 minutes between emails, 5 per 24 hours). Only for accounts that never accepted (active accounts can't be invited).
  */
-export async function sendInvite(userId: string, inviter: { id: string; name: string; roles: TeamRole[]; avatarUrl: string | null }, kind: "sent" | "resent"): Promise<InviteResult> {
+export async function sendInvite(userId: string, inviter: { id: string; name: string; roles: TeamRole[]; avatarUrl: string | null; phone?: string | null }, kind: "sent" | "resent"): Promise<InviteResult> {
   await ensureTeam();
   const provider = mailProvider();
   if (!provider && !process.env.RESEND_API_KEY) return { ok: false, error: "Email dell'agenzia non collegata: impossibile inviare l'invito." };
@@ -96,40 +96,47 @@ export async function revokeInvite(userId: string): Promise<boolean> {
   return res.rowsAffected > 0;
 }
 
-export type InviteView = { state: "valid"; name: string; email: string; roles: TeamRole[] } | { state: "expired" | "invalid" };
+export type InviteView = { state: "valid"; name: string; lastName: string; phone: string; hasPhoto: boolean; email: string; roles: TeamRole[] } | { state: "expired" | "invalid" };
 
 /** What the invite page shows for a token (never reveals who an unknown token belongs to). */
 export async function readInvite(token: string, now = Date.now()): Promise<InviteView> {
   if (!tokenShapeOk(token)) return { state: "invalid" };
   await ensureTeam();
   const res = await db().execute({
-    sql: `SELECT name, email, role, ${ROLES_SQL}, invite_expires_at FROM admin_users WHERE invite_hash = ? AND invite_state = 'pending'`,
+    sql: `SELECT name, last_name, phone, avatar_url IS NOT NULL AS has_photo, email, role, ${ROLES_SQL}, invite_expires_at FROM admin_users WHERE invite_hash = ? AND invite_state = 'pending'`,
     args: [hashInviteToken(token)],
   });
   const u = res.rows[0];
   if (!u) return { state: "invalid" };
   if (Number(u.invite_expires_at) <= now) return { state: "expired" };
-  return { state: "valid", name: String(u.name), email: String(u.email), roles: rowRoles(u) };
+  return { state: "valid", name: String(u.name), lastName: u.last_name ? String(u.last_name) : "", phone: u.phone ? String(u.phone) : "", hasPhoto: Number(u.has_photo) === 1, email: String(u.email), roles: rowRoles(u) };
 }
+
+/** Profile chosen in the onboarding step (already validated by the caller). photo null keeps the current one. */
+export type InviteProfile = { name: string; lastName: string; phone: string; photo: string | null };
 
 /**
  * Single-use acceptance: one atomic UPDATE that only matches a pending, unexpired token, so a second use (or a race)
- * gets nothing. Sets the password, activates the account and clears the token.
+ * gets nothing. Sets the password and, when given, the onboarding profile, activates the account and clears the token.
+ * Without a profile (an old page opened before the onboarding step existed) only the password is set, as before.
  */
-export async function acceptInvite(token: string, password: string, now = Date.now()) {
+export async function acceptInvite(token: string, password: string, now = Date.now(), profile: InviteProfile | null = null) {
   if (!tokenShapeOk(token)) return null;
   const hash = await hashPassword(password);
+  const set = profile
+    ? { sql: "name = ?, last_name = ?, phone = ?, " + (profile.photo ? "avatar_url = ?, " : ""), args: [profile.name, profile.lastName || null, profile.phone || null, ...(profile.photo ? [profile.photo] : [])] }
+    : { sql: "", args: [] as string[] };
   const res = await db().execute({
-    sql: `UPDATE admin_users SET password_hash = ?, active = 1, invite_state = NULL, invite_hash = NULL, invite_expires_at = NULL,
+    sql: `UPDATE admin_users SET ${set.sql}password_hash = ?, active = 1, invite_state = NULL, invite_hash = NULL, invite_expires_at = NULL,
           session_version = session_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
           WHERE invite_hash = ? AND invite_state = 'pending' AND invite_expires_at > ?
           RETURNING id, name, email, role, session_version`,
-    args: [hash, hashInviteToken(token), now],
+    args: [...set.args, hash, hashInviteToken(token), now],
   });
   const u = res.rows[0];
   if (!u) return null;
   const rolesRes = await db().execute({ sql: "SELECT GROUP_CONCAT(role) AS roles FROM admin_user_roles WHERE user_id = ?", args: [String(u.id)] });
   const user = { id: String(u.id), name: String(u.name), email: String(u.email), sv: Number(u.session_version), roles: rowRoles({ role: u.role, roles: rolesRes.rows[0]?.roles }) };
-  await logAction("team.invite_accepted", { type: "user", id: user.id }, { roles: user.roles }, { id: user.id, name: user.name, email: user.email });
+  await logAction("team.invite_accepted", { type: "user", id: user.id }, { roles: user.roles, profile: Boolean(profile), photo: Boolean(profile?.photo), phone: Boolean(profile?.phone) }, { id: user.id, name: user.name, email: user.email });
   return user;
 }

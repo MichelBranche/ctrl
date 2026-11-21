@@ -4,18 +4,27 @@
  * (server) produce byte-identical HTML. Email-client safe: tables, inline styles, no scripts; the only image is the sender photo (absolute https URL).
  * Everything the user typed is HTML-escaped; only a tiny markdown subset becomes markup.
  */
-import { CONTACT_PHONE } from "@/lib/content";
-
 const ACCENT = "#ff4a1c";
 const SITE = "ctrlagency.dev";
 /** Standard signature delimiter: lets drafts strip the signature before re-editing. */
 export const SIG_DELIM = "\n\n-- \n";
-/** Who is sending: name, roles already joined ("Founder e Designer UI/UX"), optional absolute https photo URL. */
-export type EmailSender = { name: string; role?: string | null; photoUrl?: string | null };
-const CONTACTS_TEXT = `Telefono: ${CONTACT_PHONE}\nSito: https://${SITE}`;
+/**
+ * Who is sending: name, roles already joined ("Founder e Designer UI/UX"), optional absolute https photo URL and
+ * optional phone from the sender's own admin profile. No phone, no "Telefono" line: never a shared or fixed number.
+ */
+export type EmailSender = { name: string; role?: string | null; photoUrl?: string | null; phone?: string | null };
+/** Same rule as the profile form: digits, +, spaces, dots, dashes, parentheses. Anything else is dropped. */
+export const signaturePhone = (sender?: EmailSender | null) => {
+  const v = sender?.phone?.trim();
+  return v && /^[+0-9().\s-]{3,40}$/.test(v) && /\d/.test(v) ? v : null;
+};
+const contactsText = (sender?: EmailSender | null) => {
+  const phone = signaturePhone(sender);
+  return `${phone ? `Telefono: ${phone}\n` : ""}Sito: https://${SITE}`;
+};
 /** Per-sender signature (no fixed names): "Nome Cognome\nRuolo\nCtrl Agency", or just "Ctrl Agency" without a sender. */
 export const signatureText = (sender?: EmailSender | null) =>
-  `${sender?.name ? `${sender.name}\n` : ""}${sender?.role ? `${sender.role}\n` : ""}Ctrl Agency\n\n${CONTACTS_TEXT}`;
+  `${sender?.name ? `${sender.name}\n` : ""}${sender?.role ? `${sender.role}\n` : ""}Ctrl Agency\n\n${contactsText(sender)}`;
 export const SIGNATURE_TEXT = signatureText(null);
 const FOOTER_TEXT = "CTRL AGENCY · Soluzioni digitali per imprese e professionisti";
 const LEGAL = "Hai ricevuto questa email perché sei in contatto con Ctrl Agency. Se non desideri altre comunicazioni, rispondi a questa email e non ti scriveremo più.";
@@ -80,6 +89,11 @@ ${img}<tr><td align="center" style="font:14px/1.45 Arial,Helvetica,sans-serif;co
 </td></tr></table>`;
 }
 
+function phoneHtml(sender?: EmailSender | null) {
+  const phone = signaturePhone(sender);
+  return phone ? `Telefono: <a href="tel:${esc(phone.replace(/[^+0-9]/g, ""))}" style="color:#1a56db">${esc(phone)}</a><br>` : "";
+}
+
 /** Both MIME parts for a message the user typed. The text part carries the same signature after "-- ". */
 export function brandedEmail(body: string, opts: { cta?: { label: string; href: string }; legal?: boolean; sender?: EmailSender | null } = {}): { html: string; text: string } {
   const clean = body.replace(/\r\n/g, "\n").replace(/\s+$/, "");
@@ -106,7 +120,7 @@ export function brandedEmail(body: string, opts: { cta?: { label: string; href: 
 ${bodyHtml(clean)}
 ${ctaHtml}
 ${signatureHtml(opts.sender)}
-<p align="center" style="${P};text-align:center">Telefono: <a href="tel:${CONTACT_PHONE}" style="color:#1a56db">${CONTACT_PHONE}</a><br>Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
+<p align="center" style="${P};text-align:center">${phoneHtml(opts.sender)}Sito: <a href="https://${SITE}" style="color:#1a56db" target="_blank" rel="noopener noreferrer">${SITE}</a></p>
 </td></tr>
 <tr><td style="padding:18px 24px 22px;border-top:1px solid #eeeeee">
 <p style="margin:0 0 4px;font:700 11px/1.4 Arial,Helvetica,sans-serif;letter-spacing:.08em;color:#111111">CTRL AGENCY</p>

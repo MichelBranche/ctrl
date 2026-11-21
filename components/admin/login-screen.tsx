@@ -109,15 +109,15 @@ export function LoginScreen({ initialStep = "password", notice, noticeKey }: { i
   );
 }
 
-export function FloatField({ id, name, type, label, autoComplete, invalid, value, onChange, children }: {
+export function FloatField({ id, name, type, label, autoComplete, invalid, value, onChange, children, required = true, maxLength }: {
   id: string; name: string; type: string; label: string; autoComplete: string; invalid: boolean;
-  value?: string; onChange?: (v: string) => void; children?: React.ReactNode;
+  value?: string; onChange?: (v: string) => void; children?: React.ReactNode; required?: boolean; maxLength?: number;
 }) {
   const [filled, setFilled] = useState(false);
   return (
     <div className={`adm-float${children ? " has-eye" : ""}`}>
       <input
-        id={id} name={name} type={type} autoComplete={autoComplete} required placeholder=" " value={value}
+        id={id} name={name} type={type} autoComplete={autoComplete} required={required} maxLength={maxLength} placeholder=" " value={value}
         data-filled={filled || Boolean(value) || undefined} aria-invalid={invalid || undefined}
         onChange={(e) => { onChange?.(e.target.value); setFilled(e.target.value !== ""); }}
         // Chrome fires this when it autofills (CSS animation on :-webkit-autofill), before the value is exposed to JS.
