@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ShopProductPage } from "@/components/pages/shop-product-page";
 import { publicMeta, shopDocumentDescription, shopDocumentTitle } from "@/lib/seo";
 import { getShopProduct, getShopProducts } from "@/lib/shop";
+import { SHOP_ROBOTS } from "@/lib/features";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -17,12 +18,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getShopProduct(slug);
   if (!product) return { title: { absolute: "Prodotto non trovato | CTRL®" }, robots: { index: false, follow: false } };
-  return publicMeta("it", {
-    title: shopDocumentTitle(product.titleIt, "it"),
-    description: shopDocumentDescription(product.descriptionIt, "it"),
-    itPath: `/shop/${product.slug}`,
-    images: [product.images[0] || "/images/shop/hero.webp"],
-  });
+  return {
+    ...publicMeta("it", {
+      title: shopDocumentTitle(product.titleIt, "it"),
+      description: shopDocumentDescription(product.descriptionIt, "it"),
+      itPath: `/shop/${product.slug}`,
+      images: [product.images[0] || "/images/shop/hero.webp"],
+    }),
+    ...SHOP_ROBOTS,
+  };
 }
 
 export default function Page({ params }: Props) {

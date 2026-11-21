@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CONTACT_EMAIL, LE_VELE, categoryPath, projectCategories, services } from "@/lib/content";
 import { LOCAL_PATH } from "@/lib/seo";
 import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
+import { SHOP_ENABLED } from "@/lib/features";
 
 type Item = { id: string; group: string; label: string; run: () => void };
 
@@ -35,7 +36,7 @@ export function CommandMenu() {
       { id: "services", group: "Nav", label: nav.services, run: () => go(localize("/services", lang)) },
       { id: "team", group: "Nav", label: nav.team, run: () => go(localize("/team", lang)) },
       { id: "journal", group: "Nav", label: nav.journal, run: () => go(localize("/journal", lang)) },
-      { id: "shop", group: "Nav", label: nav.shop, run: () => go(localize("/shop", lang)) },
+      ...(SHOP_ENABLED ? [{ id: "shop", group: "Nav", label: nav.shop, run: () => go(localize("/shop", lang)) }] : []),
       { id: "bookings", group: "Nav", label: t.bookings.nav, run: () => go(localize("/bookings", lang)) },
       ...projectCategories.map((c) => ({
         id: `p-${c.slug}`,

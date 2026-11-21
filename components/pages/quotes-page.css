@@ -1,0 +1,71 @@
+/* Temporary CTRL® Quotes page. Solid colours only. */
+.qp-root {
+  display: grid;
+  min-height: 100svh;
+  padding: calc(var(--header) + 2rem) var(--gutter) 3rem;
+  background: var(--ink);
+  color: #f2f0ea;
+}
+.qp-card {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 1.1rem;
+  padding: clamp(2rem, 6vw, 5rem);
+  border-radius: 24px;
+  background: #ff4a1c;
+  color: #0c0c0c;
+}
+.qp-kicker { margin: 0; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.qp-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 9vw, 8.5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  text-transform: none;
+}
+.qp-lead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.6vw, 2.4rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+.qp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: #0c0c0c;
+  color: #f2f0ea;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: none;
+}
+.qp-status i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #ff4a1c; }
+.qp-text { max-width: 34rem; margin: 0; font-size: 1.05rem; line-height: 1.5; text-transform: none; }
+.qp-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+.qp-cta,
+.qp-ghost {
+  display: inline-flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-transform: none;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.qp-cta { background: #0c0c0c; color: #f2f0ea; }
+.qp-cta:hover { background: #f2f0ea; color: #0c0c0c; }
+.qp-ghost { border: 1px solid rgba(12, 12, 12, 0.35); color: #0c0c0c; }
+.qp-ghost:hover { background: rgba(12, 12, 12, 0.08); }
+.qp-cta:focus-visible,
+.qp-ghost:focus-visible { outline: 2px solid #0c0c0c; outline-offset: 3px; }
