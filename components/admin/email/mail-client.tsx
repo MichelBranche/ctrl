@@ -89,12 +89,16 @@ export function MailFrame({ doc, title }: { doc: string; title: string }) {
       const doc = frame.contentDocument;
       const body = doc?.body;
       if (!doc || !body) return;
-      const fit = () => setHeight(Math.min(Math.max(doc.documentElement.scrollHeight, body.scrollHeight) + 2, 12000));
+      // Content height only: <html>'s scrollHeight is never smaller than the iframe itself,
+      // so using it let the frame grow and never shrink (the endless white block under the preview).
+      const fit = () => {
+        const content = Math.max(body.scrollHeight, Math.ceil(body.getBoundingClientRect().height));
+        setHeight(Math.min(Math.max(content, 80) + 2, 12000));
+      };
       fit();
       ro?.disconnect();
       ro = new ResizeObserver(fit);
       ro.observe(body);
-      ro.observe(doc.documentElement);
       // Inline (cid:) images can arrive after load and change the height.
       for (const img of Array.from(doc.images)) if (!img.complete) img.addEventListener("load", fit, { once: true });
     };

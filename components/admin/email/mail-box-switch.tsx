@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { MailIcon } from "@/components/admin/email/mailbox-ui";
 import type { MailboxId, MailboxInfo } from "@/lib/mail/mailbox-types";
 
@@ -13,7 +13,7 @@ const SwitchContext = createContext<Switching>({ pending: false, target: null, g
  * Wraps the Posta page: runs the mailbox change in a transition, dims the list with a spinner
  * while the new mailbox loads, then shows a short "Casella: …" toast.
  */
-export function MailSwitchFrame({ box, boxes, children }: { box: MailboxId; boxes: MailboxInfo[]; children: ReactNode }) {
+export function MailSwitchFrame({ box, boxes, navKey, children }: { box: MailboxId; boxes: MailboxInfo[]; navKey: string; children: ReactNode }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [target, setTarget] = useState<MailboxId | null>(null);
@@ -45,15 +45,35 @@ export function MailSwitchFrame({ box, boxes, children }: { box: MailboxId; boxe
     document.addEventListener("click", onClick);
     return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); document.removeEventListener("click", onClick); };
   }, []);
+  // Skeleton while a Posta link loads: "list" (folder, tab, page, mailbox) or "detail" (opening a message).
+  const [loading, setLoading] = useState<{ kind: "list" | "detail"; from: string } | null>(null);
+  if (loading && loading.from !== navKey) setLoading(null);
+  useEffect(() => {
+    if (!loading) return;
+    const timer = window.setTimeout(() => setLoading(null), 15_000);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[href]");
+    if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+    const url = new URL(a.href, window.location.href);
+    if (url.origin !== window.location.origin || url.pathname !== "/admin/email") return;
+    if (url.search === window.location.search) return;
+    const p = url.searchParams;
+    setLoading({ kind: p.get("m") && !p.get("compose") ? "detail" : "list", from: navKey });
+  };
   const go = (next: MailboxId, href: string) => {
     if (next === box) return;
     setTarget(next);
+    setLoading({ kind: "list", from: navKey });
     start(() => router.push(href as Route));
   };
   return (
     <SwitchContext.Provider value={{ pending, target: pending ? target : null, go }}>
-      <div className="mail-switch-frame" data-switching={pending || undefined} aria-busy={pending || undefined}>
+      <div className="mail-switch-frame" data-switching={pending || undefined} data-loading={loading?.kind} aria-busy={pending || Boolean(loading) || undefined} onClickCapture={onClickCapture}>
         {children}
+        {loading?.kind === "detail" ? <MailDetailSkeleton /> : null}
         {pending ? <div className="mail-switch-loading" role="status"><span className="mail-spinner" aria-hidden="true" />Apertura della casella…</div> : null}
       </div>
       {toast ? <p key={toast.n} className="mail-toast" role="status">{toast.text}</p> : null}
@@ -102,5 +122,54 @@ export function MailboxSwitch({ box, boxes, hrefs }: { box: MailboxId; boxes: Ma
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Placeholder of an opening message: toolbar, subject, sender, status bar, body. */
+function MailDetailSkeleton() {
+  return (
+    <div className="mail-detail-skeleton" role="status" aria-label="Apertura email…">
+      <div className="mail-sk-row"><span className="mail-sk" style={{ width: "2.6rem", height: "2.3rem" }} /><span className="mail-sk" style={{ width: "9rem", height: "2.3rem" }} /><span className="mail-sk mail-sk-end" style={{ width: "4.6rem", height: "2.3rem" }} /></div>
+      <span className="mail-sk" style={{ width: "min(36rem, 70%)", height: "1.9rem" }} />
+      <div className="mail-sk-row"><span className="mail-sk" style={{ width: "2.6rem", height: "2.6rem", borderRadius: "50%" }} /><span className="mail-sk-col"><span className="mail-sk" style={{ width: "14rem", height: ".9rem" }} /><span className="mail-sk" style={{ width: "9rem", height: ".75rem" }} /></span></div>
+      <span className="mail-sk" style={{ width: "100%", height: "3.6rem", borderRadius: ".8rem" }} />
+      <span className="mail-sk mail-sk-light" style={{ width: "100%", height: "22rem", borderRadius: ".8rem" }} />
+    </div>
+  );
+}
+
+/** Gmail categories with an underline that slides to the chosen tab (moves on click, before the server answers). */
+export function MailTabs({ children }: { children: ReactNode }) {
+  const nav = useRef<HTMLElement>(null);
+  const ink = useRef<HTMLSpanElement>(null);
+  const picked = useRef<HTMLAnchorElement | null>(null);
+  const place = () => {
+    const root = nav.current, bar = ink.current;
+    if (!root || !bar) return;
+    const current = root.querySelector<HTMLAnchorElement>("a[aria-current]");
+    if (picked.current && picked.current === current) picked.current = null;
+    const el = picked.current ?? current;
+    if (!el) { bar.style.opacity = "0"; return; }
+    bar.style.opacity = "1";
+    bar.style.transform = `translateX(${el.offsetLeft}px)`;
+    bar.style.width = `${el.offsetWidth}px`;
+    root.querySelectorAll("a").forEach((a) => a.toggleAttribute("data-picked", a === el));
+  };
+  useLayoutEffect(() => { place(); });
+  useEffect(() => {
+    const root = nav.current;
+    if (!root) return;
+    const ro = new ResizeObserver(() => place());
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <nav ref={nav} className="mail-categories" aria-label="Categorie Gmail" onClickCapture={(e) => {
+      const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a");
+      if (a && !(e.metaKey || e.ctrlKey || e.shiftKey)) { picked.current = a; place(); }
+    }}>
+      {children}
+      <span ref={ink} className="mail-tab-ink" aria-hidden="true" />
+    </nav>
   );
 }

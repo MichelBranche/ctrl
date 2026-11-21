@@ -20,7 +20,7 @@ import { LabelDot, MailIcon, MailLabelCreate, MailMessageActions, MailRowCheck, 
 import { MailCatchUp, MailPending, RememberList } from "@/components/admin/email/mail-speed";
 import { labelColor } from "@/lib/mail/label-color";
 import { MailBoxProvider } from "@/components/admin/email/mail-box";
-import { MailboxSwitch, MailSwitchFrame } from "@/components/admin/email/mail-box-switch";
+import { MailboxSwitch, MailSwitchFrame, MailTabs } from "@/components/admin/email/mail-box-switch";
 
 import { MailPeople, MailPeopleProvider, MailTeamStatus } from "@/components/admin/email/mail-people";
 
@@ -94,7 +94,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
 
   return (
     <MailBoxProvider box={box}>
-      <MailSwitchFrame box={box} boxes={boxes}>
+      <MailSwitchFrame box={box} boxes={boxes} navKey={href(q) + (q.to ? `&a=${q.to}` : "")}>
       {/* Detail and composer go full width without the page header, like the mockup; auto refresh stays on. */}
       {q.m || q.compose === "new" ? <div className="mail-live-hidden"><MailLive renderedAt={renderStamp()} /></div> : <Header q={q} boxes={boxes} founder={isFounder(me)} />}
       <Suspense fallback={<MailPending userId={me.id} folder={q.f} page={q.p} search={q.search ?? ""} category={q.category ?? ""} />}>
@@ -217,10 +217,10 @@ async function Mailbox({ me, q, address, boxes }: { me: AdminUser; q: Q; address
             </details>
           </form>
           <div className="mail-content">
-            {q.f === "inbox" && !q.search ? <nav className="mail-categories" aria-label="Categorie Gmail">
+            {q.f === "inbox" && !q.search ? <MailTabs>
               <Link aria-current={!q.category ? "page" : undefined} href={href({ box: q.box, f: "inbox" }) as Route}><MailIcon name="everything" size={16} />Tutte</Link>
-              {Object.entries(CATEGORIES).map(([id, name]) => <Link key={id} aria-current={q.category === id ? "page" : undefined} href={href({ box: q.box, f: "inbox", category: id as MailCategory }) as Route}><MailIcon name={CATEGORY_ICON[id as MailCategory]} size={16} />{name}<MailOpening label="Caricamento…" /></Link>)}
-            </nav> : <div className="mail-view-title"><strong>{folderLabel(q.f)}</strong>{q.search ? <span>Risultati per “{q.search}”</span> : null}</div>}
+              {Object.entries(CATEGORIES).map(([id, name]) => <Link key={id} aria-current={q.category === id ? "page" : undefined} href={href({ box: q.box, f: "inbox", category: id as MailCategory }) as Route}><MailIcon name={CATEGORY_ICON[id as MailCategory]} size={16} />{name}</Link>)}
+            </MailTabs> : <div className="mail-view-title"><strong>{folderLabel(q.f)}</strong>{q.search ? <span>Risultati per “{q.search}”</span> : null}</div>}
             <MailSelection key={`${q.f}:${q.search}:${q.category}:${q.p}:${view.list.map((m) => m.uid).join(",")}`} folder={q.f} uids={view.list.map((message) => message.uid)} rows={view.list.map((m) => ({ uid: m.uid, seen: m.seen, starred: Boolean(m.starred) }))} labels={view.labels ?? []}>
               <MailSelectionBar pager={pager} />
               <section className="mail-list" aria-label={`Messaggi: ${folderLabel(q.f)}`}>
