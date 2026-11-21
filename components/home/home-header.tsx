@@ -8,7 +8,9 @@ import { Wordmark } from "@/components/wordmark";
 import { LangSwitch } from "@/components/lang-switch";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { useLocale } from "@/components/use-locale";
-import { SHOP_ENABLED } from "@/lib/features";
+import { SHOP_ENABLED, isShopPath } from "@/lib/features";
+import { siteMenus, type NavMenu } from "@/lib/nav-menus";
+import "./home-header.css";
 import { localize } from "@/lib/i18n";
 import { UI_SPRING, springLinear } from "./springs";
 
@@ -23,8 +25,7 @@ const ROW_STAGGER = 0.1;
 
 const SPRING_CSS = springLinear(UI_SPRING);
 
-export type NavItem = { label: string; href: string };
-export type NavMenu = { id: string; label: string; groups: NavItem[][] };
+export type { NavItem, NavMenu } from "@/lib/nav-menus";
 
 function Arrow() {
   return (
@@ -49,11 +50,14 @@ function measureShift(row: HTMLElement) {
  * Home-only header. A transparent bar inside the hero card that springs into a
  * centred, blurred pill after the first pixels of scroll and stays fixed.
  * Progetti, Servizi and Altro open stacked blocks that drop in one after the
- * other (hover, click or keyboard; Esc closes). Inner pages keep SiteHeader.
+ * other (hover, click or keyboard; Esc closes). Used on every public page: inner pages render it through
+ * SiteHeader with `solid`, so the dark pill shows from the top and stays readable on light and dark heroes.
  */
-export function HomeHeader({ menus }: { menus: NavMenu[] }) {
+export function HomeHeader({ menus: given, solid = false }: { menus?: NavMenu[]; solid?: boolean }) {
   const { lang, t } = useLocale();
-  const [pill, setPill] = useState(false);
+  const menus = given ?? siteMenus(lang);
+  const [scrolledPill, setPill] = useState(false);
+  const pill = solid || scrolledPill;
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -243,7 +247,7 @@ export function HomeHeader({ menus }: { menus: NavMenu[] }) {
 
         <div className="hn-end">
           <LangSwitch className="hn-lang" />
-          {SHOP_ENABLED ? (
+          {SHOP_ENABLED || isShopPath(pathname ?? "") ? (
             <span className="hn-cart">
               <CartDrawer lang={lang} />
             </span>

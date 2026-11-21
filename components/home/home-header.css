@@ -1,0 +1,354 @@
+/* Site navigation (pill header). Used on every public page; extracted from the home stylesheet. */
+.hn {
+  --hv-page: #0b0b0b;
+  --hv-card: #151515;
+  --hv-card-2: #1d1d1c;
+  --hv-paper: #f2f1ec;
+  --hv-paper-2: #e7e5dd;
+  --hv-ink: #0c0c0c;
+  --hv-fg: #f2f0ea;
+  --hv-dim: rgba(242, 240, 234, 0.62);
+  --hv-faint: rgba(242, 240, 234, 0.14);
+  --hv-ink-dim: #5f5d59;
+  --hv-ink-rule: rgba(12, 12, 12, 0.12);
+  --hv-accent: #ff4a1c;
+  --hv-accent-ink: #0c0c0c;
+  --hv-glass: rgba(20, 20, 20, 0.5);
+  --hv-glass-light: rgba(255, 255, 255, 0.28);
+  --hv-frame: 10px;
+  --hv-r: 22px;
+  --hv-pad: clamp(1.25rem, 2.6vw, 2.75rem);
+  --hv-max: 100%; /* cards always fill the viewport, 10px gutter only, at any width */
+  --hv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hv-display: var(--font-display);
+  --hv-body: var(--font);
+}
+
+.hn a:focus-visible,
+.hn button:focus-visible {
+  outline: 2px solid var(--hv-accent);
+  outline-offset: 3px;
+  transition: none;
+}
+.hn-talk:active { transform: scale(0.97); }
+
+/* ---------- HEADER ---------- */
+/* Geometry from the reference at 1440x900: top bar 20px from the top, 50px from the sides, 55px tall,
+   content centred at 1100px (150 / centre / 150). Scrolled: centred 900x45 pill, 5px padding,
+   rgba(51,51,51,.25) + blur(10px). Size and position spring (--hn-spring, 400ms), colour switches at once. */
+.hn {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 20px 50px 0;
+  color: var(--hv-fg);
+  pointer-events: none;
+}
+.hn-bar {
+  box-sizing: border-box;
+  background: rgba(20, 20, 20, 0);
+  -webkit-backdrop-filter: blur(0px) saturate(1);
+  backdrop-filter: blur(0px) saturate(1);
+  width: 100%;
+  height: 55px;
+  padding: 0;
+  border-radius: 1000px;
+  pointer-events: auto;
+  /* Back to the top (pill -> bar): the dark fill and blur fade to fully transparent in 280ms first,
+     and the size spring starts 180ms later, so no dark shape is ever seen widening. Items never fade. */
+  transition:
+    background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s var(--hn-spring) 0.18s,
+    height 0.4s var(--hn-spring) 0.18s,
+    padding 0.4s var(--hn-spring) 0.18s;
+}
+.hn[data-pill] .hn-bar {
+  width: 900px;
+  height: 45px;
+  padding: 5px;
+  /* Darker than the reference (rgba(51,51,51,.25), blur 10) so the items stay readable over bright or busy areas. */
+  background: rgba(20, 20, 20, 0.76);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  /* Scrolling down (bar -> pill): unchanged, size and fill together over 400ms. */
+  transition:
+    width 0.4s var(--hn-spring),
+    height 0.4s var(--hn-spring),
+    padding 0.4s var(--hn-spring),
+    background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    -webkit-backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hn-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 150px;
+  align-items: center;
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  margin: 0 auto;
+}
+.hn-logo { justify-self: start; display: inline-flex; align-items: center; height: 35px; padding: 0 12px; color: inherit; font-size: 1.2rem; text-decoration: none; }
+.hn-links { display: flex; justify-content: center; align-items: center; gap: 3px; }
+.hn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 35px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 1000px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
+}
+.hn-link:hover,
+.hn-more-btn[aria-expanded="true"] { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
+.hn-more-btn svg { width: 0.75rem; height: 0.75rem; transition: transform 0.4s var(--hn-spring); }
+.hn-more-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.hn-more { position: relative; }
+/* Hover bridge across the 10px gap between trigger and panel. */
+.hn-more::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 10px; }
+/* Dropdown: stacked blocks, left aligned with the trigger, 10px below it, 380px wide, 5px apart.
+   Every block and every row drops 150px and fades in with the UI spring; rows stagger 100ms across blocks
+   and a block starts with its first row (the two translations add up), on open and on close. */
+.hn-sub {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  display: grid;
+  gap: 5px;
+  width: 380px;
+  /* Rows slide in from under the panel edge: nothing sweeps across the trigger or the pointer while it opens. */
+  overflow: clip;
+  pointer-events: none;
+}
+.hn-sub[data-open] { pointer-events: auto; }
+.hn-group,
+.hn-group > li {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-150px);
+  transition:
+    transform 0.4s var(--hn-spring),
+    opacity 0.4s var(--hn-spring),
+    visibility 0s linear 0.4s;
+}
+/* Closing: every block and row leaves together on the same spring; the stagger only applies on the way in. */
+.hn-sub[data-open] .hn-group,
+.hn-sub[data-open] .hn-group > li {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: var(--d, 0s), var(--d, 0s), var(--d, 0s);
+}
+.hn-group {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 10px;
+  /* Same idea as the pill but more opaque (reference: rgba(51,51,51,.25), blur 10): page text must not read through. */
+  background: rgba(20, 20, 20, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+.hn-sub-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--hv-fg);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
+}
+.hn-sub-item:hover,
+.hn-sub-item:focus-visible { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
+/* Arrow: sits after the label; on hover it springs to the right edge and turns into an up-right arrow. */
+.hn-sub-arrow { flex: none; width: 20px; height: 20px; transition: transform 0.4s var(--hn-spring); }
+.hn-sub-item:hover .hn-sub-arrow,
+.hn-sub-item:focus-visible .hn-sub-arrow { transform: translateX(var(--hn-shift, 0px)) rotate(-45deg); }
+.hn-end { justify-self: end; display: flex; align-items: center; gap: 8px; }
+.hn-lang { font-size: 0.8rem; }
+.hn-talk {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.05rem;
+  border-radius: 999px;
+  background: var(--hv-accent);
+  color: var(--hv-accent-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+.hn-talk:hover { background: var(--hv-fg); }
+.hn-cart .header-cart {
+  width: auto;
+  min-width: 0;
+  height: 35px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--hv-accent);
+  color: var(--hv-accent-ink);
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+.hn-cart .header-cart:hover { background: var(--hv-fg); }
+.hn-cart .header-cart:active { transform: scale(0.97); }
+.hn-cart .header-cart-count { position: static; min-width: 0; height: auto; margin-left: 0.4rem; padding: 0; background: transparent; color: inherit; font-size: 0.85rem; }
+.hn-cart .header-cart { display: inline-flex; align-items: center; }
+.hn-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  height: 40px;
+  padding: 0 0.85rem 0 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1), color 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Scrolled (compact dark bar): no pill of its own, just label + icon inside the bar. The pill is for the hero/top state only. */
+.hn[data-pill] .hn-toggle:not([data-open]) { border-color: transparent; background: transparent; }
+/* Open: solid light pill with a dark X, clearly visible over the overlay. */
+.hn-toggle[data-open] { background: var(--hv-fg); border-color: var(--hv-fg); color: var(--hv-ink); }
+.hn-toggle-icon { position: relative; display: block; width: 16px; height: 16px; }
+.hn-toggle-icon i {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 16px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translateY(-3.5px);
+  transition: transform 0.4s var(--hn-spring);
+}
+.hn-toggle-icon i + i { transform: translateY(3.5px); }
+.hn-toggle[data-open] .hn-toggle-icon i { transform: rotate(45deg); }
+.hn-toggle[data-open] .hn-toggle-icon i + i { transform: rotate(-45deg); }
+.hn-toggle:focus-visible { outline: 2px solid var(--hv-accent); outline-offset: 2px; }
+
+/* The bar sits above the overlay so the logo and the X stay on top. */
+.hn-bar { position: relative; z-index: 2; }
+.hn-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(20, 20, 20, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  color: var(--hv-fg);
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.25s;
+}
+.hn-mobile[data-open] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.4s var(--hn-spring), visibility 0s;
+}
+/* margin: auto centres the column and still lets it scroll from the top when it is taller than the screen. */
+.hn-mobile-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  width: 100%;
+  margin: auto;
+  padding: calc(84px + env(safe-area-inset-top)) 1.5rem calc(2rem + env(safe-area-inset-bottom));
+}
+.hn-mobile-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s linear;
+}
+.hn-mobile[data-open] .hn-mobile-group {
+  opacity: 1;
+  transform: none;
+  transition: transform 0.4s var(--hn-spring), opacity 0.4s var(--hn-spring);
+  transition-delay: calc(var(--i, 0) * 40ms);
+}
+.hn-mobile a { color: var(--hv-fg); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.hn-mobile-label { margin: 0 0 0.25rem; color: var(--hv-accent); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1.2; text-transform: uppercase; }
+.hn-mobile .hn-mobile-sub { display: block; padding: 0.2rem 0.5rem; font-size: 1.15rem; line-height: 1.3; letter-spacing: -0.02em; }
+.hn-mobile-simple { flex-direction: row; gap: 1.75rem; }
+.hn-mobile .hn-mobile-main { display: block; padding: 0.2rem 0.25rem; font-size: 1.6rem; line-height: 1.1; letter-spacing: -0.03em; }
+.hn-mobile .hn-mobile-sub:active,
+.hn-mobile .hn-mobile-main:active { opacity: 0.6; }
+.hn-mobile-lang { font-size: 0.9rem; }
+html.nav-open .hn-bar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html.nav-open .hn { z-index: 61; }
+@media (min-width: 900.02px) {
+  .hn-mobile { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hn-mobile, .hn-mobile-group, .hn-toggle-icon i { transition: none !important; }
+  .hn-mobile-group { transform: none; }
+}
+
+@media (min-width: 1800px) {
+  .hn { --hv-r: 26px; }
+}
+@media (max-width: 900px) {
+  .hn-links,
+  .hn-lang,
+  .hn-talk { display: none; }
+  .hn-toggle { display: inline-flex; }
+  .hn { padding: 14px 20px 0; }
+  .hn-row { grid-template-columns: 1fr auto; }
+  .hn[data-pill] .hn-bar { width: 100%; }
+}
+
+@media (max-width: 809.98px) {
+  .hn { --hv-r: 30px; --hv-pad: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hn-bar,
+  .hn-group,
+  .hn-group > li,
+  .hn-sub-item,
+  .hn-sub-arrow,
+  .hn-link,
+  .hn-talk,
+  .hn-more-btn svg { transition: none; }
+}

@@ -8,7 +8,8 @@ import { HomeMotionV2 } from "@/components/home/home-motion-v2";
 import { HomePlates } from "@/components/home/home-plates";
 import { HomeTestimonials } from "@/components/home/home-testimonials";
 import { SiteFooter } from "@/components/site-footer";
-import { homeFeatured, LE_VELE, services } from "@/lib/content";
+import { services } from "@/lib/content";
+import { siteMenus } from "@/lib/nav-menus";
 import { showTestimonials } from "@/lib/testimonials";
 import { presentReviews } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
@@ -52,40 +53,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
 
   return (
     <>
-      <HomeHeader
-        menus={[
-          {
-            id: "work",
-            label: t.nav.work,
-            groups: [
-              [
-                { label: LE_VELE.client, href: localize(LE_VELE.path, lang) },
-                ...homeFeatured.map((item) => ({ label: item.title[lang], href: localize(item.href, lang) })),
-              ],
-              [{ label: h.allProjects, href: localize("/projects", lang) }],
-            ],
-          },
-          {
-            id: "services",
-            label: t.nav.services,
-            groups: [
-              services.map((service) => ({ label: service.title[lang], href: localize(`/services/${service.slug}`, lang) })),
-              [{ label: h.navAllServices, href: localize("/services", lang) }],
-            ],
-          },
-          {
-            id: "more",
-            label: h.navMore,
-            groups: [
-              [
-                { label: t.nav.journal, href: localize("/journal", lang) },
-                { label: t.nav.contact, href: localize("/contact", lang) },
-              ],
-              [{ label: h.navTalk, href: localize("/bookings", lang) }],
-            ],
-          },
-        ]}
-      />
+      <HomeHeader menus={siteMenus(lang)} />
       <HomeMotionV2>
         <main className="hv">
           {/* 1. HERO */}
@@ -98,6 +66,28 @@ export async function HomePage({ lang }: { lang: Locale }) {
                 <p className="hv-hero-line">
                   <span data-hv-words>{h.heroLine[0]}</span> <span data-hv-words>{h.heroLine[1]}</span>
                 </p>
+              </div>
+
+              {/* Clouds behind the plates (Work Louder pattern: big clouds bleeding off the left and right edges, sliding in from
+                  the sides on load). One asset, white with alpha from luminance, reused 3 times. Decorative, lazy, low priority. */}
+              <div className="hv-clouds" aria-hidden="true" data-hv-clouds>
+                {[1, 2, 3].map((n) => (
+                  <span key={n} className={`hv-cloud hv-cloud-${n}`} data-hv-cloud={n === 1 ? "left" : "right"}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/images/home/clouds/cloud.webp"
+                      srcSet="/images/home/clouds/cloud-sm.webp 720w, /images/home/clouds/cloud.webp 1400w"
+                      sizes="(max-width: 809px) 80vw, 50vw"
+                      width={1400}
+                      height={755}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
+                      draggable={false}
+                    />
+                  </span>
+                ))}
               </div>
 
               <div className="hv-hero-object">
