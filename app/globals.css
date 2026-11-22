@@ -1340,9 +1340,26 @@ html.pt-booting .ca-root {
   .cta-circle::before, .cta-arrow { transition-duration: 0.01ms; }
 }
 .service-page-cta { margin-top: 2rem; }
-.nf-page { min-height: 70svh; }
-.nf-lead { max-width: 40ch; margin-top: 1.2rem; }
+/* 404: one dark card inside the 10px frame (design system), copy bottom left. */
+.subpage.nf-page {
+  min-height: min(calc(100svh - 2 * var(--ds-frame)), 46rem);
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.75rem, 3.4vw, 3.25rem);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  align-content: end;
+}
+.nf-page > .kicker {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.7rem;
+  border: 1px solid var(--ds-faint); border-radius: var(--ds-r-pill);
+  font-size: 0.85rem; letter-spacing: -0.005em; text-transform: none; color: var(--ds-fg);
+}
+.nf-page > .kicker::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--ds-accent); }
+.nf-page h1 { margin-top: 1.4rem; font-family: var(--ds-font-display); font-weight: 700; letter-spacing: var(--ds-track-display); line-height: 0.98; }
+.nf-lead { max-width: 40ch; margin-top: 1.2rem; color: var(--ds-dim); }
 .nf-cta { margin-top: 2.4rem; }
+@media (max-width: 860px) { .subpage.nf-page { padding-top: 110px; min-height: min(calc(100svh - 2 * var(--ds-frame)), 36rem); } }
 
 /* Shop cart: polish (icons, states, close easing, count bump, live price) */
 .header-cart .shop-icon { width: 1.15rem; height: 1.15rem; }
