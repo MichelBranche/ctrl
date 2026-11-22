@@ -11,6 +11,7 @@ import { localize, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "./agenda-easy.css";
+import "@/components/ds/legacy-frame.css";
 
 export const AGENDA_EASY_PATH = "/projects/webapps/agenda-easy";
 const IMG = "/images/projects/agenda-easy";
@@ -42,7 +43,7 @@ export function AgendaEasyView({ lang }: { lang: Locale }) {
   return (
     <>
       <SiteHeader />
-      <main className="p-root ae-root" data-motion-root>
+      <main className="p-root ae-root pf" data-motion-root>
         <section className="ae-hero">
           <div className="ae-hero-media" aria-hidden="true">
             <Image src={`${IMG}/hero.webp`} alt="" fill priority sizes="(max-width: 900px) 100vw, 60vw" className="ae-hero-img" data-p-hero-img />
