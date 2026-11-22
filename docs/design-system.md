@@ -13,7 +13,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Superfici admin (telaio dashboard, card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` (`.ds-page`, `.ds-head`, `.ds-card`, `.ds-*`) |
 | Panoramica admin | `components/ds/overview.css` (prefisso `.ov`) |
 | Desk admin | `components/ds/desk.css` (prefisso `.dk`) |
-| CRM admin (Oggi, poi le altre sottosezioni) | `components/ds/crm.css` (prefisso `.cr`) |
+| CRM admin (Oggi, Rubrica, poi le altre sottosezioni) | `components/ds/crm.css` (prefisso `.cr`) |
 | Cornice admin (sidebar, header, palette, drawer, campanella) | `components/ds/admin-shell.css` (classi `.adm-*` del telaio, token `--ds-*`) |
 | Badge team | `components/team-badge.tsx` + `components/pages/team-badge.css` |
 | Testi | `lib/i18n.ts` (o il file `*-copy.ts` della pagina), mai stringhe IT/EN nei componenti |

@@ -1,3 +1,5 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/crm.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -5,7 +7,7 @@ import { ContactForm } from "@/components/admin/crm/contact-form";
 import { ImportDialog } from "@/components/admin/crm/import-dialog";
 import { ContactPanel } from "@/components/admin/crm/contact-panel";
 import { NewContactShortcut } from "@/components/admin/crm/follow-up-client";
-import { avatarHue, CrmHeader, CrmTabs, initials, romeToday } from "@/components/admin/crm/crm-ui";
+import { avatarHue, CrmIcon, CrmTabs, initials, romeToday } from "@/components/admin/crm/crm-ui";
 import { RubricaBoard, type BoardRow, type SortHead } from "@/components/admin/crm/rubrica-board";
 import { RubricaSegments, RubricaTools, VistaMemory } from "@/components/admin/crm/rubrica-tools";
 import { requireSection } from "@/lib/admin";
@@ -24,19 +26,17 @@ type SP = Record<string, string | string[] | undefined>;
 
 export default function RubricaPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
-    <main className="adm-main crm-main crm-main-rubrica">
-      <Suspense fallback={<RubricaSkeleton />}><Body searchParams={searchParams} /></Suspense>
-    </main>
+    <Suspense fallback={<RubricaSkeleton />}><Body searchParams={searchParams} /></Suspense>
   );
 }
 
 function RubricaSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Caricamento della rubrica">
-      <div className="adm-skel" style={{ height: "4.5rem", width: "min(28rem, 80%)", borderRadius: ".6rem" }} />
-      <div className="adm-skel" style={{ height: "2.4rem", borderRadius: ".6rem", margin: "1.2rem 0" }} />
-      <div className="adm-skel" style={{ height: "24rem", borderRadius: ".9rem" }} />
-    </div>
+    <main className="ds-page cr" aria-busy="true" aria-label="Caricamento della rubrica">
+      <div className="ds-head cr-skel" style={{ minHeight: "8.5rem" }} />
+      <div className="cr-skel" style={{ height: "2.4rem" }} />
+      <div className="cr-skel" style={{ height: "24rem" }} />
+    </main>
   );
 }
 
@@ -108,39 +108,48 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   };
 
   return (
-    <div className="crm-rubrica crm-rubrica-page" data-panel={view.c ? "open" : undefined}>
-      <VistaMemory vista={view.vista} />
-      <div className="crm-rubrica-main">
-        <CrmHeader className="crm-rubrica-glow" title="Rubrica" intro="Tutti i tuoi contatti: filtrali, gestiscili e passa all'azione.">
-          <span className="crm-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
-          <Link className="adm-btn adm-btn-primary" href={NEW_CONTACT as Route}>Nuovo contatto</Link>
-        </CrmHeader>
-        <NewContactShortcut href={NEW_CONTACT} />
-        <CrmTabs current={RUBRICA} />
-        {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
-        <RubricaSegments query={view} counts={segments} views={views} founder={founder} />
-        <RubricaTools query={view} cities={f.cities} types={f.types} owners={owners} />
+    <main className="ds-page cr">
+      <div className="crm-rubrica crm-rubrica-page" data-panel={view.c ? "open" : undefined}>
+        <VistaMemory vista={view.vista} />
+        <div className="crm-rubrica-main">
+          <header className="ds-head cr-top">
+            <p className="ds-kicker">CRM</p>
+            <div className="cr-title">
+              <h1 className="ds-title">Rubrica</h1>
+              <p className="ds-lead">Tutti i tuoi contatti: filtrali, gestiscili e passa all&apos;azione.</p>
+            </div>
+            <div className="cr-actions">
+              <span className="crm-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
+              <Link className="cr-cta" href={NEW_CONTACT as Route}><CrmIcon d="M12 5v14M5 12h14" /><span>Nuovo contatto</span></Link>
+            </div>
+            <CrmTabs current={RUBRICA} />
+          </header>
+          <NewContactShortcut href={NEW_CONTACT} />
+          {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
+          <RubricaSegments query={view} counts={segments} views={views} founder={founder} />
+          <RubricaTools query={view} cities={f.cities} types={f.types} owners={owners} />
 
-        {rows.length ? (
-          <RubricaBoard key={listKey} rows={rows} layout={view.vista} activeId={view.c} sort={sort} owners={owners} today={today} canEmail={mailOk}
-            pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
-        ) : (
-          <div className="crm-card-panel crm-empty-state">
-            {filtered
-              ? <><p>Nessun contatto con questi filtri.</p><Link className="adm-btn adm-btn-sm" href={(view.c ? `${RUBRICA}?c=${view.c}` : RUBRICA) as Route}>Azzera i filtri</Link></>
-              : <><p>Ancora nessun contatto in rubrica.</p><p className="adm-muted">Aggiungine uno a mano o importa i lead dal Radar.</p><Link className="adm-btn adm-btn-sm adm-btn-primary" href={NEW_CONTACT as Route}>Nuovo contatto</Link></>}
-          </div>
-        )}
+          {rows.length ? (
+            <RubricaBoard key={listKey} rows={rows} layout={view.vista} activeId={view.c} sort={sort} owners={owners} today={today} canEmail={mailOk}
+              pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
+          ) : (
+            <div className="ds-card cr-blank">
+              {filtered
+                ? <><p className="cr-empty">Nessun contatto con questi filtri.</p><Link className="cr-more" href={(view.c ? `${RUBRICA}?c=${view.c}` : RUBRICA) as Route}>Azzera i filtri</Link></>
+                : <><p className="cr-empty">Ancora nessun contatto in rubrica.</p><p className="ds-lead">Aggiungine uno a mano o importa i lead dal Radar.</p><Link className="cr-cta" href={NEW_CONTACT as Route}>Nuovo contatto</Link></>}
+            </div>
+          )}
 
-        <section className="crm-card-panel" id="nuovo">
-          <details open={sp.nuovo === "1"}><summary className="adm-h2">Nuovo contatto</summary><ContactForm owners={owners} /></details>
-        </section>
+          <section className="ds-card cr-new" id="nuovo">
+            <details open={sp.nuovo === "1"}><summary>Nuovo contatto</summary><ContactForm owners={owners} /></details>
+          </section>
+        </div>
+        {view.c ? (
+          <Suspense key={`${view.c}:${view.tab}`} fallback={<PanelSkeleton />}>
+            <ContactPanel id={view.c} tab={view.tab} me={me} links={panelLinks} presentation="rubrica" />
+          </Suspense>
+        ) : null}
       </div>
-      {view.c ? (
-        <Suspense key={`${view.c}:${view.tab}`} fallback={<PanelSkeleton />}>
-          <ContactPanel id={view.c} tab={view.tab} me={me} links={panelLinks} presentation="rubrica" />
-        </Suspense>
-      ) : null}
-    </div>
+    </main>
   );
 }

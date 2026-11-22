@@ -195,12 +195,7 @@ function Avatar({ row }: { row: BoardRow }) {
 function ScoreRing({ score }: { score: number | null }) {
   if (score === null) return <span className="adm-muted">n/d</span>;
   const level = score >= 70 ? "alto" : score >= 40 ? "medio" : "basso";
-  const turn = Math.max(0, Math.min(100, score));
-  return (
-    <span className="crm-ring" data-level={level} title={`Punteggio ${score} su 100`} style={{ ["--turn" as string]: `${turn * 3.6}deg` }}>
-      <span>{score}</span>
-    </span>
-  );
+  return <span className="cr-score" data-level={level} title={`Punteggio ${score} su 100`}>{score}</span>;
 }
 
 function NextBit({ row }: { row: BoardRow }) {
