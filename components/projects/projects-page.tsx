@@ -12,6 +12,7 @@ import { categoryPath, projectCategories } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
 import "./projects.css";
+import "@/components/ds/legacy-frame.css";
 
 export function projectsMetadata(lang: Locale): Metadata {
   const c = projectsCopy[lang];
@@ -32,7 +33,7 @@ export function ProjectsView({ lang }: { lang: Locale }) {
   return (
     <>
       <SiteHeader />
-      <main className="p-root" data-motion-root>
+      <main className="p-root pf" data-motion-root>
         <section className="p-hero">
           <span className="p-hero-frame" aria-hidden="true">
             <Image className="p-hero-img" src="/images/hero.jpg" alt="" fill priority sizes="(max-width: 760px) 100vw, 70vw" data-p-hero-img />

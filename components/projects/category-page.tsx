@@ -13,6 +13,7 @@ import { categoryPath, getProjectCategory, LE_VELE, LE_VELE_MEDIA, projectCatego
 import { localize, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
 import "./projects.css";
+import "@/components/ds/legacy-frame.css";
 import "./websites.css";
 
 export function categoryMetadata(slug: string, lang: Locale): Metadata {
@@ -119,7 +120,7 @@ export function CategoryView({ slug, lang }: { slug: string; lang: Locale }) {
   return (
     <>
       <SiteHeader />
-      <main className="p-root" data-motion-root>
+      <main className="p-root pf" data-motion-root>
         <section className="p-hero p-hero-cat">
           <span className="p-hero-frame p-hero-frame-cat" aria-hidden="true">
             <Image className="p-hero-img" src={cat.image} alt="" fill priority sizes="(max-width: 760px) 100vw, 75vw" data-p-hero-img />
