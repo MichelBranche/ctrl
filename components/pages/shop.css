@@ -366,3 +366,76 @@
 .sp-manual-delivery { max-width: 58rem; margin: 1.2rem auto 0; padding: 1rem 1.2rem; border-left: 2px solid var(--shop-accent); background: rgba(255,255,255,.035); color: var(--shop-dim); font-size: .82rem; line-height: 1.55; }
 @media (max-width: 600px) { .sp-manual-heading { align-items: start; flex-direction: column; gap: 1rem; } .sp-book { height: 68vh; min-height: 22rem; } }
 @media (prefers-reduced-motion: reduce) { .sp-book iframe { animation: none; } }
+
+/* ── Frame composition (design system, app/tokens.css): bands become cards inside the 10px frame.
+   Styles only: catalog, cart, product actions and checkout (Stripe) logic are unchanged. ── */
+.shop-page { --shop-bg: var(--ds-page); --shop-fg: var(--ds-fg); --shop-dim: var(--ds-dim); --shop-rule: var(--ds-faint); --shop-accent: var(--ds-accent); background: var(--ds-page); }
+.shop-page .shop-hero {
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.5rem, 3vw, 3rem);
+  align-items: flex-end;
+  border: 0; border-radius: var(--ds-r-card);
+}
+.shop-page .shop-hero-shade { background: rgba(0, 0, 0, 0.18); }
+.shop-page .shop-hero-content { width: 100%; }
+.shop-page .shop-kicker {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.7rem;
+  border: 1px solid var(--ds-faint); border-radius: var(--ds-r-pill); background: var(--ds-glass);
+  font-size: 0.85rem; font-weight: 500; letter-spacing: -0.005em; text-transform: none;
+}
+.shop-page .shop-kicker i { order: -1; width: 0.45rem; height: 0.45rem; border-radius: 50%; }
+.shop-page .shop-hero h1 { font-weight: 700; letter-spacing: var(--ds-track-display); }
+.shop-page .shop-catalog {
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+}
+.shop-page .shop-catalog-shade { background: rgba(11, 11, 11, 0.78); }
+.shop-page .shop-card-image { border-radius: var(--ds-r-tile); }
+.shop-page .shop-card-image::after { display: none; }
+.shop-page .shop-sort { border-radius: var(--ds-r-pill); }
+.shop-page .shop-sort select { padding-left: 0.9rem; }
+
+/* Product */
+.shop-page .sp-hero,
+.shop-page .sp-benefits,
+.shop-page .sp-manual {
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding-inline: var(--ds-pad);
+  border: 0; border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.shop-page .sp-manual { width: auto; padding-block: var(--ds-pad); border-top: 0; }
+.shop-page .sp-hero { margin-top: var(--ds-frame); padding-top: 125px; padding-bottom: var(--ds-pad); }
+.shop-page .sp-gallery-main { border-radius: var(--ds-r-tile); }
+.shop-page .sp-details h1 { font-weight: 700; letter-spacing: var(--ds-track-display); }
+.shop-page .sp-category { display: flex; width: fit-content; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 500; letter-spacing: -0.005em; text-transform: none; }
+.shop-page .sp-category i { order: -1; width: 0.45rem; height: 0.45rem; border-radius: 50%; }
+.shop-page .sp-benefits { background: var(--ds-paper); color: var(--ds-ink); --shop-dim: var(--ds-ink-dim); --shop-rule: var(--ds-ink-rule); }
+.shop-page .sp-benefits h2 { letter-spacing: var(--ds-track-display); }
+.shop-page .sp-reviews {
+  width: auto;
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.shop-page .sp-review-placeholder { border: 0; border-radius: calc(var(--ds-r-card) - 4px); background: var(--ds-card-2); }
+
+/* Checkout */
+.shop-page .checkout-shell {
+  width: auto;
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.shop-page .checkout-intro h1 { font-weight: 700; letter-spacing: var(--ds-track-display); }
+.shop-page .checkout-totals { border: 0; border-radius: calc(var(--ds-r-card) - 4px); background: var(--ds-card-2); }
+.shop-page .checkout-note { border-radius: 0 var(--ds-r-tile) var(--ds-r-tile) 0; }
+
+@media (max-width: 760px) {
+  .shop-page .shop-hero, .shop-page .sp-hero, .shop-page .checkout-shell { padding-top: 110px; }
+  .shop-page .shop-catalog { padding: 1.25rem; }
+}
