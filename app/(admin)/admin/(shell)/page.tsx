@@ -1,4 +1,6 @@
 import "@/components/ds/admin-ui.css";
+import "@/components/ds/status.css";
+import "@/components/ds/rubrica.css";
 import "@/components/ds/overview.css";
 import { Suspense } from "react";
 import { CommandCenter } from "@/components/admin/command/center";
@@ -19,11 +21,10 @@ export default function Overview({ searchParams }: PageProps<"/admin">) {
 async function OverviewSkeleton() {
   const { t } = await getAdminCopy();
   return (
-    <main className="ds-page ov" aria-busy="true" aria-label={t.command.loading}>
-      <div className="ds-head ov-skel" style={{ minHeight: "8.5rem" }} />
-      <div className="ov-kpis">
-        {[0, 1, 2, 3].map((i) => <div key={i} className="ov-skel" style={{ height: "8.6rem" }} />)}
-      </div>
+    <main className="ds-page rb ov" aria-busy="true" aria-label={t.command.loading}>
+      <div className="ov-skel" style={{ minHeight: "7.5rem" }} />
+      <div className="ov-skel" style={{ minHeight: "9rem" }} />
+      <div className="ov-skel" style={{ minHeight: "20rem" }} />
     </main>
   );
 }

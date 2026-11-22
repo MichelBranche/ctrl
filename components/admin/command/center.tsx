@@ -4,9 +4,8 @@ import { ActivityCheck } from "@/components/admin/crm/activity-check";
 import { FollowUpDone } from "@/components/admin/crm/follow-up-client";
 import { AreaChart, BarList, CountUp, Donut, Sparkline } from "@/components/admin/charts";
 import { ArrowUpRight } from "@/components/ds/arrow-up-right";
-import type { CommandKpi, CommandModel, CommandRange, CommandShortcut, CommandTodo } from "@/lib/command-types";
+import type { CommandActivity, CommandFunnel, CommandKpi, CommandModel, CommandShortcut, CommandTodo } from "@/lib/command-types";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import { useAdminLocale } from "@/components/admin/locale-provider";
 import { interpolate } from "@/lib/admin-i18n";
 
@@ -41,46 +40,6 @@ const SHORTCUT_ICON: Record<CommandShortcut["id"], string> = {
 
 const MARK_ICON = { mail: MAIL, bag: BAG, doc: DOC, users: PEOPLE } as const;
 
-function PeriodMenu({ range }: { range: CommandRange }) {
-  const { t } = useAdminLocale();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  return (
-    <div className="ov-period" ref={ref}>
-      <button type="button" className="ov-chip" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((value) => !value)}>
-        <Icon d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" />
-        {interpolate(t.command.lastDays, { n: range })}
-      </button>
-      {open ? (
-        <ul className="ov-period-menu" role="listbox" aria-label={t.command.period}>
-          {([7, 30, 90] as const).map((item) => (
-            <li key={item}>
-              <Link href={`/admin?range=${item}`} scroll={false} role="option" aria-selected={item === range} onClick={() => setOpen(false)}>
-                {interpolate(t.command.lastDays, { n: item })}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
 function TodoCheck({ item }: { item: CommandTodo }) {
   const check = item.check;
   if (!check) return <span className="ov-box" data-on={item.done ? "" : undefined} aria-hidden="true" />;
@@ -96,138 +55,208 @@ function TodoCheck({ item }: { item: CommandTodo }) {
   }
 }
 
+const UP = "M7 17L17 7M9 7h8v8";
+const DOWN = "M7 7l10 10M17 9v8H9";
+const FLAT = "M5 12h14";
+/** Tag colour from where the item leads, so the same area has the same colour as the feed icons. */
+const tagType = (href: string) => (href.startsWith("/admin/crm/pipeline") ? "pipeline" : href.startsWith("/admin/crm") || href.startsWith("/admin/requests") ? "crm" : href.startsWith("/admin/shop") ? "shop" : href.startsWith("/admin/newsletter") ? "newsletter" : "post");
+const TYPE_LABEL = { crm: "typeCrm", shop: "typeShop", post: "typePost", newsletter: "typeNewsletter" } as const;
+
+/** Change against the previous period: green up, red down, neutral flat. Note text when there is nothing to compare. */
+function Delta({ card }: { card: CommandKpi }) {
+  if (!card.delta) return <span className="ov-kpi-note">{card.note ?? ""}</span>;
+  const tone = card.tone ?? "flat";
+  return (
+    <span className="ov-delta" data-tone={tone}>
+      <Icon d={tone === "up" ? UP : tone === "down" ? DOWN : FLAT} />
+      {card.delta}
+    </span>
+  );
+}
+
+function Funnel({ funnel }: { funnel: CommandFunnel }) {
+  const { t } = useAdminLocale();
+  const max = Math.max(1, ...funnel.steps.map((step) => step.count));
+  return (
+    <section className="ov-card ov-funnel" aria-labelledby="ov-funnel">
+      <div className="ov-card-head">
+        <h2 id="ov-funnel">{t.command.funnelTitle}</h2>
+        <Link href={funnel.href} className="ov-more">{t.command.funnelOpen}</Link>
+      </div>
+      <p className="ov-funnel-lead" title={t.command.funnelHint}>{interpolate(t.command.funnelTotal, { n: funnel.total })}<span className="adm-sr"> · {t.command.funnelHint}</span></p>
+      {funnel.error ? <p className="adm-error" role="alert">{t.command.funnelUnavailable}</p> : null}
+      {!funnel.error && funnel.total === 0 ? <p className="ov-empty">{t.command.funnelEmpty}</p> : null}
+      {funnel.total > 0 ? (
+        <ol className="ov-steps">
+          {funnel.steps.map((step, i) => {
+            const share = Math.round((step.count / funnel.total) * 100);
+            return (
+              <li key={step.id} data-stage={step.id} style={{ ["--i" as string]: i }}>
+                <Link href={step.href}>
+                  <span className="ov-step-label"><i aria-hidden="true" />{step.label}</span>
+                  <span className="ov-step-track" aria-hidden="true"><span style={{ width: `${Math.max(3, (step.count / max) * 100)}%` }} /></span>
+                  <span className="ov-step-n">{step.count}</span>
+                  <span className="ov-step-share">{share}%</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      {funnel.total > 0 ? (
+        <p className="ov-funnel-foot" data-stage="perso"><i aria-hidden="true" />{t.command.funnelLost} <b>{funnel.lost}</b></p>
+      ) : null}
+    </section>
+  );
+}
+
+function Feed({ items }: { items: CommandActivity[] }) {
+  return (
+    <ol className="ov-feed">
+      {items.map((item, i) => (
+        <li key={item.id} style={{ ["--i" as string]: i }}>
+          <span className="ov-act" data-type={item.tone}><Icon d={MARK_ICON[item.mark]} /></span>
+          <Link href={item.href}>{item.title}</Link>
+          <time dateTime={item.at}>{item.ago}</time>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function CommandCenter({ model }: { model: CommandModel }) {
   const { t } = useAdminLocale();
+  const types = [...new Set(model.activity.items.map((item) => item.tone))];
 
   return (
-    <main className="ds-page ov">
-      <header className="ds-head">
-        <p className="ds-kicker">{model.dateLabel}</p>
-        <h1 className="ds-title">{model.greeting}</h1>
-        {model.lead ? <p className="ds-lead">{model.lead}</p> : null}
-        <div className="ov-toolbar">
-          <Link href={model.systems.href} className="ov-chip" data-tone={model.systems.tone} title={model.systems.title}>
-            <span className="ov-live" aria-hidden="true" />
-            {model.systems.label}
-          </Link>
-          <PeriodMenu range={model.range} />
+    <main className="ds-page rb ov">
+      <header className="rb-head ov-head">
+        <div className="rb-head-row">
+          <div className="rb-head-title">
+            <p className="rb-kicker">{model.dateLabel}</p>
+            <h1>{model.greeting}</h1>
+            {model.lead ? <p className="ov-lead">{model.lead}</p> : null}
+          </div>
+          <div className="ov-head-tools">
+            <Link href={model.systems.href} className="rb-btn ov-sys" data-tone={model.systems.tone} title={model.systems.title}>
+              <span className="ov-live" aria-hidden="true" />
+              {model.systems.label}
+            </Link>
+            <nav className="rb-segs ov-range" aria-label={t.command.period}>
+              {([7, 30, 90] as const).map((item) => (
+                <Link key={item} href={`/admin?range=${item}`} scroll={false} aria-current={item === model.range ? "page" : undefined}>
+                  {interpolate(t.command.lastDays, { n: item })}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
-        {model.denied ? <p className="adm-error" role="status">{t.command.denied}</p> : null}
+        {model.denied ? <p className="adm-error ov-denied" role="status">{t.command.denied}</p> : null}
       </header>
 
       <section className="ov-kpis" aria-label={t.command.kpis}>
-        {model.kpis.map((card) => (
-          <Link key={card.id} href={card.href} className="ov-kpi">
-            <span className="ov-kpi-top">
-              <Icon d={KPI_ICON[card.id]} />
-              <span className="ov-kpi-label">{card.label}</span>
-            </span>
-            <span className="ov-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={interpolate(t.command.spark, { label: card.label })} /></span>
+        {model.kpis.map((card, i) => (
+          <Link key={card.id} href={card.href} className="ov-kpi" data-kpi={card.id} style={{ ["--i" as string]: i }}>
+            <span className="ov-kpi-label"><i aria-hidden="true" /><Icon d={KPI_ICON[card.id]} /><span>{card.label}</span></span>
             {card.unavailable ? (
-              <span className="ov-kpi-num ov-kpi-note">{card.unavailable}</span>
+              <span className="ov-kpi-num ov-kpi-off">{card.unavailable}</span>
             ) : (
               <CountUp value={card.value} className="ov-kpi-num" money={card.money} />
             )}
-            <span className="ov-kpi-delta" data-tone={card.tone || undefined}>
-              {card.delta ? (
-                <>
-                  {card.tone === "up" ? <Icon d="M6 14l6-6 6 6" /> : card.tone === "down" ? <Icon d="M6 10l6 6 6-6" /> : null}
-                  {card.delta}
-                </>
-              ) : card.note ?? ""}
-            </span>
+            <Delta card={card} />
+            <span className="ov-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={interpolate(t.command.spark, { label: card.label })} /></span>
           </Link>
         ))}
       </section>
 
-      <div className="ov-split">
+      <div className={model.traffic && model.funnel ? "ov-row2" : "ov-row1"}>
         {model.traffic ? (
-          <section className="ds-card ov-chart" aria-labelledby="ov-traffic">
-            <div className="ds-card-head">
+          <section className="ov-card ov-chart" aria-labelledby="ov-traffic">
+            <div className="ov-card-head">
               <h2 id="ov-traffic">{t.command.traffic}</h2>
               <span className="ov-legend">
                 <span><i className="ov-dot" data-tone="views" /> {t.command.views}</span>
                 <span><i className="ov-dot" data-tone="visitors" /> {t.command.visitors}</span>
               </span>
             </div>
-            {model.traffic.empty ? <p className="ov-empty">{model.traffic.empty}</p> : <AreaChart data={model.traffic.points} height={286} />}
+            {model.traffic.empty ? <p className="ov-empty">{model.traffic.empty}</p> : <div className="ov-chart-body"><AreaChart data={model.traffic.points} height={268} /></div>}
           </section>
         ) : null}
-        <section className="ds-card ov-todo-card" aria-labelledby="ov-todo">
-          <div className="ds-card-head">
+        {model.funnel ? <Funnel funnel={model.funnel} /> : null}
+      </div>
+
+      <div className="ov-row2 ov-row-even">
+        <section className="ov-card ov-todo-card" aria-labelledby="ov-todo">
+          <div className="ov-card-head">
             <h2 id="ov-todo">
               {t.command.todoTitle}
-              {model.todos.total > 0 ? <span className="ov-count">{model.todos.total}</span> : null}
+              {model.todos.total > 0 ? <span className="rb-badge">{model.todos.total}</span> : null}
             </h2>
             <Link href={model.todos.href} className="ov-more">{t.command.seeAll}</Link>
           </div>
           {model.todos.items.length === 0 ? (
             <p className="ov-empty">{t.command.todoEmpty}</p>
           ) : (
-            <ul className="ov-list">
-              {model.todos.items.map((item) => (
-                <li key={item.id} className="ov-row ov-todo" data-done={item.done ? "" : undefined}>
+            <ul className="ov-todos">
+              {model.todos.items.map((item, i) => (
+                <li key={item.id} className="ov-todo" data-done={item.done ? "" : undefined} style={{ ["--i" as string]: i }}>
                   <span className="ov-check"><TodoCheck item={item} /></span>
                   <Link href={item.href} className="ov-todo-title">{item.title}</Link>
-                  <Link href={item.href} className="ov-tag">{item.tag}</Link>
+                  <Link href={item.href} className="ov-tag" data-type={tagType(item.href)}>{item.tag}</Link>
                 </li>
               ))}
             </ul>
           )}
+        </section>
+
+        <section className="ov-card" aria-labelledby="ov-activity">
+          <div className="ov-card-head">
+            <h2 id="ov-activity">{t.command.activity}</h2>
+            {model.activity.href ? <Link href={model.activity.href} className="ov-more">{t.command.seeAllActivity}</Link> : null}
+          </div>
+          {types.length > 1 ? (
+            <p className="ov-types">
+              {types.map((type) => <span key={type} data-type={type}><i aria-hidden="true" />{t.command[TYPE_LABEL[type]]}</span>)}
+            </p>
+          ) : null}
+          {model.activity.error ? <p className="adm-error" role="alert">{t.command.activityUnavailable}</p> : null}
+          {model.activity.items.length === 0 && !model.activity.error ? <p className="ov-empty">{t.command.activityEmpty}</p> : null}
+          {model.activity.items.length ? <Feed items={model.activity.items} /> : null}
         </section>
       </div>
 
       {model.shortcuts.length ? (
         <nav className="ov-shortcuts" aria-label={t.command.shortcuts}>
           {model.shortcuts.map((item) => (
-            <Link key={item.id} href={item.href} className="ds-card ov-shortcut">
+            <Link key={item.id} href={item.href} className="ov-shortcut" data-short={item.id}>
               <span className="ov-shortcut-icon"><Icon d={SHORTCUT_ICON[item.id]} /></span>
+              <span className="ov-shortcut-text">
+                <strong>{item.title}</strong>
+                <span>{item.text}</span>
+              </span>
               <ArrowUpRight className="ov-go" />
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
             </Link>
           ))}
         </nav>
       ) : null}
 
-      <div className="ov-bottom">
-        <section className="ds-card" aria-labelledby="ov-activity">
-          <div className="ds-card-head">
-            <h2 id="ov-activity">{t.command.activity}</h2>
-            {model.activity.href ? <Link href={model.activity.href} className="ov-more">{t.command.seeAllActivity}</Link> : null}
-          </div>
-          {model.activity.error ? <p className="adm-error" role="alert">{t.command.activityUnavailable}</p> : null}
-          {model.activity.items.length === 0 && !model.activity.error ? <p className="ov-empty">{t.command.activityEmpty}</p> : null}
-          {model.activity.items.length ? (
-            <ol className="ov-list ov-feed">
-              {model.activity.items.map((item) => (
-                <li key={item.id} className="ov-row">
-                  <span className="ov-act"><Icon d={MARK_ICON[item.mark]} /></span>
-                  <Link href={item.href}>{item.title}</Link>
-                  <time dateTime={item.at}>{item.ago}</time>
-                </li>
-              ))}
-            </ol>
-          ) : null}
-        </section>
-        {model.statsHref ? (
-          <section className="ds-card ov-pages" aria-labelledby="ov-pages">
-            <div className="ds-card-head">
+      {model.statsHref ? (
+        <div className="ov-row2 ov-row-even">
+          <section className="ov-card ov-pages" aria-labelledby="ov-pages">
+            <div className="ov-card-head">
               <h2 id="ov-pages">{t.command.topPages}</h2>
               <Link href={model.statsHref} className="ov-more">{t.command.seeAnalytics}</Link>
             </div>
             <BarList rows={model.pages} empty={model.pagesEmpty ?? t.command.pagesEmpty} />
           </section>
-        ) : null}
-        {model.statsHref ? (
-          <section className="ds-card ov-donut" aria-labelledby="ov-origin">
-            <div className="ds-card-head">
+          <section className="ov-card ov-donut" aria-labelledby="ov-origin">
+            <div className="ov-card-head">
               <h2 id="ov-origin">{t.command.origin}</h2>
             </div>
             <Donut rows={model.countries} empty={model.countriesEmpty ?? t.command.countriesEmpty} centerLabel={t.command.viewsCenter} showShare />
           </section>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </main>
   );
 }

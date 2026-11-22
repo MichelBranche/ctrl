@@ -12,7 +12,8 @@ import { ensureCrmSchema, ensureShopSchema } from "@/lib/migrate";
 import { SOLD } from "@/lib/shop-orders";
 import { analytics, vercelConfigured } from "@/lib/vercel";
 import { canAccess, isFounder, type Perms } from "@/lib/team-types";
-import type { CommandActivity, CommandKpi, CommandModel, CommandNotice, CommandRange, CommandShortcut, CommandTodo, CommandTone, SeriesPoint } from "@/lib/command-types";
+import { funnelFrom } from "@/lib/command-funnel";
+import type { CommandActivity, CommandFunnel, CommandKpi, CommandModel, CommandNotice, CommandRange, CommandShortcut, CommandTodo, CommandTone, SeriesPoint } from "@/lib/command-types";
 import { commandFixturesOn, fixtureCommand, fixtureNotices, fixtureSearch } from "@/lib/command-fixtures";
 import type { SearchHit } from "@/lib/search-types";
 import { getAdminCopy } from "@/lib/admin-locale";
@@ -386,6 +387,16 @@ function crmFeed(event: CrmEvent, lang: AdminLocale, t: AdminDict): CommandActiv
   }
 }
 
+async function funnelFor(me: Person, t: AdminDict): Promise<CommandFunnel | null> {
+  if (!canAccess(me, "crm") || !dbConfigured) return null;
+  try {
+    const overview = await crmOverview();
+    return funnelFrom(overview.byStage, t);
+  } catch {
+    return funnelFrom({ nuovo: 0, contattato: 0, call: 0, preventivo: 0, vinto: 0, perso: 0 }, t, true);
+  }
+}
+
 async function activityFor(me: Person, lang: AdminLocale, t: AdminDict): Promise<CommandModel["activity"]> {
   const href = canAccess(me, "audit") ? "/admin/audit" : canAccess(me, "crm") ? "/admin/crm" : canAccess(me, "journal") ? "/admin/journal" : canAccess(me, "shop") ? "/admin/shop" : null;
   const items: CommandActivity[] = [];
@@ -485,16 +496,17 @@ export async function loadCommandCenter(me: Person, range: CommandRange, denied:
     dealKpi(me, copy.t),
     revenueKpi(me, range, copy.t),
   ]);
-  const [todos, activity] = await Promise.all([
+  const [todos, activity, funnel] = await Promise.all([
     todosFor(me, shop?.pending ?? 0, copy.t),
     activityFor(me, copy.lang, copy.t),
+    funnelFor(me, copy.t),
   ]);
   const kpis = [...stats.kpis];
   if (shop) kpis.push(shop.kpi);
   if (deals) kpis.push(deals);
   return withVoice({
     range, dateLabel, greeting: "", lead: "", denied, systems: status, kpis,
-    traffic: stats.traffic, todos, shortcuts: shortcuts(me, range, copy.t), activity,
+    traffic: stats.traffic, todos, funnel, shortcuts: shortcuts(me, range, copy.t), activity,
     pages: stats.pages, pagesEmpty: stats.pagesEmpty, countries: stats.countries, countriesEmpty: stats.countriesEmpty,
     statsHref: stats.statsHref,
   }, me.name, copy);

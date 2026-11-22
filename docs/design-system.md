@@ -11,7 +11,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Molle per le animazioni JS | `components/home/springs.ts` |
 | Freccia CTA | `components/ds/arrow-up-right.tsx` |
 | Superfici admin (telaio dashboard, card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` (`.ds-page`, `.ds-head`, `.ds-card`, `.ds-*`) |
-| Panoramica admin | `components/ds/overview.css` (prefisso `.ov`) |
+| Panoramica admin (v2: KPI a riquadri con variazione verde/rossa, imbuto delle fasi, attività colorate per tipo) | `components/ds/overview.css` (prefisso `.ov`, insieme a `.rb`); imbuto in `lib/command-funnel.ts` |
 | Desk admin | `components/ds/desk.css` (prefisso `.dk`) |
 | Cornice CRM condivisa (tab, Le mie/Team, check fatto, tip, cifre che rullano) | `components/ds/crm.css` (prefisso `.cr`) |
 | Rubrica CRM (v2: header compatto, fasi, lista densa) e primitive v2 condivise (`.rb-head`, `.rb-btn`, `.rb-cta`, `.rb-pop`, `.rb-stages`, `.rb-chip`, `.rb-cb`, `.rb-floatbar`) | `components/ds/rubrica.css` (prefisso `.rb`, insieme a `.cr`) |
@@ -35,7 +35,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 9. **Livelli.** Header 60, progress 70, back-to-top 90, cursore 140, assistente 150, carrello 180, transizione 190, command menu 200 (`--ds-z-*`).
 10. **Accessibilità.** Focus visibile (outline 2px accento), target touch di almeno 44px (`--ds-control` è 40px col mouse e 44px su touch), nome accessibile su ogni icona-link.
 11. **Liste admin.** Una card per la lista con toolbar in testa (segmenti + vista, poi ricerca, Filtri in popover, ordinamento), filtri attivi come chip rimovibili, tabella densa (`--ds-row`) con colonne che spariscono in base alla larghezza della lista (container query), righe con ingresso sfalsato. Le animazioni d'ingresso dei contenitori usano `backwards`, non `both`: una transform trattenuta renderebbe il contenitore il riferimento dei figli `position: fixed`.
-12. **Viste v2.** Una vista v2 mette sul `main` le classi `.rb` (primitive condivise) più il suo prefisso, e riusa `rb-head` con le tab, i riquadri a tessera (`rb-stages`: barra proporzionale + tessere con pallino colorato, numero grande e quota, cliccabili come filtro) e i popover `details.rb-pop` chiusi da `PopDismiss`. Scadenze: rosso in ritardo, ambra oggi, blu domani. Le azioni rapide usano solo le server action esistenti. I tooltip chiusi non occupano spazio (`display: none`), così non allargano la pagina sul telefono.
+12. **Viste v2.** Una vista v2 mette sul `main` le classi `.rb` (primitive condivise) più il suo prefisso, e riusa `rb-head` con le tab, i riquadri a tessera (`rb-stages`: barra proporzionale + tessere con pallino colorato, numero grande e quota, cliccabili come filtro) e i popover `details.rb-pop` chiusi da `PopDismiss`. Scadenze: rosso in ritardo, ambra oggi, blu domani. Le azioni rapide usano solo le server action esistenti. I tooltip chiusi non occupano spazio (`display: none`), così non allargano la pagina sul telefono. Variazioni: verde se sale, rosso se scende, neutro se invariata. I grafici condivisi (`components/admin/charts.tsx`) hanno riempimenti a gradiente: nelle viste v2 si sovrascrivono in CSS con una tinta piena del colore del dato.
 
 ## Per una pagina nuova
 

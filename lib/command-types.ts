@@ -50,6 +50,17 @@ export type CommandShortcut = {
   text: string;
 };
 
+export type FunnelStage = "nuovo" | "contattato" | "call" | "preventivo" | "vinto";
+
+/** Contacts by stage right now (read-only counts). Null when the person has no CRM access. */
+export type CommandFunnel = {
+  steps: { id: FunnelStage; label: string; count: number; href: string }[];
+  lost: number;
+  total: number;
+  href: string;
+  error: boolean;
+};
+
 export type CommandModel = {
   range: CommandRange;
   dateLabel: string;
@@ -60,6 +71,7 @@ export type CommandModel = {
   kpis: CommandKpi[];
   traffic: { points: SeriesPoint[]; empty: string | null } | null;
   todos: { total: number; items: CommandTodo[]; href: string };
+  funnel: CommandFunnel | null;
   shortcuts: CommandShortcut[];
   activity: { items: CommandActivity[]; href: string | null; error: boolean };
   pages: { key: string; pageviews: number; visitors: number }[];

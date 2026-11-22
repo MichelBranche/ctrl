@@ -1,6 +1,7 @@
 import type { CommandModel, CommandNotice, CommandRange } from "@/lib/command-types";
 import type { SearchHit } from "@/lib/search-types";
 import { formatAdminCountry, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
+import { funnelFrom } from "@/lib/command-funnel";
 
 /** Dev-only layout fixtures. Never active in a production build, and never used as a stand-in for missing production data. */
 export const commandFixturesOn = () => process.env.NODE_ENV !== "production" && process.env.COMMAND_CENTER_FIXTURES === "1";
@@ -89,6 +90,7 @@ export function fixtureCommand(range: CommandRange, dateLabel: string, empty: bo
             { id: "draft", title: t.command.publishJournalDraft, tag: t.command.tagContent, href: "/admin/journal", done: true, check: null },
           ],
         },
+    funnel: funnelFrom(empty ? { nuovo: 0, contattato: 0, call: 0, preventivo: 0, vinto: 0, perso: 0 } : { nuovo: 22, contattato: 9, call: 4, preventivo: 3, vinto: 2, perso: 1 }, t),
     shortcuts: [
       { id: "crm", href: "/admin/crm", title: t.command.shortcutCrmTitle, text: t.command.shortcutCrmText },
       { id: "shop", href: "/admin/shop", title: t.command.shortcutShopTitle, text: t.command.shortcutShopText },
