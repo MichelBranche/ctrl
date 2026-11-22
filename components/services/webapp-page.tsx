@@ -12,6 +12,7 @@ import { localize, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, publicMeta, schemaName, serviceNode } from "@/lib/seo";
 import "@/components/projects/projects.css";
 import "./webapp.css";
+import "@/components/ds/legacy-frame.css";
 
 const PATH = "/services/webapp";
 
@@ -38,7 +39,7 @@ export function WebappView({ lang }: { lang: Locale }) {
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), serviceNode(lang, { name: schemaName(c.metaTitle), description: c.metaDescription, path: PATH, serviceType: "Web application development" })]} />
       <SiteHeader />
-      <main className="p-root wa-root" data-motion-root>
+      <main className="p-root wa-root pf" data-motion-root>
         <section className="p-hero wa-hero">
           <span className="p-hero-frame wa-hero-frame" aria-hidden="true">
             <Image className="p-hero-img wa-hero-img" src="/images/projects/webapps.webp" alt="" fill priority sizes="(max-width: 760px) 100vw, 70vw" data-p-hero-img />
