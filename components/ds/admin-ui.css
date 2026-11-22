@@ -1,0 +1,432 @@
+/* Reusable admin surfaces built on the public design tokens (--ds-*).
+   Prefix .ds- is shared; page layout uses .eco. Future admin pages can import this file
+   and keep their own page prefix. Rules: docs/design-system.md. */
+
+.ds-metric,
+.ds-empty,
+.ds-table-wrap,
+.ds-bars,
+.eco {
+  --eco-accent: var(--ds-accent);
+  font-family: var(--ds-font-body);
+}
+
+.eco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-gap);
+  width: 100%;
+  margin: 0;
+  padding: var(--ds-pad) var(--ds-frame) 4rem;
+  box-sizing: border-box;
+  color: var(--ds-fg);
+  background: var(--ds-page);
+}
+
+.eco-head,
+.eco-card,
+.eco-grid,
+.ds-metric,
+.ds-empty,
+.ds-table-wrap,
+.ds-bars {
+  animation: eco-rise var(--ds-dur-slow) var(--ds-ease) both;
+}
+
+.eco-head { animation-delay: 0.02s; }
+.eco-grid { animation-delay: 0.06s; }
+.eco-card { animation-delay: 0.08s; }
+
+.eco-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+
+.eco-kicker {
+  margin: 0;
+  font-size: var(--ds-text-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-dim);
+}
+
+.eco-title {
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-title);
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+  line-height: 1.1;
+  color: var(--ds-fg);
+}
+
+.eco-lead {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--ds-dim);
+  line-height: 1.5;
+}
+
+.eco-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-kicker);
+  text-decoration: none;
+  transition: color var(--ds-dur-fast) var(--ds-ease);
+}
+
+.eco-back:hover { color: var(--ds-accent); }
+.eco-back:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 4px; }
+
+.eco-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-gap);
+}
+
+@media (min-width: 900px) {
+  .eco-grid { grid-template-columns: 1fr 1fr; }
+  .eco-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.eco-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-gap);
+}
+
+@media (min-width: 640px) {
+  .eco-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.eco-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-fg);
+  text-decoration: none;
+}
+
+.eco-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eco-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.eco-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: var(--ds-r-sm);
+}
+
+.eco-brand h2 {
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.eco-brand p {
+  margin: 0.2rem 0 0;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  line-height: 1.4;
+}
+
+.eco-card[data-product="quotes"] {
+  --eco-product: var(--ds-q-lime);
+}
+
+.eco-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0 0.7rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  white-space: nowrap;
+}
+
+.eco-pill[data-tone="live"] {
+  background: var(--ds-fg);
+  color: var(--ds-ink);
+}
+
+.eco-pill[data-tone="soon"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ds-faint);
+}
+
+.eco-snap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.eco-snap span {
+  display: block;
+  font-size: var(--ds-text-small);
+  color: var(--ds-dim);
+}
+
+.eco-snap strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--ds-font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.eco-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 0 1.1rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  font: inherit;
+  font-size: var(--ds-text-kicker);
+  text-decoration: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+
+.eco-cta:hover { background: var(--ds-accent-hover); }
+.eco-cta:hover .eco-arrow { transform: translate(2px, -2px); }
+.eco-cta:active { transform: scale(0.97); }
+.eco-cta:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.eco-cta-ghost {
+  background: transparent;
+  color: var(--ds-fg);
+  box-shadow: inset 0 0 0 1px var(--ds-faint);
+}
+
+.eco-cta-ghost:hover { background: var(--ds-card-2); color: var(--ds-fg); }
+
+.eco-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--ds-dur-fast) var(--ds-ease);
+}
+
+.ds-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-fg);
+}
+
+.ds-metric-label {
+  margin: 0;
+  font-size: var(--ds-text-kicker);
+  color: var(--ds-dim);
+}
+
+.ds-metric-value {
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-metric);
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+  line-height: 1.05;
+}
+
+.ds-metric-hint {
+  margin: 0;
+  font-size: var(--ds-text-small);
+  color: var(--ds-dim);
+}
+
+.ds-metric[data-pending] .ds-metric-value {
+  font-size: var(--ds-text-kicker);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-dim);
+}
+
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-fg);
+}
+
+.ds-empty h2,
+.ds-empty-title {
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-title);
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.ds-empty p {
+  margin: 0;
+  max-width: 38rem;
+  color: var(--ds-dim);
+  line-height: 1.5;
+}
+
+.ds-table-wrap {
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  overflow: auto;
+}
+
+.ds-table-wrap h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--ds-font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.ds-table-wrap > p {
+  margin: 0 0 1rem;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ds-text-small);
+}
+
+.ds-table th,
+.ds-table td {
+  padding: 0.65rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--ds-faint);
+}
+
+.ds-table th {
+  color: var(--ds-dim);
+  font-weight: 500;
+}
+
+.ds-table td.ds-num,
+.ds-table th.ds-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-bars {
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+
+.ds-bars h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--ds-font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.ds-bars > p {
+  margin: 0 0 1.1rem;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+.ds-bars-plot {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 8.5rem;
+}
+
+.ds-bars-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.ds-bars-bar {
+  width: 100%;
+  max-width: 1.6rem;
+  border-radius: var(--ds-r-sm);
+  background: var(--ds-fg);
+  transform-origin: bottom;
+}
+
+.ds-bars-bar[data-empty] {
+  height: 2px !important;
+  background: var(--ds-faint);
+}
+
+.ds-bars-label {
+  font-size: 0.65rem;
+  color: var(--ds-dim);
+  letter-spacing: 0.02em;
+}
+
+@keyframes eco-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eco-head,
+  .eco-card,
+  .eco-grid,
+  .ds-metric,
+  .ds-empty,
+  .ds-table-wrap,
+  .ds-bars {
+    animation: none;
+  }
+  .eco-cta,
+  .eco-arrow,
+  .eco-back,
+  .eco-cta:active {
+    transition: none;
+    transform: none;
+  }
+}

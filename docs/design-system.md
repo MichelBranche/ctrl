@@ -10,13 +10,14 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Navbar a pillola | `components/home/home-header.tsx` + `home-header.css` |
 | Molle per le animazioni JS | `components/home/springs.ts` |
 | Freccia CTA | `components/ds/arrow-up-right.tsx` |
+| Superfici admin (card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` |
 | Badge team | `components/team-badge.tsx` + `components/pages/team-badge.css` |
 | Testi | `lib/i18n.ts` (o il file `*-copy.ts` della pagina), mai stringhe IT/EN nei componenti |
 
 ## Regole
 
 1. **Solo token.** Nei CSS nuovi usa `var(--ds-*)`. Niente esadecimali, `999px`, `cubic-bezier(...)` o `z-index` numerici scritti a mano. Se manca un valore, aggiungilo a `tokens.css` con un commento d'uso.
-2. **Scope per pagina.** Ogni pagina ha un prefisso (`.hv-` home, `.qx-` Quotes, `.tb-` badge, `.t-` team). Gli alias locali (`--hv-accent: var(--ds-accent)`) sono ammessi, i valori nuovi no.
+2. **Scope per pagina.** Ogni pagina ha un prefisso (`.hv-` home, `.qx-` Quotes, `.tb-` badge, `.t-` team, `.eco` Ecosistema admin). I pezzi riusabili dell'admin usano `.ds-`. Gli alias locali (`--hv-accent: var(--ds-accent)`) sono ammessi, i valori nuovi no.
 3. **Telaio.** Pagina `--ds-page`, card a tutta larghezza con margine laterale `--ds-frame` (10px) e spazio tra card `--ds-gap` (uguale al margine). Raggio card `--ds-r-card` (22px), padding interno `--ds-pad`.
 4. **Colore.** Fondo scuro, card `--ds-card` o `--ds-paper`. Un solo accento per vista: arancione `--ds-accent`. Le palette prodotto (`--ds-q-*` per Quotes) vivono solo dentro le card di quel prodotto.
 5. **Pulito.** Colori pieni. Niente gradienti decorativi, glow o ombre colorate. Le ombre sono quelle dei token (`--ds-shadow-*`).
@@ -29,3 +30,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 ## Per una pagina nuova
 
 Copia il telaio della home (`hv-block` > `hv-card`), prendi i testi da `lib/i18n.ts`, usa solo token, verifica a 1440 e 390 px in IT ed EN.
+
+## Admin, conversione
+
+`/admin/ecosistema` è il banco di prova: telaio e componenti usano solo token `--ds-*`, non gli stili `--adm-*` delle altre sezioni. Per una nuova vista admin importa `components/ds/admin-ui.css` e i componenti `.ds-*`, e dai alla pagina un prefisso proprio.
