@@ -16,7 +16,7 @@ export function AdminLangSwitch({ variant = "default" }: { variant?: "default" |
           aria-current={item === lang ? "true" : undefined}
           onClick={() => setLang(item)}
         >
-          {item === "it" ? t.langIt : t.langEn}
+          {variant === "settings" ? (item === "it" ? "Italiano" : "English") : item === "it" ? t.langIt : t.langEn}
         </button>
       ))}
     </div>

@@ -147,6 +147,11 @@ function RecoveryCodes({ codes }: { codes: string[] }) {
   );
 }
 
+/** Disable form on its own, for the settings danger zone. */
+export function TwoFactorDisable({ recoveryLeft }: { recoveryLeft: number }) {
+  return <DisableForm recoveryLeft={recoveryLeft} />;
+}
+
 function DisableForm({ recoveryLeft }: { recoveryLeft: number }) {
   const { t } = useAdminLocale();
   const [state, action, pending] = useActionState<TwoFactorState, FormData>(disableTwoFactor, {});

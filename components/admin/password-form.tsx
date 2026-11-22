@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { updatePassword, type ActionState } from "@/app/admin/dashboard-actions";
 import { useAdminLocale } from "@/components/admin/locale-provider";
+import { SaveBar, SettingRow } from "@/components/admin/settings-ui";
 
 export function PasswordForm() {
   const { t } = useAdminLocale();
@@ -12,27 +13,13 @@ export function PasswordForm() {
     if (state.ok) form.current?.reset();
   }, [state]);
   return (
-    <form ref={form} action={action} className="adm-form">
-      <label className="adm-field">
-        <span>{t.passwordForm.current}</span>
-        <input className="adm-input" name="current" type="password" autoComplete="current-password" required />
-      </label>
-      <label className="adm-field">
-        <span>{t.passwordForm.next}</span>
-        <input className="adm-input" name="next" type="password" autoComplete="new-password" minLength={12} required />
-      </label>
-      <label className="adm-field">
-        <span>{t.passwordForm.confirm}</span>
-        <input className="adm-input" name="confirm" type="password" autoComplete="new-password" minLength={12} required />
-      </label>
-      <div className="adm-row-actions">
-        <button className="adm-btn adm-btn-primary" disabled={pending}>
-          {pending ? t.passwordForm.pending : t.passwordForm.submit}
-        </button>
-        <p role="status" className={state.error ? "adm-error" : "adm-ok"}>
-          {state.error ?? state.ok ?? ""}
-        </p>
+    <form ref={form} action={action} className="st-form">
+      <div className="st-rows">
+        <SettingRow label={t.passwordForm.current}><input className="st-input" name="current" type="password" autoComplete="current-password" required /></SettingRow>
+        <SettingRow label={t.passwordForm.next}><input className="st-input" name="next" type="password" autoComplete="new-password" minLength={12} required /></SettingRow>
+        <SettingRow label={t.passwordForm.confirm}><input className="st-input" name="confirm" type="password" autoComplete="new-password" minLength={12} required /></SettingRow>
       </div>
+      <SaveBar pending={pending} ok={state.ok} error={state.error} label={t.passwordForm.submit} pendingLabel={t.passwordForm.pending} />
     </form>
   );
 }
