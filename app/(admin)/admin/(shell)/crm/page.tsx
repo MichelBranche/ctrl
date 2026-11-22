@@ -1,8 +1,10 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/crm.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ActivityCheck } from "@/components/admin/crm/activity-check";
-import { CrmIcon, CRM_ICON, CrmTabs, CrmTip, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { CrmIcon, CRM_ICON, CrmTabs, CrmTip, romeToday } from "@/components/admin/crm/crm-ui";
 import { FollowUpDone, KeyShortcut, NewContactShortcut } from "@/components/admin/crm/follow-up-client";
 import { addDays, dueLabel, ScopeSwitch } from "@/components/admin/crm/follow-ups";
 import { AttentionLists } from "@/components/admin/crm/attention-pop";
@@ -19,26 +21,16 @@ type SP = Record<string, string | string[] | undefined>;
 
 export default function OggiPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
-    <main className="adm-main crm-main">
-      <Suspense fallback={<OggiSkeleton />}><Body searchParams={searchParams} /></Suspense>
-    </main>
+    <Suspense fallback={<OggiSkeleton />}><Body searchParams={searchParams} /></Suspense>
   );
 }
 
 function OggiSkeleton() {
   return (
-    <div className="crm-oggi-page" aria-busy="true" aria-label="Caricamento del CRM">
-      <div className="crm-oggi-top">
-        <div className="adm-skel crm-skel-kicker" />
-        <div className="adm-skel crm-skel-title" />
-        <div className="adm-skel crm-skel-status" />
-        <div className="adm-skel crm-skel-tabs" />
-      </div>
-      <div className="crm-oggi-kpis">{[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel crm-kpi-skel" />)}</div>
-      <div className="crm-oggi-split"><div className="adm-skel crm-skel-panel" /><div className="adm-skel crm-skel-panel is-side" /></div>
-      <div className="adm-skel crm-skel-wide" />
-      <div className="adm-skel crm-skel-wide is-short" />
-    </div>
+    <main className="ds-page cr" aria-busy="true" aria-label="Caricamento del CRM">
+      <div className="ds-head cr-skel" style={{ minHeight: "8.5rem" }} />
+      <div className="cr-kpis">{[0, 1, 2, 3].map((i) => <div key={i} className="cr-skel" style={{ height: "8.6rem" }} />)}</div>
+    </main>
   );
 }
 
@@ -51,17 +43,13 @@ function romeDateLabel(now = new Date()) {
 }
 
 function EmptyNote({ icon, text }: { icon: string; text: string }) {
-  return <p className="crm-empty"><CrmIcon d={icon} /><span>{text}</span></p>;
+  return <p className="cr-empty"><CrmIcon d={icon} /><span>{text}</span></p>;
 }
 
 function ScoreRing({ score }: { score: number | null }) {
   if (score === null) return null;
   const level = score >= 70 ? "alto" : score >= 40 ? "medio" : "basso";
-  return (
-    <span className="crm-score-ring" data-level={level} style={{ ["--p" as string]: score }}>
-      <ScoreBadge score={score} />
-    </span>
-  );
+  return <span className="cr-score" data-level={level} title={`Punteggio ${score} su 100`}>{score}</span>;
 }
 
 /** A clock time only when the stored value actually has one. A date alone stays blank. */
@@ -197,18 +185,18 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     <>
       <NewContactShortcut href={NEW_CONTACT} />
       <KeyShortcut href={`${PIPELINE}?nuova=1`} keyName="o" />
-      <div className="crm-oggi-page">
-        <header className="crm-oggi-top">
-          <p className="crm-oggi-eye">CRM / Overview</p>
-          <div className="crm-oggi-title">
-            <h1 className="adm-h1">Oggi</h1>
-            <p className="crm-oggi-sub">{romeDateLabel()} · Panoramica operativa</p>
+      <main className="ds-page cr">
+        <header className="ds-head cr-top">
+          <p className="ds-kicker">CRM</p>
+          <div className="cr-title">
+            <h1 className="ds-title">Oggi</h1>
+            <p className="ds-lead">{romeDateLabel()} · Panoramica operativa</p>
           </div>
-          <div className="crm-oggi-actions">
-            <Link href={NEW_CONTACT as Route} className="crm-oggi-new"><CrmIcon d={EVENT_ICON.add} /><span>Nuovo contatto</span><kbd>N</kbd></Link>
-            <details className="crm-oggi-menu">
+          <div className="cr-actions">
+            <Link href={NEW_CONTACT as Route} className="cr-cta"><CrmIcon d={EVENT_ICON.add} /><span>Nuovo contatto</span><kbd>N</kbd></Link>
+            <details className="cr-menu">
               <summary aria-label="Altre azioni"><CrmIcon d="M6 9l6 6 6-6" /></summary>
-              <div className="crm-oggi-menu-list">
+              <div className="cr-menu-list">
                 <Link href={`${PIPELINE}?nuova=1` as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><kbd>O</kbd></Link>
                 <Link href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span></Link>
                 <Link href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span></Link>
@@ -219,46 +207,46 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
         </header>
 
         <div hidden><script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} /></div>
-        <section className="crm-oggi-kpis" aria-label="Numeri del CRM">
-          <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /> Contatti</span>
-            <span className="crm-kpi-num"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
-            <span className="crm-kpi-meta" data-tone={month.tone}><i />{month.text}</span>
+        <section className="cr-kpis" aria-label="Numeri del CRM">
+          <article className="cr-kpi">
+            <span className="cr-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/rubrica"]} /> Contatti</span>
+            <span className="cr-kpi-num"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
+            <span className="cr-kpi-meta" data-tone={month.tone}><i />{month.text}</span>
             <Sparkline points={contactsLine} tone="quiet" />
           </article>
-          <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11l2 2 4-4" /> Assegnati</span>
-            <span className="crm-kpi-num"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
-            <span className="crm-kpi-meta" data-tone={freeLine.tone}><i />{freeLine.text}</span>
+          <article className="cr-kpi">
+            <span className="cr-kpi-label"><CrmIcon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11l2 2 4-4" /> Assegnati</span>
+            <span className="cr-kpi-num"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
+            <span className="cr-kpi-meta" data-tone={freeLine.tone}><i />{freeLine.text}</span>
             <Sparkline points={assignedLine} tone="quiet" />
           </article>
-          <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Opportunità</span>
-            <span className="crm-kpi-num"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
-            <span className="crm-kpi-meta" data-tone="quiet"><i />{dealStatus}</span>
+          <article className="cr-kpi">
+            <span className="cr-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Opportunità</span>
+            <span className="cr-kpi-num"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
+            <span className="cr-kpi-meta" data-tone="quiet"><i />{dealStatus}</span>
             <Sparkline points={dealsLine} tone="quiet" />
           </article>
-          <article className="crm-kpi-card">
-            <span className="crm-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare <CrmTip text={todoTip} /></span>
-            <span className="crm-kpi-num"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
-            <span className="crm-kpi-meta" data-tone={urgent.tone}><i />{urgent.text}</span>
+          <article className="cr-kpi">
+            <span className="cr-kpi-label"><CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare <CrmTip text={todoTip} /></span>
+            <span className="cr-kpi-num"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
+            <span className="cr-kpi-meta" data-tone={urgent.tone}><i />{urgent.text}</span>
             <Sparkline points={todoLine} tone="accent" />
           </article>
         </section>
 
-        <div className="crm-oggi-split">
-          <section className="crm-card-panel" aria-labelledby="crm-todo-h">
-            <div className="crm-panel-head">
-              <h2 id="crm-todo-h" className="adm-h2">
+        <div className="cr-split">
+          <section className="ds-card" aria-labelledby="crm-todo-h">
+            <div className="ds-card-head">
+              <h2 id="crm-todo-h">
                 <CrmIcon d={CRM_ICON["/admin/crm/attivita"]} /> Da fare oggi
                 <CrmTip text="I follow-up si pianificano dalla scheda. Le attività si creano nella sezione Attività." />
               </h2>
-              <div className="crm-head-actions">
+              <div className="cr-head-actions">
                 {founder ? <ScopeSwitch base={CRM_HOME} scope={scope} /> : null}
-                <Link className="crm-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Tutte le attività →</Link>
+                <Link className="cr-more" href={(scope === "team" ? "/admin/crm/attivita?ambito=team" : "/admin/crm/attivita") as Route}>Tutte le attività →</Link>
               </div>
             </div>
-            <div className="crm-card-body">
+            <div className="cr-body">
               {followShown.length || actShown.length ? (
                 <ul className="crm-todo">
                   {followShown.map((a) => {
@@ -272,7 +260,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                           <span className="adm-muted">{a.businessName}{scope === "team" ? ` · ${a.ownerName ?? "Non assegnato"}` : ""}</span>
                         </div>
                         <span className="crm-due" data-tone={due.tone}>{due.text}</span>
-                        <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                        <span className="cr-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
                       </li>
                     );
                   })}
@@ -288,7 +276,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                             <span className="adm-muted">{a.contactName ?? "Senza contatto"}</span>
                           </div>
                           <span className="crm-due" data-tone={due.tone}>{due.text}</span>
-                          <span className="crm-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
+                          <span className="cr-clock">{time ?? "–"}{time ? null : <span className="adm-sr"> orario non indicato</span>}</span>
                         </div>
                       </LeavingRow>
                     );
@@ -298,13 +286,13 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             </div>
           </section>
 
-          <section className="crm-card-panel" aria-labelledby="crm-attn-h">
-            <div className="crm-panel-head">
-              <h2 id="crm-attn-h" className="adm-h2">
+          <section className="ds-card" aria-labelledby="crm-attn-h">
+            <div className="ds-card-head">
+              <h2 id="crm-attn-h">
                 <CrmIcon d="M12 9v4M12 17h.01M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z" /> Richiedono attenzione
               </h2>
             </div>
-            <div className="crm-card-body">
+            <div className="cr-body">
               <AttentionLists
                 freeCount={String(ov.unassigned)}
                 prioCount={String(priority.length)}
@@ -319,8 +307,8 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                           </li>
                         ))}
                       </ul>
-                    ) : <p className="crm-empty">Nessun contatto senza responsabile.</p>}
-                    <Link className="crm-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
+                    ) : <p className="cr-empty">Nessun contatto senza responsabile.</p>}
+                    <Link className="cr-more" href={"/admin/crm/rubrica?resp=none" as Route}>Elenco filtrato →</Link>
                   </>
                 )}
                 prioPanel={(
@@ -334,23 +322,23 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                           </li>
                         ))}
                       </ul>
-                    ) : <p className="crm-empty">Nessun contatto con punteggio.</p>}
-                    <Link className="crm-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
+                    ) : <p className="cr-empty">Nessun contatto con punteggio.</p>}
+                    <Link className="cr-more" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}>Elenco per punteggio →</Link>
                   </>
                 )}
               />
             </div>
-            <p className="crm-card-foot"><Link className="crm-more is-accent" href={RUBRICA as Route}>Apri la rubrica →</Link></p>
+            <p className="cr-foot"><Link className="cr-more" data-accent="" href={RUBRICA as Route}>Apri la rubrica →</Link></p>
           </section>
         </div>
 
-        <section className="crm-card-panel" aria-labelledby="crm-pipe-h">
-          <div className="crm-panel-head">
-            <h2 id="crm-pipe-h" className="adm-h2">
+        <section className="ds-card" aria-labelledby="crm-pipe-h">
+          <div className="ds-card-head">
+            <h2 id="crm-pipe-h">
               <CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /> Pipeline commerciale
               <CrmTip text="Conta i contatti, non le trattative. La fase non viene azzerata e non apre un'opportunità." />
             </h2>
-            <Link className="crm-more" href={PIPELINE as Route}>Apri pipeline →</Link>
+            <Link className="cr-more" href={PIPELINE as Route}>Apri pipeline →</Link>
           </div>
           <div className="crm-bar" role="img" aria-label={pipelineStages.map((s) => `${STAGE_LABEL[s]} ${ov.byStage[s]}`).join(", ")}>
             <div className="crm-bar-fill">
@@ -359,7 +347,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                 : <span className="crm-bar-idle" />}
             </div>
           </div>
-          <ol className="crm-pipe-cols">
+          <ol className="cr-pipe">
             {pipelineStages.map((s) => (
               <li key={s}>
                 <span>{STAGE_LABEL[s]}</span>
@@ -369,27 +357,27 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           </ol>
         </section>
 
-        <section className="crm-card-panel" aria-labelledby="crm-feed-h">
-          <div className="crm-panel-head">
-            <h2 id="crm-feed-h" className="adm-h2"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> Attività recenti</h2>
-            {founder ? <Link className="crm-more" href={"/admin/audit" as Route}>Vedi tutte →</Link> : null}
+        <section className="ds-card" aria-labelledby="crm-feed-h">
+          <div className="ds-card-head">
+            <h2 id="crm-feed-h"><CrmIcon d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" /> Attività recenti</h2>
+            {founder ? <Link className="cr-more" href={"/admin/audit" as Route}>Vedi tutte →</Link> : null}
           </div>
           {feed.length ? (
             <ul className="crm-feed">
               {feed.map(({ e, d }) => (
                 <li key={e.id}>
                   <span className="crm-feed-icon" data-tone={d!.tone}><CrmIcon d={d!.icon} /></span>
-                  <span className="crm-feed-line">
+                  <span className="cr-feed-line">
                     {e.contactId ? <Link href={`${CRM_HOME}/${e.contactId}` as Route}>{d!.title}</Link> : <strong>{d!.title}</strong>}
                     <span className="adm-muted">{d!.sub}{e.actor ? ` · ${e.actor}` : ""}</span>
                   </span>
-                  <time className="crm-ago" dateTime={e.at}>{ago(e.at)}</time>
+                  <time className="cr-ago" dateTime={e.at}>{ago(e.at)}</time>
                 </li>
               ))}
             </ul>
           ) : <EmptyNote icon="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" text="Nessuna attività recente." />}
         </section>
-      </div>
+      </main>
     </>
   );
 }

@@ -13,6 +13,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Superfici admin (telaio dashboard, card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` (`.ds-page`, `.ds-head`, `.ds-card`, `.ds-*`) |
 | Panoramica admin | `components/ds/overview.css` (prefisso `.ov`) |
 | Desk admin | `components/ds/desk.css` (prefisso `.dk`) |
+| CRM admin (Oggi, poi le altre sottosezioni) | `components/ds/crm.css` (prefisso `.cr`) |
 | Cornice admin (sidebar, header, palette, drawer, campanella) | `components/ds/admin-shell.css` (classi `.adm-*` del telaio, token `--ds-*`) |
 | Badge team | `components/team-badge.tsx` + `components/pages/team-badge.css` |
 | Testi | `lib/i18n.ts` (o il file `*-copy.ts` della pagina), mai stringhe IT/EN nei componenti |
@@ -36,4 +37,4 @@ Copia il telaio della home (`hv-block` > `hv-card`), prendi i testi da `lib/i18n
 
 ## Admin, conversione
 
-La cornice (sidebar, header, ricerca, menu account) è già sui token `--ds-*` tramite `components/ds/admin-shell.css`. Le viste interne convertite importano `components/ds/admin-ui.css` e i componenti `.ds-*`, e hanno un prefisso di pagina: `.eco` Ecosistema, `.ov` Panoramica (`overview.css`), `.dk` Desk (`desk.css`). Le altre sezioni interne usano ancora gli stili `--adm-*` finché non vengono convertite.
+La cornice (sidebar, header, ricerca, menu account) è già sui token `--ds-*` tramite `components/ds/admin-shell.css`. Le viste interne convertite importano `components/ds/admin-ui.css` e i componenti `.ds-*`, e hanno un prefisso di pagina: `.eco` Ecosistema, `.ov` Panoramica (`overview.css`), `.dk` Desk (`desk.css`), `.cr` CRM (`crm.css`). Le altre sezioni interne usano ancora gli stili `--adm-*` finché non vengono convertite.
