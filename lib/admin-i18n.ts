@@ -142,6 +142,10 @@ export const adminDict = {
       contents: "Contenuti",
       communications: "Comunicazioni",
       analysis: "Analisi e sito",
+      clients: "Clienti e vendite",
+      mail: "Posta",
+      money: "Soldi",
+      site: "Sito",
     },
     shell: {
       sectionsAria: "Sezioni",
@@ -166,6 +170,7 @@ export const adminDict = {
       hintSection: "Sezione",
       hintAction: "Azione",
       commandCenter: "Command Center",
+      editArticle: "Articolo",
     },
     actions: {
       newPost: "Nuovo articolo",
@@ -174,6 +179,7 @@ export const adminDict = {
       logJob: "Registra un lavoro",
       exportSubscribers: "Esporta iscritti CSV",
       openSite: "Apri il sito",
+      socialLinks: "Link social",
     },
     searchGroups: {
       sezioni: "Sezioni",
@@ -477,6 +483,10 @@ export const adminDict = {
         "{requirement} Dopo la password l’accesso chiede anche un codice a 6 cifre generato dal tuo telefono.",
       languageTitle: "Lingua dell’admin",
       languageLead: "Vale per il menu, l’accesso e la panoramica. Le altre sezioni arriveranno in inglese a breve.",
+      siteTitle: "Link social",
+      siteLead: "Gli URL salvati compaiono nel footer e nella pagina contatti. I campi vuoti restano nascosti.",
+      siteOpen: "Apri i link social",
+      siteBack: "Impostazioni",
     },
     profile: {
       firstName: "Nome",
@@ -673,6 +683,10 @@ export const adminDict = {
       contents: "Content",
       communications: "Communications",
       analysis: "Site & analytics",
+      clients: "Clients and sales",
+      mail: "Mail",
+      money: "Money",
+      site: "Site",
     },
     shell: {
       sectionsAria: "Sections",
@@ -697,6 +711,7 @@ export const adminDict = {
       hintSection: "Section",
       hintAction: "Action",
       commandCenter: "Command Center",
+      editArticle: "Article",
     },
     actions: {
       newPost: "New article",
@@ -705,6 +720,7 @@ export const adminDict = {
       logJob: "Log a job",
       exportSubscribers: "Export subscribers CSV",
       openSite: "Open the site",
+      socialLinks: "Social links",
     },
     searchGroups: {
       sezioni: "Sections",
@@ -1008,6 +1024,10 @@ export const adminDict = {
         "{requirement} After the password, sign-in also asks for a 6-digit code from your phone.",
       languageTitle: "Admin language",
       languageLead: "Applies to the menu, sign-in and the overview. The other sections will follow in English soon.",
+      siteTitle: "Social links",
+      siteLead: "Saved URLs appear in the footer and on the contact page. Empty fields stay hidden.",
+      siteOpen: "Open social links",
+      siteBack: "Settings",
     },
     profile: {
       firstName: "First name",

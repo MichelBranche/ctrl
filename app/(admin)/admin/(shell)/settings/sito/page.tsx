@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { SocialForm } from "@/components/admin/social-form";
 import { requireSection } from "@/lib/admin";
@@ -34,6 +35,7 @@ async function Body() {
     <main className="adm-main">
       <header className="adm-top">
         <div>
+          <Link href="/admin/settings" className="adm-link adm-back">← Impostazioni</Link>
           <h1 className="adm-h1">Social</h1>
           <p className="adm-muted">Gli URL salvati compaiono nel footer e nella pagina contatti. I campi vuoti restano nascosti.</p>
         </div>

@@ -1,7 +1,7 @@
 /* Command Center (Panoramica). Dark anthracite, CTRL orange, compositor-only motion. */
 
-.adm-app[data-command] { background: #090909; }
-.adm-app[data-command] .adm-body { background: #090909; }
+.adm-app[data-command] { background: var(--ds-page); }
+.adm-app[data-command] .adm-body { background: var(--ds-page); }
 
 .cc-topbar {
   display: grid;

@@ -7,6 +7,7 @@ import { ensureClientMeetSchema, ensureCrmSchema, ensureDeskSchema, ensureEmailS
 import { ORDER_STATUS_LABEL, isOrderStatus } from "@/lib/shop-data";
 import type { SearchHit } from "@/lib/search-types";
 import { canAccess, isFounder, type Perms } from "@/lib/team-types";
+import { journalEditPath } from "@/lib/journal-admin-path";
 
 export type { SearchHit } from "@/lib/search-types";
 
@@ -130,7 +131,7 @@ export async function searchAdmin(me: Searcher, raw: string): Promise<SearchHit[
       return r.rows.map((row) => ({
         label: String(row.title),
         hint: `Articolo ${String(row.lang).toUpperCase()} · ${Number(row.published) ? "pubblicato" : "bozza"}`,
-        href: `/admin/edit?id=${row.id}`,
+        href: journalEditPath(String(row.id)),
         group: "articoli" as const,
       }));
     }) : [],
@@ -142,7 +143,7 @@ export async function searchAdmin(me: Searcher, raw: string): Promise<SearchHit[
       return r.rows.map((row) => ({
         label: String(row.cover_alt || row.title),
         hint: "Media · copertina",
-        href: `/admin/edit?id=${row.id}`,
+        href: journalEditPath(String(row.id)),
         group: "media" as const,
       }));
     }) : [],

@@ -63,9 +63,12 @@
   --ds-track-display: -0.045em;
 
   /* ---------- Layers ---------- */
+  --ds-z-admin-topbar: 20;     /* sticky admin header; CRM drawers sit just under it (z 25) */
   --ds-z-header: 60;
   --ds-z-header-open: 61;
   --ds-z-progress: 70;
+  --ds-z-admin-scrim: 80;      /* admin mobile nav overlay, under the drawer */
+  --ds-z-admin-sidebar: 85;    /* admin mobile nav drawer, under the command palette */
   --ds-z-back-to-top: 90;
   --ds-z-cursor: 140;
   --ds-z-assistant: 150;

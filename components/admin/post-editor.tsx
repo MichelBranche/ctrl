@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { journalEditPath } from "@/lib/journal-admin-path";
 import { useActionState, useRef, useState, useTransition } from "react";
 import { deletePost, savePost, uploadCover, type FormState } from "@/app/admin/actions";
 import { PostBody } from "@/components/journal/markdown";
@@ -234,7 +235,7 @@ export function PostEditor({ post, twin = null, initialWarning }: { post: Post |
             <p className="adm-muted adm-twin">
               {twin ? (
                 <>
-                  Versione inglese: <Link className="adm-link" href={`/admin/edit?id=${twin.id}`}>apri</Link>{" "}
+                  Versione inglese: <Link className="adm-link" href={journalEditPath(twin.id)}>apri</Link>{" "}
                   {twin.auto ? "(tradotta in automatico, si aggiorna a ogni salvataggio)" : "(modificata a mano, non viene sovrascritta)"}
                 </>
               ) : (

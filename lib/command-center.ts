@@ -17,6 +17,7 @@ import { commandFixturesOn, fixtureCommand, fixtureNotices, fixtureSearch } from
 import type { SearchHit } from "@/lib/search-types";
 import { getAdminCopy } from "@/lib/admin-locale";
 import { formatAdminCountry, formatAdminDateLabel, formatAdminNumber, formatAdminShortAgo, interpolate, type AdminDict, type AdminLocale } from "@/lib/admin-i18n";
+import { journalEditPath } from "@/lib/journal-admin-path";
 
 export type { CommandModel, CommandNotice } from "@/lib/command-types";
 export { commandFixturesOn, fixtureSearch };
@@ -349,7 +350,7 @@ async function todosFor(me: Person, pendingShop: number, t: AdminDict): Promise<
       if (n === 1) {
         const one = await db().execute("SELECT id, title FROM posts WHERE published = 0 ORDER BY updated_at DESC LIMIT 1");
         const row = one.rows[0];
-        if (row) open.push({ id: `draft-${row.id}`, title: interpolate(t.command.publishDraft, { title: row.title }), tag: t.command.tagContent, href: `/admin/edit?id=${row.id}`, done: false, check: null });
+        if (row) open.push({ id: `draft-${row.id}`, title: interpolate(t.command.publishDraft, { title: row.title }), tag: t.command.tagContent, href: journalEditPath(String(row.id)), done: false, check: null });
       } else if (n > 1) {
         open.push({ id: "drafts", title: interpolate(t.command.publishDrafts, { n }), tag: t.command.tagContent, href: "/admin/journal", done: false, check: null });
       }
@@ -420,7 +421,7 @@ async function activityFor(me: Person, lang: AdminLocale, t: AdminDict): Promise
         items.push({
           id: `post-${row.id}`, tone: "post", mark: "doc",
           title: interpolate(fresh && published ? t.command.postPublished : t.command.postUpdated, { title: row.title }),
-          href: `/admin/edit?id=${row.id}`, at: String(row.updated_at), ago: shortAgo(String(row.updated_at), lang),
+          href: journalEditPath(String(row.id)), at: String(row.updated_at), ago: shortAgo(String(row.updated_at), lang),
         });
       }
     } catch {

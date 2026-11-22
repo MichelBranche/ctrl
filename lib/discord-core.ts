@@ -210,7 +210,7 @@ export function auditHref(action: string, targetType: string | null, targetId: s
   if (targetType === "post") return "/admin/journal";
   if (targetType === "product" || targetType === "order") return "/admin/shop";
   if (targetType === "subscriber") return "/admin/newsletter";
-  if (targetType === "media") return "/admin/media";
+  if (targetType === "media") return "/admin/journal/media";
   if (targetType === "crm") return "/admin/crm";
   return "/admin";
 }

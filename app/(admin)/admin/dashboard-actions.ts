@@ -82,7 +82,7 @@ export async function deleteMedia(form: FormData): Promise<ActionState> {
     return { error: "Eliminazione non riuscita." };
   }
   await logAction("media.delete", { type: "media", id: u.pathname });
-  revalidatePath("/admin/media");
+  revalidatePath("/admin/journal/media");
   return { ok: "Immagine eliminata." };
 }
 

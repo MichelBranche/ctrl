@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { JournalSubnav } from "@/components/admin/journal-subnav";
 import { requireSection } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
+import { JOURNAL_NEW, journalEditPath } from "@/lib/journal-admin-path";
 import { db } from "@/lib/db";
 import { rowToPost } from "@/lib/journal";
 import { CATEGORY_LABEL, formatPostDate, type Post } from "@/lib/journal-types";
@@ -14,7 +17,7 @@ export default function JournalAdmin() {
 }
 
 async function PostList() {
-  await requireSection("journal");
+  const me = await requireSection("journal");
   let posts: Post[] = [];
   let error = "";
   try {
@@ -34,7 +37,8 @@ async function PostList() {
           <p className="adm-muted">{posts.length} articoli</p>
         </div>
         <div className="adm-top-actions">
-          <Link href="/admin/posts/new" className="adm-btn adm-btn-primary">
+          <JournalSubnav current="articles" articles media={canAccess(me, "media")} />
+          <Link href={JOURNAL_NEW} className="adm-btn adm-btn-primary">
             Nuovo articolo
           </Link>
         </div>
@@ -59,7 +63,7 @@ async function PostList() {
             {posts.map((p) => (
               <tr key={p.id}>
                 <td>
-                  <Link href={`/admin/edit?id=${p.id}`} className="adm-link">
+                  <Link href={journalEditPath(p.id)} className="adm-link">
                     {p.title}
                   </Link>
                   <span className="adm-muted adm-slug">/{p.slug}</span>

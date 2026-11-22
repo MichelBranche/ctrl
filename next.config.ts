@@ -96,6 +96,10 @@ const nextConfig: NextConfig = {
       // The Studio page was removed; the home has no about section, so send it home.
       { source: "/about", destination: "/", permanent: true },
       { source: "/en/about", destination: "/en", permanent: true },
+      // Admin IA: Social lives in Settings, Media and the journal editor live under Journal.
+      { source: "/admin/social", destination: "/admin/settings/sito", permanent: true },
+      { source: "/admin/media", destination: "/admin/journal/media", permanent: true },
+      { source: "/admin/posts/new", destination: "/admin/journal/new", permanent: true },
     ];
   },
   // Mail libraries use Node sockets/streams; keep them out of the bundle.

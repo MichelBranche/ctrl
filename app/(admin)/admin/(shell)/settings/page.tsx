@@ -1,4 +1,5 @@
 import { UserAvatar } from "@/components/admin/user-avatar";
+import Link from "next/link";
 import { Suspense } from "react";
 import { AdminLangSwitch } from "@/components/admin/admin-lang-switch";
 import { ProfileForm } from "@/components/admin/profile-form";
@@ -9,6 +10,7 @@ import { TwoFactorPanel } from "@/components/admin/two-factor";
 import { twoFactorStatus } from "@/lib/two-factor";
 import { canDisableTwoFactor, twoFactorRequired } from "@/lib/two-factor-policy";
 import { requireSection } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { SESSION_HOURS } from "@/lib/session-lifetime";
 import { getAdminCopy } from "@/lib/admin-locale";
 import { adminAreaLabel, adminRoleLabel, formatAdminDateTime, interpolate } from "@/lib/admin-i18n";
@@ -81,6 +83,13 @@ async function Body() {
           </p>
           <TwoFactorPanel enabled={twoFactor.enabled} recoveryLeft={twoFactor.recoveryLeft} canDisable={canDisableTwoFactor(admin.roles)} />
         </section>
+        {canAccess(admin, "social") ? (
+          <section className="adm-panel">
+            <h2 className="adm-h2">{t.settings.siteTitle}</h2>
+            <p className="adm-muted">{t.settings.siteLead}</p>
+            <Link href="/admin/settings/sito" className="adm-btn">{t.settings.siteOpen}</Link>
+          </section>
+        ) : null}
       </div>
     </main>
   );

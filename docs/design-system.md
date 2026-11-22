@@ -11,6 +11,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Molle per le animazioni JS | `components/home/springs.ts` |
 | Freccia CTA | `components/ds/arrow-up-right.tsx` |
 | Superfici admin (card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` |
+| Cornice admin (sidebar, header, palette, drawer) | `components/ds/admin-shell.css` (classi `.adm-*` del telaio, token `--ds-*`) |
 | Badge team | `components/team-badge.tsx` + `components/pages/team-badge.css` |
 | Testi | `lib/i18n.ts` (o il file `*-copy.ts` della pagina), mai stringhe IT/EN nei componenti |
 
@@ -33,4 +34,4 @@ Copia il telaio della home (`hv-block` > `hv-card`), prendi i testi da `lib/i18n
 
 ## Admin, conversione
 
-`/admin/ecosistema` è il banco di prova: telaio e componenti usano solo token `--ds-*`, non gli stili `--adm-*` delle altre sezioni. Per una nuova vista admin importa `components/ds/admin-ui.css` e i componenti `.ds-*`, e dai alla pagina un prefisso proprio.
+La cornice (sidebar, header, ricerca, menu account) è già sui token `--ds-*` tramite `components/ds/admin-shell.css`. `/admin/ecosistema` resta il banco di prova per le viste interne: importa `components/ds/admin-ui.css` e i componenti `.ds-*`, e dai alla pagina un prefisso proprio. Le altre sezioni interne usano ancora gli stili `--adm-*` finché non vengono convertite.

@@ -30,7 +30,7 @@ registerHooks({
 
 const statsSrc = readFileSync("lib/team-stats.ts", "utf8");
 assert.equal(statsSrc.includes("crm_kpi_daily"), false, "the daily series is computed from the source rows");
-assert.match(readFileSync("lib/team-types.ts", "utf8"), /const FOUNDER_ONLY[^\n]*\["team", "audit"\]/);
+assert.match(readFileSync("lib/team-types.ts", "utf8"), /const FOUNDER_ONLY[^\n]*\["ecosistema", "team", "audit"\]/);
 assert.match(readFileSync("app/(admin)/admin/(shell)/team/page.tsx", "utf8"), /requireSection\("team"\)/);
 assert.match(readFileSync("app/(admin)/admin/(shell)/team/[id]/page.tsx", "utf8"), /requireSection\("team"\)/);
 assert.match(readFileSync("app/(admin)/admin/team-actions.ts", "utf8"), /guardSection\("team"\)/);

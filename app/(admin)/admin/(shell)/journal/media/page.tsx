@@ -1,7 +1,9 @@
 import { list, type ListBlobResultBlob } from "@vercel/blob";
 import { Suspense } from "react";
 import { MediaRow } from "@/components/admin/media-row";
+import { JournalSubnav } from "@/components/admin/journal-subnav";
 import { requireSection } from "@/lib/admin";
+import { canAccess } from "@/lib/team-types";
 import { db } from "@/lib/db";
 
 export default function MediaPage() {
@@ -15,12 +17,15 @@ export default function MediaPage() {
 const kb = (b: number) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 async function Body() {
-  await requireSection("media");
+  const me = await requireSection("media");
   const header = (
     <header className="adm-top">
       <div>
         <h1 className="adm-h1">Media</h1>
         <p className="adm-muted">Copertine caricate su Vercel Blob. Si caricano dall&apos;editor di un articolo.</p>
+      </div>
+      <div className="adm-top-actions">
+        <JournalSubnav current="media" articles={canAccess(me, "journal")} media />
       </div>
     </header>
   );

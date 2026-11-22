@@ -8,6 +8,7 @@ import { canAccess } from "@/lib/team-types";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { POSTS_TAG } from "@/lib/journal";
+import { journalEditPath } from "@/lib/journal-admin-path";
 import { ensureTranslationSchema } from "@/lib/migrate";
 import { translatePost, translationConfigured } from "@/lib/translate";
 import { CATEGORIES, slugify, type Category } from "@/lib/journal-types";
@@ -140,7 +141,7 @@ export async function savePost(_: FormState, form: FormData): Promise<FormState>
   await logAction("journal.post_save", { type: "post", id: newId }, { lang, status, created: !id });
   const warning = lang === "it" ? await syncEnglish(newId, args, form.get("retranslate") === "1") : undefined;
   updateTag(POSTS_TAG);
-  if (!id) redirect(`/admin/edit?id=${newId}${warning ? `&tw=${encodeURIComponent(warning)}` : ""}`);
+  if (!id) redirect(journalEditPath(newId, warning));
   return { ok: status === "published" ? "Salvato e pubblicato." : "Bozza salvata.", warning };
 }
 

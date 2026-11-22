@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { analytics, deployments, vercelConfigured, type Bucket, type Deployment } from "@/lib/vercel";
+import { journalEditPath } from "@/lib/journal-admin-path";
 
 /** Real numbers only: every helper returns null when its source is unavailable, never a placeholder. */
 export const RANGES = [7, 30, 90] as const;
@@ -96,7 +97,7 @@ export async function recentActivity(limit = 8): Promise<Activity[] | null> {
         kind: "post" as const,
         at: String(x.updated_at),
         title: String(x.title),
-        href: `/admin/edit?id=${x.id}`,
+        href: journalEditPath(String(x.id)),
         detail: x.created_at === x.updated_at ? (Number(x.published) ? "Articolo pubblicato" : "Bozza creata") : "Articolo modificato",
       })),
       ...r.rows.map((x) => ({ kind: "request" as const, at: String(x.created_at), title: String(x.name), href: `/admin/requests?open=${x.id}`, detail: `Nuova richiesta · ${x.subject}` })),

@@ -26,32 +26,32 @@ const I = (d: string) => (
 
 type NavKey = keyof AdminDict["nav"];
 const NAV: { href: string; key: NavKey; icon: ReactNode; badge?: "requests" | "email" }[] = [
-  { href: "/admin/desk", key: "desk", icon: I("M3 5h18v12H3zM8 21h8M12 17v4M6 9h5M6 12h8") },
   { href: "/admin", key: "overview", icon: I("M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 17v3h6v-3z") },
-  { href: "/admin/journal", key: "journal", icon: I("M5 4h11l3 3v13H5zM9 9h6M9 13h6M9 17h4") },
-  { href: "/admin/media", key: "media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
-  { href: "/admin/shop", key: "shop", icon: I("M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2") },
-  { href: "/admin/requests", key: "requests", icon: I("M4 6h16v12H4zM4 7l8 6 8-6"), badge: "requests" },
+  { href: "/admin/desk", key: "desk", icon: I("M3 5h18v12H3zM8 21h8M12 17v4M6 9h5M6 12h8") },
   { href: "/admin/crm", key: "crm", icon: I("M4 5h16v4H4zM4 11h10v4H4zM4 17h6v3H4z") },
+  { href: "/admin/requests", key: "requests", icon: I("M4 6h16v12H4zM4 7l8 6 8-6"), badge: "requests" },
+  { href: "/admin/riunioni", key: "meetings", icon: I("M3 7h12v10H3zM15 10l6-3v10l-6-3") },
+  { href: "/admin/shop", key: "shop", icon: I("M3 8h18l-2 13H5L3 8zM8 8V6a4 4 0 0 1 8 0v2") },
   { href: "/admin/email", key: "email", icon: I("M3 6h18v12H3zM3 7l9 6 9-6M8 3h8"), badge: "email" },
   { href: "/admin/newsletter", key: "newsletter", icon: I("M4 19V5l16 7zM4 12h8") },
-  { href: "/admin/riunioni", key: "meetings", icon: I("M3 7h12v10H3zM15 10l6-3v10l-6-3") },
-  { href: "/admin/stats", key: "stats", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },
-  { href: "/admin/social", key: "social", icon: I("M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0M12 2v2M12 20v2M2 12h2M20 12h2") },
-  { href: "/admin/status", key: "status", icon: I("M3 12h4l3-7 4 14 3-7h4") },
+  { href: "/admin/journal", key: "journal", icon: I("M5 4h11l3 3v13H5zM9 9h6M9 13h6M9 17h4") },
+  { href: "/admin/journal/media", key: "media", icon: I("M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01") },
   { href: "/admin/introiti", key: "earnings", icon: I("M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3") },
   { href: "/admin/ecosistema", key: "ecosystem", icon: I("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z") },
-  { href: "/admin/audit", key: "audit", icon: I("M9 4h6v3H9zM6 6h12v15H6zM9 11h6M9 15h4") },
   { href: "/admin/team", key: "team", icon: I("M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8") },
+  { href: "/admin/audit", key: "audit", icon: I("M9 4h6v3H9zM6 6h12v15H6zM9 11h6M9 15h4") },
+  { href: "/admin/stats", key: "stats", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },
+  { href: "/admin/status", key: "status", icon: I("M3 12h4l3-7 4 14 3-7h4") },
   { href: "/admin/settings", key: "settings", icon: I("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .2-1.3-1.3L17 5l-3-1-1 2h-2L10 4 7 5l.2 2L6 8.3 4 8l-1 3 2 1v1l-2 1 1 3 2-.2L7.3 17 7 19l3 1 1-2h2l1 2 3-1-.2-2 1.3-1.3 2 .3 1-3-2-1z") },
 ];
 
 const ACTION_DEFS: { key: keyof AdminDict["actions"]; href: string; group: SearchHit["group"]; needs?: string }[] = [
-  { key: "newPost", href: "/admin/posts/new", group: "azioni", needs: "/admin/journal" },
+  { key: "newPost", href: "/admin/journal/new", group: "azioni", needs: "/admin/journal" },
   { key: "newEmail", href: "/admin/email?compose=new", group: "azioni", needs: "/admin/email" },
   { key: "newContact", href: `${RUBRICA}?nuovo=1#nuovo`, group: "azioni", needs: CRM_HOME },
   { key: "logJob", href: "/admin/introiti#nuovo", group: "azioni" },
   { key: "exportSubscribers", href: "/admin/newsletter/export", group: "azioni", needs: "/admin/newsletter" },
+  { key: "socialLinks", href: "/admin/settings/sito", group: "sezioni", needs: "/admin/settings/sito" },
   { key: "openSite", href: "/", group: "azioni" },
 ];
 
@@ -97,8 +97,20 @@ function useEmailUnread(enabled: boolean) {
   return n;
 }
 
-const isActive = (path: string, href: string) =>
-  href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`) || (href === "/admin/journal" && (path.startsWith("/admin/edit") || path.startsWith("/admin/posts")));
+const isActive = (path: string, href: string) => {
+  if (href === "/admin") return path === "/admin";
+  if (href === "/admin/journal") return path === "/admin/journal" || path.startsWith("/admin/journal/");
+  if (href === "/admin/settings") return path === "/admin/settings" || path.startsWith("/admin/settings/");
+  return path === href || path.startsWith(`${href}/`);
+};
+
+const extraCrumb = (path: string, t: AdminDict): string | null => {
+  if (path === "/admin/journal/media") return t.nav.media;
+  if (path === "/admin/journal/new") return t.actions.newPost;
+  if (path.startsWith("/admin/journal/")) return t.shell.editArticle;
+  if (path.startsWith("/admin/settings/sito")) return t.nav.social;
+  return null;
+};
 
 export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, notices = [], children }: { userId: string; email: string; name: string; avatarUrl: string | null; allowed: string[]; badges: { requests: number }; notices?: CommandNotice[]; children: ReactNode }) {
   const { t } = useAdminLocale();
@@ -144,6 +156,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
 
   const current = nav.find((n) => isActive(path, n.href));
   const crmTail = current?.href === CRM_HOME ? crmCrumb(path) : null;
+  const tail = crmTail ?? extraCrumb(path, t);
 
   return (
     <div className="adm-app" data-collapsed={collapsed ? "" : undefined} data-drawer={drawer ? "" : undefined} data-command={command ? "" : undefined}>
@@ -163,11 +176,12 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
         <nav className="adm-navigation" aria-label={t.shell.navAria}>
           <ul className="adm-nav">
             {["/admin", "/admin/desk"].flatMap(href => nav.filter(n => n.href === href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
-            <NavGroup key={`content:${path}`} id="content" label={t.nav.contents} icon={I("M4 6h6l2 2h8v12H4z")} items={nav.filter(n => ["/admin/journal", "/admin/media", "/admin/social"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            {nav.filter(n => ["/admin/shop", "/admin/crm"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
-            <NavGroup key={`communications:${path}`} id="communications" label={t.nav.communications} icon={I("M4 5h16v12H9l-5 4zM8 9h8M8 13h5")} items={nav.filter(n => ["/admin/requests", "/admin/email", "/admin/newsletter", "/admin/riunioni"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            <NavGroup key={`analysis:${path}`} id="analysis" label={t.nav.analysis} icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            {nav.filter(n => ["/admin/introiti", "/admin/ecosistema", "/admin/team", "/admin/audit"].includes(n.href)).map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            <NavGroup key={`clients:${path}`} id="clients" label={t.nav.clients} icon={I("M4 5h16v4H4zM4 11h10v4H4zM4 17h6v3H4z")} items={nav.filter(n => ["/admin/crm", "/admin/requests", "/admin/riunioni", "/admin/shop"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            <NavGroup key={`mail:${path}`} id="mail" label={t.nav.mail} icon={I("M3 6h18v12H3zM3 7l9 6 9-6")} items={nav.filter(n => ["/admin/email", "/admin/newsletter"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            <NavGroup key={`content:${path}`} id="content" label={t.nav.contents} icon={I("M4 6h6l2 2h8v12H4z")} items={nav.filter(n => n.href === "/admin/journal" || (n.href === "/admin/journal/media" && !allowed.includes("/admin/journal")))} path={path} collapsed={collapsed} counts={counts} />
+            {nav.filter(n => n.href === "/admin/introiti" || n.href === "/admin/ecosistema").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
+            <NavGroup key={`team:${path}`} id="team" label={t.nav.team} icon={I("M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8")} items={nav.filter(n => ["/admin/team", "/admin/audit"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            <NavGroup key={`site:${path}`} id="site" label={t.nav.site} icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
           </ul>
           <ul className="adm-nav adm-nav-footer">
             {nav.filter(n => n.href === "/admin/settings").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
@@ -189,8 +203,8 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
               {current && current.href !== "/admin" ? (
                 <>
                   <span aria-hidden="true">/</span>
-                  {crmTail ? <Link href={CRM_HOME}>{current.label}</Link> : <span aria-current="page">{current.label}</span>}
-                  {crmTail ? <><span aria-hidden="true">/</span><span aria-current="page">{crmTail}</span></> : null}
+                  {tail ? <Link href={current.href}>{current.label}</Link> : <span aria-current="page">{current.label}</span>}
+                  {tail ? <><span aria-hidden="true">/</span><span aria-current="page">{tail}</span></> : null}
                 </>
               ) : null}
             </nav>
@@ -263,8 +277,8 @@ function NavGroup({ id, label, icon, items, path, collapsed, counts }: { id: str
   if (!items.length) return null;
   const active = items.some(item => isActive(path,item.href));
   const stored = groupPreferences(saved)[id];
-  // Comunicazioni (Email) stays open unless the person closed it, so the first click is the link.
-  const open = override ?? (active || (id === "communications" ? stored !== false : stored === true));
+  // Groups with a live badge stay open unless the person closed them, so the first click is the link.
+  const open = override ?? (active || (id === "mail" || id === "clients" ? stored !== false : stored === true));
   const count = items.reduce((sum,item)=>sum+(item.badge ? counts[item.badge] : 0),0);
   return <li className="adm-nav-group" data-open={open || undefined} data-active={active || undefined}>
     <button type="button" className="adm-nav-link adm-nav-group-toggle" aria-expanded={open} aria-controls={`adm-group-${id}`} onClick={()=>{
