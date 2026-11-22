@@ -3,22 +3,18 @@ import Link from "next/link";
 import type { Route } from "next";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { PArrow } from "@/components/projects/arrow";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { Crumbs } from "@/components/seo/crumbs";
 import { FaqList } from "@/components/seo/faq";
 import { JsonLd } from "@/components/seo/json-ld";
-import { LE_VELE } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, faqNode, LOCAL_PATH, publicMeta } from "@/lib/seo";
+import { ProjectsCta } from "@/components/projects/cta";
+import { projectsCopy } from "@/components/projects/projects-copy";
 import "@/components/projects/projects.css";
 import "@/components/services/webapp.css";
 import "./service-detail.css";
-
-const money = {
-  it: new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(LE_VELE.revenueEur),
-  en: new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(LE_VELE.revenueEur),
-};
+import "@/components/ds/legacy-frame.css";
 
 const copy = {
   it: {
@@ -40,15 +36,6 @@ const copy = {
       { href: "/services/software-ai", kicker: "Software", label: "Gestionali su misura, automazioni e AI" },
       { href: "/services/growth-support", kicker: "SEO", label: "SEO, posizionamento Google e manutenzione" },
       { href: "/services/web-security", kicker: "Sicurezza", label: "Certificati SSL/TLS, hosting e protezione del sito" },
-    ],
-    caseKicker: "Caso studio",
-    caseTitle: "Residence Le Vele",
-    caseText: `Sito realizzato da CTRL®. Nel primo mese online: ${LE_VELE.bookings} prenotazioni e ${money.it}, con 0 € spesi in advertising.`,
-    caseCta: "Leggi il caso",
-    stats: [
-      { value: String(LE_VELE.bookings), label: "prenotazioni nel primo mese" },
-      { value: money.it, label: "di prenotazioni dirette" },
-      { value: "0 €", label: "spesi in advertising" },
     ],
     faqTitle: "Domande frequenti",
     faqs: [
@@ -81,15 +68,6 @@ const copy = {
       { href: "/services/growth-support", kicker: "SEO", label: "SEO, Google rankings and maintenance" },
       { href: "/services/web-security", kicker: "Security", label: "SSL/TLS certificates, hosting and site protection" },
     ],
-    caseKicker: "Case study",
-    caseTitle: "Residence Le Vele",
-    caseText: `Website built by CTRL®. In the first month online: ${LE_VELE.bookings} bookings and ${money.en}, with €0 spent on advertising.`,
-    caseCta: "Read the case",
-    stats: [
-      { value: String(LE_VELE.bookings), label: "bookings in the first month" },
-      { value: money.en, label: "in direct bookings" },
-      { value: "€0", label: "spent on advertising" },
-    ],
     faqTitle: "Common questions",
     faqs: [
       { q: "Where are you?", a: "At Via St. Martin de Corléans 179, 11100 Aosta. The phone number is +39 388 166 0117. The VAT number is not published yet." },
@@ -118,7 +96,7 @@ export function LocalView({ lang }: { lang: Locale }) {
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), faqNode([...c.faqs])]} />
       <SiteHeader />
-      <main className="p-root" data-motion-root>
+      <main className="p-root pf" data-motion-root>
         <section className="p-hero">
           <div className="p-hero-copy">
             <Crumbs label={c.crumb} items={crumbs.map((item) => ({ name: item.name, href: localize(item.path, lang) }))} />
@@ -151,37 +129,11 @@ export function LocalView({ lang }: { lang: Locale }) {
           </ul>
         </section>
 
-        <section className="wa-wrap sd-split" aria-labelledby="local-case">
-          <div>
-            <p className="p-kicker p-mono">{c.caseKicker}</p>
-            <h2 className="wa-h2" id="local-case">{c.caseTitle}</h2>
-          </div>
-          <div>
-            <p className="sd-prose">{c.caseText}</p>
-            <ul className="sd-stats">
-              {c.stats.map((stat) => (
-                <li key={stat.label}>
-                  <strong>{stat.value}</strong>
-                  <span>{stat.label}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="sd-links">
-              <Link href={localize(LE_VELE.path, lang) as Route} className="p-btn p-btn-fill">
-                <span className="p-mono">{c.caseCta}</span>
-                <PArrow />
-              </Link>
-              <Link href={localize("/contact", lang) as Route} className="p-btn">
-                <span className="p-mono">{c.cta}</span>
-                <PArrow />
-              </Link>
-            </div>
-          </div>
-        </section>
-
         <div className="wa-wrap">
           <FaqList id="local-faq" title={c.faqTitle} items={[...c.faqs]} />
         </div>
+
+        <ProjectsCta copy={projectsCopy[lang]} href={localize("/contact", lang)} />
         <ProjectsMotion />
       </main>
       <SiteFooter />
