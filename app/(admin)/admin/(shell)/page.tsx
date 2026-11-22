@@ -1,3 +1,5 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/overview.css";
 import { Suspense } from "react";
 import { CommandCenter } from "@/components/admin/command/center";
 import { requireSection } from "@/lib/admin";
@@ -17,10 +19,10 @@ export default function Overview({ searchParams }: PageProps<"/admin">) {
 async function OverviewSkeleton() {
   const { t } = await getAdminCopy();
   return (
-    <main className="adm-main cc" aria-busy="true" aria-label={t.command.loading}>
-      <div className="cc-hero"><div className="adm-skel" style={{ height: "8rem", width: "min(100%, 28rem)" }} /></div>
-      <div className="cc-kpis">
-        {[0, 1, 2, 3].map((i) => <div key={i} className="adm-skel cc-card" style={{ height: "8.6rem" }} />)}
+    <main className="ds-page ov" aria-busy="true" aria-label={t.command.loading}>
+      <div className="ds-head ov-skel" style={{ minHeight: "8.5rem" }} />
+      <div className="ov-kpis">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="ov-skel" style={{ height: "8.6rem" }} />)}
       </div>
     </main>
   );

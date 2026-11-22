@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./admin.css";
-import "./command.css";
 import "@/components/ds/admin-shell.css";
 
 export const metadata: Metadata = {

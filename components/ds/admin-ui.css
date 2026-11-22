@@ -1,16 +1,18 @@
 /* Reusable admin surfaces built on the public design tokens (--ds-*).
-   Prefix .ds- is shared; page layout uses .eco. Future admin pages can import this file
-   and keep their own page prefix. Rules: docs/design-system.md. */
+   Shared dashboard telaio: .ds-page, .ds-head, .ds-card, .ds-metric, .ds-empty, .ds-table-wrap, .ds-bars.
+   .eco remains an alias used by Ecosistema. Pages may add their own prefix. Rules: docs/design-system.md. */
 
 .ds-metric,
 .ds-empty,
 .ds-table-wrap,
 .ds-bars,
+.ds-page,
 .eco {
   --eco-accent: var(--ds-accent);
   font-family: var(--ds-font-body);
 }
 
+.ds-page,
 .eco {
   display: flex;
   flex-direction: column;
@@ -23,7 +25,9 @@
   background: var(--ds-page);
 }
 
+.ds-head,
 .eco-head,
+.ds-card,
 .eco-card,
 .eco-grid,
 .ds-metric,
@@ -33,10 +37,13 @@
   animation: eco-rise var(--ds-dur-slow) var(--ds-ease) both;
 }
 
+.ds-head,
 .eco-head { animation-delay: 0.02s; }
 .eco-grid { animation-delay: 0.06s; }
+.ds-card,
 .eco-card { animation-delay: 0.08s; }
 
+.ds-head,
 .eco-head {
   display: flex;
   flex-direction: column;
@@ -46,6 +53,7 @@
   background: var(--ds-card);
 }
 
+.ds-kicker,
 .eco-kicker {
   margin: 0;
   font-size: var(--ds-text-kicker);
@@ -54,6 +62,7 @@
   color: var(--ds-dim);
 }
 
+.ds-title,
 .eco-title {
   margin: 0;
   font-family: var(--ds-font-display);
@@ -64,6 +73,7 @@
   color: var(--ds-fg);
 }
 
+.ds-lead,
 .eco-lead {
   margin: 0;
   max-width: 40rem;
@@ -110,6 +120,7 @@
   .eco-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+.ds-card,
 .eco-card {
   display: flex;
   flex-direction: column;
@@ -121,6 +132,7 @@
   text-decoration: none;
 }
 
+.ds-card-head,
 .eco-card-head {
   display: flex;
   align-items: flex-start;
@@ -413,7 +425,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ds-head,
   .eco-head,
+  .ds-card,
   .eco-card,
   .eco-grid,
   .ds-metric,

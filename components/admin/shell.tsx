@@ -191,12 +191,12 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
       <button type="button" className="adm-scrim" aria-label={t.shell.closeMenu} tabIndex={-1} onClick={() => setDrawer(false)} />
 
       <div className="adm-body">
-        <header className={`adm-topbar${command ? " cc-topbar" : ""}`}>
+        <header className="adm-topbar">
           <button type="button" className="adm-icon-btn adm-burger" onClick={() => setDrawer(true)} aria-label={t.shell.openMenu} aria-expanded={drawer}>
             {I("M4 7h16M4 12h16M4 17h16")}
           </button>
           {command ? (
-            <p className="cc-brand"><Link href="/admin"><span className="cc-slash">/</span> {t.shell.commandCenter}</Link></p>
+            <p className="adm-cc-brand"><Link href="/admin"><span className="adm-cc-slash">/</span> {t.shell.commandCenter}</Link></p>
           ) : (
             <nav className="adm-crumbs" aria-label={t.shell.crumbs}>
               <Link href="/admin">Admin</Link>
@@ -209,14 +209,14 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
               ) : null}
             </nav>
           )}
-          <button type="button" className={`adm-search${command ? " cc-search" : ""}`} onClick={() => setPalette(true)} aria-keyshortcuts="Meta+K Control+K">
+          <button type="button" className="adm-search" onClick={() => setPalette(true)} aria-keyshortcuts="Meta+K Control+K">
             {I("M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4")}
             <span>{command ? t.shell.searchCommand : t.shell.search}</span>
             <kbd>⌘K</kbd>
           </button>
-          <div className={command ? "cc-tools" : "contents"}>
+          <div className={command ? "adm-cc-tools" : "contents"}>
             {command ? <NoticeBell notices={notices} /> : null}
-            <div className={`adm-account${command ? " cc-account" : ""}`}>
+            <div className="adm-account">
               <button type="button" className="adm-avatar" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu" aria-label={t.shell.account}>
                 <UserAvatar name={name || email} src={avatarUrl} />
                 {command ? I("M6 9l6 6 6-6") : null}

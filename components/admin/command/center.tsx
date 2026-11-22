@@ -3,16 +3,12 @@
 import { ActivityCheck } from "@/components/admin/crm/activity-check";
 import { FollowUpDone } from "@/components/admin/crm/follow-up-client";
 import { AreaChart, BarList, CountUp, Donut, Sparkline } from "@/components/admin/charts";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import type { CommandKpi, CommandModel, CommandRange, CommandShortcut, CommandTodo } from "@/lib/command-types";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAdminLocale } from "@/components/admin/locale-provider";
 import { interpolate } from "@/lib/admin-i18n";
-
-gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 function Icon({ d }: { d: string }) {
   return (
@@ -65,13 +61,13 @@ function PeriodMenu({ range }: { range: CommandRange }) {
     };
   }, [open]);
   return (
-    <div className="cc-period" ref={ref}>
-      <button type="button" className="cc-chip" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((value) => !value)}>
+    <div className="ov-period" ref={ref}>
+      <button type="button" className="ov-chip" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((value) => !value)}>
         <Icon d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" />
         {interpolate(t.command.lastDays, { n: range })}
       </button>
       {open ? (
-        <ul className="cc-period-menu" role="listbox" aria-label={t.command.period}>
+        <ul className="ov-period-menu" role="listbox" aria-label={t.command.period}>
           {([7, 30, 90] as const).map((item) => (
             <li key={item}>
               <Link href={`/admin?range=${item}`} scroll={false} role="option" aria-selected={item === range} onClick={() => setOpen(false)}>
@@ -87,7 +83,7 @@ function PeriodMenu({ range }: { range: CommandRange }) {
 
 function TodoCheck({ item }: { item: CommandTodo }) {
   const check = item.check;
-  if (!check) return <span className={`cc-box${item.done ? " is-on" : ""}`} aria-hidden="true" />;
+  if (!check) return <span className="ov-box" data-on={item.done ? "" : undefined} aria-hidden="true" />;
   switch (check.kind) {
     case "activity":
       return <ActivityCheck id={check.id} version={check.version} done={item.done} label={item.title} />;
@@ -102,66 +98,37 @@ function TodoCheck({ item }: { item: CommandTodo }) {
 
 export function CommandCenter({ model }: { model: CommandModel }) {
   const { t } = useAdminLocale();
-  const root = useRef<HTMLElement>(null);
-  useGSAP(() => {
-    const motion = gsap.matchMedia();
-    motion.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.from(".cc-hero-art", { autoAlpha: 0, duration: 0.9, ease: "power2.out" });
-      gsap.from("[data-cc-hero] > *", { y: 14, autoAlpha: 0, duration: 0.65, stagger: 0.07, ease: "power3.out" });
-      gsap.utils.toArray<HTMLElement>("[data-cc-block]").forEach((block) => {
-        const kids = block.querySelectorAll<HTMLElement>(":scope > *");
-        const row = block.matches(".cc-kpis, .cc-shortcuts");
-        gsap.from(kids.length ? kids : block, {
-          ...(row ? {} : { y: 16 }),
-          autoAlpha: 0,
-          duration: 0.6,
-          stagger: 0.06,
-          ease: "power3.out",
-          clearProps: "transform",
-          onComplete() { block.querySelectorAll<HTMLElement>(":scope > *").forEach((el) => { el.style.transform = ""; }); },
-          scrollTrigger: { trigger: block, start: "top 92%", once: true },
-        });
-      });
-    });
-  }, { scope: root });
 
   return (
-    <main className="adm-main cc" ref={root}>
-      <header className="cc-hero">
-        <picture className="cc-hero-art">
-          <source type="image/avif" srcSet="/command/hero-wave-960.avif 960w, /command/hero-wave-1440.avif 1440w, /command/hero-wave-2172.avif 2172w" sizes="(max-width: 700px) 100vw, 58vw" />
-          <source type="image/webp" srcSet="/command/hero-wave-960.webp 960w, /command/hero-wave-1440.webp 1440w, /command/hero-wave-2172.webp 2172w" sizes="(max-width: 700px) 100vw, 58vw" />
-          <img src="/command/hero-wave-1440.webp" alt="" width={2172} height={724} decoding="async" fetchPriority="low" />
-        </picture>
-        <div className="cc-hero-copy" data-cc-hero>
-          <p className="cc-date">{model.dateLabel}</p>
-          <h1>{model.greeting}</h1>
-          {model.lead ? <p className="cc-lead">{model.lead}</p> : null}
-          <div className="cc-chips">
-            <Link href={model.systems.href} className={`cc-chip is-${model.systems.tone}`} title={model.systems.title}>
-              <span className="cc-live" aria-hidden="true" />
-              {model.systems.label}
-            </Link>
-            <PeriodMenu range={model.range} />
-          </div>
-          {model.denied ? <p className="adm-error" role="status">{t.command.denied}</p> : null}
+    <main className="ds-page ov">
+      <header className="ds-head">
+        <p className="ds-kicker">{model.dateLabel}</p>
+        <h1 className="ds-title">{model.greeting}</h1>
+        {model.lead ? <p className="ds-lead">{model.lead}</p> : null}
+        <div className="ov-toolbar">
+          <Link href={model.systems.href} className="ov-chip" data-tone={model.systems.tone} title={model.systems.title}>
+            <span className="ov-live" aria-hidden="true" />
+            {model.systems.label}
+          </Link>
+          <PeriodMenu range={model.range} />
         </div>
+        {model.denied ? <p className="adm-error" role="status">{t.command.denied}</p> : null}
       </header>
 
-      <section className="cc-kpis" aria-label={t.command.kpis} data-cc-block>
+      <section className="ov-kpis" aria-label={t.command.kpis}>
         {model.kpis.map((card) => (
-          <Link key={card.id} href={card.href} className="cc-card cc-kpi">
-            <span className="cc-kpi-top">
+          <Link key={card.id} href={card.href} className="ov-kpi">
+            <span className="ov-kpi-top">
               <Icon d={KPI_ICON[card.id]} />
-              <span className="cc-kpi-label">{card.label}</span>
+              <span className="ov-kpi-label">{card.label}</span>
             </span>
-            <span className="cc-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={interpolate(t.command.spark, { label: card.label })} /></span>
+            <span className="ov-kpi-spark"><Sparkline data={card.spark.length > 1 ? card.spark : [0, 0, 0, 0, 0, 0, 0]} label={interpolate(t.command.spark, { label: card.label })} /></span>
             {card.unavailable ? (
-              <span className="cc-kpi-num cc-kpi-note">{card.unavailable}</span>
+              <span className="ov-kpi-num ov-kpi-note">{card.unavailable}</span>
             ) : (
-              <CountUp value={card.value} className="cc-kpi-num" money={card.money} />
+              <CountUp value={card.value} className="ov-kpi-num" money={card.money} />
             )}
-            <span className={`cc-kpi-delta${card.tone ? ` is-${card.tone}` : ""}`}>
+            <span className="ov-kpi-delta" data-tone={card.tone || undefined}>
               {card.delta ? (
                 <>
                   {card.tone === "up" ? <Icon d="M6 14l6-6 6 6" /> : card.tone === "down" ? <Icon d="M6 10l6 6 6-6" /> : null}
@@ -173,36 +140,36 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         ))}
       </section>
 
-      <div className="cc-split">
+      <div className="ov-split">
         {model.traffic ? (
-          <section className="cc-card cc-chart" aria-labelledby="cc-traffic" data-cc-block>
-            <div className="cc-card-head">
-              <h2 id="cc-traffic">{t.command.traffic}</h2>
-              <span className="cc-legend">
-                <span><i className="cc-dot is-views" /> {t.command.views}</span>
-                <span><i className="cc-dot is-visitors" /> {t.command.visitors}</span>
+          <section className="ds-card ov-chart" aria-labelledby="ov-traffic">
+            <div className="ds-card-head">
+              <h2 id="ov-traffic">{t.command.traffic}</h2>
+              <span className="ov-legend">
+                <span><i className="ov-dot" data-tone="views" /> {t.command.views}</span>
+                <span><i className="ov-dot" data-tone="visitors" /> {t.command.visitors}</span>
               </span>
             </div>
-            {model.traffic.empty ? <p className="cc-empty">{model.traffic.empty}</p> : <AreaChart data={model.traffic.points} height={286} />}
+            {model.traffic.empty ? <p className="ov-empty">{model.traffic.empty}</p> : <AreaChart data={model.traffic.points} height={286} />}
           </section>
         ) : null}
-        <section className="cc-card cc-todo-card" aria-labelledby="cc-todo" data-cc-block>
-          <div className="cc-card-head">
-            <h2 id="cc-todo">
+        <section className="ds-card ov-todo-card" aria-labelledby="ov-todo">
+          <div className="ds-card-head">
+            <h2 id="ov-todo">
               {t.command.todoTitle}
-              {model.todos.total > 0 ? <span className="cc-count">{model.todos.total}</span> : null}
+              {model.todos.total > 0 ? <span className="ov-count">{model.todos.total}</span> : null}
             </h2>
-            <Link href={model.todos.href} className="cc-more">{t.command.seeAll}</Link>
+            <Link href={model.todos.href} className="ov-more">{t.command.seeAll}</Link>
           </div>
           {model.todos.items.length === 0 ? (
-            <p className="cc-empty">{t.command.todoEmpty}</p>
+            <p className="ov-empty">{t.command.todoEmpty}</p>
           ) : (
-            <ul className="cc-todos">
+            <ul className="ov-list">
               {model.todos.items.map((item) => (
-                <li key={item.id} className={`cc-row cc-todo${item.done ? " is-done" : ""}`}>
-                  <span className="cc-check"><TodoCheck item={item} /></span>
-                  <Link href={item.href} className="cc-todo-title">{item.title}</Link>
-                  <Link href={item.href} className="cc-tag">{item.tag}</Link>
+                <li key={item.id} className="ov-row ov-todo" data-done={item.done ? "" : undefined}>
+                  <span className="ov-check"><TodoCheck item={item} /></span>
+                  <Link href={item.href} className="ov-todo-title">{item.title}</Link>
+                  <Link href={item.href} className="ov-tag">{item.tag}</Link>
                 </li>
               ))}
             </ul>
@@ -211,11 +178,11 @@ export function CommandCenter({ model }: { model: CommandModel }) {
       </div>
 
       {model.shortcuts.length ? (
-        <nav className="cc-shortcuts" aria-label={t.command.shortcuts} data-cc-block>
+        <nav className="ov-shortcuts" aria-label={t.command.shortcuts}>
           {model.shortcuts.map((item) => (
-            <Link key={item.id} href={item.href} className="cc-card cc-shortcut">
-              <span className="cc-shortcut-icon"><Icon d={SHORTCUT_ICON[item.id]} /></span>
-              <span className="cc-go" aria-hidden="true"><Icon d="M7 17 17 7M9 7h8v8" /></span>
+            <Link key={item.id} href={item.href} className="ds-card ov-shortcut">
+              <span className="ov-shortcut-icon"><Icon d={SHORTCUT_ICON[item.id]} /></span>
+              <ArrowUpRight className="ov-go" />
               <h3>{item.title}</h3>
               <p>{item.text}</p>
             </Link>
@@ -223,19 +190,19 @@ export function CommandCenter({ model }: { model: CommandModel }) {
         </nav>
       ) : null}
 
-      <div className="cc-bottom">
-        <section className="cc-card" aria-labelledby="cc-activity" data-cc-block>
-          <div className="cc-card-head">
-            <h2 id="cc-activity">{t.command.activity}</h2>
-            {model.activity.href ? <Link href={model.activity.href} className="cc-more">{t.command.seeAllActivity}</Link> : null}
+      <div className="ov-bottom">
+        <section className="ds-card" aria-labelledby="ov-activity">
+          <div className="ds-card-head">
+            <h2 id="ov-activity">{t.command.activity}</h2>
+            {model.activity.href ? <Link href={model.activity.href} className="ov-more">{t.command.seeAllActivity}</Link> : null}
           </div>
           {model.activity.error ? <p className="adm-error" role="alert">{t.command.activityUnavailable}</p> : null}
-          {model.activity.items.length === 0 && !model.activity.error ? <p className="cc-empty">{t.command.activityEmpty}</p> : null}
+          {model.activity.items.length === 0 && !model.activity.error ? <p className="ov-empty">{t.command.activityEmpty}</p> : null}
           {model.activity.items.length ? (
-            <ol className="cc-feed">
+            <ol className="ov-list ov-feed">
               {model.activity.items.map((item) => (
-                <li key={item.id} className="cc-row">
-                  <span className={`cc-act-icon is-${item.mark}`}><Icon d={MARK_ICON[item.mark]} /></span>
+                <li key={item.id} className="ov-row">
+                  <span className="ov-act"><Icon d={MARK_ICON[item.mark]} /></span>
                   <Link href={item.href}>{item.title}</Link>
                   <time dateTime={item.at}>{item.ago}</time>
                 </li>
@@ -244,18 +211,18 @@ export function CommandCenter({ model }: { model: CommandModel }) {
           ) : null}
         </section>
         {model.statsHref ? (
-          <section className="cc-card cc-pages" aria-labelledby="cc-pages" data-cc-block>
-            <div className="cc-card-head">
-              <h2 id="cc-pages">{t.command.topPages}</h2>
-              <Link href={model.statsHref} className="cc-more">{t.command.seeAnalytics}</Link>
+          <section className="ds-card ov-pages" aria-labelledby="ov-pages">
+            <div className="ds-card-head">
+              <h2 id="ov-pages">{t.command.topPages}</h2>
+              <Link href={model.statsHref} className="ov-more">{t.command.seeAnalytics}</Link>
             </div>
             <BarList rows={model.pages} empty={model.pagesEmpty ?? t.command.pagesEmpty} />
           </section>
         ) : null}
         {model.statsHref ? (
-          <section className="cc-card cc-donut" aria-labelledby="cc-origin" data-cc-block>
-            <div className="cc-card-head">
-              <h2 id="cc-origin">{t.command.origin}</h2>
+          <section className="ds-card ov-donut" aria-labelledby="ov-origin">
+            <div className="ds-card-head">
+              <h2 id="ov-origin">{t.command.origin}</h2>
             </div>
             <Donut rows={model.countries} empty={model.countriesEmpty ?? t.command.countriesEmpty} centerLabel={t.command.viewsCenter} showShare />
           </section>

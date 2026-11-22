@@ -38,10 +38,10 @@ export function NoticeBell({ notices }: { notices: CommandNotice[] }) {
 
   const count = notices.length;
   return (
-    <div className="cc-bell" ref={root}>
+    <div className="adm-bell" ref={root}>
       <button
         type="button"
-        className="adm-icon-btn cc-bell-btn"
+        className="adm-icon-btn adm-bell-btn"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={count ? interpolate(t.notices.ariaCount, { n: count }) : t.notices.aria}
@@ -50,12 +50,12 @@ export function NoticeBell({ notices }: { notices: CommandNotice[] }) {
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <path d={BELL} />
         </svg>
-        {count ? <span className="cc-bell-dot" aria-hidden="true" /> : null}
+        {count ? <span className="adm-bell-dot" aria-hidden="true" /> : null}
       </button>
       {open ? (
-        <div className="cc-bell-pop" role="dialog" aria-label={t.notices.dialog}>
+        <div className="adm-bell-pop" role="dialog" aria-label={t.notices.dialog}>
           {count === 0 ? (
-            <p className="cc-bell-empty">{t.notices.empty}</p>
+            <p className="adm-bell-empty">{t.notices.empty}</p>
           ) : (
             <ul>
               {notices.map((notice) => (

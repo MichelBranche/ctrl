@@ -180,6 +180,7 @@
 .adm-table tbody tr { transition: background-color 0.15s ease; }
 .adm-table tbody tr:hover { background: var(--adm-panel); }
 .adm-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+#analisi { scroll-margin-top: 5rem; }
 .adm-stat { display: flex; flex-direction: column; gap: 0.35rem; padding: 1rem 1.1rem; border: 1px solid var(--adm-rule); border-radius: var(--adm-radius); background: var(--adm-panel); color: var(--adm-fg); text-decoration: none; transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
 a.adm-stat:hover { border-color: rgb(255 74 28 / 0.45); }
 .adm-stat-num { font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1.1; }

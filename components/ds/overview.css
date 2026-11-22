@@ -1,0 +1,447 @@
+/* Panoramica /admin (Command Center) on the public design tokens.
+   Reuses the dashboard telaio from admin-ui.css (.ds-page, .ds-head, .ds-card, .ds-metric).
+   Prefix .ov is unique to this page. Rules: docs/design-system.md. */
+
+.ov-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.ov-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  border: 0;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+
+.ov-chip:hover { background: var(--ds-paper); color: var(--ds-ink); }
+.ov-chip:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-live {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: none;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-dim);
+}
+
+.ov-chip[data-tone="ok"] .ov-live { background: var(--ds-fg); }
+.ov-chip[data-tone="busy"] .ov-live { background: var(--ds-dim); }
+.ov-chip[data-tone="bad"] .ov-live { background: var(--ds-accent); }
+
+.ov-chip svg { width: 0.95rem; height: 0.95rem; }
+
+.ov-period { position: relative; }
+
+.ov-period-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  min-width: 12rem;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card-2);
+}
+
+.ov-period-menu a {
+  display: block;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--ds-r-sm);
+  color: var(--ds-fg);
+  text-decoration: none;
+}
+
+.ov-period-menu a:hover,
+.ov-period-menu a[aria-selected="true"] { background: var(--ds-card); }
+.ov-period-menu a:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+.ov-kpis,
+.ov-split,
+.ov-shortcuts,
+.ov-bottom {
+  display: grid;
+  gap: var(--ds-gap);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.ov-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ov-split { grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.9fr); }
+.ov-shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ov-bottom { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.ov-kpis,
+.ov-split,
+.ov-shortcuts,
+.ov-bottom { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) both; }
+.ov-kpis { animation-delay: 0.06s; }
+.ov-split { animation-delay: 0.1s; }
+.ov-shortcuts { animation-delay: 0.14s; }
+.ov-bottom { animation-delay: 0.18s; }
+
+.ov-kpi {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "top top" "num spark" "delta spark";
+  column-gap: 0.75rem;
+  row-gap: 0.4rem;
+  align-items: end;
+  min-width: 0;
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-fg);
+  text-decoration: none;
+}
+
+.ov-kpi:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-kpi-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ds-dim);
+}
+
+.ov-kpi-top svg { width: 1rem; height: 1rem; flex: none; }
+
+.ov-kpi-label {
+  font-size: var(--ds-text-kicker);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-kpi-num {
+  grid-area: num;
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-metric);
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-kpi-note {
+  font-size: var(--ds-text-kicker);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-dim);
+}
+
+.ov-kpi-spark {
+  grid-area: spark;
+  width: 5.5rem;
+  height: 2.1rem;
+  align-self: center;
+  pointer-events: none;
+}
+
+.ov-kpi-spark .adm-spark { width: 100%; height: 100%; display: block; }
+
+.ov-kpi-delta {
+  grid-area: delta;
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin: 0;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-kpi-delta svg { width: 0.85rem; height: 0.85rem; flex: none; }
+.ov-kpi-delta[data-tone="up"] { color: var(--ds-fg); }
+.ov-kpi-delta[data-tone="down"] { color: var(--ds-accent); }
+
+.ov-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ov-card-head h2,
+.ov .ds-card-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.ov-more {
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color var(--ds-dur-fast) var(--ds-ease-std);
+}
+
+.ov-more:hover { color: var(--ds-fg); }
+.ov-more:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  font-size: var(--ds-text-small);
+  font-weight: 600;
+}
+
+.ov-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+.ov-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.35rem;
+  border-radius: var(--ds-r-pill);
+  vertical-align: middle;
+  background: var(--ds-fg);
+}
+
+.ov-dot[data-tone="views"] { background: var(--ds-accent); }
+.ov-dot[data-tone="visitors"] { background: var(--ds-dim); }
+
+.ov-empty {
+  margin: 0.6rem 0 0;
+  color: var(--ds-dim);
+  line-height: 1.5;
+}
+
+.ov-list {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+}
+
+.ov-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 44px;
+  padding: 0.2rem 0.15rem;
+  border-radius: var(--ds-r-sm);
+}
+
+.ov-todo-title,
+.ov-feed a {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-fg);
+  text-decoration: none;
+}
+
+.ov-todo-title:hover,
+.ov-feed a:hover { color: var(--ds-accent); }
+.ov-todo-title:focus-visible,
+.ov-feed a:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-todo[data-done] .ov-todo-title {
+  color: var(--ds-dim);
+  text-decoration: line-through;
+}
+
+.ov-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0 0.6rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ov-tag:hover { color: var(--ds-fg); }
+.ov-tag:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-check { display: grid; place-items: center; width: 1.15rem; }
+.ov-check form { margin: 0; }
+
+.ov-box,
+.ov-todo input[type="checkbox"],
+.ov-todo .crm-check {
+  appearance: none;
+  box-sizing: border-box;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--ds-dim);
+  border-radius: var(--ds-r-sm);
+  background: transparent;
+  color: transparent;
+  display: grid;
+  place-items: center;
+}
+
+.ov-todo input[type="checkbox"]:checked,
+.ov-box[data-on],
+.ov-todo .crm-check:hover {
+  border-color: var(--ds-accent);
+}
+
+.ov-todo input[type="checkbox"]:checked,
+.ov-box[data-on] {
+  background: var(--ds-accent);
+}
+
+.ov-todo input[type="checkbox"]:checked::after,
+.ov-box[data-on]::after {
+  content: "";
+  width: 0.28rem;
+  height: 0.48rem;
+  border-right: 2px solid var(--ds-accent-ink);
+  border-bottom: 2px solid var(--ds-accent-ink);
+  transform: rotate(45deg) translateY(-0.08rem);
+}
+
+.ov-feed time {
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  white-space: nowrap;
+}
+
+.ov-act {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: var(--ds-r-sm);
+  background: var(--ds-card-2);
+  color: var(--ds-dim);
+}
+
+.ov-act svg { width: 1rem; height: 1rem; }
+
+.ov-shortcut {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "icon . go" "title title title" "text text text";
+  gap: 0.35rem 0.4rem;
+  min-height: 8.7rem;
+}
+
+.ov-shortcut-icon { grid-area: icon; color: var(--ds-dim); }
+.ov-shortcut-icon svg { width: 1.15rem; height: 1.15rem; }
+
+.ov-go {
+  grid-area: go;
+  width: 14px;
+  height: 14px;
+  color: var(--ds-dim);
+  transition: transform var(--ds-dur-fast) var(--ds-ease), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+
+.ov-shortcut:hover .ov-go {
+  color: var(--ds-fg);
+  transform: translate(2px, -2px);
+}
+
+.ov-shortcut:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.ov-shortcut h3 {
+  grid-area: title;
+  margin: 0.55rem 0 0;
+  font-family: var(--ds-font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.ov-shortcut p {
+  grid-area: text;
+  margin: 0;
+  min-height: calc(1.45em * 2);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  line-height: 1.45;
+}
+
+.ov-pages .adm-barlist { gap: 0.4rem; margin-top: 0.85rem; }
+.ov-pages .adm-barlist-fill { background: color-mix(in srgb, var(--ds-accent) 28%, transparent); }
+.ov-donut .adm-donut { margin-top: 0.4rem; }
+.ov-donut .adm-donut svg { width: 10.4rem; height: 10.4rem; }
+
+.ov-skel {
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+
+@media (max-width: 1100px) {
+  .ov-kpis,
+  .ov-shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov-bottom { grid-template-columns: 1fr 1fr; }
+  .ov-bottom > :first-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 980px) {
+  .ov-split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .ov-kpis,
+  .ov-shortcuts,
+  .ov-split,
+  .ov-bottom { grid-template-columns: 1fr; }
+  .ov-bottom > :first-child { grid-column: auto; }
+  .ov-kpi-spark { width: 4.4rem; height: 1.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-kpis,
+  .ov-split,
+  .ov-shortcuts,
+  .ov-bottom,
+  .ov-chip,
+  .ov-more,
+  .ov-go,
+  .ov-shortcut:hover .ov-go {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
