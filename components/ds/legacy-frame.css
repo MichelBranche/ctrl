@@ -178,6 +178,62 @@
 .pf .wd-cap { border-radius: var(--ds-r-pill); padding: 0.3rem 0.7rem; }
 .pf .lv-frame { border-radius: var(--ds-r-card); overflow: hidden; }
 
+/* ---------- Agenda Easy (.ae-) ---------- */
+.pf .ae-hero {
+  max-width: none; min-height: min(84svh, 50rem);
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.5rem, 3vw, 3rem);
+  border-radius: var(--ds-r-card); background: var(--ds-card); align-items: end;
+}
+.pf .ae-hero-media {
+  inset: var(--ds-frame) var(--ds-frame) var(--ds-frame) 46%;
+  border-radius: calc(var(--ds-r-card) - var(--ds-frame)); mask-image: none; -webkit-mask-image: none;
+}
+.pf .ae-title { font-family: var(--ds-font-display); font-weight: 700; letter-spacing: var(--ds-track-display); }
+.pf .ae-wrap { max-width: none; padding: 0; }
+.pf .ae-overview {
+  margin: 0 var(--ds-frame) var(--ds-gap); padding: var(--ds-pad);
+  border-radius: var(--ds-r-card); background: var(--ds-card);
+}
+.pf .ae-h { font-family: var(--ds-font-display); font-weight: 500; letter-spacing: var(--ds-track-display); }
+.pf .ae-features { gap: var(--ds-gap); margin: 0 var(--ds-frame) var(--ds-gap); padding: 0; }
+.pf .ae-features > li { padding: clamp(1.25rem, 2vw, 1.75rem); border-radius: var(--ds-r-card); background: var(--ds-paper); color: var(--ds-ink); }
+.pf .ae-features .ae-icon { border-color: var(--ds-ink-rule-strong); }
+.pf .ae-features .ae-feature-text { color: var(--ds-ink-dim); }
+.pf .ae-screens { gap: var(--ds-gap); margin: 0 var(--ds-frame) var(--ds-gap); }
+.pf .ae-screen { border: 0; border-radius: var(--ds-r-card); }
+.pf .ae-video {
+  margin: 0 var(--ds-frame) var(--ds-gap); padding: var(--ds-pad);
+  border-radius: var(--ds-r-card); background: var(--ds-card);
+}
+.pf .ae-video-frame { border: 0; border-radius: calc(var(--ds-r-card) - var(--ds-frame)); }
+.pf .ae-play { box-shadow: none; }
+.pf .ae-facts {
+  margin: 0 var(--ds-frame) var(--ds-gap); padding: var(--ds-pad);
+  border-radius: var(--ds-r-card); background: var(--ds-card);
+}
+.pf .ae-fact { border-left-color: var(--ds-faint); }
+.pf .ae-cta {
+  margin: 0 var(--ds-frame) var(--ds-gap); padding: var(--ds-pad);
+  border: 0; border-radius: var(--ds-r-card); background: var(--ds-paper); color: var(--ds-ink);
+}
+.pf .ae-cta .p-kicker, .pf .ae-cta-text { color: var(--ds-ink-dim); }
+.pf .ae-cta-title { font-weight: 500; letter-spacing: var(--ds-track-display); }
+.pf .ae-cta .p-btn { border-color: var(--ds-ink); background: var(--ds-ink); color: var(--ds-fg); }
+.pf .ae-cta .p-btn:hover { background: var(--ds-accent); border-color: var(--ds-accent); color: var(--ds-accent-ink); }
+
+/* ---------- Residence Le Vele project page (.lv-) ---------- */
+.pf .lv-reel { max-width: none; margin: 0 var(--ds-frame) var(--ds-gap); padding: 0; }
+.pf .lv-frame { border-radius: var(--ds-r-card); overflow: hidden; }
+.pf .lv-story, .pf .lv-faq {
+  max-width: none; margin: 0 var(--ds-frame) var(--ds-gap); padding: var(--ds-pad);
+  border-radius: var(--ds-r-card); background: var(--ds-card);
+}
+.pf .lv-faq { background: var(--ds-paper); color: var(--ds-ink); }
+.pf .lv-faq p { color: var(--ds-ink-dim); }
+.pf .lv-faq-list, .pf .lv-faq details { border-color: var(--ds-ink-rule-strong); }
+.pf .lv-story-title { font-family: var(--ds-font-display); letter-spacing: var(--ds-track-display); }
+
 @media (max-width: 900px) {
   .pf .p-hero, .pf .p-hero-cat { min-height: 0; padding-top: 140px; flex-direction: column; justify-content: flex-start; }
   .pf .p-hero-frame,
@@ -187,4 +243,11 @@
   .pf .p-hero-copy { max-width: none; }
   .pf .p-bar { border-radius: calc(var(--ds-r-card) - 4px); }
   .pf .wd-hero { padding-top: 110px; }
+  .pf .ae-hero { min-height: 0; padding-top: 140px; }
+  .pf .ae-hero-media { position: relative; inset: auto; order: 2; aspect-ratio: 4 / 3; margin: 1.5rem 0 0; }
+  .pf .ae-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 40rem) {
+  .pf .ae-features { grid-template-columns: minmax(0, 1fr); }
 }

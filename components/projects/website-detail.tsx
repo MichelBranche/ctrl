@@ -14,6 +14,7 @@ import { localize, type Locale } from "@/lib/i18n";
 import { projectDocumentDescription, projectDocumentTitle, publicMeta } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
+import "@/components/ds/legacy-frame.css";
 
 export function websiteSlugs() {
   return websitesInOrder().map((p) => p.slug);
@@ -46,7 +47,7 @@ export function WebsiteDetail({ slug, lang }: { slug: string; lang: Locale }) {
   return (
     <>
       <SiteHeader />
-      <main className="p-root" data-motion-root>
+      <main className="p-root pf" data-motion-root>
         <section className="wd-hero">
           <div className="wd-crumbs">
             <Link href={localize("/projects/websites", lang)} className="p-back p-mono" data-p-fade>

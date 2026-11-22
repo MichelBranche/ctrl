@@ -14,6 +14,7 @@ import { localize, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, faqNode, publicMeta, ORG_ID, SITE_URL } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
+import "@/components/ds/legacy-frame.css";
 
 const money = {
   it: new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(LE_VELE.revenueEur),
@@ -118,7 +119,7 @@ export function LeVeleView({ lang }: { lang: Locale }) {
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), article, faqNode([...c.faqs])]} />
       <SiteHeader />
-      <main className="p-root" data-motion-root>
+      <main className="p-root pf" data-motion-root>
         <section className="wd-hero">
           <div className="wd-crumbs">
             <Link href={localize("/projects/websites", lang)} className="p-back p-mono" data-p-fade>
