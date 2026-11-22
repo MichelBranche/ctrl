@@ -24,6 +24,7 @@ type ServicesCopy = {
   modesText: string;
   custom: Plan;
   subscription: Plan;
+  local: { kicker: string; title: string; text: string; cta: string };
 };
 
 export const servicesCopy: Record<Locale, ServicesCopy> = {
@@ -70,6 +71,12 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
       checks: ["Supporto continuo", "Aggiornamenti inclusi", "Assistenza prioritaria"],
       cta: "Scopri il piano",
     },
+    local: {
+      kicker: "Valle d'Aosta",
+      title: "Agenzia web ad Aosta.",
+      text: "Prima la valle, poi l'ospitalità nel Nord Italia.",
+      cta: "Agenzia in Valle d'Aosta",
+    },
   },
   en: {
     metaTitle: "Web services in Aosta: sites, software, brand | CTRL®",
@@ -113,6 +120,12 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
       text: "An ongoing partner, with a transparent monthly fee.",
       checks: ["Ongoing support", "Updates included", "Priority assistance"],
       cta: "Discover the plan",
+    },
+    local: {
+      kicker: "Valle d'Aosta",
+      title: "A web studio in Aosta.",
+      text: "The valley first, then hospitality across Northern Italy.",
+      cta: "Studio in Valle d'Aosta",
     },
   },
 };

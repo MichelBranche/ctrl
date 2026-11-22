@@ -1,4 +1,3 @@
-import { CtaLink } from "@/components/cta-link";
 import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,9 +5,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ServicesMotion } from "@/components/pages/services-motion";
 import { servicesCopy } from "@/components/pages/services-copy";
-import { LE_VELE, services } from "@/lib/content";
+import { services } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import "./services.css";
 
 export function servicesMetadata(lang: Locale): Metadata {
@@ -16,17 +16,9 @@ export function servicesMetadata(lang: Locale): Metadata {
   return publicMeta(lang, { title: c.metaTitle, description: c.metaDescription, itPath: "/services" });
 }
 
-function Arrow({ className = "s-arrow" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function Check() {
   return (
-    <svg className="s-check" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="sv-check" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4.5 12.5l4.5 4.5L19.5 6.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   );
@@ -51,12 +43,12 @@ function CalendarIcon() {
 
 function MountainMark({ label }: { label: string }) {
   return (
-    <svg className="s-mark" viewBox="0 0 400 300" role="img" aria-label={label}>
+    <svg className="sv-mark" viewBox="0 0 400 300" role="img" aria-label={label}>
       <g fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="miter">
         <path data-draw d="M14 300 L160 18 L222 18 L386 300" />
         <path data-draw d="M110 300 L196 120 L300 300" />
       </g>
-      <g className="s-spark" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+      <g className="sv-spark" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
         <path d="M370 14v32M354 30h32M358.7 18.7l22.6 22.6M381.3 18.7l-22.6 22.6" />
       </g>
     </svg>
@@ -74,148 +66,155 @@ export function ServicesView({ lang }: { lang: Locale }) {
   return (
     <>
       <SiteHeader />
-      <main className="s-root" data-motion-root>
+      <main className="sv" data-motion-root>
         <ServicesMotion />
-        <section className="s-hero">
-          <Image className="s-hero-img" src="/images/hero.jpg" alt="" fill priority sizes="100vw" data-s-hero-img />
-          <div className="s-hero-copy">
-            <p className="s-tag" data-s-fade>{c.tag}</p>
-            <h1 className="s-title" data-s-split aria-label={c.title}>
-              {c.title.split("®").map((part, i) => (
-                <span key={part + i}>
-                  {i > 0 ? <sup className="s-reg">®</sup> : null}
-                  {part}
-                </span>
-              ))}
-            </h1>
-            <p className="s-lead" data-s-fade>{c.lead}</p>
-            <CtaLink href="#servizi" className="s-discover" data-s-fade>
-              {c.discover}
-            </CtaLink>
-          </div>
-        </section>
 
-        <section className="s-grid-wrap" id="servizi" aria-label={c.gridLabel}>
-          <ul className="s-grid">
-            {services.map((s) => (
-              <li className={`s-cell${s.sub ? " s-cell-has-sub" : ""}`} key={s.slug} data-s-cell>
-                <Link href={localize(`/services/${s.slug}`, lang) as Route} className="s-cell-body">
-                  <span className="s-mono s-index">{s.index}</span>
-                  <h2 className="s-cell-title">{s.title[lang]}</h2>
-                  <p className="s-cell-text">{s.text[lang]}</p>
-                  <p className="s-cell-summary">{s.summary[lang]}</p>
-                  <ul className="s-points">
-                    {s.points[lang].map((point) => (
-                      <li key={point}>
-                        <Arrow />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Link>
-                {s.sub ? (
-                  <Link href={localize(s.sub.href, lang) as Route} className="s-sub">
-                    <span className="s-sub-dot" aria-hidden="true" />
-                    <span className="s-sub-copy">
-                      <span className="s-sub-label">{s.sub.label[lang]}</span>
-                      <span className="s-sub-note s-mono">{s.sub.note[lang]}</span>
-                    </span>
-                    <Arrow className="s-arrow s-sub-arrow" />
-                  </Link>
-                ) : null}
-              </li>
-            ))}
-            <li className="s-cell s-cell-mark" data-s-cell>
-              <MountainMark label={c.graphicAlt} />
-            </li>
-          </ul>
-          <span className="s-rule s-rule-v s-rule-v1" aria-hidden="true" data-s-rule="y" />
-          <span className="s-rule s-rule-v s-rule-v2" aria-hidden="true" data-s-rule="y" />
-          <span className="s-rule s-rule-h s-rule-h1" aria-hidden="true" data-s-rule="x" />
-        </section>
-
-        <section className="s-soft" aria-labelledby="s-soft-title">
-          <div className="s-soft-intro" data-s-fade-scroll>
-            <p className="s-mono s-kicker">{c.software.kicker}</p>
-            <h2 className="s-h2" id="s-soft-title">{c.software.title}</h2>
-            <p className="s-modes-text">{c.software.text}</p>
-          </div>
-          <ul className="s-soft-grid">
-            {c.software.products.map((p) => (
-              <li key={p.name} className="s-product" data-s-card>
-                <span className="s-product-media">
-                  <Image src={p.image} alt={p.alt} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" className="s-product-img" />
-                </span>
-                <div className="s-product-body">
-                  <p className="s-product-badge s-mono"><i aria-hidden="true" />{c.software.available}</p>
-                  <h3 className="s-card-title">{p.name}</h3>
-                  <p className="s-product-text">{p.text}</p>
-                  <p className="s-product-price"><strong>{p.price}</strong> {c.software.perMonth}</p>
-                  <Link href={localize(p.href, lang) as Route} className="s-btn s-btn-fill" data-magnetic>
-                    <span className="s-btn-label s-mono">{p.cta}</span>
-                    <Arrow />
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="s-local" aria-labelledby="s-local-title">
-          <div>
-            <p className="s-mono s-kicker">{lang === "it" ? "Valle d'Aosta" : "Valle d'Aosta"}</p>
-            <h2 className="s-h2" id="s-local-title">{lang === "it" ? "Agenzia web ad Aosta." : "A web studio in Aosta."}</h2>
-            <p className="s-modes-text">
-              {lang === "it"
-                ? "Prima la valle, poi l'ospitalità nel Nord Italia. Residence Le Vele: 14 prenotazioni e 11.947 € nel primo mese, con 0 € di ads."
-                : "The valley first, then hospitality across Northern Italy. Residence Le Vele: 14 bookings and €11,947 in the first month, with €0 of ads."}
-            </p>
-            <div className="s-local-links">
-              <Link href={localize("/agenzia-web-valle-d-aosta", lang) as Route} className="s-btn s-btn-line">
-                <span className="s-btn-label s-mono">{lang === "it" ? "Agenzia in Valle d'Aosta" : "Studio in Valle d'Aosta"}</span>
-                <Arrow />
-              </Link>
-              <Link href={localize(LE_VELE.path, lang) as Route} className="s-btn s-btn-fill">
-                <span className="s-btn-label s-mono">{lang === "it" ? "Caso Residence Le Vele" : "Residence Le Vele case"}</span>
-                <Arrow />
-              </Link>
+        {/* 1. HERO: one card inside the 10px frame, photo behind, title bottom left. */}
+        <section className="sv-hero" data-sv-hero>
+          <div className="sv-card sv-hero-card">
+            <Image className="sv-hero-img" src="/images/hero.jpg" alt="" fill priority sizes="100vw" data-sv-hero-img />
+            <div className="sv-hero-copy">
+              <p className="sv-tag" data-sv-fade>
+                <i aria-hidden="true" />
+                {c.tag}
+              </p>
+              <h1 className="sv-title" data-sv-words aria-label={c.title}>
+                {c.title.split("®").map((part, i) => (
+                  <span key={part + i}>
+                    {i > 0 ? <sup className="sv-reg">®</sup> : null}
+                    {part}
+                  </span>
+                ))}
+              </h1>
+            </div>
+            <div className="sv-hero-side">
+              <p className="sv-lead" data-sv-fade>{c.lead}</p>
+              <a href="#servizi" className="sv-cta" data-sv-fade>
+                {c.discover}
+                <ArrowUpRight className="sv-arrow sv-arrow-down" />
+              </a>
             </div>
           </div>
         </section>
 
-        <section className="s-modes">
-          <div className="s-modes-intro" data-s-fade-scroll>
-            <p className="s-mono s-kicker">{c.modesKicker}</p>
-            <h2 className="s-h2">
-              {c.modesTitle.map((line) => (
-                <span key={line}>{line} </span>
+        {/* 2. SERVICES: five light cards and the mountain mark, bento 3 + 3. */}
+        <section className="sv-block" id="servizi" aria-label={c.gridLabel}>
+          <ul className="sv-grid" data-sv-stagger>
+            {services.map((s) => (
+              <li className="sv-card sv-service" key={s.slug}>
+                <Link href={localize(`/services/${s.slug}`, lang) as Route} className="sv-service-body">
+                  <span className="sv-index">{s.index}</span>
+                  <h2 className="sv-service-title">
+                    {s.title[lang]}
+                    <ArrowUpRight className="sv-arrow" />
+                  </h2>
+                  <p className="sv-service-text">{s.text[lang]}</p>
+                  <p className="sv-service-summary">{s.summary[lang]}</p>
+                  <ul className="sv-points">
+                    {s.points[lang].map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </Link>
+                {s.sub ? (
+                  <Link href={localize(s.sub.href, lang) as Route} className="sv-sub">
+                    <span className="sv-sub-dot" aria-hidden="true" />
+                    <span className="sv-sub-copy">
+                      <span className="sv-sub-label">{s.sub.label[lang]}</span>
+                      <span className="sv-sub-note">{s.sub.note[lang]}</span>
+                    </span>
+                    <ArrowUpRight className="sv-arrow" />
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+            <li className="sv-card sv-mark-card">
+              <MountainMark label={c.graphicAlt} />
+            </li>
+          </ul>
+        </section>
+
+        {/* 3. SOFTWARE: intro and the ready-made products in one dark card. */}
+        <section className="sv-block" aria-labelledby="sv-soft-title">
+          <div className="sv-card sv-soft">
+            <div className="sv-head">
+              <p className="sv-kicker">{c.software.kicker}</p>
+              <h2 className="sv-h2" id="sv-soft-title" data-sv-title>{c.software.title}</h2>
+              <p className="sv-text" data-sv-rise>{c.software.text}</p>
+            </div>
+            <ul className="sv-products" data-sv-stagger>
+              {c.software.products.map((p) => (
+                <li key={p.name} className="sv-product">
+                  <span className="sv-product-media">
+                    <Image src={p.image} alt={p.alt} fill sizes="(max-width: 900px) 100vw, 40vw" className="sv-product-img" />
+                  </span>
+                  <div className="sv-product-body">
+                    <p className="sv-badge"><i aria-hidden="true" />{c.software.available}</p>
+                    <h3 className="sv-h3">{p.name}</h3>
+                    <p className="sv-text">{p.text}</p>
+                    <p className="sv-price"><strong>{p.price}</strong> {c.software.perMonth}</p>
+                    <Link href={localize(p.href, lang) as Route} className="sv-cta">
+                      {p.cta}
+                      <ArrowUpRight className="sv-arrow" />
+                    </Link>
+                  </div>
+                </li>
               ))}
-            </h2>
-            <p className="s-modes-text">{c.modesText}</p>
+            </ul>
           </div>
-          {plans.map(({ key, plan, Icon, filled }) => (
-            <article className="s-card" key={key} data-s-card>
-              <div className="s-card-head">
-                <span className="s-card-icon" aria-hidden="true">
-                  <Icon />
-                </span>
-                <h3 className="s-card-title">{plan.title}</h3>
-              </div>
-              <p className="s-card-text">{plan.text}</p>
-              <ul className="s-checks">
-                {plan.checks.map((item) => (
-                  <li key={item} data-s-check>
-                    <Check />
-                    <span>{item}</span>
-                  </li>
+        </section>
+
+        {/* 4. LOCAL: one slim card. */}
+        <section className="sv-block" aria-labelledby="sv-local-title">
+          <div className="sv-card sv-local" data-sv-rise>
+            <div>
+              <p className="sv-kicker">{c.local.kicker}</p>
+              <h2 className="sv-h2" id="sv-local-title">{c.local.title}</h2>
+              <p className="sv-text">{c.local.text}</p>
+            </div>
+            <Link href={localize("/agenzia-web-valle-d-aosta", lang) as Route} className="sv-ghost">
+              {c.local.cta}
+              <ArrowUpRight className="sv-arrow" />
+            </Link>
+          </div>
+        </section>
+
+        {/* 5. MODES: intro card and the two plans side by side. */}
+        <section className="sv-block" aria-labelledby="sv-modes-title">
+          <div className="sv-modes" data-sv-stagger>
+            <div className="sv-card sv-modes-intro">
+              <p className="sv-kicker">{c.modesKicker}</p>
+              <h2 className="sv-h2" id="sv-modes-title">
+                {c.modesTitle.map((line) => (
+                  <span key={line}>{line} </span>
                 ))}
-              </ul>
-              <Link href={contact} className={`s-btn ${filled ? "s-btn-fill" : "s-btn-line"}`} data-magnetic>
-                <span className="s-btn-label s-mono">{plan.cta}</span>
-                <Arrow />
-              </Link>
-            </article>
-          ))}
+              </h2>
+              <p className="sv-text">{c.modesText}</p>
+            </div>
+            {plans.map(({ key, plan, Icon, filled }) => (
+              <article className={`sv-card sv-plan${filled ? " sv-plan-fill" : ""}`} key={key}>
+                <div className="sv-plan-head">
+                  <span className="sv-plan-icon" aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <h3 className="sv-h3">{plan.title}</h3>
+                </div>
+                <p className="sv-text">{plan.text}</p>
+                <ul className="sv-checks">
+                  {plan.checks.map((item) => (
+                    <li key={item}>
+                      <Check />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link href={contact} className={filled ? "sv-cta" : "sv-ghost sv-ghost-ink"}>
+                  {plan.cta}
+                  <ArrowUpRight className="sv-arrow" />
+                </Link>
+              </article>
+            ))}
+          </div>
         </section>
       </main>
       <SiteFooter />

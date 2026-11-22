@@ -17,6 +17,8 @@
   --ds-faint: rgba(242, 240, 234, 0.14);
   --ds-accent: #ff4a1c;        /* CTRL orange: CTAs, focus, highlights. One accent per view. */
   --ds-accent-ink: #0c0c0c;    /* text on the accent */
+  --ds-accent-hover: #e13a0f;  /* accent text hovered on light surfaces */
+  --ds-scrim: rgba(11, 11, 11, 0.45); /* flat overlay on hero photos */
   --ds-glass: rgba(20, 20, 20, 0.5);
   --ds-glass-light: rgba(255, 255, 255, 0.28);
 

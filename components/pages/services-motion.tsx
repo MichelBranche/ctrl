@@ -4,69 +4,73 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import { ENTER_SPRING, TEXT_SPRING, springEase } from "@/components/home/springs";
 import { playWhenReady } from "@/lib/ready";
+import { scheduleRefresh } from "@/lib/refresh";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 /**
- * Motion for /services. Initial states are set here only, so content stays
+ * Motion for /services, on the home springs. Initial states are set here only, so content stays
  * visible without JS and under prefers-reduced-motion.
  */
 export function ServicesMotion() {
   useGSAP(() => {
-    const root = document.querySelector<HTMLElement>(".s-root");
+    const root = document.querySelector<HTMLElement>(".sv");
     if (!root) return;
     const q = <T extends Element = HTMLElement>(sel: string) => Array.from(root.querySelectorAll<T & Element>(sel)) as T[];
+    const enter = springEase(ENTER_SPRING);
     const mm = gsap.matchMedia();
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
-      // Hero: chars rise through a mask, then tag, lead and CTA fade up.
-      const title = root.querySelector<HTMLElement>("[data-s-split]");
-      const intro = gsap.timeline({ delay: 0.15, paused: true });
+      const splits: SplitText[] = [];
+
+      // Hero: title words clear their blur on the text spring, then tag, lead and CTA rise.
+      const intro = gsap.timeline({ paused: true });
       playWhenReady(intro);
-      if (title) {
-        const split = SplitText.create(title, { type: "words,chars", mask: "words" });
-        intro.from(split.chars, { yPercent: 115, duration: 1.1, ease: "power4.out", stagger: 0.035 }, 0.1);
-      }
-      intro.from(q("[data-s-fade]"), { y: 22, autoAlpha: 0, duration: 0.9, ease: "power3.out", stagger: 0.12 }, 0);
-      const img = root.querySelector("[data-s-hero-img]");
+      q("[data-sv-words]").forEach((el) => {
+        const split = SplitText.create(el, { type: "words", wordsClass: "sv-word" });
+        splits.push(split);
+        intro.fromTo(split.words, { opacity: 0.001, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: TEXT_SPRING.duration, stagger: 0.05, ease: springEase(TEXT_SPRING), clearProps: "filter" }, 0.2);
+      });
+      intro.fromTo(q("[data-sv-fade]"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: ENTER_SPRING.duration, stagger: 0.08, ease: enter }, 0.45);
+      const img = root.querySelector("[data-sv-hero-img]");
       if (img) {
         intro.fromTo(img, { scale: 1.08 }, { scale: 1, duration: 2.2, ease: "power2.out" }, 0);
-        gsap.to(img, {
-          yPercent: 8,
-          ease: "none",
-          scrollTrigger: { trigger: ".s-hero", start: "top top", end: "bottom top", scrub: true },
-        });
+        gsap.to(img, { yPercent: 6, ease: "none", scrollTrigger: { trigger: "[data-sv-hero]", start: "top top", end: "bottom top", scrub: true } });
       }
 
-      // Grid: dividers draw in, then cells stagger up.
-      const grid = root.querySelector(".s-grid-wrap");
-      const tl = gsap.timeline({ scrollTrigger: { trigger: grid, start: "top 82%", once: true } });
-      tl.fromTo(q("[data-s-rule='x']"), { scaleX: 0 }, { scaleX: 1, duration: 1.4, ease: "power3.inOut" }, 0)
-        .fromTo(q("[data-s-rule='y']"), { scaleY: 0 }, { scaleY: 1, duration: 1.4, ease: "power3.inOut", stagger: 0.12 }, 0.1)
-        .from(q("[data-s-cell]"), { y: 40, autoAlpha: 0, duration: 1, ease: "power3.out", stagger: 0.09 }, 0.25)
-        .from(q(".s-points li"), { x: -10, autoAlpha: 0, duration: 0.6, ease: "power2.out", stagger: 0.025 }, 0.6);
+      // Blocks: titles by word, single blocks rise, card groups stagger.
+      q("[data-sv-title]").forEach((el) => {
+        const split = SplitText.create(el, { type: "words", wordsClass: "sv-word" });
+        splits.push(split);
+        gsap.fromTo(split.words, { opacity: 0, y: 40, filter: "blur(10px)" }, {
+          opacity: 1, y: 0, filter: "blur(0px)", duration: 1.1, stagger: 0.05, ease: "expo.out", clearProps: "filter",
+          scrollTrigger: { trigger: el, start: "top 88%" },
+        });
+      });
+      q("[data-sv-rise]").forEach((el) => {
+        gsap.fromTo(el, { opacity: 0, y: 48 }, { opacity: 1, y: 0, duration: ENTER_SPRING.duration, ease: enter, scrollTrigger: { trigger: el, start: "top 92%" } });
+      });
+      q("[data-sv-stagger]").forEach((group) => {
+        gsap.fromTo(group.children, { opacity: 0, y: 40 }, {
+          opacity: 1, y: 0, duration: ENTER_SPRING.duration, stagger: 0.07, ease: enter,
+          scrollTrigger: { trigger: group, start: "top 90%" },
+        });
+      });
 
       // Line-art mark draws itself, sparkle pops in.
-      const paths = q<SVGPathElement>(".s-mark [data-draw]");
+      const paths = q<SVGPathElement>(".sv-mark [data-draw]");
       paths.forEach((p) => {
         const len = p.getTotalLength();
         gsap.set(p, { strokeDasharray: len, strokeDashoffset: len });
       });
-      gsap.timeline({ scrollTrigger: { trigger: ".s-cell-mark", start: "top 85%", once: true } })
+      gsap.timeline({ scrollTrigger: { trigger: ".sv-mark-card", start: "top 85%", once: true } })
         .to(paths, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut", stagger: 0.35 })
-        .from(".s-spark", { scale: 0, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.8, ease: "back.out(2)" }, "-=0.8");
+        .from(".sv-spark", { scale: 0, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.8, ease: "back.out(2)" }, "-=0.8");
 
-      // Modes: intro, cards lift in, checks stagger.
-      gsap.from(q("[data-s-fade-scroll]"), {
-        y: 30, autoAlpha: 0, duration: 1, ease: "power3.out",
-        scrollTrigger: { trigger: ".s-modes", start: "top 82%", once: true },
-      });
-      q("[data-s-card]").forEach((card, i) => {
-        gsap.timeline({ scrollTrigger: { trigger: ".s-modes", start: "top 80%", once: true }, delay: 0.15 + i * 0.12 })
-          .from(card, { y: 48, autoAlpha: 0, duration: 1.1, ease: "power3.out" })
-          .from(card.querySelectorAll("[data-s-check]"), { x: -12, autoAlpha: 0, duration: 0.5, ease: "power2.out", stagger: 0.08 }, "-=0.5");
-      });
+      scheduleRefresh();
+      return () => splits.forEach((s) => s.revert());
     });
 
     return () => mm.revert();

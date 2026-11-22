@@ -12,6 +12,8 @@ export type Spring = { zeta: number; omega: number; duration: number };
 
 export const UI_SPRING: Spring = { zeta: 0.8, omega: 22.5, duration: 0.4 };
 export const TEXT_SPRING: Spring = { zeta: 1, omega: 4.6, duration: 2 };
+/** Inner pages: cards and blocks rising into place on scroll. Slightly underdamped, settles in ~1.2s. */
+export const ENTER_SPRING: Spring = { zeta: 0.86, omega: 7.5, duration: 1.2 };
 
 function position({ zeta, omega }: Spring, t: number) {
   if (zeta < 1) {
