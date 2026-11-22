@@ -17,6 +17,7 @@ import { breadcrumbNode, faqNode, publicMeta, schemaName, serviceNode, SITE_URL 
 import "@/components/projects/projects.css";
 import "@/components/services/webapp.css";
 import "@/components/pages/service-detail.css";
+import "@/components/ds/legacy-frame.css";
 
 const PARENT = "/services/growth-support";
 
@@ -67,7 +68,7 @@ export function SecurityView({ lang }: { lang: Locale }) {
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), securityServiceNode(lang), faqNode(p.faqs)]} />
       <SiteHeader />
-      <main className="p-root wa-root" data-motion-root>
+      <main className="p-root wa-root pf" data-motion-root>
         <section className="p-hero wa-hero">
           <span className="p-hero-frame wa-hero-frame" aria-hidden="true">
             <Image className="p-hero-img wa-hero-img sec-hero-img" src={SECURITY_IMAGE} alt="" fill priority sizes="(max-width: 760px) 100vw, 70vw" data-p-hero-img />
