@@ -13,8 +13,9 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 | Superfici admin (telaio dashboard, card metrica, tabella, stato vuoto, barre) | `components/ds/metric-card.tsx`, `data-table.tsx`, `empty-state.tsx`, `metric-bars.tsx` + `admin-ui.css` (`.ds-page`, `.ds-head`, `.ds-card`, `.ds-*`) |
 | Panoramica admin | `components/ds/overview.css` (prefisso `.ov`) |
 | Desk admin | `components/ds/desk.css` (prefisso `.dk`) |
-| CRM admin (Oggi, poi le altre sottosezioni) | `components/ds/crm.css` (prefisso `.cr`) |
-| Rubrica CRM (v2: header compatto, fasi, lista densa) | `components/ds/rubrica.css` (prefisso `.rb`, insieme a `.cr`) |
+| Cornice CRM condivisa (tab, Le mie/Team, check fatto, tip, cifre che rullano) | `components/ds/crm.css` (prefisso `.cr`) |
+| Rubrica CRM (v2: header compatto, fasi, lista densa) e primitive v2 condivise (`.rb-head`, `.rb-btn`, `.rb-cta`, `.rb-pop`, `.rb-stages`, `.rb-chip`, `.rb-cb`, `.rb-floatbar`) | `components/ds/rubrica.css` (prefisso `.rb`, insieme a `.cr`) |
+| CRM Oggi (v2: striscia scadenze, lista follow-up con Fatto e Rimanda, KPI a riquadri) | `components/ds/oggi.css` (prefisso `.og`, insieme a `.cr .rb`) |
 | Stato dei dati (fase, punteggio, scadenza, avatar per categoria) | `components/ds/status.tsx` + `status.css` (`.ds-stage`, `.ds-score`, `.ds-due`, `.ds-avatar`) |
 | Cornice admin (sidebar, header, palette, drawer, campanella) | `components/ds/admin-shell.css` (classi `.adm-*` del telaio, token `--ds-*`) |
 | Badge team | `components/team-badge.tsx` + `components/pages/team-badge.css` |
@@ -34,6 +35,7 @@ Il linguaggio visivo delle pagine nuove (home, /team, /ctrl-quotes). Ogni pagina
 9. **Livelli.** Header 60, progress 70, back-to-top 90, cursore 140, assistente 150, carrello 180, transizione 190, command menu 200 (`--ds-z-*`).
 10. **Accessibilità.** Focus visibile (outline 2px accento), target touch di almeno 44px (`--ds-control` è 40px col mouse e 44px su touch), nome accessibile su ogni icona-link.
 11. **Liste admin.** Una card per la lista con toolbar in testa (segmenti + vista, poi ricerca, Filtri in popover, ordinamento), filtri attivi come chip rimovibili, tabella densa (`--ds-row`) con colonne che spariscono in base alla larghezza della lista (container query), righe con ingresso sfalsato. Le animazioni d'ingresso dei contenitori usano `backwards`, non `both`: una transform trattenuta renderebbe il contenitore il riferimento dei figli `position: fixed`.
+12. **Viste v2.** Una vista v2 mette sul `main` le classi `.rb` (primitive condivise) più il suo prefisso, e riusa `rb-head` con le tab, i riquadri a tessera (`rb-stages`: barra proporzionale + tessere con pallino colorato, numero grande e quota, cliccabili come filtro) e i popover `details.rb-pop` chiusi da `PopDismiss`. Scadenze: rosso in ritardo, ambra oggi, blu domani. Le azioni rapide usano solo le server action esistenti. I tooltip chiusi non occupano spazio (`display: none`), così non allargano la pagina sul telefono.
 
 ## Per una pagina nuova
 
@@ -41,4 +43,4 @@ Copia il telaio della home (`hv-block` > `hv-card`), prendi i testi da `lib/i18n
 
 ## Admin, conversione
 
-La cornice (sidebar, header, ricerca, menu account) è già sui token `--ds-*` tramite `components/ds/admin-shell.css`. Le viste interne convertite importano `components/ds/admin-ui.css` e i componenti `.ds-*`, e hanno un prefisso di pagina: `.eco` Ecosistema, `.ov` Panoramica (`overview.css`), `.dk` Desk (`desk.css`), `.cr` CRM (`crm.css`), `.rb` Rubrica (`rubrica.css`, il modello per le prossime viste). Le altre sezioni interne usano ancora gli stili `--adm-*` finché non vengono convertite.
+La cornice (sidebar, header, ricerca, menu account) è già sui token `--ds-*` tramite `components/ds/admin-shell.css`. Le viste interne convertite importano `components/ds/admin-ui.css` e i componenti `.ds-*`, e hanno un prefisso di pagina: `.eco` Ecosistema, `.ov` Panoramica (`overview.css`), `.dk` Desk (`desk.css`), `.cr` CRM (`crm.css`), `.rb` Rubrica (`rubrica.css`, il modello per le prossime viste), `.og` CRM Oggi (`oggi.css`). Le altre sezioni interne usano ancora gli stili `--adm-*` finché non vengono convertite.

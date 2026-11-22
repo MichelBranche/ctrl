@@ -550,18 +550,18 @@ export async function crmStats(now = new Date()): Promise<CrmStats> {
   return { leadsMonth: Number(x.leads ?? 0), won: Number(x.won ?? 0), lost: Number(x.lost ?? 0), openValue: Number(x.open_value ?? 0), wonValue: Number(x.won_value ?? 0) };
 }
 
-export type DueAction = { id: string; businessName: string; nextAction: string | null; nextActionAt: string; stage: Stage; ownerUserId: string | null; ownerName: string | null };
+export type DueAction = { id: string; businessName: string; nextAction: string | null; nextActionAt: string; stage: Stage; ownerUserId: string | null; ownerName: string | null; version: number };
 /** Open contacts whose next action is due by `until` (Rome date, default today), overdue included. ownerId null = everyone's. */
 export async function dueActions(ownerId: string | null, today: string, until = today): Promise<DueAction[]> {
   await ensureCrmSchema();
   const end = until > today ? until : today;
   const res = await db().execute({
-    sql: `SELECT c.id, c.business_name, c.next_action, c.next_action_at, c.stage, c.owner_user_id, u.name AS owner_name ${FROM}
+    sql: `SELECT c.id, c.business_name, c.next_action, c.next_action_at, c.stage, c.owner_user_id, c.version, u.name AS owner_name ${FROM}
       WHERE c.archived = 0 AND c.stage NOT IN ('vinto','perso') AND c.next_action_at IS NOT NULL AND substr(c.next_action_at, 1, 10) <= ?
       ${ownerId ? "AND (c.owner_user_id = ? OR (c.owner_user_id IS NULL AND c.created_by = ?))" : ""} ORDER BY c.next_action_at LIMIT 50`,
     args: ownerId ? [end, ownerId, ownerId] : [end],
   });
-  return res.rows.map((r) => ({ id: String(r.id), businessName: String(r.business_name), nextAction: s(r.next_action), nextActionAt: String(r.next_action_at), stage: isStage(r.stage) ? r.stage : "nuovo", ownerUserId: r.owner_user_id ? String(r.owner_user_id) : null, ownerName: s(r.owner_name) }));
+  return res.rows.map((r) => ({ id: String(r.id), businessName: String(r.business_name), nextAction: s(r.next_action), nextActionAt: String(r.next_action_at), stage: isStage(r.stage) ? r.stage : "nuovo", ownerUserId: r.owner_user_id ? String(r.owner_user_id) : null, ownerName: s(r.owner_name), version: Number(r.version ?? 1) }));
 }
 
 /**

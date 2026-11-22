@@ -1,0 +1,435 @@
+/* CRM Oggi /admin/crm, v2. Prefix .og, on a main that also carries .cr (CRM chrome) and .rb (shared v2 primitives:
+   header, buttons, popovers, stage tiles). Structure: header with tabs, "Da fare oggi" strip in due-date colours
+   (filters the list), dense follow-up list with Fatto and Rimanda, attention and feed on the side, KPI tiles, stages.
+   Tokens only; rules in docs/design-system.md. */
+
+/* ---------- Colour hooks: due buckets, activity kinds, KPIs ---------- */
+.og [data-due] { --c: var(--ds-stage-nuovo); }
+.og [data-due="ritardo"] { --c: var(--ds-danger); }
+.og [data-due="oggi"] { --c: var(--ds-warn); }
+.og [data-due="domani"] { --c: var(--ds-info); }
+.og [data-kind] { --c: var(--ds-stage-nuovo); }
+.og [data-kind="contatto"], .og [data-kind="followup"] { --c: var(--ds-info); }
+.og [data-kind="email"] { --c: var(--ds-tone-6); }
+.og [data-kind="call"] { --c: var(--ds-ok); }
+.og [data-kind="meeting"] { --c: var(--ds-stage-call); }
+.og [data-kind="radar"] { --c: var(--ds-tone-5); }
+.og [data-kpi="contatti"] { --c: var(--ds-info); }
+.og [data-kpi="assegnati"] { --c: var(--ds-ok); }
+.og [data-kpi="opportunita"] { --c: var(--ds-stage-preventivo); }
+.og [data-kpi="dafare"] { --c: var(--ds-warn); }
+
+.og-strip, .og-list, .og-side > *, .og-kpis, .og-pipe { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) backwards; }
+.og-strip { animation-delay: 0.04s; }
+.og-list { animation-delay: 0.08s; }
+.og-side > :nth-child(1) { animation-delay: 0.1s; }
+.og-side > :nth-child(2) { animation-delay: 0.13s; }
+.og-kpis { animation-delay: 0.16s; }
+.og-pipe { animation-delay: 0.2s; }
+
+.og h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.og-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.og-link svg { width: 14px; height: 14px; transition: transform var(--ds-dur-fast) var(--ds-ease); }
+.og-link:hover { color: var(--ds-fg); }
+.og-link:hover svg { transform: translateX(2px); }
+.og-link:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; border-radius: var(--ds-r-sm); }
+
+/* ---------- Header extras ---------- */
+.og .rb-head h1 .rb-count { text-transform: none; }
+.og-more-panel { width: 15.5rem; gap: 0.1rem; padding: 0.4rem; }
+.og-more-panel a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  border-radius: var(--ds-r-sm);
+  color: var(--ds-fg);
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+}
+.og-more-panel a svg { width: 15px; height: 15px; color: var(--ds-dim); }
+.og-more-panel a span { flex: 1; }
+.og-more-panel a kbd { padding: 0.1rem 0.35rem; border: 1px solid var(--ds-faint); border-radius: var(--ds-r-sm); color: var(--ds-dim); font: inherit; font-size: 0.68rem; }
+.og-more-panel a:hover { background: color-mix(in srgb, var(--ds-fg) 6%, transparent); }
+.og-more-panel a:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }
+
+/* ---------- "Da fare oggi" strip ---------- */
+.og-strip {
+  padding: 1.1rem var(--rb-pad-x) 0.9rem;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.og-strip-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem; }
+.og .og-strip-head .crm-scope { margin: 0; }
+.og-strip-bar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-faint);
+}
+.og-strip-bar > span {
+  min-width: 6px;
+  flex-basis: 0;
+  background: var(--c);
+  transform-origin: left center;
+  animation: ds-grow var(--ds-dur-slow) var(--ds-ease) both;
+  animation-delay: calc(0.15s + var(--i) * 60ms);
+  transition: opacity var(--ds-dur) var(--ds-ease-std);
+}
+.og-strip-bar > .og-strip-idle { flex: 1; background: transparent; animation: none; }
+.og-strip[data-active] .og-strip-bar > span { opacity: 0.25; }
+.og-strip[data-active="ritardo"] .og-strip-bar > [data-due="ritardo"],
+.og-strip[data-active="oggi"] .og-strip-bar > [data-due="oggi"],
+.og-strip[data-active="domani"] .og-strip-bar > [data-due="domani"] { opacity: 1; }
+
+.og-strip-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+}
+.og-strip-tiles a,
+.og-kpi {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "label label" "n sub";
+  align-items: baseline;
+  gap: 0.3rem 0.55rem;
+  padding: 0.65rem 0.8rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: var(--ds-r-tile);
+  color: var(--ds-fg);
+  text-decoration: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), border-color var(--ds-dur-fast) var(--ds-ease-std), opacity var(--ds-dur) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.og-strip-tiles a:hover, a.og-kpi:hover { background: color-mix(in srgb, var(--c) 9%, var(--ds-card)); border-color: color-mix(in srgb, var(--c) 24%, transparent); }
+.og-strip-tiles a:active, a.og-kpi:active { transform: scale(0.98); }
+.og-strip-tiles a:focus-visible, a.og-kpi:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.og-strip-tiles a[aria-current] { background: color-mix(in srgb, var(--c) 14%, var(--ds-card)); border-color: color-mix(in srgb, var(--c) 50%, transparent); }
+.og-strip-tiles a[data-due="tutto"][aria-current] { background: var(--ds-card-2); border-color: var(--ds-faint); }
+.og-strip[data-active] .og-strip-tiles a:not([aria-current]) { opacity: 0.6; }
+.og-strip[data-active] .og-strip-tiles a:not([aria-current]):hover { opacity: 1; }
+.og-tile-label {
+  grid-area: label;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  color: var(--ds-dim);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.og-tile-label > i { width: 0.5rem; height: 0.5rem; flex: none; border-radius: var(--ds-r-pill); background: var(--c); }
+.og-tile-n, .og-kpi-n {
+  grid-area: n;
+  font-family: var(--ds-font-display);
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.og-strip-tiles a[data-due="ritardo"] .og-tile-n { color: color-mix(in srgb, var(--c) 80%, var(--ds-fg)); }
+.og-tile-sub { grid-area: sub; overflow: hidden; color: var(--ds-dim); font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Layout ---------- */
+.og-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+  align-items: start;
+  gap: var(--ds-gap);
+}
+.og-side { display: flex; flex-direction: column; gap: var(--ds-gap); min-width: 0; }
+.og-list, .og-card, .og-pipe {
+  min-width: 0;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.og-list-head, .og-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding: 0.5rem var(--rb-pad-x);
+  border-bottom: 1px solid var(--ds-faint);
+}
+
+/* ---------- Dense follow-up list ---------- */
+.og-group + .og-group { border-top: 1px solid var(--ds-faint); }
+.og-group-h {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem var(--rb-pad-x) 0.35rem;
+  color: color-mix(in srgb, var(--c) 78%, var(--ds-fg));
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.og-group-h > i { width: 0.5rem; height: 0.5rem; border-radius: var(--ds-r-pill); background: var(--c); }
+.og-group-h > span { color: var(--ds-dim); font-weight: 500; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.og-rows { margin: 0; padding: 0 0 0.35rem; list-style: none; }
+.og-li { list-style: none; }
+/* An open Rimanda menu must not be clipped by the collapse wrapper of activity rows. */
+.og .crm-leave:not(.is-leaving) .crm-leave-clip { overflow: visible; }
+.og-row {
+  display: grid;
+  grid-template-columns: 2rem 2rem minmax(0, 1fr) auto auto;
+  grid-template-areas: "done kind main when act";
+  align-items: center;
+  gap: 0 0.75rem;
+  min-height: var(--ds-row);
+  padding: 0.35rem calc(var(--rb-pad-x) - 0.4rem) 0.35rem var(--rb-pad-x);
+  border-top: 1px solid color-mix(in srgb, var(--ds-faint) 60%, transparent);
+  animation: rb-row-in var(--ds-dur-slow) var(--ds-ease) backwards;
+  animation-delay: calc(0.12s + var(--i, 0) * 26ms);
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.og-rows > :first-child .og-row { border-top-color: transparent; }
+.og-row:hover { background: color-mix(in srgb, var(--ds-fg) 3%, transparent); }
+.og-row-done { grid-area: done; display: grid; place-items: center; min-width: 0; }
+.og .og-row-done .crm-check { width: 1.35rem; height: 1.35rem; color: transparent; }
+.og .og-row-done .crm-check:hover { border-color: var(--ds-ok); color: var(--ds-ok); }
+.og .og-row-done .crm-check:disabled { border-color: var(--ds-ok); background: var(--ds-ok); color: var(--ds-ink); }
+.og .og-row-done form { display: grid; place-items: center; }
+.og .og-row-done input[type="checkbox"] {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  border: 1.5px solid var(--ds-dim);
+  border-radius: var(--ds-r-sm);
+  background: transparent;
+  appearance: none;
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std), background-color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.og .og-row-done input[type="checkbox"]:hover { border-color: var(--ds-ok); }
+.og .og-row-done input[type="checkbox"]:checked,
+.og .og-row-done input[type="checkbox"]:disabled { border-color: var(--ds-ok); background: var(--ds-ok); }
+.og .og-row-done input[type="checkbox"]:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.og-row-done .adm-error, .og-row-error { position: absolute; margin: 0; }
+
+.og-kind {
+  grid-area: kind;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: var(--ds-r-tile);
+  background: color-mix(in srgb, var(--c) 15%, var(--ds-card));
+  color: color-mix(in srgb, var(--c) 88%, var(--ds-fg));
+}
+.og-kind svg { width: 15px; height: 15px; }
+.og-row-main { grid-area: main; display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.og-row-title {
+  overflow: hidden;
+  color: var(--ds-fg);
+  font-size: var(--ds-text-body);
+  font-weight: 500;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.og-row-title:hover { color: var(--ds-accent); }
+.og-row-title:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; border-radius: var(--ds-r-sm); }
+.og-row-sub { display: flex; align-items: center; gap: 0.5rem; min-width: 0; color: var(--ds-dim); font-size: 0.78rem; }
+.og-row-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.og-row-sub .ds-stage { height: 1.3rem; font-size: 0.68rem; }
+.og-row-owner { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.og-row-owner .ds-avatar[data-size="sm"] { width: 1.2rem; height: 1.2rem; font-size: 0.52rem; }
+.og-row-when { grid-area: when; display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+.og-clock { min-width: 2.6rem; color: var(--ds-dim); font-size: 0.78rem; font-variant-numeric: tabular-nums; text-align: right; }
+.og-row-act { grid-area: act; position: relative; }
+.og-snooze-btn { height: 34px; padding: 0 0.7rem; color: var(--ds-dim); }
+.og-snooze-btn svg { width: 14px; height: 14px; }
+.og-snooze[open] .og-snooze-btn { color: var(--ds-fg); }
+.og-snooze-btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+.og-snooze-panel { width: 14.5rem; gap: 0.1rem; padding: 0.45rem; }
+.og-snooze-panel .rb-pop-title { padding: 0.25rem 0.5rem 0.35rem; color: var(--ds-dim); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.og-snooze-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: var(--ds-r-sm);
+  background: none;
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  text-align: left;
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
+}
+.og-snooze-panel button small { color: var(--ds-dim); font-size: 0.72rem; }
+.og-snooze-panel button:hover:not(:disabled) { background: color-mix(in srgb, var(--ds-info) 14%, transparent); }
+.og-snooze-panel button:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }
+.og-snooze-panel button:disabled { opacity: 0.5; cursor: wait; }
+.og-row-error { right: 0; top: calc(100% + 0.2rem); z-index: var(--ds-z-admin-topbar); padding: 0.3rem 0.5rem; border-radius: var(--ds-r-sm); background: var(--ds-card-2); white-space: nowrap; }
+
+.og-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 1.4rem var(--rb-pad-x);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+.og-empty svg { width: 16px; height: 16px; color: var(--ds-ok); }
+
+/* ---------- Side: attention and feed ---------- */
+.og-attn { display: flex; flex-direction: column; }
+.og-attn-block { --c: var(--ds-ok); display: flex; flex-direction: column; gap: 0.4rem; padding: 0.85rem var(--rb-pad-x) 0.75rem; }
+.og-attn-block + .og-attn-block { border-top: 1px solid var(--ds-faint); }
+.og-attn-block[data-tone="warn"] { --c: var(--ds-warn); }
+.og-attn-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--ds-dim); font-size: var(--ds-text-small); }
+.og-attn-title > i { width: 0.5rem; height: 0.5rem; border-radius: var(--ds-r-pill); background: var(--c); }
+.og-attn-title b { margin-left: auto; color: color-mix(in srgb, var(--c) 80%, var(--ds-fg)); font-family: var(--ds-font-display); font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.og-mini { margin: 0; padding: 0; list-style: none; }
+.og-mini li { display: flex; align-items: center; gap: 0.6rem; min-height: 38px; min-width: 0; }
+.og-mini a { flex: 1; min-width: 0; overflow: hidden; color: var(--ds-fg); font-size: var(--ds-text-small); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.og-mini a:hover { color: var(--ds-accent); }
+.og-mini a:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; border-radius: var(--ds-r-sm); }
+.og-mini-meta { color: var(--ds-dim); font-size: 0.72rem; white-space: nowrap; }
+.og-mini-empty { margin: 0; color: var(--ds-dim); font-size: var(--ds-text-small); }
+.og-attn-block .og-link { align-self: flex-start; }
+
+.og-feed { margin: 0; padding: 0.35rem 0; list-style: none; }
+.og-feed li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3.25rem;
+  padding: 0.3rem var(--rb-pad-x);
+}
+.og-feed-icon {
+  --c: var(--ds-stage-nuovo);
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) 15%, var(--ds-card));
+  color: color-mix(in srgb, var(--c) 88%, var(--ds-fg));
+}
+.og-feed-icon[data-tone="ok"] { --c: var(--ds-ok); }
+.og-feed-icon[data-tone="accent"] { --c: var(--ds-stage-preventivo); }
+.og-feed-icon[data-tone="violet"] { --c: var(--ds-stage-call); }
+.og-feed-icon svg { width: 15px; height: 15px; }
+.og-feed-line { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.og-feed-line > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.og-feed-line a, .og-feed-line strong { color: var(--ds-fg); font-size: var(--ds-text-small); font-weight: 500; text-decoration: none; }
+.og-feed-line a:hover { color: var(--ds-accent); }
+.og-feed-line > span { color: var(--ds-dim); font-size: 0.75rem; }
+.og-feed time { color: var(--ds-dim); font-size: 0.72rem; white-space: nowrap; }
+
+/* ---------- KPI tiles ---------- */
+.og-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.og-kpi { grid-template-areas: "label label" "n n" "meta meta" "spark spark"; padding: 0.85rem 0.9rem 0.6rem; }
+.og-kpi-n { font-size: 2rem; }
+.og-kpi-meta { grid-area: meta; display: inline-flex; align-items: center; gap: 0.35rem; color: var(--ds-dim); font-size: 0.75rem; }
+.og-kpi-meta[data-tone="ok"] { color: var(--ds-ok); }
+.og-kpi-meta[data-tone="warn"] { color: var(--ds-warn); }
+.og-kpi-meta[data-tone="late"] { color: var(--ds-danger); }
+.og .og-kpi .crm-spark { grid-area: spark; width: 100%; height: 2.25rem; margin-top: 0.25rem; }
+.og .og-kpi .crm-spark-line { stroke: var(--c); }
+.og .og-kpi .crm-spark-area { fill: color-mix(in srgb, var(--c) 14%, transparent); }
+.og .og-kpi .crm-tip { margin-left: 0.1rem; }
+.og .og-kpi .crm-spark-line { vector-effect: non-scaling-stroke; }
+.og .og-kpi .crm-spark.is-idle { box-sizing: border-box; background: transparent; border-bottom: 1px dashed var(--ds-faint); }
+/* Closed tips take no room, so they never widen the page on a phone. */
+.og .crm-tip-bubble { display: none; max-width: min(16rem, calc(100vw - 3rem)); }
+.og .crm-tip:hover .crm-tip-bubble, .og .crm-tip:focus-visible .crm-tip-bubble { display: block; }
+.og [data-kpi="dafare"] .crm-tip-bubble { left: auto; right: -1rem; }
+
+/* ---------- Stages ---------- */
+.og-pipe .og-pipe-head { border-bottom: 0; padding-bottom: 0; min-height: 3rem; }
+.og-pipe .rb-stages { padding-top: 0.75rem; animation: none; background: transparent; }
+
+.og-skel { border-radius: var(--ds-r-card); background: var(--ds-card); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1180px) {
+  .og-grid { grid-template-columns: 1fr; }
+  .og-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+@media (max-width: 860px) {
+  .og-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .og-side { display: flex; align-items: stretch; }
+}
+@media (max-width: 640px) {
+  .og-strip-head { flex-wrap: wrap; }
+  .og-strip-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .og-tile-n { font-size: 1.4rem; }
+  .og-kpi-n { font-size: 1.6rem; }
+  .og-more { flex: 0 0 auto !important; }
+  .og-more .rb-btn > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .og-more .rb-btn { width: var(--ds-control); padding: 0; }
+  .og-more-panel { left: 0; right: auto; transform-origin: top left; }
+  .og-row {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    grid-template-areas: "done main main" "done when act";
+    gap: 0.35rem 0.6rem;
+    padding: 0.6rem 0.6rem 0.6rem var(--rb-pad-x);
+  }
+  .og-kind { display: none; }
+  .og-row-done { align-self: start; padding-top: 0.15rem; }
+  .og-row-when { justify-content: flex-start; }
+  .og-clock { min-width: 0; text-align: left; }
+  .og-row-sub { flex-wrap: wrap; row-gap: 0.25rem; }
+  .og-row-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .og-snooze-panel { position: fixed; top: auto; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; transform-origin: bottom center; }
+}
+@media (pointer: coarse) {
+  .og-snooze-btn { height: 40px; }
+  .og .og-row-done .crm-check, .og .og-row-done input[type="checkbox"] { width: 1.6rem; height: 1.6rem; }
+  .og-row-done { min-width: 44px; min-height: 44px; }
+  .og-row { grid-template-columns: 44px minmax(0, 1fr) auto; }
+}
+@media (pointer: coarse) and (min-width: 641px) {
+  .og-row { grid-template-columns: 44px 2rem minmax(0, 1fr) auto auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .og-strip, .og-list, .og-side > *, .og-kpis, .og-pipe, .og-row, .og-strip-bar > span { animation: none; }
+  .og *, .og *::after { transition-duration: 0.01ms !important; }
+  .og-link:hover svg, .og-strip-tiles a:active, a.og-kpi:active { transform: none; }
+}

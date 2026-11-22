@@ -46,7 +46,7 @@ const X = "M6 6l12 12M18 6 6 18";
  * Every control writes the URL, so refresh, back/forward and saved views restore the same list.
  */
 /** Closes open menus (filters, saved views, stage, bulk) on an outside click or Escape. */
-function PopDismiss() {
+export function PopDismiss() {
   useEffect(() => {
     const close = (keep?: Element | null) => {
       for (const d of document.querySelectorAll<HTMLDetailsElement>(".rb details.rb-pop[open], .rb details.rb-stage-menu[open]")) if (!keep || !d.contains(keep)) d.removeAttribute("open");
