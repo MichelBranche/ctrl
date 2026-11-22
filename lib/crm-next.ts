@@ -36,3 +36,19 @@ export function pickNextTouch(items: NextCandidate[], today: string): NextTouch 
   const at = best.at.slice(0, 10);
   return { title: best.title.trim() || "Attività", at, overdue: at < today, relative: relativeDay(at, today), source: best.source };
 }
+
+/** Short Italian "time ago" for a timestamp: "ora", "12 min fa", "3 h fa", "ieri", "5 gg fa", then "12/10". */
+export function agoLabel(iso: string | null | undefined, now: number = Date.now()): string {
+  const t = iso ? Date.parse(iso.includes("T") || iso.includes(" ") ? iso.replace(" ", "T").replace(/(T[\d:.]+)$/, "$1Z") : `${iso}T12:00:00Z`) : NaN;
+  if (!Number.isFinite(t)) return "";
+  const min = Math.max(0, Math.round((now - t) / 60_000));
+  if (min < 1) return "ora";
+  if (min < 60) return `${min} min fa`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} h fa`;
+  const d = Math.round(h / 24);
+  if (d === 1) return "ieri";
+  if (d < 30) return `${d} gg fa`;
+  const date = new Date(t);
+  return `${date.getUTCDate()}/${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}

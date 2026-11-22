@@ -1,0 +1,109 @@
+/* Data-status atoms (components/ds/status.tsx). Colours from the --ds-stage-*, --ds-tone-*, --ds-ok/warn/danger tokens.
+   Reusable on every converted admin view: Rubrica first, then Oggi, Pipeline, Panoramica. */
+
+.ds-stage {
+  --c: var(--ds-stage-nuovo);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 1.6rem;
+  padding: 0 0.6rem 0 0.5rem;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) 14%, var(--ds-card));
+  color: color-mix(in srgb, var(--c) 82%, var(--ds-fg));
+  font-size: 0.75rem;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ds-stage > i {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: none;
+  border-radius: var(--ds-r-pill);
+  background: var(--c);
+}
+.ds-stage[data-stage="contattato"] { --c: var(--ds-stage-contattato); }
+.ds-stage[data-stage="call"] { --c: var(--ds-stage-call); }
+.ds-stage[data-stage="preventivo"] { --c: var(--ds-stage-preventivo); }
+.ds-stage[data-stage="vinto"] { --c: var(--ds-stage-vinto); }
+.ds-stage[data-stage="perso"] { --c: var(--ds-stage-perso); }
+
+.ds-score {
+  --c: var(--ds-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--ds-text-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ds-score[data-level="alto"] { --c: var(--ds-ok); }
+.ds-score[data-level="medio"] { --c: var(--ds-warn); }
+.ds-score[data-level="basso"] { --c: var(--ds-stage-nuovo); }
+.ds-score-bar {
+  position: relative;
+  width: 3.25rem;
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-faint);
+}
+.ds-score[data-compact] .ds-score-bar { width: 2.25rem; }
+.ds-score-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--c);
+  transform-origin: left center;
+  animation: ds-grow var(--ds-dur-slow) var(--ds-ease) both;
+  animation-delay: calc(var(--i, 0) * 22ms + 0.12s);
+}
+.ds-score-n { min-width: 1.5rem; color: var(--ds-fg); font-weight: 600; }
+.ds-score[data-level="none"] .ds-score-n { color: var(--ds-dim); font-weight: 400; }
+
+.ds-due {
+  display: inline-flex;
+  align-items: center;
+  height: 1.35rem;
+  padding: 0 0.45rem;
+  border-radius: var(--ds-r-sm);
+  background: var(--ds-card-2);
+  color: var(--ds-dim);
+  font-size: 0.72rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.ds-due[data-state="late"] { background: color-mix(in srgb, var(--ds-danger) 16%, var(--ds-card)); color: var(--ds-danger); }
+.ds-due[data-state="today"] { background: color-mix(in srgb, var(--ds-warn) 16%, var(--ds-card)); color: var(--ds-warn); }
+
+.ds-avatar {
+  --c: var(--ds-tone-1);
+  display: inline-grid;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: var(--ds-r-tile);
+  background: color-mix(in srgb, var(--c) 20%, var(--ds-card));
+  color: color-mix(in srgb, var(--c) 88%, var(--ds-fg));
+  font-family: var(--ds-font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ds-avatar[data-size="sm"] { width: 1.5rem; height: 1.5rem; border-radius: var(--ds-r-pill); font-size: 0.62rem; }
+.ds-avatar[data-size="lg"] { width: 2.75rem; height: 2.75rem; font-size: 0.9rem; }
+.ds-avatar[data-tone="2"] { --c: var(--ds-tone-2); }
+.ds-avatar[data-tone="3"] { --c: var(--ds-tone-3); }
+.ds-avatar[data-tone="4"] { --c: var(--ds-tone-4); }
+.ds-avatar[data-tone="5"] { --c: var(--ds-tone-5); }
+.ds-avatar[data-tone="6"] { --c: var(--ds-tone-6); }
+.ds-avatar[data-tone="7"] { --c: var(--ds-tone-7); }
+.ds-avatar[data-tone="8"] { --c: var(--ds-tone-8); }
+
+@keyframes ds-grow { from { transform: scaleX(0); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-score-bar > span { animation: none; }
+}

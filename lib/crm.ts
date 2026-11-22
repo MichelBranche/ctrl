@@ -304,6 +304,16 @@ export async function countContacts(f: ContactFilter = {}): Promise<number> {
   return Number(r.rows[0]?.n ?? 0);
 }
 
+/** Contacts per stage for the same filter (read-only). Stages with no rows come back as 0. */
+export async function stageCounts(f: ContactFilter = {}): Promise<Record<Stage, number>> {
+  await ensureCrmSchema();
+  const { where, args } = contactWhere({ ...f, stage: undefined });
+  const r = await db().execute({ sql: `SELECT c.stage AS stage, COUNT(*) AS n FROM crm_contacts c WHERE ${where} GROUP BY c.stage`, args });
+  const out = Object.fromEntries(STAGES.map((s) => [s, 0])) as Record<Stage, number>;
+  for (const row of r.rows) if (isStage(row.stage)) out[row.stage] = Number(row.n ?? 0);
+  return out;
+}
+
 export type RubricaSegments = { tutti: number; aziende: number; persone: number; liberi: number };
 
 /** Real sizes of the rubrica segments. Archived contacts stay out. */

@@ -23,6 +23,31 @@
   --ds-glass: rgba(20, 20, 20, 0.5);
   --ds-glass-light: rgba(255, 255, 255, 0.28);
 
+  /* ---------- Colour: data status (admin and product UI) ----------
+     Meaning, not decoration: pipeline stages, scores, due dates, categories. Never on chrome (buttons, nav, focus stay
+     on --ds-accent). Tuned for text and 14–22% tints on --ds-card; each passes 4.5:1 as text on --ds-card. */
+  --ds-stage-nuovo: #9aa3b5;      /* slate: lead to qualify */
+  --ds-stage-contattato: #5fa8ff; /* blue: first touch done */
+  --ds-stage-call: #b18cff;       /* violet: in conversation */
+  --ds-stage-preventivo: #f5c451; /* amber: offer sent */
+  --ds-stage-vinto: #3fd69a;      /* green: won */
+  --ds-stage-perso: #ff7a7a;      /* red: lost */
+  --ds-ok: #3fd69a;               /* positive values, high score */
+  --ds-warn: #f5c451;             /* due today, medium score */
+  --ds-danger: #ff7a7a;           /* overdue, errors */
+  --ds-info: #5fa8ff;
+  --ds-tone-1: #5fa8ff;           /* category tones for avatars and tags, picked by a stable hash */
+  --ds-tone-2: #b18cff;
+  --ds-tone-3: #3fd69a;
+  --ds-tone-4: #f5c451;
+  --ds-tone-5: #ff8fb8;
+  --ds-tone-6: #4fd1d9;
+  --ds-tone-7: #ff9e64;
+  --ds-tone-8: #a3e36b;
+  --ds-tint: 18%;                 /* background tint of a status colour on a dark card: color-mix(in srgb, X var(--ds-tint), var(--ds-card)) */
+  --ds-row: 3.5rem;               /* dense table row (admin lists) */
+  --ds-control: 40px;             /* toolbar controls on fine pointers; 44px on touch */
+
   /* ---------- Colour: product palette, CTRL® Quotes (only inside Quotes cards) ---------- */
   --ds-q-violet: #7c3aed;
   --ds-q-violet-ink: #5b21b6;

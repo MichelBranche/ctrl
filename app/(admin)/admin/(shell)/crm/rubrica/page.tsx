@@ -1,5 +1,7 @@
 import "@/components/ds/admin-ui.css";
 import "@/components/ds/crm.css";
+import "@/components/ds/status.css";
+import "@/components/ds/rubrica.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -7,14 +9,16 @@ import { ContactForm } from "@/components/admin/crm/contact-form";
 import { ImportDialog } from "@/components/admin/crm/import-dialog";
 import { ContactPanel } from "@/components/admin/crm/contact-panel";
 import { NewContactShortcut } from "@/components/admin/crm/follow-up-client";
-import { avatarHue, CrmIcon, CrmTabs, initials, romeToday } from "@/components/admin/crm/crm-ui";
+import { CrmIcon, CrmTabs, initials, romeToday } from "@/components/admin/crm/crm-ui";
 import { RubricaBoard, type BoardRow, type SortHead } from "@/components/admin/crm/rubrica-board";
-import { RubricaSegments, RubricaTools, VistaMemory } from "@/components/admin/crm/rubrica-tools";
+import { RubricaStages } from "@/components/admin/crm/rubrica-stages";
+import { RubricaToolbar, VistaMemory } from "@/components/admin/crm/rubrica-tools";
+import { toneOf } from "@/components/ds/status";
 import { requireSection } from "@/lib/admin";
-import { backfillRequests, countContacts, crmOwners, facets, listContacts, openActivitiesFor, rubricaSegments, type ContactFilter } from "@/lib/crm";
+import { backfillRequests, countContacts, crmOwners, facets, listContacts, openActivitiesFor, rubricaSegments, stageCounts, type ContactFilter } from "@/lib/crm";
 import { isSource, isStage } from "@/lib/crm-core";
 import { resolveKind } from "@/lib/crm-kind";
-import { pickNextTouch } from "@/lib/crm-next";
+import { agoLabel, pickNextTouch } from "@/lib/crm-next";
 import { listSavedViews } from "@/lib/crm-views";
 import {
   ATTIVITA, contactEmailPath, contactMailSearch, defaultContactMail, PANEL_TABS, parseRubricaQuery, RUBRICA, RUBRICA_PAGE_SIZE, RUBRICA_SORTS,
@@ -32,10 +36,10 @@ export default function RubricaPage({ searchParams }: { searchParams: Promise<SP
 
 function RubricaSkeleton() {
   return (
-    <main className="ds-page cr" aria-busy="true" aria-label="Caricamento della rubrica">
-      <div className="ds-head cr-skel" style={{ minHeight: "8.5rem" }} />
-      <div className="cr-skel" style={{ height: "2.4rem" }} />
-      <div className="cr-skel" style={{ height: "24rem" }} />
+    <main className="ds-page cr rb" aria-busy="true" aria-label="Caricamento della rubrica">
+      <div className="rb-skel" style={{ height: "7.5rem" }} />
+      <div className="rb-skel" style={{ height: "6rem" }} />
+      <div className="rb-skel" style={{ height: "28rem" }} />
     </main>
   );
 }
@@ -67,8 +71,8 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     kind: query.seg === "aziende" ? "azienda" : query.seg === "persone" ? "persona" : undefined,
   };
   const pageOf = (p: number) => listContacts({ ...filter, sort: query.ordina, dir: query.dir, limit: RUBRICA_PAGE_SIZE, offset: (p - 1) * RUBRICA_PAGE_SIZE });
-  const [total, firstTry, segments, f, owners, views] = await Promise.all([
-    countContacts(filter), pageOf(query.p), rubricaSegments(), facets(), crmOwners(), listSavedViews(me.id),
+  const [total, firstTry, segments, f, owners, views, stages] = await Promise.all([
+    countContacts(filter), pageOf(query.p), rubricaSegments(), facets(), crmOwners(), listSavedViews(me.id), stageCounts(filter),
   ]);
   const pages = Math.max(1, Math.ceil(total / RUBRICA_PAGE_SIZE));
   const page = Math.min(query.p, pages);
@@ -90,13 +94,16 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       ...open.map((a) => ({ title: a.title, at: a.at, time: a.time, source: "attivita" as const })),
       ...(c.nextActionAt ? [{ title: c.nextAction ?? "Follow-up", at: c.nextActionAt, source: "followup" as const }] : []),
     ], today);
+    const person = c.contactName && c.contactName !== c.businessName ? c.contactName : null;
     return {
       id: c.id, version: c.version, name: c.businessName,
-      sub: c.type ?? (kind === "persona" ? (c.contactName && c.contactName !== c.businessName ? c.contactName : "Persona") : c.contactName),
-      stage: c.stage, score: c.score, hue: avatarHue(c.businessName), letters: initials(c.businessName),
+      category: c.type ?? (kind === "persona" ? "Persona" : null), person, city: c.city,
+      stage: c.stage, score: c.score, tone: toneOf(c.type ?? kind), letters: initials(c.businessName),
+      owner: c.ownerUserId ? { name: c.ownerName ?? "Ex membro", letters: initials(c.ownerName ?? "?"), tone: toneOf(c.ownerName), active: c.ownerActive !== false } : null,
+      updated: agoLabel(c.updatedAt),
       href: href({ c: c.id }), planHref: `${ATTIVITA}?nuova=1&contatto=${c.id}`,
       mailHref: mailOk && c.email ? `${contactEmailPath(c.id)}${contactMailSearch(mailBase, { compose: "new" })}` : null,
-      next: next ? { title: next.title, relative: next.relative, overdue: next.overdue } : null,
+      next: next ? { title: next.title, relative: next.relative, overdue: next.overdue, today: next.at === today } : null,
     };
   });
   const from = total ? (page - 1) * RUBRICA_PAGE_SIZE + 1 : 0;
@@ -107,41 +114,50 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     email: view.c ? { list: `${contactEmailPath(view.c)}${contactMailSearch(mailBase)}`, compose: `${contactEmailPath(view.c)}${contactMailSearch(mailBase, { compose: "new" })}` } : undefined,
   };
 
+  const stageTotal = Object.values(stages).reduce((a, b) => a + b, 0);
+
   return (
-    <main className="ds-page cr">
+    <main className="ds-page cr rb">
       <div className="crm-rubrica crm-rubrica-page" data-panel={view.c ? "open" : undefined}>
         <VistaMemory vista={view.vista} />
-        <div className="crm-rubrica-main">
-          <header className="ds-head cr-top">
-            <p className="ds-kicker">CRM</p>
-            <div className="cr-title">
-              <h1 className="ds-title">Rubrica</h1>
-              <p className="ds-lead">Tutti i tuoi contatti: filtrali, gestiscili e passa all&apos;azione.</p>
-            </div>
-            <div className="cr-actions">
-              <span className="crm-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
-              <Link className="cr-cta" href={NEW_CONTACT as Route}><CrmIcon d="M12 5v14M5 12h14" /><span>Nuovo contatto</span></Link>
+        <div className="crm-rubrica-main rb-main">
+          <header className="rb-head">
+            <div className="rb-head-row">
+              <div className="rb-head-title">
+                <p className="rb-kicker">CRM</p>
+                <h1>Rubrica <span className="rb-count" aria-label={`${segments.tutti} contatti`}>{segments.tutti.toLocaleString("it-IT")}</span></h1>
+              </div>
+              <div className="rb-head-actions">
+                <span className="crm-import rb-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
+                <Link className="rb-cta" href={NEW_CONTACT as Route} aria-keyshortcuts="N">
+                  <CrmIcon d="M12 5v14M5 12h14" /><span>Nuovo contatto</span><kbd aria-hidden="true">N</kbd>
+                </Link>
+              </div>
             </div>
             <CrmTabs current={RUBRICA} />
           </header>
           <NewContactShortcut href={NEW_CONTACT} />
-          {sp.archiviato === "1" ? <p className="adm-ok" role="status">Contatto archiviato.</p> : null}
-          <RubricaSegments query={view} counts={segments} views={views} founder={founder} />
-          <RubricaTools query={view} cities={f.cities} types={f.types} owners={owners} />
+          {sp.archiviato === "1" ? <p className="rb-flash" role="status">Contatto archiviato.</p> : null}
 
-          {rows.length ? (
-            <RubricaBoard key={listKey} rows={rows} layout={view.vista} activeId={view.c} sort={sort} owners={owners} today={today} canEmail={mailOk}
-              pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
-          ) : (
-            <div className="ds-card cr-blank">
-              {filtered
-                ? <><p className="cr-empty">Nessun contatto con questi filtri.</p><Link className="cr-more" href={(view.c ? `${RUBRICA}?c=${view.c}` : RUBRICA) as Route}>Azzera i filtri</Link></>
-                : <><p className="cr-empty">Ancora nessun contatto in rubrica.</p><p className="ds-lead">Aggiungine uno a mano o importa i lead dal Radar.</p><Link className="cr-cta" href={NEW_CONTACT as Route}>Nuovo contatto</Link></>}
-            </div>
-          )}
+          <RubricaStages counts={stages} total={stageTotal} active={isStage(view.fase) ? view.fase : null}
+            hrefs={Object.fromEntries(Object.keys(stages).map((st) => [st, href({ fase: view.fase === st ? "" : st, p: 1 })])) as Record<keyof typeof stages, string>} />
 
-          <section className="ds-card cr-new" id="nuovo">
-            <details open={sp.nuovo === "1"}><summary>Nuovo contatto</summary><ContactForm owners={owners} /></details>
+          <section className="rb-list" aria-label="Contatti">
+            <RubricaToolbar query={view} counts={segments} views={views} founder={founder} cities={f.cities} types={f.types} owners={owners} />
+            {rows.length ? (
+              <RubricaBoard key={listKey} rows={rows} layout={view.vista} activeId={view.c} sort={sort} owners={owners} today={today} canEmail={mailOk}
+                pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
+            ) : (
+              <div className="rb-blank">
+                {filtered
+                  ? <><p className="rb-blank-title">Nessun contatto con questi filtri.</p><p className="rb-blank-lead">Prova a togliere un filtro o a cercare un altro nome.</p><Link className="rb-btn" href={(view.c ? `${RUBRICA}?c=${view.c}` : RUBRICA) as Route}>Azzera i filtri</Link></>
+                  : <><p className="rb-blank-title">Ancora nessun contatto in rubrica.</p><p className="rb-blank-lead">Aggiungine uno a mano o importa i lead dal Radar.</p><Link className="rb-cta" href={NEW_CONTACT as Route}>Nuovo contatto</Link></>}
+              </div>
+            )}
+          </section>
+
+          <section className="rb-new" id="nuovo">
+            <details open={sp.nuovo === "1"}><summary><CrmIcon d="M12 5v14M5 12h14" />Nuovo contatto</summary><ContactForm owners={owners} /></details>
           </section>
         </div>
         {view.c ? (
