@@ -243,7 +243,7 @@ const visualIt: ServiceDetail = {
   what: [
     "Realizziamo il sito da zero: struttura, impianto dei testi, interfaccia e codice. Si parte da quello che offri e da chi deve capirlo in pochi secondi.",
     "Le richieste che arrivano più spesso sono tre. Un sito nuovo per un'attività che non ne ha uno. Il rifacimento di un sito lento, illeggibile da telefono o impossibile da aggiornare. Un e-commerce con un catalogo vero e un pagamento chiaro.",
-    "Per hotel, residence e altre strutture ricettive il sito ha un lavoro in più: far prenotare in modo diretto. La persona vede camere, date e prezzo, e chiude sul tuo sito. Residence Le Vele, nel primo mese online, ha raccolto 14 prenotazioni e 11.947 euro, con 0 euro di advertising.",
+    "Per hotel, residence e altre strutture ricettive il sito ha un lavoro in più: far prenotare in modo diretto. La persona vede camere, date e prezzo, e chiude sul tuo sito.",
   ],
   forTitle: "Per chi è",
   forWhom: [
@@ -281,7 +281,6 @@ const visualIt: ServiceDetail = {
   ],
   cta: "Parliamo del sito",
   related: [
-    { href: "/projects/websites/residence-le-vele", label: "Caso Residence Le Vele" },
     { href: "/services/brand-identity", label: "Brand e identità" },
     { href: "/agenzia-web-valle-d-aosta", label: "Agenzia web in Valle d'Aosta" },
   ],
@@ -300,7 +299,7 @@ const visualEn: ServiceDetail = {
   what: [
     "We build the site from scratch: structure, a first pass at the words, interface and code. We start from what you offer and from who has to understand it in a few seconds.",
     "Three requests come up most. A first website for a business that does not have one. A rebuild of a site that is slow, unreadable on a phone, or impossible to update. An online shop with a real catalogue and a clear checkout.",
-    "For hotels, residences and other stays, the site has one more job: direct booking. The guest sees rooms, dates and price, and finishes on your site. In its first month online, Residence Le Vele took 14 bookings and €11,947, with €0 spent on ads.",
+    "For hotels, residences and other stays, the site has one more job: direct booking. The guest sees rooms, dates and price, and finishes on your site.",
   ],
   forTitle: "Who it is for",
   forWhom: [
@@ -338,7 +337,6 @@ const visualEn: ServiceDetail = {
   ],
   cta: "Talk about the website",
   related: [
-    { href: "/projects/websites/residence-le-vele", label: "Residence Le Vele case study" },
     { href: "/services/brand-identity", label: "Brand and identity" },
     { href: "/agenzia-web-valle-d-aosta", label: "Web studio in Valle d'Aosta" },
   ],
@@ -387,13 +385,12 @@ const growthIt: ServiceDetail = {
     { q: "Garantite la prima pagina di Google?", a: "No. Chi la garantisce sta vendendo una cosa che non controlla. Garantiamo il lavoro: tecnica pulita, pagine chiare, e un modo per vedere se visite e contatti si muovono." },
     { q: "La SEO si può fare su un sito già online?", a: "Sì. Se il sito è lento o i testi sono sbagliati, spesso conviene rifarlo e impostare la SEO insieme, invece di ottimizzare una base che non regge." },
     { q: "Fate una pagina per ogni città?", a: "No. Non pubblichiamo pagine «siti web Milano» o «siti web Torino». Scriviamo della valle, dei servizi e dei casi veri." },
-    { q: "Include la pubblicità su Google?", a: "No. Residence Le Vele, nel primo mese, ha preso prenotazioni con 0 euro di ads. La pubblicità, se serve, è un'altra conversazione." },
+    { q: "Include la pubblicità su Google?", a: "No. La pubblicità, se serve, è un'altra conversazione." },
   ],
   cta: "Parliamo di posizionamento",
   related: [
     { href: "/services/web-security", label: "Sicurezza web e SSL gestiti" },
     { href: "/services/visual-communication", label: "Siti web su misura" },
-    { href: "/projects/websites/residence-le-vele", label: "Caso Residence Le Vele" },
   ],
 };
 
@@ -440,13 +437,12 @@ const growthEn: ServiceDetail = {
     { q: "Do you guarantee the first page of Google?", a: "No. Anyone who guarantees it is selling something they do not control. We guarantee the work: clean technical SEO, clear pages, and a way to see whether visits and enquiries move." },
     { q: "Can SEO be done on a site that is already live?", a: "Yes. If the site is slow or the words are wrong, it is often better to rebuild and set up SEO together, instead of optimising a base that cannot hold." },
     { q: "Do you make a page for every city?", a: "No. We do not publish pages such as “websites Milan” or “websites Turin”. We write about the valley, the services and real cases." },
-    { q: "Does this include Google ads?", a: "No. Residence Le Vele took bookings in its first month with €0 of ads. Advertising, if you need it, is a separate conversation." },
+    { q: "Does this include Google ads?", a: "No. Advertising, if you need it, is a separate conversation." },
   ],
   cta: "Talk about search",
   related: [
     { href: "/services/web-security", label: "Managed web security and SSL" },
     { href: "/services/visual-communication", label: "Custom websites" },
-    { href: "/projects/websites/residence-le-vele", label: "Residence Le Vele case study" },
   ],
 };
 

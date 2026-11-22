@@ -5,18 +5,15 @@ import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { PArrow } from "@/components/projects/arrow";
-import { ProjectsMotion } from "@/components/projects/projects-motion";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
+import { ServicesMotion } from "@/components/pages/services-motion";
 import { Crumbs } from "@/components/seo/crumbs";
-import { FaqList } from "@/components/seo/faq";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getServiceDetail } from "@/components/pages/service-detail-copy";
 import { getService, services } from "@/lib/content";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, faqNode, publicMeta, schemaName, serviceNode } from "@/lib/seo";
-import "@/components/projects/projects.css";
-import "@/components/services/webapp.css";
-import "./service-detail.css";
+import "./service-page.css";
 
 export function serviceMetadata(slug: string, lang: Locale): Metadata {
   const service = getService(slug);
@@ -41,114 +38,144 @@ export function ServiceView({ slug, lang }: { slug: string; lang: Locale }) {
     { name: service.title[lang], path },
   ];
   const others = services.filter((item) => item.slug !== service.slug);
+  const othersLabel = lang === "it" ? "Altri servizi" : "Other services";
 
   return (
     <>
       <JsonLd data={[breadcrumbNode(lang, crumbs), serviceNode(lang, { name: schemaName(detail.metaTitle), description: detail.metaDescription, path, serviceType: detail.serviceType }), faqNode(detail.faqs)]} />
       <SiteHeader />
-      <main className="p-root wa-root" data-motion-root>
-        <section className="p-hero wa-hero">
-          <span className="p-hero-frame wa-hero-frame" aria-hidden="true">
-            <Image className="p-hero-img wa-hero-img" src={detail.image} alt="" fill priority sizes="(max-width: 760px) 100vw, 70vw" />
-          </span>
-          <div className="p-hero-copy">
-            <Crumbs
-              label={crumbLabel}
-              items={crumbs.map((item) => ({ name: item.name, href: localize(item.path, lang) }))}
-            />
-            <p className="p-tag p-mono" data-p-fade>{detail.tag}</p>
-            <h1 className="p-title p-title-cat" data-p-split>{detail.title}</h1>
-            <p className="p-lead" data-p-fade>{detail.lead}</p>
-          </div>
-        </section>
+      <main className="sx" data-motion-root>
+        <ServicesMotion root=".sx" />
 
-        <section className="wa-wrap sd-split" aria-labelledby="sd-what">
-          <h2 className="wa-h2" id="sd-what">{detail.whatTitle}</h2>
-          <div>
-            {detail.what.map((paragraph) => (
-              <p className="sd-prose" key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        </section>
-
-        <section className="wa-wrap sd-split" aria-labelledby="sd-for">
-          <h2 className="wa-h2" id="sd-for">{detail.forTitle}</h2>
-          <ul className="sd-for">
-            {detail.forWhom.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="wa-wrap" aria-labelledby="sd-included">
-          <h2 className="wa-h2" id="sd-included">{detail.includedTitle}</h2>
-          <ul className="sd-included">
-            {detail.included.map((item) => (
-              <li key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="wa-wrap wa-process" aria-labelledby="sd-process">
-          <div>
-            <p className="p-kicker p-mono">{detail.processKicker}</p>
-            <h2 className="wa-h2" id="sd-process">{detail.processTitle}</h2>
-          </div>
-          <ol className="wa-steps">
-            {detail.steps.map((step, index) => (
-              <li key={step.title} className="wa-step">
-                <span className="wa-step-dot" aria-hidden="true" />
-                <span className="p-mono wa-step-n">{String(index + 1).padStart(2, "0")}</span>
-                <h3 className="wa-step-title">{step.title}</h3>
-                <p className="wa-step-text">{step.text}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="wa-wrap sd-split" aria-labelledby="sd-timing">
-          <h2 className="wa-h2" id="sd-timing">{detail.timingTitle}</h2>
-          <div>
-            <p className="sd-prose">{detail.timing}</p>
-            <div className="sd-links">
-              {detail.related.map((link) => (
-                <Link key={link.href} href={localize(link.href, lang) as Route} className="p-mono">
-                  {link.label}
-                </Link>
-              ))}
+        {/* 1. HERO: copy card and image card side by side. */}
+        <section className="sx-hero" data-sv-hero>
+          <div className="sx-card sx-hero-copy">
+            <Crumbs label={crumbLabel} items={crumbs.map((item) => ({ name: item.name, href: localize(item.path, lang) }))} />
+            <div className="sx-hero-text">
+              <p className="sx-index" data-sv-fade>{detail.tag}</p>
+              <h1 className="sx-title" data-sv-words>{detail.title}</h1>
+              <p className="sx-lead" data-sv-fade>{detail.lead}</p>
+              <Link href={localize("/contact", lang) as Route} className="sx-cta" data-sv-fade>
+                {detail.cta}
+                <ArrowUpRight className="sx-arrow" />
+              </Link>
             </div>
-            <div className="sd-links">
-              <Link href={localize("/contact", lang) as Route} className="p-btn p-btn-fill">
-                <span className="p-mono">{detail.cta}</span>
-                <PArrow />
+          </div>
+          <div className="sx-card sx-hero-media">
+            <Image src={detail.image} alt={detail.imageAlt} fill priority sizes="(max-width: 900px) 100vw, 45vw" className="sx-hero-img" data-sv-hero-img />
+          </div>
+        </section>
+
+        {/* 2. WHAT + FOR WHOM: wide light card, narrow dark card. */}
+        <section className="sx-block">
+          <div className="sx-pair">
+            <div className="sx-card sx-what" data-sv-rise>
+              <h2 className="sx-h2" id="sd-what" data-sv-title>{detail.whatTitle}</h2>
+              <div className="sx-prose">
+                {detail.what.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
+            <div className="sx-card sx-for" data-sv-rise>
+              <h2 className="sx-h3" id="sd-for">{detail.forTitle}</h2>
+              <ul className="sx-for-list">
+                {detail.forWhom.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. INCLUDED: one dark card, inner tiles. */}
+        <section className="sx-block" aria-labelledby="sd-included">
+          <div className="sx-card sx-included">
+            <h2 className="sx-h2" id="sd-included" data-sv-title>{detail.includedTitle}</h2>
+            <ul className="sx-tiles" data-sv-stagger style={{ "--cols": detail.included.length === 4 ? 4 : 3 } as React.CSSProperties}>
+              {detail.included.map((item, index) => (
+                <li key={item.title} className="sx-tile">
+                  <span className="sx-tile-n">{String(index + 1).padStart(2, "0")}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* 4. PROCESS: light card, steps on a line. */}
+        <section className="sx-block" aria-labelledby="sd-process">
+          <div className="sx-card sx-process">
+            <div className="sx-process-head">
+              <p className="sx-kicker">{detail.processKicker}</p>
+              <h2 className="sx-h2" id="sd-process" data-sv-title>{detail.processTitle}</h2>
+            </div>
+            <ol className="sx-steps" data-sv-stagger>
+              {detail.steps.map((step, index) => (
+                <li key={step.title} className="sx-step">
+                  <span className="sx-step-n">{String(index + 1).padStart(2, "0")}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* 5. TIMING + CTA: the one orange card of the page. */}
+        <section className="sx-block" aria-labelledby="sd-timing">
+          <div className="sx-card sx-timing" data-sv-rise>
+            <h2 className="sx-h2" id="sd-timing">{detail.timingTitle}</h2>
+            <div className="sx-timing-body">
+              <p>{detail.timing}</p>
+              <div className="sx-related">
+                {detail.related.map((link) => (
+                  <Link key={link.href} href={localize(link.href, lang) as Route} className="sx-chip">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+              <Link href={localize("/contact", lang) as Route} className="sx-cta sx-cta-ink">
+                {detail.cta}
+                <ArrowUpRight className="sx-arrow" />
               </Link>
             </div>
           </div>
         </section>
 
-        <div className="wa-wrap">
-          <FaqList id="sd-faq" title={detail.faqTitle} items={detail.faqs} />
-        </div>
+        {/* 6. FAQ */}
+        <section className="sx-block" aria-labelledby="sd-faq">
+          <div className="sx-card sx-faq">
+            <h2 className="sx-h2" id="sd-faq" data-sv-title>{detail.faqTitle}</h2>
+            <div className="sx-faq-list">
+              {detail.faqs.map((item) => (
+                <details key={item.q} className="sx-details">
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
 
-        <section className="p-others" aria-labelledby="sd-others">
-          <h2 className="p-kicker p-mono" id="sd-others">{lang === "it" ? "Altri servizi" : "Other services"}</h2>
-          <ul className="p-others-grid">
+        {/* 7. OTHER SERVICES: a row of small light cards. */}
+        <section className="sx-block" aria-labelledby="sd-others">
+          <h2 className="sx-others-title" id="sd-others">{othersLabel}</h2>
+          <ul className="sx-others" data-sv-stagger>
             {others.map((item) => (
               <li key={item.slug}>
-                <Link href={localize(`/services/${item.slug}`, lang) as Route} className="p-other">
-                  <span className="p-other-label">
+                <Link href={localize(`/services/${item.slug}`, lang) as Route} className="sx-card sx-other">
+                  <span className="sx-other-n">{item.index}</span>
+                  <span className="sx-other-name">
                     {item.title[lang]}
-                    <PArrow className="p-arrow p-card-arrow" />
+                    <ArrowUpRight className="sx-arrow" />
                   </span>
                 </Link>
               </li>
             ))}
           </ul>
         </section>
-        <ProjectsMotion />
       </main>
       <SiteFooter />
     </>

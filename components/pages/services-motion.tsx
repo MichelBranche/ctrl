@@ -11,12 +11,13 @@ import { scheduleRefresh } from "@/lib/refresh";
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 /**
- * Motion for /services, on the home springs. Initial states are set here only, so content stays
- * visible without JS and under prefers-reduced-motion.
+ * Motion for /services and the /services/[slug] template (root ".sx"), on the home springs.
+ * Hooks: data-sv-words (hero title), data-sv-fade (hero), data-sv-title, data-sv-rise, data-sv-stagger.
+ * Initial states are set here only, so content stays visible without JS and under prefers-reduced-motion.
  */
-export function ServicesMotion() {
+export function ServicesMotion({ root: rootSelector = ".sv" }: { root?: string }) {
   useGSAP(() => {
-    const root = document.querySelector<HTMLElement>(".sv");
+    const root = document.querySelector<HTMLElement>(rootSelector);
     if (!root) return;
     const q = <T extends Element = HTMLElement>(sel: string) => Array.from(root.querySelectorAll<T & Element>(sel)) as T[];
     const enter = springEase(ENTER_SPRING);
@@ -37,7 +38,7 @@ export function ServicesMotion() {
       const img = root.querySelector("[data-sv-hero-img]");
       if (img) {
         intro.fromTo(img, { scale: 1.08 }, { scale: 1, duration: 2.2, ease: "power2.out" }, 0);
-        gsap.to(img, { yPercent: 6, ease: "none", scrollTrigger: { trigger: "[data-sv-hero]", start: "top top", end: "bottom top", scrub: true } });
+        gsap.to(img, { yPercent: 6, ease: "none", scrollTrigger: { trigger: root.querySelector("[data-sv-hero]") ?? img, start: "top top", end: "bottom top", scrub: true } });
       }
 
       // Blocks: titles by word, single blocks rise, card groups stagger.
@@ -65,9 +66,10 @@ export function ServicesMotion() {
         const len = p.getTotalLength();
         gsap.set(p, { strokeDasharray: len, strokeDashoffset: len });
       });
-      gsap.timeline({ scrollTrigger: { trigger: ".sv-mark-card", start: "top 85%", once: true } })
+      const markCard = root.querySelector(".sv-mark-card");
+      if (markCard) gsap.timeline({ scrollTrigger: { trigger: markCard, start: "top 85%", once: true } })
         .to(paths, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut", stagger: 0.35 })
-        .from(".sv-spark", { scale: 0, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.8, ease: "back.out(2)" }, "-=0.8");
+        .from(root.querySelectorAll(".sv-spark"), { scale: 0, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.8, ease: "back.out(2)" }, "-=0.8");
 
       scheduleRefresh();
       return () => splits.forEach((s) => s.revert());
