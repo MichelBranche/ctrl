@@ -359,3 +359,143 @@
 .j-news-consent a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
 .j-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .j-news-consent input { margin: 0.15em 0 0; accent-color: var(--j-accent); }
+
+/* ---------- Frame composition (design system, app/tokens.css): every band is a card inside the 10px frame.
+   Shared by the journal list, the article, the legal pages (.l-root) and the newsletter unsubscribe page.
+   Styles only: markup, forms, honeypot and scripts are unchanged. ---------- */
+.j-root {
+  --j-bg: var(--ds-card);
+  --j-fg: var(--ds-fg);
+  --j-dim: var(--ds-dim);
+  --j-rule: var(--ds-faint);
+  --j-accent: var(--ds-accent);
+  --j-accent-ink: var(--ds-accent-ink);
+  --j-display-face: var(--ds-font-display);
+  --j-ease: var(--ds-ease);
+  background: var(--ds-page);
+  font-family: var(--ds-font-body);
+}
+.j-root .j-meta,
+.j-root .j-tag,
+.j-root .j-filter,
+.j-root .j-read,
+.j-root .j-pill,
+.j-root .j-back,
+.j-root .j-related-h,
+.j-root .j-text-btn {
+  font-family: var(--ds-font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-transform: none;
+}
+
+/* Hero: photo card, flat scrim, copy bottom left */
+.j-root .j-hero {
+  place-items: end start;
+  min-height: min(76svh, 44rem);
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.5rem, 3vw, 3rem);
+  border-radius: var(--ds-r-card);
+  text-align: left;
+  isolation: isolate;
+}
+.j-root .j-hero::after { background: var(--ds-scrim); }
+.j-root .j-hero-copy { align-items: flex-start; }
+.j-root .j-hero .seo-crumbs { justify-content: flex-start; }
+.j-root .j-tag {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.4rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.7rem;
+  border: 1px solid var(--ds-faint); border-radius: var(--ds-r-pill); background: var(--ds-glass);
+}
+.j-root .j-tag::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--ds-accent); }
+.j-root .j-title { font-weight: 700; font-size: clamp(3.4rem, 8vw, 8rem); letter-spacing: var(--ds-track-display); }
+.j-root .j-lead { max-width: 30em; color: var(--ds-fg); text-wrap: pretty; }
+
+/* List: one dark card, filters as pills, posts as raised tiles */
+.j-root .j-list {
+  max-width: none;
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.j-root .j-filters-wrap { justify-content: flex-start; padding: 0 0 var(--ds-pad); }
+.j-root .j-filters { gap: 0.4rem; padding-bottom: 0; }
+.j-root .j-filters .j-dot,
+.j-root .j-filter-line { display: none; }
+.j-root .j-filter { padding: 0.55rem 1rem; border: 1px solid var(--ds-faint); border-radius: var(--ds-r-pill); }
+.j-root .j-filter[aria-pressed="true"] { border-color: var(--ds-fg); background: var(--ds-fg); color: var(--ds-ink); }
+.j-root .j-grid { gap: var(--ds-gap); }
+.j-root .j-card-link { border: 0; border-radius: calc(var(--ds-r-card) - 4px); background: var(--ds-card-2); }
+.j-root .j-card-link:hover { background: #242423; }
+.j-root .j-card-link:active { background: var(--ds-card-2); }
+.j-root .j-card-media { border-radius: var(--ds-r-tile); }
+.j-root .j-card-title { letter-spacing: -0.03em; }
+.j-root .j-empty { border: 0; border-radius: calc(var(--ds-r-card) - 4px); background: var(--ds-card-2); }
+.j-root .j-empty-title { letter-spacing: var(--ds-track-display); }
+
+/* Newsletter: light card */
+.j-root .j-news {
+  max-width: none;
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: var(--ds-pad);
+  border: 0;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-paper);
+  color: var(--ds-ink);
+  --j-fg: var(--ds-ink);
+  --j-dim: var(--ds-ink-dim);
+  --j-faint: rgba(12, 12, 12, 0.45);
+  --j-rule-hi: var(--ds-ink-rule-strong);
+}
+.j-root .j-news-title { letter-spacing: var(--ds-track-display); }
+.j-root .j-news-input { border-radius: var(--ds-r-pill); padding: 0 1.2rem; }
+.j-root .j-news .j-pill::before { background: var(--ds-ink); }
+.j-root .j-news .j-pill:hover { color: var(--ds-fg); }
+
+/* Article, legal and unsubscribe: head card, cover card, body on a light reading card */
+.j-root.j-article { padding-bottom: 0; }
+.j-root .j-a-head {
+  max-width: none;
+  margin: var(--ds-frame) var(--ds-frame) var(--ds-gap);
+  padding: 125px clamp(1.25rem, 3.125vw, 3.5rem) clamp(1.75rem, 3.4vw, 3.25rem);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.j-root .j-a-head > * { max-width: 56rem; }
+.j-root .j-back { margin-bottom: 2rem; padding: 0.45rem 0.9rem; border: 1px solid var(--ds-faint); border-radius: var(--ds-r-pill); }
+.j-root .j-a-title { font-weight: 700; letter-spacing: var(--ds-track-display); }
+.j-root .j-a-cover { max-width: none; margin: 0 var(--ds-frame) var(--ds-gap); border-radius: var(--ds-r-card); aspect-ratio: 21 / 9; }
+.j-root .j-a-body {
+  max-width: none;
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: clamp(2rem, 5vw, 5rem) var(--ds-pad);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-paper);
+  color: var(--ds-ink);
+  --j-dim: var(--ds-ink-dim);
+}
+.j-root .j-a-body > * { margin-inline: auto; }
+.j-root .j-a-body .j-prose {
+  --pr-fg: var(--ds-ink);
+  --pr-dim: #3d3c39;
+  --pr-rule: var(--ds-ink-rule);
+  --pr-code: rgba(12, 12, 12, 0.06);
+}
+.j-root .j-related {
+  max-width: none;
+  margin: 0 var(--ds-frame) var(--ds-gap);
+  padding: var(--ds-pad);
+  border: 0;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+/* Unsubscribe form sits in the head card */
+.j-root .j-a-head .j-news-form { justify-self: start; margin-top: 1.6rem; }
+
+@media (max-width: 760px) {
+  .j-root .j-hero { min-height: min(70svh, 34rem); padding-top: 110px; }
+  .j-root .j-a-head { padding-top: 110px; }
+  .j-root .j-a-cover { aspect-ratio: 4 / 3; }
+}
