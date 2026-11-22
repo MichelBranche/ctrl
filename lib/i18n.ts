@@ -108,6 +108,8 @@ export const dict = {
       ecoQuotes: "Preventivi che convincono.",
       ecoAgenda: "La tua agenda, finalmente semplice.",
       ecoOpen: "si apre in una nuova scheda",
+      ecoSoonTitle: "Prossimamente",
+      ecoSoonSub: "Nuovi strumenti CTRL® in arrivo.",
       workTitle: "Lavori che parlano da soli.",
       openProject: "Apri il progetto",
       proofStats: [
@@ -228,6 +230,8 @@ export const dict = {
       ecoQuotes: "Quotes that win clients.",
       ecoAgenda: "Your schedule, finally simple.",
       ecoOpen: "opens in a new tab",
+      ecoSoonTitle: "Coming soon",
+      ecoSoonSub: "More CTRL® tools on the way.",
       workTitle: "Work that speaks for itself.",
       openProject: "Open project",
       proofStats: [

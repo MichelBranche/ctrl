@@ -1,0 +1,77 @@
+/* CTRL® design tokens. Single source for the public site (home, team, ctrl-quotes and every page restyled after them).
+   Rules and usage: docs/design-system.md. Page scopes (.hv, .hn, .qx, .t-root, .tb-grid) alias these, never redefine values. */
+
+:root {
+  /* ---------- Colour: CTRL dark ---------- */
+  --ds-page: #0b0b0b;          /* page background behind the cards */
+  --ds-card: #151515;          /* dark card surface */
+  --ds-card-2: #1d1d1c;        /* raised dark surface */
+  --ds-paper: #f2f1ec;         /* light card surface */
+  --ds-paper-2: #e7e5dd;
+  --ds-ivory: #ece7de;         /* team badge surface */
+  --ds-ink: #0c0c0c;           /* text on light surfaces */
+  --ds-ink-dim: #5f5d59;
+  --ds-ink-rule: rgba(12, 12, 12, 0.12);
+  --ds-fg: #f2f0ea;            /* text on dark surfaces */
+  --ds-dim: rgba(242, 240, 234, 0.62);
+  --ds-faint: rgba(242, 240, 234, 0.14);
+  --ds-accent: #ff4a1c;        /* CTRL orange: CTAs, focus, highlights. One accent per view. */
+  --ds-accent-ink: #0c0c0c;    /* text on the accent */
+  --ds-glass: rgba(20, 20, 20, 0.5);
+  --ds-glass-light: rgba(255, 255, 255, 0.28);
+
+  /* ---------- Colour: product palette, CTRL® Quotes (only inside Quotes cards) ---------- */
+  --ds-q-violet: #7c3aed;
+  --ds-q-violet-ink: #5b21b6;
+  --ds-q-lime: #c4fa46;
+  --ds-q-paper: #f4f4f0;
+  --ds-q-paper-2: #f5f5f7;
+  --ds-q-ink: #1a1a1e;
+  --ds-q-dim: #5d5d66;
+  --ds-q-rule: rgba(26, 26, 30, 0.1);
+
+  /* ---------- Space ---------- */
+  --ds-frame: 10px;                              /* side margin of every card */
+  --ds-gap: var(--ds-frame);                     /* gap between cards = side margin */
+  --ds-band: clamp(1.25rem, 2vw, 1.75rem);       /* space above/below a text band (marquee) */
+  --ds-pad: clamp(1.25rem, 2.6vw, 2.75rem);      /* card inner padding */
+  --ds-pad-lg: clamp(1.25rem, 3vw, 3.25rem);     /* roomy card padding (product pages) */
+
+  /* ---------- Radius ---------- */
+  --ds-r-card: 22px;     /* section cards */
+  --ds-r-tile: 10px;     /* badges, menu panels, small tiles */
+  --ds-r-sm: 6px;        /* photos and thumbnails inside a tile */
+  --ds-r-pill: 999px;    /* pills, buttons, icon buttons */
+
+  /* ---------- Shadow ---------- */
+  --ds-shadow-badge: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 2px 6px rgba(0, 0, 0, 0.35), 0 26px 50px -12px rgba(0, 0, 0, 0.7);
+  --ds-shadow-metal: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+
+  /* ---------- Type ---------- */
+  --ds-font-display: var(--font-display);  /* Satoshi: titles, names, wordmarks */
+  --ds-font-body: var(--font);             /* Geist: body, UI */
+  --ds-text-h1: clamp(2.8rem, 6.4vw, 6rem);
+  --ds-text-h2: clamp(2.4rem, 4.4vw, 4.25rem);
+  --ds-text-h3: clamp(1.6rem, 2.4vw, 2.4rem);
+  --ds-text-kicker: 0.875rem;
+  --ds-track-display: -0.045em;
+
+  /* ---------- Layers ---------- */
+  --ds-z-header: 60;
+  --ds-z-header-open: 61;
+  --ds-z-progress: 70;
+  --ds-z-back-to-top: 90;
+  --ds-z-cursor: 140;
+  --ds-z-assistant: 150;
+  --ds-z-cart: 180;
+  --ds-z-transition: 190;
+  --ds-z-command: 200;
+
+  /* ---------- Motion ---------- */
+  --ds-ease: cubic-bezier(0.22, 1, 0.36, 1);       /* default: reveals, arrows, springs-like CSS */
+  --ds-ease-std: cubic-bezier(0.4, 0, 0.2, 1);     /* colour/background changes on the nav */
+  --ds-ease-inout: cubic-bezier(0.44, 0, 0.56, 1); /* small hover fills */
+  --ds-dur-fast: 0.2s;
+  --ds-dur: 0.3s;
+  --ds-dur-slow: 0.45s;
+}

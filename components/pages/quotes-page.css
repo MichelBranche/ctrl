@@ -2,24 +2,24 @@
    CTRL® Quotes palette inside the cards. Solid colours, no glow. Scoped with .qx-. */
 
 .qx {
-  --qx-page: #0b0b0b;
-  --qx-violet: #7c3aed;
-  --qx-violet-ink: #5b21b6;
-  --qx-lime: #c4fa46;
-  --qx-paper: #f4f4f0;
-  --qx-paper-2: #f5f5f7;
-  --qx-ink: #1a1a1e;
-  --qx-dim: #5d5d66;
-  --qx-rule: rgba(26, 26, 30, 0.1);
-  --qx-frame: 10px;
-  --qx-gap: var(--qx-frame);
-  --qx-r: 22px;
-  --qx-pad: clamp(1.25rem, 3vw, 3.25rem);
-  --qx-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --qx-display: var(--font-satoshi), var(--font-display);
+  --qx-page: var(--ds-page);
+  --qx-violet: var(--ds-q-violet);
+  --qx-violet-ink: var(--ds-q-violet-ink);
+  --qx-lime: var(--ds-q-lime);
+  --qx-paper: var(--ds-q-paper);
+  --qx-paper-2: var(--ds-q-paper-2);
+  --qx-ink: var(--ds-q-ink);
+  --qx-dim: var(--ds-q-dim);
+  --qx-rule: var(--ds-q-rule);
+  --qx-frame: var(--ds-frame);
+  --qx-gap: var(--ds-gap);
+  --qx-r: var(--ds-r-card);
+  --qx-pad: var(--ds-pad-lg);
+  --qx-ease: var(--ds-ease);
+  --qx-display: var(--font-satoshi), var(--ds-font-display);
   background: var(--qx-page);
   color: var(--qx-ink);
-  font-family: var(--font);
+  font-family: var(--ds-font-body);
 }
 
 .qx-card {
@@ -33,7 +33,7 @@
 .qx-word { display: inline-block; will-change: transform, filter; }
 
 /* Type */
-.qx-kicker { margin: 0; color: var(--qx-dim); font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em; }
+.qx-kicker { margin: 0; color: var(--qx-dim); font-size: var(--ds-text-kicker); font-weight: 600; letter-spacing: -0.01em; }
 .qx-kicker-light { color: rgba(244, 244, 240, 0.6); }
 .qx-h2,
 .qx-hero-title,
@@ -43,7 +43,7 @@
   font-family: var(--qx-display);
   font-weight: 900;
   line-height: 0.95;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--ds-track-display);
   text-transform: uppercase;
   overflow-wrap: break-word;
   min-width: 0;
@@ -62,7 +62,7 @@
   gap: 0.5rem;
   min-height: 3rem;
   padding: 0.85rem 1.3rem;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.015em;
@@ -93,7 +93,7 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: -0.005em;
@@ -177,7 +177,7 @@
 .qx-video-poster:hover .qx-video-play { transform: scale(1.08); background: var(--qx-ink); }
 .qx-slogan { padding-top: 0.5rem; font-size: clamp(2.2rem, 6vw, 6.25rem); text-align: center; }
 .qx-slogan > span { display: inline-block; }
-.qx-slogan-pill { padding: 0.02em 0.28em 0.06em; border-radius: 999px; background: var(--qx-lime); color: var(--qx-ink); }
+.qx-slogan-pill { padding: 0.02em 0.28em 0.06em; border-radius: var(--ds-r-pill); background: var(--qx-lime); color: var(--qx-ink); }
 
 /* ---------- 3. STEPS ---------- */
 .qx-steps-card { background: var(--qx-paper-2); }
@@ -195,12 +195,12 @@
 .qx-block-row:nth-child(2) i { background: var(--qx-lime); box-shadow: inset 0 0 0 1px rgba(26, 26, 30, 0.15); }
 .qx-block-row:nth-child(3) i { background: var(--qx-ink); }
 /* Invia: the link, a plane that flies off, then "sent". */
-.qx-send-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 0.9rem; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--qx-rule); font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+.qx-send-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 0.9rem; border-radius: var(--ds-r-pill); background: #fff; box-shadow: 0 0 0 1px var(--qx-rule); font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
 .qx-send-link svg { width: 1rem; height: 1rem; color: var(--qx-violet); }
 .qx-send-plane { position: absolute; left: 50%; top: 22%; width: 1.6rem; height: 1.6rem; color: var(--qx-violet); opacity: 0; }
 .qx-send-done { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--qx-violet); font-size: 0.85rem; font-weight: 700; }
 /* Incassa: lime toast, then the deposit. */
-.qx-toast { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1rem; border-radius: 999px; background: var(--qx-lime); color: var(--qx-ink); font-size: 0.9rem; font-weight: 700; box-shadow: 0 6px 18px rgba(26, 26, 30, 0.08); }
+.qx-toast { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1rem; border-radius: var(--ds-r-pill); background: var(--qx-lime); color: var(--qx-ink); font-size: 0.9rem; font-weight: 700; box-shadow: 0 6px 18px rgba(26, 26, 30, 0.08); }
 .qx-toast-ink { background: var(--qx-ink); color: #fff; font-size: 0.82rem; }
 
 /* Loops run only while the card is on screen (.is-in from quotes-motion); without JS the static state shows. */
@@ -285,9 +285,9 @@
 .qx-tpl-row span { overflow: hidden; color: var(--qx-dim); font-size: 0.72rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 
 .qx-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: auto 0 0; padding: 0.5rem 0 0; list-style: none; }
-.qx-chips li { padding: 0.3rem 0.65rem; border-radius: 999px; background: rgba(26, 26, 30, 0.08); font-size: 0.78rem; font-weight: 600; }
+.qx-chips li { padding: 0.3rem 0.65rem; border-radius: var(--ds-r-pill); background: rgba(26, 26, 30, 0.08); font-size: 0.78rem; font-weight: 600; }
 .qx-tile-pay .qx-chips li { background: rgba(255, 255, 255, 0.16); }
-.qx-fake-btn { display: inline-flex; align-items: center; gap: 0.45rem; align-self: flex-start; margin-top: auto; padding: 0.6rem 1rem; border-radius: 999px; background: var(--qx-violet); color: #fff; font-size: 0.85rem; font-weight: 600; }
+.qx-fake-btn { display: inline-flex; align-items: center; gap: 0.45rem; align-self: flex-start; margin-top: auto; padding: 0.6rem 1rem; border-radius: var(--ds-r-pill); background: var(--qx-violet); color: #fff; font-size: 0.85rem; font-weight: 600; }
 .qx-notes { display: grid; gap: 0.4rem; margin: auto 0 0; padding: 0.4rem 0 0; list-style: none; }
 .qx-notes li { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.7rem; border-radius: 0.7rem; background: #fff; box-shadow: 0 0 0 1px var(--qx-rule); font-size: 0.82rem; font-weight: 600; }
 .qx-notes i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--qx-violet); }

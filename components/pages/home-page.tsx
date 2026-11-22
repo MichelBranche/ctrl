@@ -14,15 +14,8 @@ import { showTestimonials } from "@/lib/testimonials";
 import { presentReviews } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { dict, localize, type Locale } from "@/lib/i18n";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import "./home-v2.css";
-
-function ArrowUpRight() {
-  return (
-    <svg className="hv-arrow" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 function Marquee({ text, tone = "dark" }: { text: string; tone?: "dark" | "light" }) {
   const items = Array.from({ length: 6 }, (_, i) => i);
@@ -99,7 +92,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
                   <span className="hv-pill-name">{h.heroPill}</span>
                   <Link href={localize("/projects", lang)} className="hv-cta">
                     {h.heroCta}
-                    <ArrowUpRight />
+                    <ArrowUpRight className="hv-arrow" />
                   </Link>
                 </div>
               </div>
@@ -127,12 +120,12 @@ export async function HomePage({ lang }: { lang: Locale }) {
                     <Link href={localize(`/services/${service.slug}`, lang)} className="hv-service">
                       <h3>
                         {service.title[lang]}
-                        <ArrowUpRight />
+                        <ArrowUpRight className="hv-arrow" />
                       </h3>
                       <p>{service.text[lang]}</p>
                       <span className="hv-service-more">
                         {h.servicesMore}
-                        <ArrowUpRight />
+                        <ArrowUpRight className="hv-arrow" />
                       </span>
                     </Link>
                   </li>
@@ -165,6 +158,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
                 lead: h.ecoLead,
                 subs: { quotes: h.ecoQuotes, agenda: h.ecoAgenda },
                 open: h.ecoOpen,
+                soon: { title: h.ecoSoonTitle, sub: h.ecoSoonSub },
               }}
             />
           </div>
@@ -225,7 +219,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
               <div className="hv-talk-actions">
                 <Link href={localize("/bookings", lang)} className="hv-cta hv-cta-lg">
                   {b.bookCta}
-                  <ArrowUpRight />
+                  <ArrowUpRight className="hv-arrow" />
                 </Link>
                 <Link href={localize("/contact", lang)} className="hv-ghost">
                   {b.fallback}

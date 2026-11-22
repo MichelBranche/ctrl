@@ -1,27 +1,27 @@
 /* Site navigation (pill header). Used on every public page; extracted from the home stylesheet. */
 .hn {
-  --hv-page: #0b0b0b;
-  --hv-card: #151515;
-  --hv-card-2: #1d1d1c;
-  --hv-paper: #f2f1ec;
-  --hv-paper-2: #e7e5dd;
-  --hv-ink: #0c0c0c;
-  --hv-fg: #f2f0ea;
-  --hv-dim: rgba(242, 240, 234, 0.62);
-  --hv-faint: rgba(242, 240, 234, 0.14);
-  --hv-ink-dim: #5f5d59;
-  --hv-ink-rule: rgba(12, 12, 12, 0.12);
-  --hv-accent: #ff4a1c;
-  --hv-accent-ink: #0c0c0c;
-  --hv-glass: rgba(20, 20, 20, 0.5);
-  --hv-glass-light: rgba(255, 255, 255, 0.28);
-  --hv-frame: 10px;
-  --hv-r: 22px;
-  --hv-pad: clamp(1.25rem, 2.6vw, 2.75rem);
+  --hv-page: var(--ds-page);
+  --hv-card: var(--ds-card);
+  --hv-card-2: var(--ds-card-2);
+  --hv-paper: var(--ds-paper);
+  --hv-paper-2: var(--ds-paper-2);
+  --hv-ink: var(--ds-ink);
+  --hv-fg: var(--ds-fg);
+  --hv-dim: var(--ds-dim);
+  --hv-faint: var(--ds-faint);
+  --hv-ink-dim: var(--ds-ink-dim);
+  --hv-ink-rule: var(--ds-ink-rule);
+  --hv-accent: var(--ds-accent);
+  --hv-accent-ink: var(--ds-accent-ink);
+  --hv-glass: var(--ds-glass);
+  --hv-glass-light: var(--ds-glass-light);
+  --hv-frame: var(--ds-frame);
+  --hv-r: var(--ds-r-card);
+  --hv-pad: var(--ds-pad);
   --hv-max: 100%; /* cards always fill the viewport, 10px gutter only, at any width */
-  --hv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --hv-display: var(--font-display);
-  --hv-body: var(--font);
+  --hv-ease: var(--ds-ease);
+  --hv-display: var(--ds-font-display);
+  --hv-body: var(--ds-font-body);
 }
 
 .hn a:focus-visible,
@@ -38,7 +38,7 @@
    rgba(51,51,51,.25) + blur(10px). Size and position spring (--hn-spring, 400ms), colour switches at once. */
 .hn {
   position: fixed;
-  z-index: 60;
+  z-index: var(--ds-z-header);
   top: 0;
   left: 0;
   right: 0;
@@ -61,9 +61,9 @@
   /* Back to the top (pill -> bar): the dark fill and blur fade to fully transparent in 280ms first,
      and the size spring starts 180ms later, so no dark shape is ever seen widening. Items never fade. */
   transition:
-    background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    -webkit-backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    backdrop-filter 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.28s var(--ds-ease-std),
+    -webkit-backdrop-filter 0.28s var(--ds-ease-std),
+    backdrop-filter 0.28s var(--ds-ease-std),
     width 0.4s var(--hn-spring) 0.18s,
     height 0.4s var(--hn-spring) 0.18s,
     padding 0.4s var(--hn-spring) 0.18s;
@@ -81,9 +81,9 @@
     width 0.4s var(--hn-spring),
     height 0.4s var(--hn-spring),
     padding 0.4s var(--hn-spring),
-    background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    -webkit-backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color 0.4s var(--ds-ease),
+    -webkit-backdrop-filter 0.4s var(--ds-ease),
+    backdrop-filter 0.4s var(--ds-ease);
 }
 .hn-row {
   display: grid;
@@ -114,7 +114,7 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
+  transition: background-color 0.2s var(--ds-ease-inout);
 }
 .hn-link:hover,
 .hn-more-btn[aria-expanded="true"] { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
@@ -162,7 +162,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-radius: 10px;
+  border-radius: var(--ds-r-tile);
   /* Same idea as the pill but more opaque (reference: rgba(51,51,51,.25), blur 10): page text must not read through. */
   background: rgba(20, 20, 20, 0.9);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
@@ -175,14 +175,14 @@
   gap: 5px;
   height: 40px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--ds-r-tile);
   color: var(--hv-fg);
   font-size: 16px;
   font-weight: 400;
   letter-spacing: -0.03em;
   white-space: nowrap;
   text-decoration: none;
-  transition: background-color 0.2s cubic-bezier(0.44, 0, 0.56, 1);
+  transition: background-color 0.2s var(--ds-ease-inout);
 }
 .hn-sub-item:hover,
 .hn-sub-item:focus-visible { background: rgba(166, 166, 166, 0.5); transition: background-color 0.4s var(--hn-spring); }
@@ -196,7 +196,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.6rem 1.05rem;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: var(--hv-accent);
   color: var(--hv-accent-ink);
   font-size: 0.92rem;
@@ -211,7 +211,7 @@
   min-width: 0;
   height: 35px;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: var(--hv-accent);
   color: var(--hv-accent-ink);
   transition: background-color 0.25s ease, transform 0.2s ease;
@@ -227,14 +227,14 @@
   height: 40px;
   padding: 0 0.85rem 0 1rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: transparent;
   color: inherit;
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1), color 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.28s var(--ds-ease-std), color 0.28s var(--ds-ease-std), border-color 0.28s var(--ds-ease-std);
 }
 /* Scrolled (compact dark bar): no pill of its own, just label + icon inside the bar. The pill is for the hero/top state only. */
 .hn[data-pill] .hn-toggle:not([data-open]) { border-color: transparent; background: transparent; }
@@ -275,7 +275,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.25s;
+  transition: opacity 0.25s var(--ds-ease), visibility 0s linear 0.25s;
 }
 .hn-mobile[data-open] {
   opacity: 1;
@@ -300,7 +300,7 @@
   gap: 0.35rem;
   opacity: 0;
   transform: translateY(14px);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s linear;
+  transition: transform 0.25s var(--ds-ease), opacity 0.2s linear;
 }
 .hn-mobile[data-open] .hn-mobile-group {
   opacity: 1;
@@ -317,7 +317,7 @@
 .hn-mobile .hn-mobile-main:active { opacity: 0.6; }
 .hn-mobile-lang { font-size: 0.9rem; }
 html.nav-open .hn-bar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
-html.nav-open .hn { z-index: 61; }
+html.nav-open .hn { z-index: var(--ds-z-header-open); }
 @media (min-width: 900.02px) {
   .hn-mobile { display: none; }
 }

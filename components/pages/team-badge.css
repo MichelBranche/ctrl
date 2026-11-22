@@ -64,7 +64,7 @@
   height: var(--tb-ribbon);
   margin-left: calc(var(--tb-ribbon-w) / -2);
   z-index: 3;
-  background: #ff4a1c url("/images/team-badge/ribbon.webp") 0 0 / 56px 56px repeat;
+  background: var(--ds-accent) url("/images/team-badge/ribbon.webp") 0 0 / 56px 56px repeat;
   box-shadow: inset 2px 0 2px rgba(0, 0, 0, 0.18), inset -2px 0 2px rgba(0, 0, 0, 0.18), inset 0 -2px 2px rgba(0, 0, 0, 0.22);
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 55%);
   mask-image: linear-gradient(180deg, transparent 0, #000 55%);
@@ -80,7 +80,7 @@
   margin-left: calc(var(--tb-clip-w) / -2);
   z-index: 2;
   clip-path: inset(0 0 var(--tb-tuck) 0);
-  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+  filter: var(--ds-shadow-metal);
 }
 
 .tb-card {
@@ -89,10 +89,10 @@
   display: flex;
   flex-direction: column;
   padding: 46px 16px 18px;
-  border-radius: 10px;
-  background: #ece7de;
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-ivory);
   color: #141414;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 2px 6px rgba(0, 0, 0, 0.35), 0 26px 50px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--ds-shadow-badge);
   pointer-events: auto;
   text-align: left;
 }
@@ -105,12 +105,12 @@
   height: var(--tb-slot-h);
   margin-left: -22px;
   border-radius: 99px;
-  background: #0b0b0b;
+  background: var(--ds-page);
   box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .tb-logo {
-  font-family: var(--font-display);
+  font-family: var(--ds-font-display);
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -122,7 +122,7 @@
   margin-left: 1px;
   font-size: 0.55em;
   line-height: 0;
-  color: #ff4a1c;
+  color: var(--ds-accent);
   vertical-align: baseline;
 }
 
@@ -131,7 +131,7 @@
   aspect-ratio: 218 / 200;
   margin-top: 12px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--ds-r-sm);
   background: #1c1c1c;
 }
 .tb-photo img {
@@ -141,7 +141,7 @@
 
 .tb-name {
   margin: 16px 0 0;
-  font-family: var(--font-display);
+  font-family: var(--ds-font-display);
   font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -168,8 +168,8 @@
 }
 .tb-links .t-socials a::after { content: ""; position: absolute; inset: -5px; } /* 44px touch target */
 .tb-links .t-socials svg { width: 16px; height: 16px; }
-.tb-links .t-socials a:hover { color: #ff4a1c; border-color: #ff4a1c; }
-.tb-links .t-socials a:focus-visible { color: #ff4a1c; border-color: #ff4a1c; outline: 2px solid #ff4a1c; outline-offset: 2px; }
+.tb-links .t-socials a:hover { color: var(--ds-accent); border-color: var(--ds-accent); }
+.tb-links .t-socials a:focus-visible { color: var(--ds-accent); border-color: var(--ds-accent); outline: 2px solid var(--ds-accent); outline-offset: 2px; }
 
 /* Tablet: two per row, Jacopo centered on the last row. */
 @media (max-width: 1040px) {

@@ -3,12 +3,14 @@ import { EcoWordmark } from "@/components/home/eco-wordmarks";
 import { ECOSYSTEM, ecosystemIcon } from "@/lib/ecosystem";
 import { localize, type Locale } from "@/lib/i18n";
 
-const SOON = {
-  it: { title: "Prossimamente", sub: "Nuovi strumenti CTRL® in arrivo." },
-  en: { title: "Coming soon", sub: "More CTRL® tools on the way." },
+type Copy = {
+  kicker: string;
+  title: string;
+  lead: string;
+  subs: Record<string, string>;
+  open: string;
+  soon: { title: string; sub: string };
 };
-
-type Copy = { kicker: string; title: string; lead: string; subs: Record<string, string>; open: string };
 
 export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
   return (
@@ -52,8 +54,8 @@ export function HomeEcosystem({ lang, copy }: { lang: Locale; copy: Copy }) {
           <li className="hv-eco-soon" aria-hidden="true">
             <span className="hv-eco-soon-icon">+</span>
             <span className="hv-eco-text">
-              <span className="hv-eco-soon-title">{SOON[lang].title}</span>
-              <span className="hv-eco-sub">{SOON[lang].sub}</span>
+              <span className="hv-eco-soon-title">{copy.soon.title}</span>
+              <span className="hv-eco-sub">{copy.soon.sub}</span>
             </span>
           </li>
         </ul>

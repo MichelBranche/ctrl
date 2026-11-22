@@ -5,7 +5,7 @@
   --pt-accent: var(--accent, #ff4a1c);
   position: fixed;
   inset: 0;
-  z-index: 190; /* above header and assistant, below the command menu (200) */
+  z-index: var(--ds-z-transition); /* above header and assistant, below the command menu (200) */
   display: flex;
   visibility: hidden;
   opacity: 0;

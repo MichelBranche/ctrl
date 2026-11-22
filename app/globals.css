@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "lenis/dist/lenis.css";
+@import "./tokens.css";
 
 :root {
   --ink: #0c0c0c;
@@ -120,7 +121,7 @@ input[type="radio"] {
 
 .scroll-progress {
   position: fixed;
-  z-index: 70;
+  z-index: var(--ds-z-progress);
   top: 0;
   left: 0;
   width: 100%;
@@ -201,7 +202,7 @@ input[type="radio"] {
 
 .site-header {
   position: fixed;
-  z-index: 60;
+  z-index: var(--ds-z-header);
   top: 0;
   left: 0;
   right: 0;
@@ -290,7 +291,7 @@ html.nav-open .site-header.is-hidden {
 }
 .header-cart svg { width: 1.15rem; height: 1.15rem; }
 .header-cart-count { position: absolute; top: -.12rem; right: -.22rem; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .16rem; border-radius: 99px; background: var(--accent, #ff4a1c); color: #0c0c0c; font-size: .55rem; font-weight: 700; line-height: 1; }
-.cart-layer { position: fixed; inset: 0; z-index: 180; color: #f2f0ea; }
+.cart-layer { position: fixed; inset: 0; z-index: var(--ds-z-cart); color: #f2f0ea; }
 .cart-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(0,0,0,.62); opacity: 0; animation: cart-backdrop-in .28s ease forwards; cursor: pointer; }
 .cart-drawer { position: absolute; inset: 0 0 0 auto; display: flex; flex-direction: column; width: min(30rem, 100vw); padding: clamp(1.25rem, 4vw, 2rem); border-left: 1px solid rgba(242,240,234,.15); background: #0b0b0b; box-shadow: -1.5rem 0 4rem rgba(0,0,0,.28); animation: cart-drawer-in .42s cubic-bezier(.22,1,.36,1) both; }
 .cart-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(242,240,234,.18); }
@@ -770,8 +771,8 @@ button:focus-visible .swap span:last-child {
    Typography stays on Geist (original font).
    ========================================================== */
 :root {
-  --accent: #ff4a1c;
-  --accent-ink: #0c0c0c;
+  --accent: var(--ds-accent);
+  --accent-ink: var(--ds-accent-ink);
 }
 
 ::selection { background: var(--accent); color: var(--accent-ink); }
@@ -794,7 +795,7 @@ kbd, .cmd .mono, .cmd-trigger {
 
 /* Command menu */
 .cmd {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: var(--ds-z-command);
   display: grid; place-items: start center; padding: 14vh 1rem 1rem;
   background: rgba(8,8,8,.55); backdrop-filter: blur(8px);
   animation: cmd-fade .2s ease;
@@ -974,7 +975,7 @@ h3,
   position: fixed;
   right: calc(var(--ca-gap) + env(safe-area-inset-right));
   bottom: calc(var(--ca-gap) + env(safe-area-inset-bottom));
-  z-index: 150; /* above content (≤100), below command menu (200) */
+  z-index: var(--ds-z-assistant); /* above content (≤100), below command menu (200) */
   font-family: var(--font-geist-sans), sans-serif;
 }
 .ca-launcher {
@@ -1133,7 +1134,7 @@ html.pt-booting .ca-root {
 
 .cursor-label {
   position: fixed;
-  z-index: 140;
+  z-index: var(--ds-z-cursor);
   top: 0;
   left: 0;
   display: grid;
@@ -1153,7 +1154,7 @@ html.pt-booting .ca-root {
 
 .back-to-top {
   position: fixed;
-  z-index: 90;
+  z-index: var(--ds-z-back-to-top);
   left: calc(24px + env(safe-area-inset-left));
   bottom: calc(24px + env(safe-area-inset-bottom));
   width: 2.75rem;

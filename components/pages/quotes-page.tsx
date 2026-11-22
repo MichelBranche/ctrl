@@ -7,6 +7,7 @@ import { QuotesVideo } from "@/components/quotes/quotes-video";
 import { QUOTES_COPY, QUOTES_TEMPLATES, QUOTES_URL, QUOTES_VIDEO } from "@/components/quotes/quotes-copy";
 import type { Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import "./quotes-page.css";
 
 /** Indexing switch: when false the page gets noindex (the sitemap lists /ctrl-quotes and /en/ctrl-quotes in app/sitemap.ts). */
@@ -23,14 +24,6 @@ export function quotesMetadata(lang: Locale): Metadata {
   });
 }
 
-function ArrowUpRight() {
-  return (
-    <svg className="qx-arrow" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
 function Check() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true" className="qx-check">
@@ -43,7 +36,7 @@ function OfficialLink({ className, children }: { className: string; children: Re
   return (
     <a href={QUOTES_URL} target="_blank" rel="noopener" className={className}>
       {children}
-      <ArrowUpRight />
+      <ArrowUpRight className="qx-arrow" strokeWidth={1.6} />
     </a>
   );
 }
@@ -107,7 +100,7 @@ export function QuotesPage({ lang }: { lang: Locale }) {
                 <p className="qx-kicker qx-kicker-light">{c.videoKicker}</p>
                 <a href={`https://www.youtube.com/watch?v=${QUOTES_VIDEO.id}`} target="_blank" rel="noopener noreferrer" className="qx-link">
                   {c.onYoutube}
-                  <ArrowUpRight />
+                  <ArrowUpRight className="qx-arrow" strokeWidth={1.6} />
                 </a>
               </div>
               <div className="qx-video-frame" data-qx-rise>

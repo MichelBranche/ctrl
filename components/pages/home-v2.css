@@ -1,33 +1,34 @@
 /* Home page v2 (Work Louder pattern study, CTRL material). Scoped with .hv- (page), .hn- (header), .hp- (plates).
+   Values come from app/tokens.css (--ds-*); the --hv-* names below are local aliases.
    Floor: tokens at the scope root, no transition: all, reduced-motion fallbacks, content visible without JS. */
 
 .hv {
-  --hv-page: #0b0b0b;
-  --hv-card: #151515;
-  --hv-card-2: #1d1d1c;
-  --hv-paper: #f2f1ec;
-  --hv-paper-2: #e7e5dd;
-  --hv-ink: #0c0c0c;
-  --hv-fg: #f2f0ea;
-  --hv-dim: rgba(242, 240, 234, 0.62);
-  --hv-faint: rgba(242, 240, 234, 0.14);
-  --hv-ink-dim: #5f5d59;
-  --hv-ink-rule: rgba(12, 12, 12, 0.12);
-  --hv-accent: #ff4a1c;
-  --hv-accent-ink: #0c0c0c;
-  --hv-glass: rgba(20, 20, 20, 0.5);
-  --hv-glass-light: rgba(255, 255, 255, 0.28);
-  --hv-frame: 10px;
+  --hv-page: var(--ds-page);
+  --hv-card: var(--ds-card);
+  --hv-card-2: var(--ds-card-2);
+  --hv-paper: var(--ds-paper);
+  --hv-paper-2: var(--ds-paper-2);
+  --hv-ink: var(--ds-ink);
+  --hv-fg: var(--ds-fg);
+  --hv-dim: var(--ds-dim);
+  --hv-faint: var(--ds-faint);
+  --hv-ink-dim: var(--ds-ink-dim);
+  --hv-ink-rule: var(--ds-ink-rule);
+  --hv-accent: var(--ds-accent);
+  --hv-accent-ink: var(--ds-accent-ink);
+  --hv-glass: var(--ds-glass);
+  --hv-glass-light: var(--ds-glass-light);
+  --hv-frame: var(--ds-frame);
   /* One vertical rhythm for the whole home: the gap between section cards equals the side frame. */
   --hv-gap: var(--hv-frame);
   /* Text bands (marquees) sit between cards with the same space above and below. */
-  --hv-band: clamp(1.25rem, 2vw, 1.75rem);
-  --hv-r: 22px;
-  --hv-pad: clamp(1.25rem, 2.6vw, 2.75rem);
+  --hv-band: var(--ds-band);
+  --hv-r: var(--ds-r-card);
+  --hv-pad: var(--ds-pad);
   --hv-max: 100%; /* cards always fill the viewport, 10px gutter only, at any width */
-  --hv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --hv-display: var(--font-display);
-  --hv-body: var(--font);
+  --hv-ease: var(--ds-ease);
+  --hv-display: var(--ds-font-display);
+  --hv-body: var(--ds-font-body);
 }
 
 .hv {
@@ -52,7 +53,7 @@
 .hv-kicker {
   margin: 0;
   color: var(--hv-dim);
-  font-size: 0.875rem;
+  font-size: var(--ds-text-kicker);
   font-weight: 500;
   letter-spacing: -0.01em;
 }
@@ -60,10 +61,10 @@
 .hv-h2 {
   margin: 0;
   font-family: var(--hv-display);
-  font-size: clamp(2.4rem, 4.4vw, 4.25rem);
+  font-size: var(--ds-text-h2);
   font-weight: 500;
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--ds-track-display);
   overflow-wrap: break-word;
   min-width: 0;
 }
@@ -71,7 +72,7 @@
 .hv-h3 {
   margin: 0.35rem 0 0;
   font-family: var(--hv-display);
-  font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+  font-size: var(--ds-text-h3);
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.04em;
@@ -92,7 +93,7 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.7rem 1.05rem 0.7rem 1.15rem;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: var(--hv-accent);
   color: var(--hv-accent-ink);
   font-size: 0.95rem;
@@ -124,7 +125,7 @@
   gap: 1rem;
   padding: 0.4rem 0.4rem 0.4rem 1.2rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: var(--hv-glass);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -156,7 +157,7 @@
   align-items: center;
   padding: 0.95rem 1.35rem;
   border: 1px solid var(--hv-ink-rule);
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   color: var(--hv-ink);
   font-size: 0.98rem;
   font-weight: 500;
@@ -302,7 +303,7 @@
   --hp-edge-base: #2a2b2e;
   --hp-face-base: #3b3c40;
   --hp-hole: #101012;
-  --hp-orange: #ff4a1c;
+  --hp-orange: var(--ds-accent);
   --hp-orange-edge: #c93710;
   --hp-orange-deep: #b92f0a;
   --hp-glass-edge: rgba(214, 228, 240, 0.2);
@@ -800,7 +801,7 @@
   position: absolute;
   bottom: 0.45rem;
   padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--ds-r-pill);
   background: rgba(0, 0, 0, 0.72);
   color: #f5f4f1;
   font-size: 0.72rem;
@@ -904,7 +905,7 @@
 .hv .h-review time,
 .hv .h-review-text { color: var(--hv-dim); }
 .hv .h-reviews-fixture { color: var(--hv-accent); font-size: 0.8rem; font-weight: 600; }
-.hv .h-reviews-pause { grid-area: pause; padding: 0.4rem 0.8rem; border: 1px solid var(--hv-faint); border-radius: 999px; background: transparent; color: var(--hv-dim); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.hv .h-reviews-pause { grid-area: pause; padding: 0.4rem 0.8rem; border: 1px solid var(--hv-faint); border-radius: var(--ds-r-pill); background: transparent; color: var(--hv-dim); font: inherit; font-size: 0.8rem; cursor: pointer; }
 .hv .h-reviews-viewport { grid-area: track; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .hv .h-reviews-track { display: flex; width: max-content; }
 .hv .h-reviews-set { display: flex; gap: 0.7rem; margin: 0; padding: 0 0.7rem 0 0; list-style: none; }
@@ -975,12 +976,12 @@ html:has(main.hv) .h-close { padding-inline: calc(var(--hv-frame, 10px) + clamp(
   /* Centred: the assistant launcher stays hidden while the hero is on screen (see below). */
   .hv-hero-bottom { justify-content: center; }
   /* Assistant launcher: shows only once the hero is scrolled past, soft fade both ways. */
-  .ca-root { transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0s; }
+  .ca-root { transition: opacity 0.45s var(--ds-ease), visibility 0s linear 0s; }
   html[data-hv-hero="in"] .ca-root:not(:has(.ca-launcher.is-open)) {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.45s;
+    transition: opacity 0.45s var(--ds-ease), visibility 0s linear 0.45s;
   }
   .hv-hero .hv-pill { gap: 0.5rem; padding: 0.35rem 0.35rem 0.35rem 0.95rem; }
   .hv-hero .hv-pill-name { font-size: 0.95rem; }
