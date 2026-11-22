@@ -305,7 +305,44 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             </nav>
           </section>
 
-          <div className="og-grid">
+          <div hidden><script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} /></div>
+          <section className="og-kpis" aria-label="Numeri del CRM">
+            <Link href={RUBRICA as Route} className="og-kpi" data-kpi="contatti" style={{ ["--i" as string]: 0 }}>
+              <span className="og-tile-label"><i aria-hidden="true" />Contatti</span>
+              <span className="og-kpi-n"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
+              <span className="og-kpi-meta" data-tone={month.tone}>{month.text}</span>
+              <Sparkline points={contactsLine} tone="quiet" />
+            </Link>
+            <div className="og-kpi" data-kpi="assegnati" style={{ ["--i" as string]: 1 }}>
+              <span className="og-tile-label"><i aria-hidden="true" />Assegnati</span>
+              <span className="og-kpi-n"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
+              <span className="og-kpi-meta" data-tone={freeLine.tone}>{freeLine.text}</span>
+              <Sparkline points={assignedLine} tone="quiet" />
+            </div>
+            <Link href={PIPELINE as Route} className="og-kpi" data-kpi="opportunita" style={{ ["--i" as string]: 2 }}>
+              <span className="og-tile-label"><i aria-hidden="true" />Opportunità</span>
+              <span className="og-kpi-n"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
+              <span className="og-kpi-meta" data-tone="quiet">{dealStatus}</span>
+              <Sparkline points={dealsLine} tone="quiet" />
+            </Link>
+            <div className="og-kpi" data-kpi="dafare" style={{ ["--i" as string]: 3 }}>
+              <span className="og-tile-label"><i aria-hidden="true" />Da fare <CrmTip text={todoTip} /></span>
+              <span className="og-kpi-n"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
+              <span className="og-kpi-meta" data-tone={urgent.tone}>{urgent.text}</span>
+              <Sparkline points={todoLine} tone="accent" />
+            </div>
+          </section>
+
+          <section className="og-pipe" aria-labelledby="og-pipe-h">
+            <div className="og-card-head og-pipe-head">
+              <h2 id="og-pipe-h">Contatti per fase <CrmTip text="Conta i contatti, non le trattative. Un riquadro apre la rubrica filtrata per quella fase." /></h2>
+              <Link className="og-link" href={PIPELINE as Route}>Apri pipeline <CrmIcon d="M5 12h14M13 6l6 6-6 6" /></Link>
+            </div>
+            <RubricaStages counts={ov.byStage} total={stageTotal} active={null}
+              hrefs={Object.fromEntries(STAGES.map((st) => [st, `${RUBRICA}?fase=${st}`])) as Record<Stage, string>} />
+          </section>
+
+          <div className="og-grid" data-layout={shown.length === 0 ? "empty" : shown.length < 10 ? "stack" : "split"}>
             <section className="og-list" aria-labelledby="og-list-h">
               <div className="og-list-head">
                 <h2 id="og-list-h">Follow-up e attività {filter ? <span className="rb-badge rb-badge-quiet">{shown.length}</span> : null}</h2>
@@ -350,7 +387,19 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                   </ul>
                 </div>
               )) : (
-                <EmptyNote icon={CRM_ICON["/admin/crm/attivita"]} text={filter ? "Niente in questa scadenza." : team ? "Niente in scadenza per il team." : "Niente in scadenza per te."} />
+                <div className="og-clear">
+                  <span className="og-clear-icon" aria-hidden="true"><CrmIcon d="M5 12l5 5L20 7" /></span>
+                  <div className="og-clear-text">
+                    <p className="og-clear-title">{filter ? "Niente in questa scadenza" : "Niente in scadenza"}</p>
+                    <p className="og-clear-sub">{filter ? "Togli il filtro per vedere il resto." : team ? "Il team non ha follow-up né attività fino a domani." : "Non hai follow-up né attività fino a domani. Buon momento per pianificare."}</p>
+                  </div>
+                  <div className="og-clear-actions">
+                    {filter ? <Link className="rb-btn" href={href({ scadenza: null }) as Route} scroll={false}>Mostra tutto</Link> : null}
+                    <Link className="rb-btn" href={"/admin/crm/attivita?nuova=1" as Route}><CrmIcon d="M12 5v14M5 12h14" /><span>Pianifica un follow-up</span></Link>
+                    <Link className="rb-btn rb-btn-quiet" href={"/admin/crm/rubrica?resp=none" as Route}><span>Senza responsabile</span>{ov.unassigned ? <span className="rb-badge rb-badge-quiet">{ov.unassigned}</span> : null}</Link>
+                    <Link className="rb-btn rb-btn-quiet" href={"/admin/crm/rubrica?ordina=punteggio&dir=desc" as Route}><span>Punteggi più alti</span></Link>
+                  </div>
+                </div>
               )}
             </section>
 
@@ -416,42 +465,6 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             </aside>
           </div>
 
-          <div hidden><script dangerouslySetInnerHTML={{ __html: "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('crm-oggi-kpis'))document.documentElement.classList.add('crm-roll-play')}catch(e){}" }} /></div>
-          <section className="og-kpis" aria-label="Numeri del CRM">
-            <Link href={RUBRICA as Route} className="og-kpi" data-kpi="contatti" style={{ ["--i" as string]: 0 }}>
-              <span className="og-tile-label"><i aria-hidden="true" />Contatti</span>
-              <span className="og-kpi-n"><RollValue id="total" text={String(kpi.contactsTotal)} /></span>
-              <span className="og-kpi-meta" data-tone={month.tone}>{month.text}</span>
-              <Sparkline points={contactsLine} tone="quiet" />
-            </Link>
-            <div className="og-kpi" data-kpi="assegnati" style={{ ["--i" as string]: 1 }}>
-              <span className="og-tile-label"><i aria-hidden="true" />Assegnati</span>
-              <span className="og-kpi-n"><RollValue id="assigned" text={String(kpi.assigned)} /></span>
-              <span className="og-kpi-meta" data-tone={freeLine.tone}>{freeLine.text}</span>
-              <Sparkline points={assignedLine} tone="quiet" />
-            </div>
-            <Link href={PIPELINE as Route} className="og-kpi" data-kpi="opportunita" style={{ ["--i" as string]: 2 }}>
-              <span className="og-tile-label"><i aria-hidden="true" />Opportunità</span>
-              <span className="og-kpi-n"><RollValue id="open" text={String(kpi.opportunitiesActive)} /></span>
-              <span className="og-kpi-meta" data-tone="quiet">{dealStatus}</span>
-              <Sparkline points={dealsLine} tone="quiet" />
-            </Link>
-            <div className="og-kpi" data-kpi="dafare" style={{ ["--i" as string]: 3 }}>
-              <span className="og-tile-label"><i aria-hidden="true" />Da fare <CrmTip text={todoTip} /></span>
-              <span className="og-kpi-n"><RollValue id={`todo-${scope}`} text={String(todoCount)} /></span>
-              <span className="og-kpi-meta" data-tone={urgent.tone}>{urgent.text}</span>
-              <Sparkline points={todoLine} tone="accent" />
-            </div>
-          </section>
-
-          <section className="og-pipe" aria-labelledby="og-pipe-h">
-            <div className="og-card-head og-pipe-head">
-              <h2 id="og-pipe-h">Contatti per fase <CrmTip text="Conta i contatti, non le trattative. Un riquadro apre la rubrica filtrata per quella fase." /></h2>
-              <Link className="og-link" href={PIPELINE as Route}>Apri pipeline <CrmIcon d="M5 12h14M13 6l6 6-6 6" /></Link>
-            </div>
-            <RubricaStages counts={ov.byStage} total={stageTotal} active={null}
-              hrefs={Object.fromEntries(STAGES.map((st) => [st, `${RUBRICA}?fase=${st}`])) as Record<Stage, string>} />
-          </section>
         </div>
       </main>
     </>

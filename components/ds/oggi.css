@@ -21,11 +21,11 @@
 
 .og-strip, .og-list, .og-side > *, .og-kpis, .og-pipe { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) backwards; }
 .og-strip { animation-delay: 0.04s; }
-.og-list { animation-delay: 0.08s; }
-.og-side > :nth-child(1) { animation-delay: 0.1s; }
-.og-side > :nth-child(2) { animation-delay: 0.13s; }
-.og-kpis { animation-delay: 0.16s; }
-.og-pipe { animation-delay: 0.2s; }
+.og-kpis { animation-delay: 0.08s; }
+.og-pipe { animation-delay: 0.11s; }
+.og-list { animation-delay: 0.14s; }
+.og-side > :nth-child(1) { animation-delay: 0.17s; }
+.og-side > :nth-child(2) { animation-delay: 0.2s; }
 
 .og h2 {
   display: flex;
@@ -163,6 +163,16 @@
   gap: var(--ds-gap);
 }
 .og-side { display: flex; flex-direction: column; gap: var(--ds-gap); min-width: 0; }
+/* Few or no follow-ups: the list spans the width and the side cards sit below in a balanced pair,
+   so a short list never leaves a tall empty column next to them. */
+.og-grid[data-layout="empty"], .og-grid[data-layout="stack"] { grid-template-columns: minmax(0, 1fr); }
+/* Many follow-ups: the side column follows the scroll (below the 4rem topbar), so it never ends in a void. */
+@media (min-width: 1181px) and (min-height: 760px) {
+  .og-grid[data-layout="split"] .og-side { position: sticky; top: calc(4rem + var(--ds-gap)); }
+}
+/* Full width, the two attention lists sit side by side; the feed spans below. Nothing is stretched. */
+.og-grid:is([data-layout="empty"], [data-layout="stack"]) .og-attn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.og-grid:is([data-layout="empty"], [data-layout="stack"]) .og-attn-block + .og-attn-block { border-top: 0; border-left: 1px solid var(--ds-faint); }
 .og-list, .og-card, .og-pipe {
   min-width: 0;
   border-radius: var(--ds-r-card);
@@ -296,6 +306,32 @@
 .og-snooze-panel button:disabled { opacity: 0.5; cursor: wait; }
 .og-row-error { right: 0; top: calc(100% + 0.2rem); z-index: var(--ds-z-admin-topbar); padding: 0.3rem 0.5rem; border-radius: var(--ds-r-sm); background: var(--ds-card-2); white-space: nowrap; }
 
+/* Compact, useful empty state: what to do next instead of a blank card. */
+.og-clear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 1rem var(--rb-pad-x) 1.1rem;
+}
+.og-clear-icon {
+  display: grid;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--ds-ok) 15%, var(--ds-card));
+  color: var(--ds-ok);
+}
+.og-clear-icon svg { width: 16px; height: 16px; }
+.og-clear-text { flex: 1 1 16rem; min-width: 0; }
+.og-clear-title { margin: 0; color: var(--ds-fg); font-size: var(--ds-text-body); font-weight: 500; }
+.og-clear-sub { margin: 0.15rem 0 0; color: var(--ds-dim); font-size: var(--ds-text-small); }
+.og-clear-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.og-clear-actions .rb-btn svg { width: 14px; height: 14px; }
+.og-clear-actions .rb-badge { margin-left: 0.1rem; }
+
 .og-empty {
   display: flex;
   align-items: center;
@@ -389,14 +425,19 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
   .og-grid { grid-template-columns: 1fr; }
-  .og-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .og-attn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .og-attn-block + .og-attn-block { border-top: 0; border-left: 1px solid var(--ds-faint); }
 }
 @media (max-width: 860px) {
   .og-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .og-side { display: flex; align-items: stretch; }
 }
 @media (max-width: 640px) {
   .og-strip-head { flex-wrap: wrap; }
+  .og .og-grid .og-attn { display: flex; }
+  .og .og-grid .og-attn-block + .og-attn-block { border-left: 0; border-top: 1px solid var(--ds-faint); }
+  .og-clear { align-items: flex-start; }
+  .og-clear-actions { flex: 1 1 100%; }
+  .og-clear-actions .rb-btn { flex: 1 1 auto; justify-content: center; }
   .og-strip-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .og-tile-n { font-size: 1.4rem; }
   .og-kpi-n { font-size: 1.6rem; }
