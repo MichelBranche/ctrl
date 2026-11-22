@@ -1,206 +1,94 @@
-/* Hallmark · floor-only run on a mockup-driven page (contact) · genre: atmospheric (inferred from the site)
- * critique: mockup 1:1, site's own system wins on type and labels; one idea per screen: hero, info, form, map
- * waive 9, 67, 64 (tracked mono capitals on labels): the mockup and every existing page use them; 1:1 requested
- * waive 13 (map split text): within budget, recorded for clarity */
+/* /contact. Frame system (components/ds/frame.css + app/tokens.css): photo hero card, info cards, one form card,
+   map bento. The wizard (.cw-*) and its form classes below keep their own rules; only the shell changed. */
 
-/* Contact page (mockup). Scoped with the .c- prefix. */
 :root {
-  --c-bg: #0b0b0b;
-  --c-fg: #f2f0ea;
-  --c-dim: rgba(242, 240, 234, 0.62);
+  /* Aliases kept for the wizard and the form rules below. */
+  --c-bg: var(--ds-page);
+  --c-fg: var(--ds-fg);
+  --c-dim: var(--ds-dim);
   --c-faint: rgba(242, 240, 234, 0.4);
   --c-rule: rgba(242, 240, 234, 0.12);
   --c-field: rgba(242, 240, 234, 0.03);
   --c-field-line: rgba(242, 240, 234, 0.18);
-  --c-accent: var(--accent, #ff4a1c);
-  --c-accent-ink: var(--accent-ink, #0c0c0c);
-  --c-shade: rgba(11, 11, 11, 0.35);
-  --c-shade-lo: rgba(11, 11, 11, 0.1);
+  --c-accent: var(--ds-accent);
+  --c-accent-ink: var(--ds-accent-ink);
   --c-mono-face: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --c-display-face: var(--font-display);
-  --c-max: 90rem;
-  --c-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --c-display-face: var(--ds-font-display);
+  --c-ease: var(--ds-ease);
 }
 
-.c-root {
-  background: var(--c-bg);
-  color: var(--c-fg);
-}
-
-.c-mono {
-  font-family: var(--c-mono-face);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
+.c-mono { font-family: var(--c-mono-face); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; }
 .c-label { margin: 0; color: var(--c-dim); }
-
-/* One centered column, the same width as the other inner pages. */
-.c-band {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--gutter);
-  row-gap: var(--gutter);
-  box-sizing: border-box;
-  width: min(100%, var(--container, 92rem));
-  margin-inline: auto;
-  padding-inline: var(--gutter);
-}
+.c-form-text { max-width: 34rem; margin: 1.1rem 0 0; font-size: 0.98rem; line-height: 1.55; color: var(--c-fg); }
 
 /* 1. HERO */
-.c-hero {
-  position: relative;
+.c-hero { height: 78svh; min-height: 36rem; max-height: 56rem; }
+.c-hero-card {
   display: grid;
-  place-items: center;
-  min-height: min(100svh, 56rem);
-  padding: calc(var(--header) + 3rem) var(--gutter) 6rem;
-  overflow: hidden;
-  text-align: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 2rem;
+  height: 100%;
+  padding-inline: clamp(1.25rem, 3.125vw, 3.5rem);
+  padding-bottom: clamp(1.5rem, 3vw, 3rem);
+  isolation: isolate;
 }
-.c-hero-img { object-fit: cover; object-position: 70% 50%; z-index: 0; }
-.c-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, var(--c-shade) 0%, var(--c-shade-lo) 55%, var(--c-bg) 100%);
+.c-hero-img { z-index: -2; object-fit: cover; object-position: 70% 50%; filter: grayscale(1); }
+.c-hero-card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ds-scrim); }
+.c-hero-top { grid-column: 1 / -1; align-self: start; }
+.c-hero-copy { display: grid; justify-items: start; gap: 1.25rem; min-width: 0; }
+.c-title { font-size: clamp(3rem, 8vw, 9rem); }
+.c-lead { color: var(--ds-fg); }
+.c-hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
+.c-hero-actions .ds-ghost { background: var(--ds-glass); }
+.c-arrow-down { transform: rotate(90deg); }
+.ds-cta:hover .c-arrow-down { transform: rotate(90deg) translate(2px, 0); }
+
+/* 2. INFO */
+.c-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--ds-gap); }
+.c-info-col { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; padding: clamp(1.1rem, 1.8vw, 1.75rem); }
+.c-info-value { font-family: var(--ds-font-display); font-size: clamp(1.1rem, 1.35vw, 1.4rem); font-weight: 500; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.c-info-link { transition: color var(--ds-dur) ease; }
+.c-info-link:hover { color: var(--ds-accent-hover); }
+.c-info-note { color: var(--ds-ink-dim); font-size: 0.88rem; line-height: 1.45; }
+.c-socials { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.2rem; }
+
+/* 3. FORM */
+.c-form-wrap { scroll-margin-top: 0; }
+.c-form-card { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(1.5rem, 4vw, 4.5rem); align-items: start; }
+.c-form-intro { position: sticky; top: 100px; display: grid; gap: 1rem; }
+/* The wizard sits on the card: no second frame around it. */
+.c-form-slot .cw { max-width: 40rem; padding: 0; border: 0; background: none; }
+
+/* 4. PLACE */
+.c-place { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--ds-gap); }
+.c-map-media { min-height: 26rem; background: var(--ds-card); }
+.c-map-frame { display: block; width: 100%; height: 100%; border: 0; filter: grayscale(1); }
+.c-card { display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; min-width: 0; }
+.c-card .ds-ghost, .c-card .ds-cta { margin-top: auto; }
+.c-card-address { margin: 0; font-weight: 600; }
+.c-rating { margin: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--ds-accent); }
+
+@media (max-width: 1100px) {
+  .c-place { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .c-map-media { grid-column: 1 / -1; min-height: 20rem; }
 }
-.c-hero-copy {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: min(100%, 46rem);
-  min-width: 0;
-  animation: c-rise 1.1s var(--c-ease) both;
+@media (max-width: 860px) {
+  .c-hero { height: auto; min-height: 0; max-height: none; }
+  .c-hero-card { grid-template-columns: minmax(0, 1fr); min-height: calc(100svh - 2 * var(--ds-frame)); max-height: 46rem; }
+  .c-hero-actions { justify-content: flex-start; }
+  .c-form-card { grid-template-columns: minmax(0, 1fr); }
+  .c-form-intro { position: static; }
 }
-.c-hero .seo-crumbs { justify-content: center; }
-.c-tag {
-  margin: 0;
-  padding-bottom: 0.6rem;
-  font-family: var(--c-mono-face);
-  font-size: 0.66rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--c-fg);
-  border-bottom: 2px solid var(--c-accent);
+@media (max-width: 600px) {
+  .c-place { grid-template-columns: minmax(0, 1fr); }
+  .c-map-media { min-height: 16rem; }
 }
-.c-title {
-  margin: 1.6rem 0 0;
-  font-family: var(--c-display-face);
-  font-size: clamp(3.4rem, 9vw, 9rem);
-  font-weight: 500;
-  line-height: 1.02;
-  letter-spacing: -0.05em;
-  overflow-wrap: break-word;
-  min-width: 0;
-}
-.c-lead {
-  display: flex;
-  flex-direction: column;
-  margin: 1.8rem 0 0;
-  font-size: clamp(1rem, 1.35vw, 1.3rem);
-  line-height: 1.45;
-  color: var(--c-fg);
-}
-.c-write {
-  display: inline-flex;
-  align-items: center;
-  gap: 1.4rem;
-  margin-top: 2.6rem;
-  color: var(--c-fg);
-  text-decoration: none;
-}
+
+/* Form rules (unchanged) */
 .c-arrow { width: 1.1rem; height: 1.1rem; flex: none; transition: transform 0.45s var(--c-ease); }
-.c-write:hover .c-arrow { transform: translateY(3px) rotate(90deg); }
-.c-book {
-  margin-top: 1.5rem;
-  color: var(--c-fg);
-  font-size: 0.95rem;
-  text-decoration: none;
-  border-bottom: 1px solid var(--c-accent);
-  padding-bottom: 0.12rem;
-}
-.c-book:hover { color: var(--c-accent); }
-
-/* 2. INFO STRIP. Hairlines come from the 1px gap, so every cell shares the same edges. */
-.c-info {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-  gap: 1px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  background: var(--c-rule);
-  border: 1px solid var(--c-rule);
-}
-.c-info-col {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  min-width: 0;
-  padding: 1.8rem 1.35rem 1.7rem;
-  background: var(--c-bg);
-}
-.c-info-col::after {
-  content: "";
-  position: absolute;
-  left: 1.35rem;
-  right: 1.35rem;
-  bottom: 0;
-  height: 1px;
-  background: var(--c-accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.6s var(--c-ease);
-}
-.c-info-col:hover::after { transform: scaleX(1); }
-.c-info-value { font-size: 1.05rem; color: var(--c-fg); overflow-wrap: anywhere; }
-.c-info-link { text-decoration: none; transition: color 0.3s ease; }
-.c-info-link:hover { color: var(--c-accent); }
-.c-info-note { font-size: 0.82rem; color: var(--c-dim); }
-.c-socials { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: 0.85rem; color: var(--c-fg); margin-top: 0.3rem; }
-
-/* 3. FORM. The wizard is the centerpiece: intro and card share one centered measure. */
-.c-form-wrap {
-  padding-block: 5.5rem 6rem;
-  scroll-margin-top: var(--header);
-}
-.c-form-intro,
-.c-form-wrap .cw {
-  grid-column: 1 / -1;
-  justify-self: center;
-  width: min(100%, 40rem);
-  max-width: 40rem;
-}
-.c-form-intro { text-align: center; }
-.c-h2 {
-  display: flex;
-  flex-direction: column;
-  margin: 1.1rem 0 0;
-  font-family: var(--c-display-face);
-  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.04em;
-  overflow-wrap: break-word;
-  min-width: 0;
-}
-/* Scroll-reveal wraps each heading line in an overflow mask. The mask is the line box,
-   which crops descenders (the g in "progetto") unless the line has room inside it. */
-.c-root .reveal-line {
-  display: block;
-  line-height: 1.25;
-  padding-top: 0.08em;
-  padding-bottom: 0.22em;
-  margin-top: -0.08em;
-  margin-bottom: -0.22em;
-}
-.c-form-intro .c-h2 { align-items: center; }
-.c-form-text { max-width: 34rem; margin: 1.1rem 0 0; font-size: 0.98rem; line-height: 1.55; color: var(--c-fg); }
-.c-form-intro .c-form-text { margin-inline: auto; }
+.c-hp, .j-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .c-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -281,77 +169,7 @@
   cursor: pointer;
 }
 
-/* 4. MAP AND REVIEW. Same 12 columns as the bands above. */
-.c-place { padding-block: 0 5.5rem; }
-.c-map-media {
-  grid-column: 1 / -1;
-  aspect-ratio: 16 / 8;
-  min-block-size: 16rem;
-  border: 1px solid var(--c-rule);
-  background: var(--c-bg);
-}
-.c-map-frame { display: block; width: 100%; height: 100%; border: 0; }
-.c-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
-  padding: 1.6rem 1.45rem 1.5rem;
-  border: 1px solid var(--c-rule);
-  background:
-    linear-gradient(var(--c-accent), var(--c-accent)) top / 100% 2px no-repeat,
-    rgba(242, 240, 234, 0.03);
-}
-.c-card:nth-of-type(1) { grid-column: 1 / span 6; }
-.c-review { grid-column: 7 / -1; }
-.c-where { margin-top: 0.85rem; font-size: clamp(2rem, 3vw, 2.8rem); }
-.c-card-address { margin: 0.85rem 0 0; font-size: 1.05rem; }
-.c-rating { margin: 0.85rem 0 0; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
-.c-card .c-form-text { margin-top: 0.75rem; }
-.c-maps {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8rem;
-  align-self: flex-start;
-  margin-top: auto;
-  padding-top: 1.6rem;
-  color: var(--c-fg);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-.c-maps:hover { color: var(--c-accent); }
-.c-maps:hover .c-arrow { transform: translateX(4px); }
 
-/* Focus */
-.c-root a:focus-visible,
-.c-root button:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 4px;
-  transition: none;
-}
-
-@keyframes c-rise {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (max-width: 860px) {
-  .c-form-wrap { padding-block: 3.5rem 4rem; }
-  .c-map-media { aspect-ratio: 4 / 3; min-block-size: 14rem; }
-  .c-card:nth-of-type(1),
-  .c-review { grid-column: 1 / -1; }
-}
-@media (max-width: 560px) {
-  .c-form { grid-template-columns: minmax(0, 1fr); }
-  .c-write { gap: 1rem; }
-  .c-place { padding-block: 0 3.5rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .c-hero-copy { animation: none; }
-  .c-root *,
-  .c-root *::after { transition-duration: 0.01ms !important; }
-}
-.c-hp, .j-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 
 /* Wizard: one question at a time. Motion that moves lives in GSAP; these transitions are color only,
    except the hover lift which is opted into when the person has not asked for reduced motion. */
@@ -642,3 +460,9 @@
 .c-send:disabled { opacity: 0.6; cursor: wait; }
 .c-socials a { text-decoration: none; transition: color 0.2s ease; }
 .c-socials a:hover, .c-socials a:focus-visible { color: var(--c-accent); }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .c-root *,
+  .c-root *::after { transition-duration: 0.01ms !important; }
+}
