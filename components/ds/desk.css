@@ -1,0 +1,260 @@
+/* Desk /admin/desk on the public design tokens.
+   Reuses the dashboard telaio from admin-ui.css (.ds-page, .ds-head, .ds-card, .ds-metric).
+   Prefix .dk is unique to this page. Rules: docs/design-system.md. */
+
+.dk-kpis,
+.dk-grid {
+  display: grid;
+  gap: var(--ds-gap);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.dk-kpis { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.dk-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+
+.dk-wide { grid-column: 1 / -1; }
+
+.dk-kpis,
+.dk-grid { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) both; }
+.dk-kpis { animation-delay: 0.06s; }
+.dk-grid { animation-delay: 0.1s; }
+
+.dk .ds-card-head {
+  align-items: center;
+}
+
+.dk .ds-card-head h2 {
+  margin: 0;
+  font-family: var(--ds-font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: var(--ds-track-display);
+}
+
+.dk-hint {
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+.dk-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--ds-dur-fast) var(--ds-ease-std);
+}
+
+.dk-more:hover { color: var(--ds-fg); }
+.dk-more:hover .dk-arrow { transform: translate(2px, -2px); }
+.dk-more:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.dk-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--ds-dur-fast) var(--ds-ease);
+}
+
+.dk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dk-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--ds-faint);
+}
+
+.dk-item:last-child { border-bottom: 0; }
+
+.dk-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: var(--ds-text-small);
+}
+
+.dk-item-head strong { font-weight: 500; }
+
+.dk-item[data-done] .dk-item-head,
+.dk-item[data-done] .dk-link { color: var(--ds-dim); }
+
+.dk-due { color: var(--ds-dim); }
+.dk-due[data-overdue] { color: var(--ds-accent); }
+
+.dk-body {
+  margin: 0 0 0.7rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--ds-text-small);
+  color: var(--ds-dim);
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.dk-link {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--ds-fg);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.dk-link:hover { color: var(--ds-accent); }
+.dk-link:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.dk-empty {
+  margin: 0.6rem 0 0;
+  color: var(--ds-dim);
+  line-height: 1.5;
+}
+
+.dk-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0 0.65rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  white-space: nowrap;
+}
+
+.dk-status[data-status="todo"] {
+  background: var(--ds-fg);
+  color: var(--ds-ink);
+}
+
+.dk-status[data-status="working"] {
+  box-shadow: inset 0 0 0 1px var(--ds-faint);
+  background: transparent;
+  color: var(--ds-fg);
+}
+
+.dk-status[data-status="waiting"] { color: var(--ds-fg); }
+
+.dk-details { margin-top: 0.2rem; }
+
+.dk-details summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  color: var(--ds-fg);
+  font-size: var(--ds-text-small);
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
+  list-style: none;
+}
+
+.dk-details summary::-webkit-details-marker { display: none; }
+.dk-details summary:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.dk-fold summary { color: var(--ds-dim); }
+
+.dk-form {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.dk-field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+.dk-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-page);
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std);
+}
+
+textarea.dk-input {
+  min-height: 5.5rem;
+  padding: 0.7rem 0.85rem;
+  resize: vertical;
+}
+
+.dk-input:hover { border-color: var(--ds-dim); }
+.dk-input:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+.dk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.dk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 1.05rem;
+  border: 0;
+  border-radius: var(--ds-r-pill);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ds-faint);
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  cursor: url("/cursors/pointer.svg") 11 1, pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+
+.dk-btn:hover { background: var(--ds-card-2); }
+.dk-btn:active { transform: scale(0.97); }
+.dk-btn:disabled { opacity: 0.5; cursor: wait; }
+.dk-btn:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+
+.dk-btn-primary {
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  box-shadow: none;
+}
+
+.dk-btn-primary:hover { background: var(--ds-accent-hover); }
+
+.dk-skel {
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+
+@media (max-width: 60rem) {
+  .dk-grid { grid-template-columns: minmax(0, 1fr); }
+  .dk-wide { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dk-kpis,
+  .dk-grid,
+  .dk-more,
+  .dk-arrow,
+  .dk-btn,
+  .dk-btn:active,
+  .dk-more:hover .dk-arrow {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}

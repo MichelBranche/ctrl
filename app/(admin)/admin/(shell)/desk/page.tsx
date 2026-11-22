@@ -1,3 +1,5 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/desk.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -9,46 +11,218 @@ import { ensureDeskSchema, ensureEmailSchema } from "@/lib/migrate";
 import { db } from "@/lib/db";
 import { DeskForm, DeskAction } from "@/components/admin/desk-controls";
 import { MAIL_STATUSES, isMailStatus } from "@/lib/mail/workflow-types";
+import { ArrowUpRight } from "@/components/ds/arrow-up-right";
+import { DsMetricCard } from "@/components/ds/metric-card";
+import { getAdminCopy } from "@/lib/admin-locale";
+import { formatAdminDate, interpolate, type AdminDict } from "@/lib/admin-i18n";
 
-export default function DeskPage(){return <main className="adm-main"><Suspense fallback={<p className="adm-muted" role="status">Preparo la tua scrivania…</p>}><Body/></Suspense></main>;}
-async function Body(){
-  const me=await requireSection("desk");
-  await Promise.all([ensureDeskSchema(),ensureEmailSchema()]);
-  const emailAccess=canAccess(me,"email");
-  const [items,mail]=await Promise.all([
-    db().execute({sql:"SELECT id,kind,title,body,due,done,pinned FROM desk_items WHERE user_id=? ORDER BY done,pinned DESC,due IS NULL,due,created_at DESC",args:[me.id]}),
-    emailAccess ? db().execute({sql:`SELECT c.message_key,r.subject,r.sender,COALESCE(w.status,'todo') AS status FROM email_claims c LEFT JOIN email_references r ON r.message_key=c.message_key LEFT JOIN email_workflow w ON w.message_key=c.message_key WHERE c.user_id=?${isFounder(me)?'':" AND COALESCE(r.mailbox,'hello')='hello'"} ORDER BY c.claimed_at DESC`,args:[me.id]}) : Promise.resolve({rows:[]}),
+export default function DeskPage() {
+  return (
+    <Suspense fallback={<DeskSkeleton />}>
+      <Body />
+    </Suspense>
+  );
+}
+
+async function DeskSkeleton() {
+  const { t } = await getAdminCopy();
+  return (
+    <main className="ds-page dk" aria-busy="true" aria-label={t.desk.loading}>
+      <div className="ds-head dk-skel" style={{ minHeight: "7.5rem" }} />
+      <div className="dk-kpis">
+        {[0, 1, 2].map((i) => <div key={i} className="dk-skel" style={{ height: "6.5rem" }} />)}
+      </div>
+    </main>
+  );
+}
+
+function dueLabel(due: string, today: string, done: boolean, lang: "it" | "en", t: AdminDict) {
+  const formatted = formatAdminDate(`${due}T12:00:00Z`, lang, { day: "numeric", month: "short", year: "numeric" });
+  if (due < today && !done) return { text: `${t.desk.overdue} · ${formatted}`, overdue: true };
+  if (due === today && !done) return { text: `${t.desk.today} · ${formatted}`, overdue: false };
+  return { text: formatted, overdue: false };
+}
+
+async function Body() {
+  const [me, { lang, t }] = await Promise.all([requireSection("desk"), getAdminCopy()]);
+  await Promise.all([ensureDeskSchema(), ensureEmailSchema()]);
+  const emailAccess = canAccess(me, "email");
+  const [items, mail] = await Promise.all([
+    db().execute({ sql: "SELECT id,kind,title,body,due,done,pinned FROM desk_items WHERE user_id=? ORDER BY done,pinned DESC,due IS NULL,due,created_at DESC", args: [me.id] }),
+    emailAccess
+      ? db().execute({
+          sql: `SELECT c.message_key,r.subject,r.sender,COALESCE(w.status,'todo') AS status FROM email_claims c LEFT JOIN email_references r ON r.message_key=c.message_key LEFT JOIN email_workflow w ON w.message_key=c.message_key WHERE c.user_id=?${isFounder(me) ? "" : " AND COALESCE(r.mailbox,'hello')='hello'"} ORDER BY c.claimed_at DESC`,
+          args: [me.id],
+        })
+      : Promise.resolve({ rows: [] }),
   ]);
-  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   // CRM follow-ups due today or overdue: your own, or everyone's for founders. Never breaks the desk.
-  const crmAccess=canAccess(me,"crm"), founder=isFounder(me);
-  const crmDue:DueAction[]=crmAccess ? await dueActions(founder ? null : me.id,today).catch(()=>[]) : [];
-  const tasks=items.rows.filter(row=>row.kind==='task'),notes=items.rows.filter(row=>row.kind==='note');
-  const dueToday=tasks.filter(row=>!row.done && row.due && String(row.due)<=today).length;
-  const activeEmails=mail.rows.filter(row=>row.status!=='done');
-  const renderItem=(row:typeof items.rows[number])=>{
-    const task=row.kind==='task', done=Number(row.done)===1, due=row.due ? String(row.due) : "";
-    return <li key={String(row.id)} className="desk-item" data-done={done || undefined}>
-      <div className="desk-item-head"><strong>{row.pinned && !task ? "★ " : ""}{String(row.title)}</strong>{due ? <span className={due<today && !done ? "adm-error" : "adm-muted"}>{due<today && !done ? "Scaduta · " : due===today && !done ? "Oggi · " : ""}{new Date(due+'T12:00:00Z').toLocaleDateString('it-IT',{timeZone:'Europe/Rome',day:'numeric',month:'short',year:'numeric'})}</span> : null}</div>
-      {row.body ? <p className="desk-note-body">{String(row.body)}</p> : null}
-      <div className="adm-row-actions"><DeskAction id={String(row.id)} operation={task ? done ? 'reopen':'done' : done ? 'restore':'archive'}>{task ? done ? 'Riapri':'Completa' : done ? 'Ripristina':'Archivia'}</DeskAction>
-      {!task && !done ? <DeskAction id={String(row.id)} operation={row.pinned ? 'unpin':'pin'}>{row.pinned ? 'Non fissare più':'Fissa in alto'}</DeskAction> : null}</div>
-      <details className="desk-editor"><summary>Modifica</summary><DeskForm kind={task?'task':'note'} item={{id:String(row.id),title:String(row.title),body:String(row.body),due}}/></details>
-    </li>;
+  const crmAccess = canAccess(me, "crm");
+  const founder = isFounder(me);
+  const crmDue: DueAction[] = crmAccess ? await dueActions(founder ? null : me.id, today).catch(() => []) : [];
+  const tasks = items.rows.filter((row) => row.kind === "task");
+  const notes = items.rows.filter((row) => row.kind === "note");
+  const openTasks = tasks.filter((row) => !row.done);
+  const doneTasks = tasks.filter((row) => row.done);
+  const openNotes = notes.filter((row) => !row.done);
+  const archivedNotes = notes.filter((row) => row.done);
+  const dueToday = openTasks.filter((row) => row.due && String(row.due) <= today).length;
+  const activeEmails = mail.rows.filter((row) => row.status !== "done");
+  const doneEmails = mail.rows.filter((row) => row.status === "done");
+
+  const renderItem = (row: (typeof items.rows)[number]) => {
+    const task = row.kind === "task";
+    const done = Number(row.done) === 1;
+    const due = row.due ? String(row.due) : "";
+    const when = due ? dueLabel(due, today, done, lang, t) : null;
+    return (
+      <li key={String(row.id)} className="dk-item" data-done={done || undefined}>
+        <div className="dk-item-head">
+          <strong>{row.pinned && !task ? "★ " : ""}{String(row.title)}</strong>
+          {when ? <span className="dk-due" data-overdue={when.overdue || undefined}>{when.text}</span> : null}
+        </div>
+        {row.body ? <p className="dk-body">{String(row.body)}</p> : null}
+        <div className="dk-actions">
+          <DeskAction id={String(row.id)} operation={task ? (done ? "reopen" : "done") : done ? "restore" : "archive"}>
+            {task ? (done ? t.desk.reopen : t.desk.complete) : done ? t.desk.restore : t.desk.archive}
+          </DeskAction>
+          {!task && !done ? (
+            <DeskAction id={String(row.id)} operation={row.pinned ? "unpin" : "pin"}>
+              {row.pinned ? t.desk.unpin : t.desk.pin}
+            </DeskAction>
+          ) : null}
+        </div>
+        <details className="dk-details dk-fold">
+          <summary>{t.desk.edit}</summary>
+          <DeskForm kind={task ? "task" : "note"} item={{ id: String(row.id), title: String(row.title), body: String(row.body), due }} />
+        </details>
+      </li>
+    );
   };
-  const renderMail=(row:typeof mail.rows[number])=><li key={String(row.message_key)} className="desk-item"><Link className="desk-mail-link" href={(`/admin/desk/email?key=${row.message_key}`) as Route}>{String(row.subject || "Email presa in carico")}</Link><div className="desk-item-head"><span className="adm-muted">{String(row.sender || "Apri la casella per recuperare il riferimento")}</span><span className="mail-workflow-badge" data-status={String(row.status)}>{isMailStatus(row.status) ? MAIL_STATUSES[row.status] : MAIL_STATUSES.todo}</span></div></li>;
-  return <>
-    <header className="adm-top"><div><p className="adm-muted">Il tuo spazio personale</p><h1 className="adm-h1">La mia scrivania</h1><p className="adm-muted">Ciao {me.name}, qui trovi quello di cui occuparti.</p></div></header>
-    <div className="desk-summary" aria-label="Riepilogo personale"><span><strong>{dueToday}</strong> attività per oggi o scadute</span><span><strong>{tasks.filter(row=>!row.done).length}</strong> attività aperte</span>{emailAccess ? <span><strong>{activeEmails.length}</strong> email da seguire</span> : null}</div>
-    <div className="desk-grid"><section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">Da fare</h2><span className="adm-muted">Solo tu</span></div><details className="desk-add"><summary>+ Nuova attività</summary><DeskForm kind="task"/></details>
-      <ul className="desk-list">{tasks.filter(row=>!row.done).map(renderItem)}</ul>{!tasks.some(row=>!row.done) ? <p className="adm-muted">Nessuna attività aperta. Aggiungi il prossimo passo o una consegna da ricordare.</p> : null}
-      {tasks.some(row=>row.done) ? <details><summary>Completate ({tasks.filter(row=>row.done).length})</summary><ul className="desk-list">{tasks.filter(row=>row.done).map(renderItem)}</ul></details> : null}</section>
-    <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">Le mie email</h2>{emailAccess ? <Link href="/admin/email">Apri casella →</Link> : null}</div>
-      {!emailAccess ? <p className="adm-muted">L’accesso alla casella condivisa non è attivo per il tuo account.</p> : <><ul className="desk-list">{activeEmails.map(renderMail)}</ul>{!activeEmails.length ? <p className="adm-muted">Nessuna email da seguire. Premi “Prendi in carico” nella casella per ritrovarla qui.</p> : null}{mail.rows.some(row=>row.status==='done') ? <details><summary>Concluse ({mail.rows.length-activeEmails.length})</summary><ul className="desk-list">{mail.rows.filter(row=>row.status==='done').map(renderMail)}</ul></details> : null}</>}
-    </section>
-    {crmAccess ? <section className="adm-panel"><div className="adm-panel-head"><h2 className="adm-h2">CRM da seguire</h2><Link href={"/admin/crm/pipeline" as Route}>Pipeline →</Link></div>
-      <ul className="desk-list">{crmDue.map(a=><li key={a.id} className="desk-item"><Link className="desk-mail-link" href={`/admin/crm/${a.id}` as Route}>{a.businessName}</Link><div className="desk-item-head"><span className="adm-muted">{a.nextAction || "Prossima azione da definire"}{founder && a.ownerName ? ` · ${a.ownerName}` : ""}</span><span className={a.nextActionAt<today ? "adm-error" : "adm-muted"}>{a.nextActionAt<today ? "Scaduta · " : "Oggi · "}{STAGE_LABEL[a.stage]}</span></div></li>)}</ul>
-      {!crmDue.length ? <p className="adm-muted">Nessuna prossima azione per oggi.</p> : null}</section> : null}
-    <section className="adm-panel desk-notes"><div className="adm-panel-head"><h2 className="adm-h2">Note personali</h2><span className="adm-muted">Private · Solo tu</span></div><details className="desk-add"><summary>+ Nuova nota</summary><DeskForm kind="note"/></details><ul className="desk-list">{notes.filter(row=>!row.done).map(renderItem)}</ul>{!notes.some(row=>!row.done) ? <p className="adm-muted">Appunti, idee e riferimenti da tenere a portata di mano.</p> : null}{notes.some(row=>row.done) ? <details><summary>Archiviate ({notes.filter(row=>row.done).length})</summary><ul className="desk-list">{notes.filter(row=>row.done).map(renderItem)}</ul></details> : null}</section></div>
-  </>;
+
+  const renderMail = (row: (typeof mail.rows)[number]) => (
+    <li key={String(row.message_key)} className="dk-item">
+      <Link className="dk-link" href={(`/admin/desk/email?key=${row.message_key}`) as Route}>
+        {String(row.subject || t.desk.claimedMail)}
+      </Link>
+      <div className="dk-item-head">
+        <span className="dk-hint">{String(row.sender || t.desk.missingRef)}</span>
+        <span className="dk-status" data-status={String(row.status)}>
+          {isMailStatus(row.status) ? MAIL_STATUSES[row.status] : MAIL_STATUSES.todo}
+        </span>
+      </div>
+    </li>
+  );
+
+  return (
+    <main className="ds-page dk">
+      <header className="ds-head">
+        <p className="ds-kicker">{t.desk.kicker}</p>
+        <h1 className="ds-title">{t.desk.title}</h1>
+        <p className="ds-lead">{interpolate(t.desk.lead, { name: me.name })}</p>
+      </header>
+
+      <section className="dk-kpis" aria-label={t.desk.summary}>
+        <DsMetricCard label={t.desk.dueToday} value={dueToday} />
+        <DsMetricCard label={t.desk.openTasks} value={openTasks.length} />
+        {emailAccess ? <DsMetricCard label={t.desk.emailsFollow} value={activeEmails.length} /> : null}
+      </section>
+
+      <div className="dk-grid">
+        <section className="ds-card" aria-labelledby="dk-tasks">
+          <div className="ds-card-head">
+            <h2 id="dk-tasks">{t.desk.tasksTitle}</h2>
+            <span className="dk-hint">{t.desk.onlyYou}</span>
+          </div>
+          <details className="dk-details">
+            <summary>{t.desk.newTask}</summary>
+            <DeskForm kind="task" />
+          </details>
+          <ul className="dk-list">{openTasks.map(renderItem)}</ul>
+          {!openTasks.length ? <p className="dk-empty">{t.desk.tasksEmpty}</p> : null}
+          {doneTasks.length ? (
+            <details className="dk-details dk-fold">
+              <summary>{interpolate(t.desk.completed, { n: doneTasks.length })}</summary>
+              <ul className="dk-list">{doneTasks.map(renderItem)}</ul>
+            </details>
+          ) : null}
+        </section>
+
+        <section className="ds-card" aria-labelledby="dk-mail">
+          <div className="ds-card-head">
+            <h2 id="dk-mail">{t.desk.emailsTitle}</h2>
+            {emailAccess ? (
+              <Link href="/admin/email" className="dk-more">
+                {t.desk.openInbox}
+                <ArrowUpRight className="dk-arrow" />
+              </Link>
+            ) : null}
+          </div>
+          {!emailAccess ? (
+            <p className="dk-empty">{t.desk.noEmailAccess}</p>
+          ) : (
+            <>
+              <ul className="dk-list">{activeEmails.map(renderMail)}</ul>
+              {!activeEmails.length ? <p className="dk-empty">{t.desk.emailsEmpty}</p> : null}
+              {doneEmails.length ? (
+                <details className="dk-details dk-fold">
+                  <summary>{interpolate(t.desk.emailsDone, { n: doneEmails.length })}</summary>
+                  <ul className="dk-list">{doneEmails.map(renderMail)}</ul>
+                </details>
+              ) : null}
+            </>
+          )}
+        </section>
+
+        {crmAccess ? (
+          <section className="ds-card dk-wide" aria-labelledby="dk-crm">
+            <div className="ds-card-head">
+              <h2 id="dk-crm">{t.desk.crmTitle}</h2>
+              <Link href={"/admin/crm/pipeline" as Route} className="dk-more">
+                {t.desk.openPipeline}
+                <ArrowUpRight className="dk-arrow" />
+              </Link>
+            </div>
+            <ul className="dk-list">
+              {crmDue.map((a) => (
+                <li key={a.id} className="dk-item">
+                  <Link className="dk-link" href={`/admin/crm/${a.id}` as Route}>{a.businessName}</Link>
+                  <div className="dk-item-head">
+                    <span className="dk-hint">
+                      {a.nextAction || t.desk.nextActionFallback}
+                      {founder && a.ownerName ? ` · ${a.ownerName}` : ""}
+                    </span>
+                    <span className="dk-due" data-overdue={a.nextActionAt < today || undefined}>
+                      {a.nextActionAt < today ? t.desk.overdue : t.desk.today} · {STAGE_LABEL[a.stage]}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {!crmDue.length ? <p className="dk-empty">{t.desk.crmEmpty}</p> : null}
+          </section>
+        ) : null}
+
+        <section className="ds-card dk-wide" aria-labelledby="dk-notes">
+          <div className="ds-card-head">
+            <h2 id="dk-notes">{t.desk.notesTitle}</h2>
+            <span className="dk-hint">{t.desk.notesHint}</span>
+          </div>
+          <details className="dk-details">
+            <summary>{t.desk.newNote}</summary>
+            <DeskForm kind="note" />
+          </details>
+          <ul className="dk-list">{openNotes.map(renderItem)}</ul>
+          {!openNotes.length ? <p className="dk-empty">{t.desk.notesEmpty}</p> : null}
+          {archivedNotes.length ? (
+            <details className="dk-details dk-fold">
+              <summary>{interpolate(t.desk.archived, { n: archivedNotes.length })}</summary>
+              <ul className="dk-list">{archivedNotes.map(renderItem)}</ul>
+            </details>
+          ) : null}
+        </section>
+      </div>
+    </main>
+  );
 }
