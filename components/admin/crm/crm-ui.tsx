@@ -83,7 +83,7 @@ export const telHref = (phone: string | null) => (phone ? `tel:${phone.replace(/
 /** New message in Comunicazioni with the recipient filled in: the existing editor, nothing is sent until the user does it. */
 export const composeHref = (email: string) => `/admin/email?${new URLSearchParams({ compose: "new", a: email })}`;
 export const meetHref = (c: { businessName: string; email: string | null }) =>
-  `/admin/riunioni?${new URLSearchParams({ titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
+  `/admin/riunioni/nuova?${new URLSearchParams({ tipo: "team", titolo: `Call con ${c.businessName}`.slice(0, 120), ...(c.email ? { ospite: c.email } : {}) })}`;
 export const initials = (name: string) => name.split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
 /** Stable 0–5 tint for an initials avatar. No network and no screenshot service. */
 export const avatarHue = (name: string) => {

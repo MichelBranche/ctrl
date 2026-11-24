@@ -114,3 +114,16 @@ export async function upcomingClientMeetings(fromLocal: string): Promise<ClientM
   const r = await db().execute({ sql: "SELECT * FROM client_meetings WHERE cancelled_at IS NULL AND start_local >= ? ORDER BY start_local LIMIT 50", args: [fromLocal] });
   return r.rows.map((x) => toRow(x as Record<string, unknown>));
 }
+
+/** Client meetings starting in [fromLocal, toLocal) (Rome wall time), soonest first. Read only. */
+export async function clientMeetingsBetween(fromLocal: string, toLocal: string): Promise<ClientMeeting[]> {
+  await ensureClientMeetSchema();
+  const r = await db().execute({ sql: "SELECT * FROM client_meetings WHERE cancelled_at IS NULL AND start_local >= ? AND start_local < ? ORDER BY start_local LIMIT 300", args: [fromLocal, toLocal] });
+  return r.rows.map((x) => toRow(x as Record<string, unknown>));
+}
+/** Past client meetings (started before beforeLocal), most recent first. Read only. */
+export async function pastClientMeetings(beforeLocal: string, limit = 30): Promise<ClientMeeting[]> {
+  await ensureClientMeetSchema();
+  const r = await db().execute({ sql: "SELECT * FROM client_meetings WHERE cancelled_at IS NULL AND start_local < ? ORDER BY start_local DESC LIMIT ?", args: [beforeLocal, limit] });
+  return r.rows.map((x) => toRow(x as Record<string, unknown>));
+}

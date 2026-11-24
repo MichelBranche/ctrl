@@ -43,7 +43,7 @@ async function Body({ params }: { params: Promise<{ id: string }> }) {
         <div className="adm-row-actions">
           <MapsLink contact={c} />
           {meetings ? <Link className="adm-btn adm-btn-sm" href={meet as Route}>Organizza un Meet</Link> : null}
-          {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni?cliente=${encodeURIComponent(c.id)}#clienti` as Route}>Invita su Meet</Link> : null}
+          {meetings && c.email ? <Link className="adm-btn adm-btn-sm" href={`/admin/riunioni/nuova?tipo=cliente&cliente=${encodeURIComponent(c.id)}` as Route}>Invita su Meet</Link> : null}
           {mail && c.email ? <Link className="adm-btn adm-btn-sm" href={composeHref(c.email) as Route}>Scrivi email</Link> : null}
           {mail && mailSearch ? <Link className="adm-btn adm-btn-sm" href={`/admin/email?search=${encodeURIComponent(mailSearch)}` as Route}>Email collegate</Link> : null}
         </div>

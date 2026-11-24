@@ -146,6 +146,13 @@ export async function upcomingMeetings(now = new Date()): Promise<Meeting[]> {
   return ((j?.items ?? []) as Parameters<typeof toMeeting>[0][]).filter((e) => e.status !== "cancelled").map(toMeeting);
 }
 
+/** Meetings created from this panel (tagged ctrl=1) that overlap [from, to), soonest first. Read only. */
+export async function meetingsBetween(from: Date, to: Date): Promise<Meeting[]> {
+  const q = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250", privateExtendedProperty: "ctrl=1" });
+  const j = await api(`?${q}`);
+  return ((j?.items ?? []) as Parameters<typeof toMeeting>[0][]).filter((e) => e.status !== "cancelled").map(toMeeting);
+}
+
 export async function getMeeting(id: string): Promise<Meeting | null> {
   if (!/^[a-zA-Z0-9_-]{5,200}$/.test(id)) return null;
   try { return toMeeting(await api(`/${id}`)); } catch { return null; }
