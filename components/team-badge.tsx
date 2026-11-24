@@ -109,6 +109,20 @@ export function TeamBadge({ member, lang, priority = false }: { member: TeamMemb
     };
   }, []);
 
+  // Only Kallebe's portrait links out. Michel and Jacopo stay unchanged.
+  const photoHref = member.slug === "kallebe-gallo" ? member.socials.website : undefined;
+  const portrait = member.photo ? (
+    <Image
+      src={member.photo}
+      alt={photoHref ? "" : member.name}
+      fill
+      sizes="240px"
+      quality={90}
+      priority={priority}
+      style={{ objectPosition: FACE[member.slug] ?? "50% 30%" } as CSSProperties}
+    />
+  ) : null;
+
   return (
     <li ref={rootRef} className="tb">
       <span ref={hitRef} className="tb-hit" aria-hidden="true" />
@@ -129,16 +143,18 @@ export function TeamBadge({ member, lang, priority = false }: { member: TeamMemb
             CTRL<sup>®</sup>
           </span>
           <div className="tb-photo">
-            {member.photo ? (
-              <Image
-                src={member.photo}
-                alt={member.name}
-                fill
-                sizes="240px"
-                quality={90}
-                priority={priority}
-                style={{ objectPosition: FACE[member.slug] ?? "50% 30%" } as CSSProperties}
-              />
+            {member.photo ? photoHref ? (
+              <a
+                className="tb-photo-link"
+                href={photoHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={lang === "it" ? `Apri il sito di ${member.name}` : `Open ${member.name}'s website`}
+              >
+                {portrait}
+              </a>
+            ) : (
+              portrait
             ) : null}
           </div>
           <h2 className="tb-name" id={`tb-${member.slug}`}>

@@ -257,7 +257,7 @@ export type ProjectAuthor = { name: string; url: string };
 
 export const AUTHORS = {
   michel: { name: "Michel Branche", url: "https://www.michelbranche.it" },
-  kallebe: { name: "Kallebe Gallo", url: "https://portafoglio-alpha.vercel.app/" },
+  kallebe: { name: "Kallebe Gallo", url: "https://kallebegallo.ctrlagency.dev" },
 } satisfies Record<string, ProjectAuthor>;
 
 /**
@@ -785,7 +785,7 @@ export const team: TeamMember[] = [
     socials: {
       linkedin: "https://www.linkedin.com/in/kallebe-gallo-a55b01211/",
       email: "kallebesiqueira@gmail.com",
-      website: "https://portafoglio-alpha.vercel.app/",
+      website: "https://kallebegallo.ctrlagency.dev",
       github: "https://github.com/kallebesiqueira-dev",
     },
   },
