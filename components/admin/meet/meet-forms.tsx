@@ -8,53 +8,68 @@ export const MEET_NEW = "https://meet.new";
 export type MemberOption = { id: string; name: string; email: string };
 
 function Msg({ s }: { s: MeetState }) {
-  return s.error ? <p className="adm-error" role="alert">{s.error}</p> : s.ok ? <p className="adm-ok" role="status">{s.ok}{s.url ? <> <a href={s.url} target="_blank" rel="noopener noreferrer">Entra ora</a></> : null}</p> : null;
+  return s.error
+    ? <p className="mt-msg" data-tone="error" role="alert">{s.error}</p>
+    : s.ok ? <p className="mt-msg" data-tone="ok" role="status">{s.ok}{s.url ? <> <a href={s.url} target="_blank" rel="noopener noreferrer">Entra ora</a></> : null}</p> : null;
 }
+
+const durationLabel = (m: number) => (m < 60 ? `${m} minuti` : m === 60 ? "1 ora" : `${m / 60} ore`.replace(".5", " e mezza"));
 
 export function NewMeetingForm({ members, today, time, title, external }: { members: MemberOption[]; today: string; time: string; title?: string; external?: string }) {
   const [state, action, pending] = useActionState(createMeetingAction, {});
   return (
-    <form action={action} className="adm-form adm-meet-form">
-      <label className="adm-field"><span>Titolo</span><input className="adm-input" name="title" maxLength={120} required defaultValue={title} placeholder="Es. Allineamento progetto sito" /></label>
-      <div className="adm-meet-when">
-        <label className="adm-field"><span>Data</span><input className="adm-input" name="date" type="date" min={today} defaultValue={today} required /></label>
-        <label className="adm-field"><span>Ora</span><input className="adm-input" name="time" type="time" step={300} defaultValue={time} required /></label>
-        <label className="adm-field"><span>Durata</span>
-          <select className="adm-input" name="minutes" defaultValue="30">
-            {[15, 30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m < 60 ? `${m} minuti` : m === 60 ? "1 ora" : `${m / 60} ore`.replace(".5", " e mezza")}</option>)}
+    <form action={action} className="mt-form">
+      <label className="rb-field"><span>Titolo</span><input name="title" maxLength={120} required defaultValue={title} placeholder="Es. Allineamento progetto sito" /></label>
+      <div className="mt-when">
+        <label className="rb-field"><span>Data</span><input name="date" type="date" min={today} defaultValue={today} required /></label>
+        <label className="rb-field"><span>Ora</span><input name="time" type="time" step={300} defaultValue={time} required /></label>
+        <label className="rb-field"><span>Durata</span>
+          <select name="minutes" defaultValue="30">
+            {[15, 30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{durationLabel(m)}</option>)}
           </select>
         </label>
       </div>
-      <fieldset className="adm-field adm-meet-people">
-        <span>Partecipanti dal team</span>
-        <div className="adm-chips">
+      <fieldset className="mt-people">
+        <legend>Partecipanti dal team</legend>
+        <div className="mt-chips">
           {members.map((m) => (
-            <label key={m.id} className="adm-chip"><input type="checkbox" name="members" value={m.id} /> {m.name}</label>
+            <label key={m.id} className="mt-chip"><input type="checkbox" name="members" value={m.id} /><span>{m.name}</span></label>
           ))}
-          {!members.length ? <span className="adm-muted">Nessun altro membro attivo.</span> : null}
+          {!members.length ? <span className="mt-hint">Nessun altro membro attivo.</span> : null}
         </div>
       </fieldset>
-      <label className="adm-field"><span>Ospiti esterni (email separate da virgola)</span><input className="adm-input" name="external" defaultValue={external} placeholder="cliente@azienda.it, altro@esempio.it" autoComplete="off" /></label>
-      <label className="adm-field"><span>Note (finiscono nell&apos;invito)</span><textarea className="adm-input" name="notes" rows={3} maxLength={2000} placeholder="Ordine del giorno, link utili…" /></label>
-      <p className="adm-muted">Google Calendar crea il link Meet e manda l&apos;invito a tutti, te compreso.</p>
-      <div><button className="adm-btn adm-btn-primary" disabled={pending}>{pending ? "Creo la riunione…" : "Crea riunione"}</button></div>
+      <label className="rb-field"><span>Ospiti esterni (email separate da virgola)</span><input name="external" defaultValue={external} placeholder="cliente@azienda.it, altro@esempio.it" autoComplete="off" /></label>
+      <label className="rb-field"><span>Note (finiscono nell&apos;invito)</span><textarea name="notes" rows={3} maxLength={2000} placeholder="Ordine del giorno, link utili…" /></label>
+      <div className="mt-form-foot">
+        <p className="mt-hint">Google Calendar crea il link Meet e manda l&apos;invito a tutti, te compreso.</p>
+        <button className="rb-cta" disabled={pending}>{pending ? "Creo la riunione…" : "Crea riunione"}</button>
+      </div>
       <Msg s={state} />
     </form>
   );
 }
 
-export function MeetingActions({ id, url }: { id: string; url: string | null }) {
+/** Copy-to-clipboard button with a short "Copiato" confirmation. */
+export function CopyLink({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
+  return (
+    <button type="button" className="rb-btn rb-btn-quiet mt-act" data-done={copied || undefined} onClick={() => navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })}>
+      {copied ? "Copiato" : "Copia link"}
+    </button>
+  );
+}
+
+export function MeetingActions({ id, url }: { id: string; url: string | null }) {
   const [state, setState] = useState<MeetState>({});
   const [pending, start] = useTransition();
   return (
-    <span className="adm-row-actions">
-      {url ? <a className="adm-btn adm-btn-sm adm-btn-primary" href={url} target="_blank" rel="noopener noreferrer">Entra</a> : null}
-      {url ? <button type="button" className="adm-btn adm-btn-sm" onClick={() => navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })}>{copied ? "Copiato" : "Copia link"}</button> : null}
-      <button type="button" className="adm-btn adm-btn-sm adm-btn-danger" disabled={pending} onClick={() => { if (confirm("Annullare la riunione? Google avvisa tutti gli invitati.")) start(async () => setState(await cancelMeetingAction(id))); }}>
+    <span className="mt-actions">
+      {url ? <a className="rb-cta rb-cta-sm mt-act" href={url} target="_blank" rel="noopener noreferrer">Entra</a> : null}
+      {url ? <CopyLink url={url} /> : null}
+      <button type="button" className="rb-btn rb-btn-quiet mt-act mt-danger" disabled={pending} onClick={() => { if (confirm("Annullare la riunione? Google avvisa tutti gli invitati.")) start(async () => setState(await cancelMeetingAction(id))); }}>
         {pending ? "Annullo…" : "Annulla"}
       </button>
-      {state.error ? <span className="adm-error">{state.error}</span> : null}
+      {state.error ? <span className="mt-msg" data-tone="error" role="alert">{state.error}</span> : null}
     </span>
   );
 }
@@ -88,8 +103,8 @@ export function DisconnectGoogle() {
   const [pending, start] = useTransition();
   const [state, setState] = useState<MeetState>({});
   return (
-    <span>
-      <button type="button" className="adm-btn adm-btn-sm adm-btn-danger" disabled={pending} onClick={() => { if (confirm("Scollegare l'account Google? Le riunioni già create restano nel calendario.")) start(async () => setState(await disconnectGoogleAction())); }}>Scollega Google</button>
+    <span className="mt-disconnect">
+      <button type="button" className="rb-btn rb-btn-quiet mt-danger" disabled={pending} onClick={() => { if (confirm("Scollegare l'account Google? Le riunioni già create restano nel calendario.")) start(async () => setState(await disconnectGoogleAction())); }}>Scollega Google</button>
       <Msg s={state} />
     </span>
   );
