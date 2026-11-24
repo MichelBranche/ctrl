@@ -104,9 +104,12 @@ async function api(path: string, init: RequestInit = {}) {
   return res.status === 204 || init.method === "DELETE" ? null : res.json();
 }
 
-export type Meeting = { id: string; title: string; start: string; end: string; meetUrl: string | null; calendarUrl: string | null; attendees: string[]; notes: string };
+/** fromPanel: created here (ctrl=1); client: a client invite (ctrl_client=1, listed from the DB instead); allDay: date-only event. */
+export type Meeting = { id: string; title: string; start: string; end: string; meetUrl: string | null; calendarUrl: string | null; attendees: string[]; notes: string; fromPanel: boolean; client: boolean; allDay: boolean };
 
-const toMeeting = (e: Record<string, unknown> & { start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string }; attendees?: { email?: string }[] }): Meeting => ({
+type GEvent = Record<string, unknown> & { start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string }; attendees?: { email?: string }[]; extendedProperties?: { private?: Record<string, string> } };
+const toMeeting = (e: GEvent): Meeting => ({
+  fromPanel: e.extendedProperties?.private?.ctrl === "1", client: e.extendedProperties?.private?.ctrl_client === "1", allDay: !e.start?.dateTime && Boolean(e.start?.date),
   id: String(e.id), title: String(e.summary ?? "Riunione"),
   start: String(e.start?.dateTime ?? e.start?.date ?? ""), end: String(e.end?.dateTime ?? e.end?.date ?? ""),
   meetUrl: typeof e.hangoutLink === "string" && e.hangoutLink.startsWith("https://meet.google.com/") ? e.hangoutLink : null,
@@ -139,18 +142,22 @@ export async function createMeeting(m: NewMeeting): Promise<Meeting> {
   return toMeeting(await api(`?conferenceDataVersion=1&sendUpdates=${m.notify === false ? "none" : "all"}`, { method: "POST", body: JSON.stringify(body) }));
 }
 
-/** Upcoming meetings created from this panel (tagged ctrl=1), soonest first. */
-export async function upcomingMeetings(now = new Date()): Promise<Meeting[]> {
-  const q = new URLSearchParams({ timeMin: new Date(now.getTime() - 3600_000).toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "25", privateExtendedProperty: "ctrl=1" });
-  const j = await api(`?${q}`);
-  return ((j?.items ?? []) as Parameters<typeof toMeeting>[0][]).filter((e) => e.status !== "cancelled").map(toMeeting);
-}
-
-/** Meetings created from this panel (tagged ctrl=1) that overlap [from, to), soonest first. Read only. */
+/**
+ * Every event of the agency's primary calendar that overlaps [from, to): the ones created here AND the ones added
+ * directly in Google Calendar. Client invites (ctrl_client=1) are skipped: the panel lists those from the database.
+ * Recurring events are expanded (singleEvents); pages are followed up to 1000 events. Read only.
+ */
 export async function meetingsBetween(from: Date, to: Date): Promise<Meeting[]> {
-  const q = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250", privateExtendedProperty: "ctrl=1" });
-  const j = await api(`?${q}`);
-  return ((j?.items ?? []) as Parameters<typeof toMeeting>[0][]).filter((e) => e.status !== "cancelled").map(toMeeting);
+  const out: Meeting[] = [];
+  let pageToken = "";
+  for (let page = 0; page < 4; page++) {
+    const q = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250", timeZone: MEET_TZ, ...(pageToken ? { pageToken } : {}) });
+    const j = await api(`?${q}`);
+    out.push(...((j?.items ?? []) as GEvent[]).filter((e) => e.status !== "cancelled").map(toMeeting).filter((m) => !m.client));
+    pageToken = typeof j?.nextPageToken === "string" ? j.nextPageToken : "";
+    if (!pageToken) break;
+  }
+  return out;
 }
 
 export async function getMeeting(id: string): Promise<Meeting | null> {

@@ -69,7 +69,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const view: CalView = one(sp.vista) === "mese" ? "mese" : "settimana";
   const anchor = DAY_RE.test(one(sp.data) ?? "") ? one(sp.data)! : today;
   const list = one(sp.elenco) === "passate" ? "passate" : "prossime";
-  const tipo = one(sp.tipo) === "team" ? "team" : one(sp.tipo) === "clienti" ? "clienti" : "tutte";
+  const tipo = one(sp.tipo) === "team" ? "team" : one(sp.tipo) === "clienti" ? "clienti" : one(sp.tipo) === "google" ? "google" : "tutte";
 
   const [from, to] = calRange(view, anchor);
   const [cal, upcoming, past] = await Promise.all([
@@ -79,7 +79,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   ]);
   if (cal.disconnected) live = false;
   const rows = (list === "prossime" ? (upcoming?.items ?? []).filter((x) => x.end > now) : past ?? [])
-    .filter((x) => tipo === "tutte" || (tipo === "team" ? x.kind === "team" : x.kind === "cliente"));
+    .filter((x) => tipo === "tutte" || x.kind === ({ team: "team", clienti: "cliente", google: "google" } as const)[tipo]);
   const keep = { vista: view, data: anchor, elenco: list, tipo };
   const listHref = (patch: Partial<typeof keep>) => `/admin/riunioni?${new URLSearchParams({ ...keep, ...patch })}#elenco`;
   const calQuery = { elenco: list, tipo };
@@ -144,6 +144,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
               <a href={listHref({ tipo: "tutte" })} aria-current={tipo === "tutte" ? "page" : undefined}>Tutte</a>
               <a href={listHref({ tipo: "team" })} aria-current={tipo === "team" ? "page" : undefined}>Team</a>
               <a href={listHref({ tipo: "clienti" })} aria-current={tipo === "clienti" ? "page" : undefined}>Clienti</a>
+              <a href={listHref({ tipo: "google" })} aria-current={tipo === "google" ? "page" : undefined}>Google</a>
             </div>
           </div>
         </div>
@@ -163,7 +164,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <span className="mt-head-icon" data-kind={live ? "ok" : "google"}><Icon d={MI.plug} /></span>
           <div>
             <h2 id="mt-g-h">Google Calendar</h2>
-            <p>{live ? <>Collegato{conn?.connectedBy ? ` da ${conn.connectedBy}` : ""}{conn ? ` il ${new Date(conn.connectedAt).toLocaleDateString("it-IT", { timeZone: MEET_TZ })}` : ""}. Le riunioni team e i link Meet arrivano dal calendario dell&apos;agenzia.</> : "Non collegato: il calendario mostra le riunioni con i clienti salvate nel pannello. Collegando Google arrivano anche le riunioni team e i link Meet automatici."}</p>
+            <p>{live ? <>Collegato{conn?.connectedBy ? ` da ${conn.connectedBy}` : ""}{conn ? ` il ${new Date(conn.connectedAt).toLocaleDateString("it-IT", { timeZone: MEET_TZ })}` : ""}. Il calendario mostra tutti gli eventi del calendario principale dell&apos;agenzia (anche quelli aggiunti direttamente su Google) e le riunioni create qui hanno il link Meet.</> : "Non collegato: il calendario mostra le riunioni con i clienti salvate nel pannello. Collegando Google arrivano anche le riunioni team e i link Meet automatici."}</p>
           </div>
           {live && founder ? <DisconnectGoogle /> : null}
         </div>

@@ -8,20 +8,24 @@ import { addMinutes, GoogleError, type Meeting, meetingsBetween, nowLocal } from
  * Every time here is Rome wall time "YYYY-MM-DDTHH:MM", so both sources compare and sort the same way.
  */
 
-export type MeetKind = "team" | "cliente";
+/** team: created from the panel; google: added directly in Google Calendar; cliente: client invite (DB). */
+export type MeetKind = "team" | "google" | "cliente";
 export type AgendaItem = {
   kind: MeetKind; id: string; title: string; start: string; end: string; minutes: number;
-  meetUrl: string | null; href: string; who: string;
+  meetUrl: string | null; href: string; who: string; allDay: boolean;
 };
 
 const fromTeam = (m: Meeting): AgendaItem => {
-  const start = nowLocal(new Date(m.start)), end = nowLocal(new Date(m.end));
-  const minutes = Math.round((new Date(m.end).getTime() - new Date(m.start).getTime()) / 60000);
-  return { kind: "team", id: m.id, title: m.title, start, end, minutes, meetUrl: m.meetUrl, href: `/admin/riunioni/team/${encodeURIComponent(m.id)}`, who: `${m.attendees.length} ${m.attendees.length === 1 ? "invitato" : "invitati"}` };
+  // All-day events carry only dates: they run from local midnight of the start day to midnight of the end day.
+  const start = m.allDay ? `${m.start.slice(0, 10)}T00:00` : nowLocal(new Date(m.start));
+  const end = m.allDay ? `${(m.end || m.start).slice(0, 10)}T00:00` : nowLocal(new Date(m.end));
+  const minutes = m.allDay ? 0 : Math.round((new Date(m.end).getTime() - new Date(m.start).getTime()) / 60000);
+  const who = m.attendees.length ? `${m.attendees.length} ${m.attendees.length === 1 ? "invitato" : "invitati"}` : m.fromPanel ? "0 invitati" : "Google Calendar";
+  return { kind: m.fromPanel ? "team" : "google", id: m.id, title: m.title, start, end, minutes, meetUrl: m.meetUrl, href: `/admin/riunioni/team/${encodeURIComponent(m.id)}`, who, allDay: m.allDay };
 };
 const fromClient = (m: ClientMeeting): AgendaItem => ({
   kind: "cliente", id: m.id, title: m.title, start: m.start, end: addMinutes(m.start, m.minutes), minutes: m.minutes,
-  meetUrl: m.meetUrl, href: `/admin/riunioni/cliente/${encodeURIComponent(m.id)}`, who: m.clientName,
+  meetUrl: m.meetUrl, href: `/admin/riunioni/cliente/${encodeURIComponent(m.id)}`, who: m.clientName, allDay: false,
 });
 
 export type Agenda = { items: AgendaItem[]; googleError: string | null; disconnected: boolean };
@@ -49,7 +53,7 @@ export async function pastAgenda(live: boolean): Promise<AgendaItem[]> {
     live ? meetingsBetween(from, new Date()).catch(() => [] as Meeting[]) : Promise.resolve([] as Meeting[]),
     pastClientMeetings(now, 30).catch(() => [] as ClientMeeting[]),
   ]);
-  return [...team.map(fromTeam), ...clients.map(fromClient)].filter((x) => x.start < now).sort((a, b) => b.start.localeCompare(a.start)).slice(0, 40);
+  return [...team.map(fromTeam), ...clients.map(fromClient)].filter((x) => x.end <= now).sort((a, b) => b.start.localeCompare(a.start)).slice(0, 40);
 }
 
 export { fromClient, fromTeam };

@@ -71,6 +71,8 @@ export async function cancelMeetingAction(id: string): Promise<MeetState> {
   await guardSection("meetings");
   const m = await getMeeting(id);
   if (!m) return { error: "Riunione non trovata." };
+  // Events added directly in Google Calendar are shown read-only: the panel cancels only what it created.
+  if (!m.fromPanel) return { error: "Evento creato in Google Calendar: modificalo o annullalo da lì." };
   try {
     await cancelMeeting(id);
     await logAction("meet.cancelled", { type: "meeting", id }, { title: m.title, start: m.start, attendees: m.attendees.length });

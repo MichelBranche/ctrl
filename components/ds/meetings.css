@@ -2,12 +2,12 @@
    (shared v2 primitives: kicker, count, buttons, CTA, fields, segments). Structure: header with one primary CTA,
    calendar (week/month), two big choices that open the guided creation, list (upcoming/past, type filter),
    Google Calendar card. Detail pages use fixed sections. Colour sits on data, never on chrome:
-   kind      team = --ds-info (blue), cliente = --ds-stage-call (violet);
+   kind      team = --ds-info (blue), cliente = --ds-stage-call (violet), added in Google Calendar = --ds-stage-nuovo (slate);
    state     in corso = --ds-ok (pulsing dot), oggi = --ds-warn, domani = --ds-tone-6 (teal);
    Google    collegato = --ds-ok, non collegato = --ds-warn.
    The orange accent stays for CTAs, focus, today and the current step. Tokens only; rules in docs/design-system.md. */
 
-.mt { --mt-team: var(--ds-info); --mt-client: var(--ds-stage-call); --mt-live: var(--ds-ok); --mt-today: var(--ds-warn); --mt-tomorrow: var(--ds-tone-6); }
+.mt { --mt-team: var(--ds-info); --mt-client: var(--ds-stage-call); --mt-google: var(--ds-stage-nuovo); --mt-live: var(--ds-ok); --mt-today: var(--ds-warn); --mt-tomorrow: var(--ds-tone-6); }
 .mt-narrow > * { width: 100%; max-width: 60rem; margin-inline: auto; }
 .mt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mt-dim { color: var(--ds-dim); }
@@ -385,6 +385,13 @@ a.rb-cta.mt-act:hover::after { transform: translateX(3px); }
 .mt-danger-zone > div { display: flex; flex-direction: column; gap: 0.4rem; }
 .mt-cancel { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; }
 
+/* Events added directly in Google Calendar (read only in the panel). */
+.mt-ev[data-kind="google"], .mt-row[data-kind="google"], .mt-date[data-kind="google"], .mt-dhead[data-kind="google"] { --c: var(--mt-google); }
+.mt-legend [data-kind="google"] i, .mt-dots i[data-kind="google"] { background: var(--mt-google); }
+.mt-sec-icon[data-c="google"] { --c: var(--mt-google); }
+.mt-gnote { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; animation-delay: 160ms; }
+.mt-gnote > div { display: flex; flex-direction: column; gap: 0.4rem; }
+
 @keyframes mt-pulse { 50% { opacity: 0.35; } }
 @keyframes mt-step-in { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
 @keyframes mt-check { from { opacity: 0; transform: scale(0.5) rotate(-12deg); } to { opacity: 1; transform: none; } }
@@ -426,7 +433,7 @@ a.rb-cta.mt-act:hover::after { transform: translateX(3px); }
   .mt-dhead { flex-wrap: wrap; }
   .mt-dhead-cta { width: 100%; }
   .mt-dl > div { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
-  .mt-danger-zone, .mt-cancel { align-items: stretch; }
+  .mt-danger-zone, .mt-cancel, .mt-gnote { align-items: stretch; }
   .mt-gcard .mt-card-head { flex-wrap: wrap; }
 }
 

@@ -21,9 +21,9 @@ function Ev({ it, now, compact }: { it: AgendaItem; now: string; compact?: boole
   const when = whenOf(it, now);
   return (
     <li>
-      <a className="mt-ev" href={it.href} data-kind={it.kind} data-when={when} title={`${it.start.slice(11)} · ${it.title} · ${it.who}`}>
+      <a className="mt-ev" href={it.href} data-kind={it.kind} data-when={when} title={`${it.allDay ? "Tutto il giorno" : it.start.slice(11)} · ${it.title} · ${it.who}`}>
         <i aria-hidden="true" />
-        <time>{it.start.slice(11)}</time>
+        <time>{it.allDay ? "Giorno" : it.start.slice(11)}</time>
         <span>{it.title}</span>
         {!compact ? <small>{it.who}</small> : null}
       </a>
@@ -34,8 +34,9 @@ function Ev({ it, now, compact }: { it: AgendaItem; now: string; compact?: boole
 export function MeetCalendar({ items, view, anchor, today, now, query }: { items: AgendaItem[]; view: CalView; anchor: string; today: string; now: string; query: Record<string, string> }) {
   const href = (v: CalView, d: string) => `/admin/riunioni?${new URLSearchParams({ ...query, vista: v, data: d })}#calendario`;
   const byDay = new Map<string, AgendaItem[]>();
-  for (const it of items) { const d = it.start.slice(0, 10); byDay.set(d, [...(byDay.get(d) ?? []), it]); }
   const [from, to] = calRange(view, anchor);
+  // An event that began before the visible range (multi-day, all-day) shows on the first visible day.
+  for (const it of items) { const s = it.start.slice(0, 10); const d = s < from ? from : s; byDay.set(d, [...(byDay.get(d) ?? []), it]); }
   const days: string[] = [];
   for (let d = from; d < to; d = addDays(d, 1)) days.push(d);
   const prev = view === "settimana" ? addDays(anchor, -7) : addMonths(anchor, -1);
@@ -68,7 +69,7 @@ export function MeetCalendar({ items, view, anchor, today, now, query }: { items
           </div>
         </div>
       </header>
-      <p className="mt-legend" aria-hidden="true"><span data-kind="team"><i />Team</span><span data-kind="cliente"><i />Cliente</span><span data-kind="live"><i />In corso</span></p>
+      <p className="mt-legend" aria-hidden="true"><span data-kind="team"><i />Team</span><span data-kind="cliente"><i />Cliente</span><span data-kind="google"><i />Da Google Calendar</span><span data-kind="live"><i />In corso</span></p>
 
       {view === "settimana" ? (
         <div className="mt-week">

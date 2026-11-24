@@ -27,8 +27,8 @@ export function MeetRow({ it, now, i, past }: { it: AgendaItem; now: string; i: 
       <a className="mt-row-main" href={it.href}>
         <span className="mt-row-title"><strong>{it.title}</strong><WhenPill when={when} /></span>
         <span className="mt-row-meta">
-          <span><Icon d={it.kind === "team" ? MI.users : MI.client} size={13} />{it.kind === "team" ? `Team · ${it.who}` : it.who}</span>
-          <span><Icon d={MI.clock} size={13} />{it.start.slice(11)}–{it.end.slice(11)} · {durationLabel(it.minutes)}</span>
+          <span><Icon d={it.kind === "team" ? MI.users : it.kind === "google" ? MI.cal : MI.client} size={13} />{it.kind === "team" ? `Team · ${it.who}` : it.kind === "google" ? `Da Google Calendar${it.who !== "Google Calendar" ? ` · ${it.who}` : ""}` : it.who}</span>
+          <span><Icon d={MI.clock} size={13} />{it.allDay ? "Tutto il giorno" : `${it.start.slice(11)}–${it.end.slice(11)} · ${durationLabel(it.minutes)}`}</span>
         </span>
       </a>
       <span className="mt-actions">
