@@ -13,7 +13,7 @@ import { siteMenus } from "@/lib/nav-menus";
 import { showTestimonials } from "@/lib/testimonials";
 import { presentReviews } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
-import { getStudioVideos } from "@/lib/ctrl-videos";
+import { getStudioVideos } from "@/lib/ctrl-videos-feed";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import "./home-v2.css";

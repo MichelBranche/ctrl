@@ -14,8 +14,6 @@
  * Known videos keep their local webp poster in /public/images/home/videos so
  * those frames do not load from YouTube before play. New uploads use i.ytimg.com.
  */
-import { cacheLife, cacheTag } from "next/cache";
-
 export type CtrlVideo = {
   id: string;
   title: string;
@@ -130,33 +128,9 @@ export function parseYouTubeFeed(xml: string): CtrlVideo[] {
   return videos;
 }
 
-function assemble(feed: CtrlVideo[]): CtrlVideo[] {
+export function assembleStudioVideos(feed: CtrlVideo[]): CtrlVideo[] {
   const studio = feed.find((video) => video.id === CTRL_FILM_ID) ?? KNOWN.get(CTRL_FILM_ID);
   const rest = feed.filter((video) => video.id !== CTRL_FILM_ID);
   const list = (studio ? [studio, ...rest] : rest).slice(0, CTRL_VIDEO_LIMIT);
   return list.length ? list : CTRL_VIDEOS;
-}
-
-async function readChannelFeed(): Promise<CtrlVideo[]> {
-  "use cache";
-  cacheLife({ stale: 3600, revalidate: 3600, expire: 86400 * 7 });
-  cacheTag("ctrl-videos");
-  const res = await fetch(CTRL_CHANNEL_FEED, {
-    headers: { Accept: "application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8" },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) throw new Error(`youtube feed ${res.status}`);
-  const videos = parseYouTubeFeed(await res.text());
-  if (!videos.length) throw new Error("youtube feed empty");
-  return videos;
-}
-
-/** Latest channel videos for the home Studio film section, with a static fallback. */
-export async function getStudioVideos(): Promise<CtrlVideo[]> {
-  try {
-    return assemble(await readChannelFeed());
-  } catch (error) {
-    console.error("[ctrl-videos]", error instanceof Error ? error.message : "feed failed");
-    return CTRL_VIDEOS;
-  }
 }
