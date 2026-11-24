@@ -10,7 +10,7 @@ import { ServicesMotion } from "@/components/pages/services-motion";
 import { ContactForm } from "@/components/pages/contact-wizard";
 import { Crumbs } from "@/components/seo/crumbs";
 import { JsonLd } from "@/components/seo/json-ld";
-import { CONTACT_EMAIL, STUDIO_PLACE, studioMapEmbedUrl } from "@/lib/content";
+import { ADMIN_EMAIL, MAILBOX_LABEL, SALES_EMAIL, STUDIO_PLACE, studioMapEmbedUrl } from "@/lib/content";
 import { formatRating } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { dict, localize, type Locale } from "@/lib/i18n";
@@ -75,9 +75,16 @@ export async function ContactView({ lang }: { lang: Locale }) {
           <ul className="ds-list c-info" data-sv-stagger>
             <li className="ds-card ds-card-light c-info-col">
               <span className="ds-kicker">{c.emailLabel}</span>
-              <a className="c-info-value c-info-link" href={`mailto:${CONTACT_EMAIL}`}>
-                {CONTACT_EMAIL}
-              </a>
+              <span className="c-info-mails">
+                <a className="c-info-mail" href={`mailto:${SALES_EMAIL}`}>
+                  <span className="c-info-mail-label">{MAILBOX_LABEL[lang].sales}</span>
+                  <span className="c-info-value c-info-link">{SALES_EMAIL}</span>
+                </a>
+                <a className="c-info-mail" href={`mailto:${ADMIN_EMAIL}`}>
+                  <span className="c-info-mail-label">{MAILBOX_LABEL[lang].admin}</span>
+                  <span className="c-info-value c-info-link">{ADMIN_EMAIL}</span>
+                </a>
+              </span>
               <span className="c-info-note">{c.emailNote}</span>
             </li>
             <li className="ds-card ds-card-light c-info-col">

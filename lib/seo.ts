@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, CONTACT_PHONE, STUDIO_PLACE, services, team } from "@/lib/content";
+import { ADMIN_EMAIL, CONTACT_PHONE, SALES_EMAIL, STUDIO_PLACE, services, team } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export const SITE_URL = "https://www.ctrlagency.dev";
@@ -35,6 +35,7 @@ export const businessProfile = {
 /** Profiles already linked from the public footer, plus the Maps listing. */
 export const SAME_AS = [
   "https://www.linkedin.com/company/ctrl%C2%AE/",
+  "https://www.instagram.com/ctrlragency/",
   "https://www.youtube.com/channel/UCgirvfq-N2XXvpRQ0OL5tsw",
   MAPS_URL,
 ] as const;
@@ -226,7 +227,7 @@ export function organizationNode(): Record<string, unknown> {
     url: SITE_URL,
     logo: `${SITE_URL}/apple-icon.png`,
     image: `${SITE_URL}/images/home/hero.jpg`,
-    email: CONTACT_EMAIL,
+    email: SALES_EMAIL,
     address,
     geo: { "@type": "GeoCoordinates", latitude: STUDIO_GEO.latitude, longitude: STUDIO_GEO.longitude },
     hasMap: MAPS_URL,
@@ -236,17 +237,27 @@ export function organizationNode(): Record<string, unknown> {
     sameAs: SAME_AS,
   };
   if (businessProfile.legalName) node.legalName = businessProfile.legalName;
-  if (businessProfile.telephone) {
-    node.telephone = businessProfile.telephone;
-    node.contactPoint = {
+  const contactPoints: Record<string, unknown>[] = [
+    {
       "@type": "ContactPoint",
-      contactType: "customer support",
-      email: CONTACT_EMAIL,
-      telephone: businessProfile.telephone,
+      contactType: "sales",
+      email: SALES_EMAIL,
       areaServed: "IT",
       availableLanguage: ["Italian", "English"],
-    };
+    },
+    {
+      "@type": "ContactPoint",
+      contactType: "administration",
+      email: ADMIN_EMAIL,
+      areaServed: "IT",
+      availableLanguage: ["Italian", "English"],
+    },
+  ];
+  if (businessProfile.telephone) {
+    node.telephone = businessProfile.telephone;
+    contactPoints[0].telephone = businessProfile.telephone;
   }
+  node.contactPoint = contactPoints;
   return node;
 }
 

@@ -1,7 +1,15 @@
 import type { L, Locale } from "@/lib/i18n";
 
-/** Single source of truth for the studio contact address. */
-export const CONTACT_EMAIL = "ctrlragency@gmail.com";
+/** Public sales mailbox on ctrlagency.dev. */
+export const SALES_EMAIL = "vendite@ctrlagency.dev";
+/** Public administration, privacy and company-data mailbox on ctrlagency.dev. */
+export const ADMIN_EMAIL = "amministrazione@ctrlagency.dev";
+/** Generic public contact (sales). Use ADMIN_EMAIL for privacy, billing and company data. */
+export const CONTACT_EMAIL = SALES_EMAIL;
+export const MAILBOX_LABEL = {
+  it: { sales: "Vendite", admin: "Amministrazione" },
+  en: { sales: "Sales", admin: "Administration" },
+} as const;
 /** Michel's phone, international format. Single source for the WhatsApp link. */
 export const CONTACT_PHONE = "+393881660117";
 /** WhatsApp chat link for CONTACT_PHONE, with an optional prefilled message. */

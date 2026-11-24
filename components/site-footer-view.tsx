@@ -11,7 +11,7 @@ import { FooterNewsletter } from "@/components/footer-newsletter";
 import { useLocale } from "@/components/use-locale";
 import { localize } from "@/lib/i18n";
 import { LOCAL_PATH } from "@/lib/seo";
-import { CONTACT_EMAIL } from "@/lib/content";
+import { ADMIN_EMAIL, MAILBOX_LABEL, SALES_EMAIL } from "@/lib/content";
 import type { SocialKey, SocialLink } from "@/lib/settings-types";
 import "./site-footer.css";
 
@@ -19,6 +19,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const DEFAULT_FOOTER_SOCIALS: SocialLink[] = [
   { key: "linkedin", label: "LinkedIn", url: "https://www.linkedin.com/company/ctrl%C2%AE/" },
+  { key: "instagram", label: "Instagram", url: "https://www.instagram.com/ctrlragency/" },
   { key: "youtube", label: "YouTube", url: "https://www.youtube.com/channel/UCgirvfq-N2XXvpRQ0OL5tsw" },
 ];
 
@@ -92,8 +93,13 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
           <p className="h-close-lead">{h.closeLead}</p>
         </div>
         <div className="h-close-col h-close-contact">
-          <a className="h-close-mail" href={`mailto:${CONTACT_EMAIL}`}>
-            {CONTACT_EMAIL}
+          <a className="h-close-mail" href={`mailto:${SALES_EMAIL}`}>
+            <span className="h-small h-close-mail-label">{MAILBOX_LABEL[lang].sales}</span>
+            {SALES_EMAIL}
+          </a>
+          <a className="h-close-mail" href={`mailto:${ADMIN_EMAIL}`}>
+            <span className="h-small h-close-mail-label">{MAILBOX_LABEL[lang].admin}</span>
+            {ADMIN_EMAIL}
           </a>
           <Link className="h-small h-close-place" href={localize(LOCAL_PATH, lang) as Route}>
             {h.location}
@@ -103,7 +109,7 @@ export function SiteFooterView({ socials }: { socials: SocialLink[] }) {
           <ul className="h-close-col h-socials">
             {footerSocials.map((s) => (
               <li key={s.key}>
-                <a className="h-small" href={s.url} target="_blank" rel="noopener noreferrer me">
+                <a className="h-small" href={s.url} target="_blank" rel="noopener noreferrer me" aria-label={s.label}>
                   {ICONS[s.key] ? (
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       {ICONS[s.key]}

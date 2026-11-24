@@ -115,6 +115,7 @@
 
 .h-close-contact { display: grid; gap: 0.45rem; justify-items: start; }
 .h-close-mail {
+  display: grid;
   color: var(--h-fg);
   font-size: 1rem;
   font-weight: 500;
@@ -122,6 +123,9 @@
   text-decoration: none;
   overflow-wrap: anywhere;
   transition: color 0.2s ease;
+}
+.h-close-mail-label {
+  color: var(--h-dim);
 }
 .h-close-mail:hover,
 .h-close-mail:focus-visible { color: var(--h-accent); }

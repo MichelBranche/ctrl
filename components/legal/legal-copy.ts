@@ -1,3 +1,4 @@
+import { ADMIN_EMAIL } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
 
 /**
@@ -6,7 +7,7 @@ import type { Locale } from "@/lib/i18n";
  * one technical admin cookie, covers on Vercel Blob, FAQ assistant that stores nothing.
  * Update this file whenever a new processor, cookie or data flow is added.
  */
-export const LEGAL_UPDATED: Record<Locale, string> = { it: "31 ottobre 2026", en: "31 October 2026" };
+export const LEGAL_UPDATED: Record<Locale, string> = { it: "24 novembre 2026", en: "24 November 2026" };
 
 export const privacy: Record<Locale, { title: string; lead: string; body: string }> = {
   it: {
@@ -14,7 +15,7 @@ export const privacy: Record<Locale, { title: string; lead: string; body: string
     lead: "Quali dati raccoglie questo sito, perché, per quanto tempo e quali diritti hai. In breve: pochi dati, nessun cookie di profilazione, nessuna vendita a terzi.",
     body: `## Titolare del trattamento
 
-CTRL® di Michel Branche, Valle d'Aosta, Italia. Contatto per ogni richiesta sulla privacy: [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com).
+CTRL® di Michel Branche, Valle d'Aosta, Italia. Contatto per ogni richiesta sulla privacy: [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).
 
 ## Quali dati trattiamo e perché
 
@@ -48,7 +49,7 @@ Sono responsabili del trattamento nominati con accordi conformi all'art. 28 GDPR
 
 ## I tuoi diritti
 
-Puoi chiedere in qualsiasi momento accesso, rettifica, cancellazione, limitazione, portabilità dei tuoi dati e opporti al trattamento basato sul legittimo interesse (artt. 15-22 GDPR). Puoi revocare il consenso alla newsletter senza conseguenze. Scrivi a [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com): rispondiamo entro 30 giorni.
+Puoi chiedere in qualsiasi momento accesso, rettifica, cancellazione, limitazione, portabilità dei tuoi dati e opporti al trattamento basato sul legittimo interesse (artt. 15-22 GDPR). Puoi revocare il consenso alla newsletter senza conseguenze. Scrivi a [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}): rispondiamo entro 30 giorni.
 
 Hai anche il diritto di presentare reclamo al Garante per la protezione dei dati personali ([garanteprivacy.it](https://www.garanteprivacy.it)).
 
@@ -65,7 +66,7 @@ Se cambiamo il modo in cui trattiamo i dati aggiorniamo questa pagina e la data 
     lead: "What data this site collects, why, for how long, and what your rights are. In short: very little data, no profiling cookies, nothing sold to anyone.",
     body: `## Data controller
 
-CTRL® by Michel Branche, Valle d'Aosta, Italy. Contact for any privacy request: [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com).
+CTRL® by Michel Branche, Valle d'Aosta, Italy. Contact for any privacy request: [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).
 
 ## What we process and why
 
@@ -99,7 +100,7 @@ They act as processors under agreements that meet Art. 28 GDPR. Some data may be
 
 ## Your rights
 
-You can ask at any time for access, correction, deletion, restriction or portability of your data, and object to processing based on legitimate interest (Arts. 15-22 GDPR). You can withdraw newsletter consent with no consequences. Write to [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com): we reply within 30 days.
+You can ask at any time for access, correction, deletion, restriction or portability of your data, and object to processing based on legitimate interest (Arts. 15-22 GDPR). You can withdraw newsletter consent with no consequences. Write to [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}): we reply within 30 days.
 
 You also have the right to lodge a complaint with the Italian data protection authority, the Garante per la protezione dei dati personali ([garanteprivacy.it](https://www.garanteprivacy.it)), or with the authority where you live.
 
@@ -139,7 +140,7 @@ Puoi cancellare o bloccare i cookie dalle impostazioni del browser. Bloccare ctr
 
 ## Contatti
 
-Titolare: CTRL® di Michel Branche, [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com).`,
+Titolare: CTRL® di Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
   },
   en: {
     title: "Cookie policy",
@@ -166,6 +167,6 @@ You can delete or block cookies in your browser settings. Blocking ctrl_admin on
 
 ## Contact
 
-Controller: CTRL® by Michel Branche, [ctrlragency@gmail.com](mailto:ctrlragency@gmail.com).`,
+Controller: CTRL® by Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
   },
 };

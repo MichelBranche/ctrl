@@ -49,7 +49,17 @@
 .c-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--ds-gap); }
 .c-info-col { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; padding: clamp(1.1rem, 1.8vw, 1.75rem); }
 .c-info-value { font-family: var(--ds-font-display); font-size: clamp(1.1rem, 1.35vw, 1.4rem); font-weight: 500; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.c-info-mails { display: grid; gap: 0.85rem; }
+.c-info-mail { display: grid; gap: 0.15rem; text-decoration: none; color: inherit; }
+.c-info-mail-label {
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ds-ink-dim);
+}
 .c-info-link { transition: color var(--ds-dur) ease; }
+.c-info-mail:hover .c-info-link,
 .c-info-link:hover { color: var(--ds-accent-hover); }
 .c-info-note { color: var(--ds-ink-dim); font-size: 0.88rem; line-height: 1.45; }
 .c-socials { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.2rem; }

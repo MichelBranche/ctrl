@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { unsubscribe } from "@/app/actions/public";
+import { ADMIN_EMAIL } from "@/lib/content";
 
 export function UnsubscribeForm({ token }: { token: string }) {
   const [state, setState] = useState<"idle" | "done" | "error">("idle");
   const [pending, start] = useTransition();
-  if (!token) return <p className="j-a-lead">Link non valido. Scrivici a ctrlragency@gmail.com per essere rimosso. / Invalid link: email us to be removed.</p>;
+  if (!token) return <p className="j-a-lead">Link non valido. Scrivici a {ADMIN_EMAIL} per essere rimosso. / Invalid link: email us at {ADMIN_EMAIL} to be removed.</p>;
   if (state === "done") return <p className="j-a-lead" role="status">Fatto: non riceverai più la newsletter. / Done: you will not receive the newsletter any more.</p>;
   return (
     <form
