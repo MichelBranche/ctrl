@@ -13,6 +13,7 @@ import { siteMenus } from "@/lib/nav-menus";
 import { showTestimonials } from "@/lib/testimonials";
 import { presentReviews } from "@/lib/google-reviews-core";
 import { getGoogleReviews } from "@/lib/google-reviews";
+import { getStudioVideos } from "@/lib/ctrl-videos";
 import { dict, localize, type Locale } from "@/lib/i18n";
 import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import "./home-v2.css";
@@ -41,7 +42,7 @@ export async function HomePage({ lang }: { lang: Locale }) {
   const t = dict[lang];
   const h = t.home;
   const b = t.bookings;
-  const reviews = await getGoogleReviews();
+  const [reviews, videos] = await Promise.all([getGoogleReviews(), getStudioVideos()]);
   const reviewStrip = reviews?.reviews.length ? presentReviews(reviews, lang) : null;
 
   return (
@@ -138,13 +139,13 @@ export async function HomePage({ lang }: { lang: Locale }) {
 
           {/* 3b + 4. STUDIO FILM and ECOSISTEMA as two half-width cards side by side (stacked under 1024px). */}
           <div className="hv-pair">
-            {/* 4. STUDIO FILM: player grande + fila video del canale (lib/ctrl-videos.ts) */}
+            {/* 4. STUDIO FILM: player grande + fila video del canale (feed YouTube, fallback in lib/ctrl-videos.ts) */}
             {/* No visible title: the player and its poster speak for themselves; the name stays for screen readers. */}
             <section className="hv-block hv-film" aria-label={h.filmTitle}>
               <div className="hv-card hv-film-card">
                 <p className="hv-kicker hv-film-kicker">CTRL® / {h.filmKicker}</p>
                 <div className="hv-film-frame" data-hv-rise>
-                  <HomeFilm lang={lang} />
+                  <HomeFilm lang={lang} videos={videos} />
                 </div>
               </div>
             </section>

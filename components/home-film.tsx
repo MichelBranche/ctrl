@@ -4,7 +4,7 @@ import gsap from "gsap";
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { UI_SPRING, springEase } from "@/components/home/springs";
-import { CTRL_VIDEOS, formatDuration } from "@/lib/ctrl-videos";
+import { CTRL_VIDEOS, formatDuration, type CtrlVideo } from "@/lib/ctrl-videos";
 import type { Locale } from "@/lib/i18n";
 
 const COPY = {
@@ -20,14 +20,15 @@ const ease = springEase(UI_SPRING);
  * a click, so no YouTube request or cookie happens before that. Once the visitor
  * has pressed play, picking another video in the rail starts it straight away.
  */
-export function HomeFilm({ lang }: { lang: Locale }) {
+export function HomeFilm({ lang, videos }: { lang: Locale; videos: CtrlVideo[] }) {
   const t = COPY[lang];
+  const list = videos.length ? videos : CTRL_VIDEOS;
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLUListElement>(null);
   const first = useRef(true);
-  const video = CTRL_VIDEOS[active];
+  const video = list[Math.min(active, list.length - 1)];
 
   // Soft swap on every change of video: the new stage settles in with the UI spring.
   useLayoutEffect(() => {
@@ -87,7 +88,7 @@ export function HomeFilm({ lang }: { lang: Locale }) {
               </span>
               <span className="h-film-caption" aria-hidden="true">
                 <span className="h-film-caption-title">{video.title}</span>
-                <span className="h-film-caption-time">{formatDuration(video.duration)}</span>
+                {video.duration != null ? <span className="h-film-caption-time">{formatDuration(video.duration)}</span> : null}
               </span>
             </button>
           )}
@@ -106,19 +107,19 @@ export function HomeFilm({ lang }: { lang: Locale }) {
         </a>
       </div>
       <ul className="h-film-rail" ref={rail} aria-labelledby="h-film-rail-title" onKeyDown={onRailKey}>
-        {CTRL_VIDEOS.map((v, i) => (
+        {list.map((v, i) => (
           <li key={v.id}>
             <button
               type="button"
               className="h-film-thumb"
               data-active={i === active ? "" : undefined}
               aria-current={i === active ? "true" : undefined}
-              aria-label={`${i === active ? t.now : t.select}: ${v.title}, ${formatDuration(v.duration)}`}
+              aria-label={`${i === active ? t.now : t.select}: ${v.title}${v.duration != null ? `, ${formatDuration(v.duration)}` : ""}`}
               onClick={() => pick(i)}
             >
               <span className="h-film-thumb-media">
-                <Image src={v.thumb} alt="" fill sizes="(max-width: 809px) 62vw, 280px" quality={70} />
-                <span className="h-film-thumb-time">{formatDuration(v.duration)}</span>
+                <Image src={v.thumb} alt="" fill sizes="(max-width: 809px) 62vw, 280px" quality={75} />
+                {v.duration != null ? <span className="h-film-thumb-time">{formatDuration(v.duration)}</span> : null}
                 {i === active ? <span className="h-film-thumb-now">{t.now}</span> : null}
               </span>
               <span className="h-film-thumb-title">{v.title}</span>
