@@ -2,15 +2,17 @@
 
 export const SHOP_CATEGORIES = ["tech", "merch", "accessories", "gift"] as const;
 export type ShopCategory = (typeof SHOP_CATEGORIES)[number];
-export const SHOP_CATEGORY_LABEL: Record<"it" | "en", Record<ShopCategory, string>> = {
+export const SHOP_CATEGORY_LABEL: Record<"it" | "en" | "de" | "fr", Record<ShopCategory, string>> = {
   it: { tech: "Tech & Tools", merch: "Merch", accessories: "Accessori", gift: "Gift Card" },
   en: { tech: "Tech & Tools", merch: "Merch", accessories: "Accessories", gift: "Gift Card" },
+  de: { tech: "Tech & Tools", merch: "Merch", accessories: "Zubehör", gift: "Gutschein" },
+  fr: { tech: "Tech & outils", merch: "Boutique", accessories: "Accessoires", gift: "Carte cadeau" },
 };
 export const isShopCategory = (value: unknown): value is ShopCategory => SHOP_CATEGORIES.includes(value as ShopCategory);
 
 /** Per-language product page copy: small label above the title, benefits block, short highlights next to the buy button. */
 export type ShopDetails = { label: string; heading: string; benefits: [string, string][]; highlights: string[] };
-export type ShopDetailsByLang = { it: ShopDetails; en: ShopDetails };
+export type ShopDetailsByLang = { it: ShopDetails; en: ShopDetails; de: ShopDetails; fr: ShopDetails };
 export const EMPTY_DETAILS: ShopDetails = { label: "", heading: "", benefits: [], highlights: [] };
 
 /** Public product: what pages and client components receive. Supplier fields live only in ShopProductAdmin. */
@@ -70,6 +72,28 @@ export const GOOGLE_CARD_DETAILS: ShopDetailsByLang = {
     ],
     highlights: ["NFC and QR", "Two ways to open the link", "Dedicated support"],
   },
+  de: {
+    label: "Karten",
+    heading: "Eine kleine Geste. Mehr Bewertungen.",
+    benefits: [
+      ["Mehr Bewertungen", "Machen Sie es Ihren Kundinnen und Kunden leicht, ihre Erfahrungen zu teilen."],
+      ["Mehr Vertrauen", "Zeigen Sie neuen Kunden die Rückmeldungen Ihrer bestehenden Kundschaft."],
+      ["NFC + QR", "Funktioniert per NFC oder durch Scannen des QR-Codes."],
+      ["Immer griffbereit", "Ein kleines Hilfsmittel für den direkten Einsatz am Tresen."],
+    ],
+    highlights: ["NFC und QR", "Zwei Zugangswege", "Persönlicher Support"],
+  },
+  fr: {
+    label: "Cartes",
+    heading: "Un petit geste. Plus d’avis.",
+    benefits: [
+      ["Plus d’avis", "Facilitez le partage d’expérience de vos clients."],
+      ["Plus de confiance", "Aidez vos futurs clients à découvrir les avis de votre clientèle."],
+      ["NFC + QR", "Fonctionne par simple contact NFC ou en scannant le QR code."],
+      ["Toujours à portée de main", "Un petit outil prêt à être utilisé au comptoir."],
+    ],
+    highlights: ["NFC et QR", "Deux façons d’accéder au lien", "Assistance dédiée"],
+  },
 };
 
 export const DEFAULT_SHOP_PRODUCT: ShopProduct = {
@@ -104,7 +128,7 @@ function cleanDetails(value: unknown): ShopDetails {
 export function parseDetails(json: unknown): ShopDetailsByLang {
   let raw: Record<string, unknown> = {};
   try { raw = typeof json === "string" ? JSON.parse(json) : {}; } catch { raw = {}; }
-  return { it: cleanDetails(raw?.it), en: cleanDetails(raw?.en) };
+  return { it: cleanDetails(raw?.it), en: cleanDetails(raw?.en), de: cleanDetails(raw?.de ?? raw?.en), fr: cleanDetails(raw?.fr ?? raw?.en) };
 }
 
 /** Admin textarea format: one benefit per line, "Title | text". */

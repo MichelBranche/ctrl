@@ -4,16 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Locale } from "@/lib/i18n";
+import { localize, withGermanFallback, type Locale } from "@/lib/i18n";
 import { ShopIcon } from "@/components/shop/shop-icons";
 import { refreshCartPrices } from "@/lib/shop-cart-sync";
 
 type CartItem = { id: string; title: string; quantity: number; price?: number; slug?: string; image?: string };
 const STORAGE_KEY = "ctrl-shop-cart";
-const labels = {
+const labels = withGermanFallback({
   it: { open: "Apri il carrello", title: "Il tuo carrello", close: "Chiudi carrello", empty: "Il carrello è vuoto.", shop: "Scopri lo shop", remove: "Rimuovi", subtotal: "Subtotale", return: "Torna allo shop", checkout: "Vai al checkout", decrease: "Diminuisci quantità", increase: "Aumenta quantità", unavailable: "—" },
   en: { open: "Open cart", title: "Your cart", close: "Close cart", empty: "Your cart is empty.", shop: "Discover the shop", remove: "Remove", subtotal: "Subtotal", return: "Back to shop", checkout: "Go to checkout", decrease: "Decrease quantity", increase: "Increase quantity", unavailable: "—" },
-} as const;
+  fr: { open: "Ouvrir le panier", title: "Votre panier", close: "Fermer le panier", empty: "Votre panier est vide.", shop: "Découvrir la boutique", remove: "Retirer", subtotal: "Sous-total", return: "Retour à la boutique", checkout: "Voir le panier", decrease: "Diminuer la quantité", increase: "Augmenter la quantité", unavailable: "—" },
+});
 
 function readCart(): CartItem[] {
   try {
@@ -56,14 +57,14 @@ export function CartDrawer({ lang }: { lang: Locale }) {
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0), [items]);
   const money = useMemo(() => new Intl.NumberFormat(lang === "it" ? "it-IT" : "en-IE", { style: "currency", currency: "EUR" }), [lang]);
-  const shopHref = lang === "en" ? "/en/shop" : "/shop";
-  const checkoutHref = lang === "en" ? "/en/checkout" : "/checkout";
-  const productHref = (item: CartItem) => item.slug ? `${lang === "en" ? "/en" : ""}/shop/${item.slug}` : shopHref;
+  const shopHref = localize("/shop", lang);
+  const checkoutHref = localize("/checkout", lang);
+  const productHref = (item: CartItem) => item.slug ? localize(`/shop/${item.slug}`, lang) : shopHref;
 
   const sync = useCallback(() => {
     const cart = readCart();
     setItems(cart);
-    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh) setItems(fresh); });
+    void refreshCartPrices(cart, lang === "de" || lang === "fr" ? "en" : lang).then((fresh) => { if (fresh) setItems(fresh); });
   }, [lang]);
   useEffect(() => {
     // Initial read from localStorage, deferred so state is not set synchronously in the effect body.

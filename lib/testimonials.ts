@@ -14,7 +14,7 @@
  */
 export const TESTIMONIALS_READY = true;
 
-type L = { it: string; en: string };
+type L = { it: string; en: string; [lang: string]: string };
 export type Testimonial = {
   name: string;
   /** Square avatar (192px webp) in /public/images/home/reviews; initials when missing. */

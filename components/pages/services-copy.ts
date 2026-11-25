@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 type Plan = { title: string; text: string; checks: string[]; cta: string };
 
@@ -27,7 +27,7 @@ type ServicesCopy = {
   local: { kicker: string; title: string; text: string; cta: string };
 };
 
-export const servicesCopy: Record<Locale, ServicesCopy> = {
+export const servicesCopy = withGermanFallback<ServicesCopy>({
   it: {
     metaTitle: "Servizi web ad Aosta: siti, software e brand | CTRL®",
     metaDescription:
@@ -128,4 +128,30 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
       cta: "Studio in Valle d'Aosta",
     },
   },
-};
+  de: {
+    metaTitle: "Webleistungen in Aosta: Websites, Software und Marken | CTRL®",
+    metaDescription: "Maßgeschneiderte Websites, Markenidentität, Web-Apps, Software, SEO und Sicherheit. CTRL® ist das Webstudio in Aosta für Italien und Europa.",
+    tag: "Leistungen", title: "Leistungen von CTRL®", lead: "Individuelle Websites, Marken, Web-Apps, Software und SEO aus unserem Studio in Aosta.", discover: "Leistungen entdecken", gridLabel: "Unsere Leistungen", graphicAlt: "CTRL®-Signet: ein A als Berg gestaltet",
+    software: {
+      kicker: "Software im Abonnement", title: "Sofort einsatzbereit.", text: "CTRL®-Produkte, die wir entwickelt haben und betreuen. Aktivieren Sie sie direkt zum monatlichen Festpreis.", available: "Jetzt verfügbar", perMonth: "/Monat",
+      products: [{ name: "Agenda Easy", text: "Die Web-App für Termine, Kunden und Leistungen – für Studios und Dienstleistungsbetriebe.", price: "ab 9,90 €", image: "/images/projects/agenda-easy/hero.webp", alt: "Agenda Easy auf einem Laptop", href: "/projects/webapps/agenda-easy", cta: "Agenda Easy entdecken" }],
+    },
+    modesKicker: "Zwei Wege der Zusammenarbeit", modesTitle: ["Individuell.", "Oder im Abo."], modesText: "Wählen Sie das Modell, das am besten zu Ihren Anforderungen passt.",
+    custom: { title: "Individuell", text: "Ein maßgeschneidertes Projekt von der Strategie bis zum Launch.", checks: ["Individuelle Lösung", "Dediziertes Team", "Klare Zeitplanung"], cta: "Angebot anfragen" },
+    subscription: { title: "Im Abonnement", text: "Ein langfristiger Partner zu transparenten monatlichen Kosten.", checks: ["Laufender Support", "Updates inklusive", "Priorisierter Service"], cta: "Tarif entdecken" },
+    local: { kicker: "Aostatal", title: "Webstudio in Aosta.", text: "Zuerst das Aostatal, dann Hotellerie in ganz Norditalien.", cta: "Studio im Aostatal" },
+  },
+  fr: {
+    metaTitle: "Services web à Aoste : sites, logiciels et marques | CTRL®",
+    metaDescription: "Sites sur mesure, identité de marque, applications web, logiciels, SEO et sécurité. CTRL® est un studio web à Aoste, en Italie.",
+    tag: "Services", title: "Les services de CTRL®", lead: "Sites web sur mesure, marques, applications web, logiciels et SEO depuis notre studio à Aoste.", discover: "Découvrir les services", gridLabel: "Nos services", graphicAlt: "Le symbole graphique de CTRL : un A dessiné comme une montagne",
+    software: {
+      kicker: "Logiciels par abonnement", title: "Prêts à l’emploi.", text: "Des produits CTRL® conçus et maintenus par notre équipe, disponibles immédiatement avec un abonnement mensuel.", available: "Disponible maintenant", perMonth: "/mois",
+      products: [{ name: "Agenda Easy", text: "L’application web pour gérer les rendez-vous, les clients et les prestations des studios et professionnels.", price: "à partir de 9,90 €", image: "/images/projects/agenda-easy/hero.webp", alt: "Agenda Easy ouvert sur un ordinateur portable", href: "/projects/webapps/agenda-easy", cta: "Découvrir Agenda Easy" }],
+    },
+    modesKicker: "Deux façons de travailler ensemble", modesTitle: ["Sur mesure.", "Ou par abonnement."], modesText: "Choisissez la formule qui correspond le mieux à vos besoins.",
+    custom: { title: "Sur mesure", text: "Un projet personnalisé, de la stratégie à la mise en ligne.", checks: ["Solution personnalisée", "Équipe dédiée", "Calendrier défini"], cta: "Demander un devis" },
+    subscription: { title: "Par abonnement", text: "Un partenaire à vos côtés, avec un tarif mensuel transparent.", checks: ["Accompagnement continu", "Mises à jour incluses", "Assistance prioritaire"], cta: "Découvrir l’offre" },
+    local: { kicker: "Vallée d’Aoste", title: "Studio web à Aoste.", text: "La vallée d’abord, puis l’hôtellerie dans le nord de l’Italie.", cta: "Studio dans la Vallée d’Aoste" },
+  },
+});

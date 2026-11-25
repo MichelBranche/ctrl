@@ -1,6 +1,6 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
-export const contactCopy = {
+export const contactCopy = withGermanFallback({
   it: {
     metaTitle: "Contatta l'agenzia web ad Aosta, Valle d'Aosta | CTRL®",
     metaDescription: "Scrivi a CTRL® ad Aosta per un sito, un rifacimento, un hotel, una web app o un brand. Valle d'Aosta e Nord Italia. Rispondiamo entro 24 ore.",
@@ -101,6 +101,22 @@ export const contactCopy = {
     reviewAction: "Leave a review",
     ratingLine: "{rating} out of 5",
   },
-} satisfies Record<Locale, Record<string, string | string[]>>;
+  de: {
+    metaTitle: "CTRL® kontaktieren – Webstudio in Aosta | CTRL®",
+    metaDescription: "Schreiben Sie CTRL® in Aosta zu Websites, Hotels, Web-Apps oder Marken. Wir antworten innerhalb von 24 Stunden.",
+    tag: "Kontakt", title: "Sprechen wir.", lead: ["Haben Sie ein Projekt, eine Idee oder eine Frage?", "Wir hören Ihnen zu."],
+    write: "Schreiben Sie uns", emailLabel: "E-Mail", emailNote: "Antwort innerhalb von 24 Std.", availLabel: "Verfügbarkeit", avail: "Neue Projekte", availNote: "Neue Partnerschaften", placeLabel: "Standort", placeNote: "Wir arbeiten remote in ganz Italien", socialLabel: "Social Media",
+    formKicker: "Nachricht", formTitle: ["Erzählen Sie uns", "von Ihrem Projekt."], formText: "Eine Frage nach der anderen. Wir antworten persönlich innerhalb von 24 Stunden.",
+    name: "Name", namePh: "Ihr Name", email: "E-Mail", emailPh: "Ihre E-Mail-Adresse", subject: "Betreff", subjectPh: "Bitte wählen", subjects: ["Neue Website", "Neugestaltung", "Web-App / KI", "Zusammenarbeit", "Sonstiges"], message: "Nachricht", messagePh: "Schreiben Sie Ihre Nachricht …", send: "Nachricht senden", required: "Pflichtfeld", badEmail: "Geben Sie eine gültige E-Mail-Adresse ein", successTitle: "Nachricht bereit.", successText: "Wir haben Ihre Nachricht erhalten und antworten so bald wie möglich. In dringenden Fällen schreiben Sie an", sending: "Wird gesendet …", rateError: "Zu viele Nachrichten in kurzer Zeit. Versuchen Sie es in einer Stunde erneut oder schreiben Sie an", sendError: "Senden fehlgeschlagen. Schreiben Sie direkt an", consent: "Mit dem Absenden stimmen Sie zu, dass wir Ihre Angaben nur zur Beantwortung verwenden. Details in der", privacyLink: "Datenschutzerklärung", again: "Weitere Nachricht schreiben", mailFrom: "Von", whereKicker: "Hier finden Sie uns", whereTitle: "Aosta.", whereText: "Wir arbeiten von Aosta im Aostatal aus mit Kunden in ganz Italien.", maps: "In Google Maps öffnen", mapTitle: "Karte von Aosta", reviewKicker: "Bewertung", reviewTitle: "Bewertung abgeben", reviewText: "Wenn Sie mit uns gearbeitet haben, hilft eine Google-Bewertung anderen, unser Studio zu finden.", reviewAction: "Bewertung abgeben", ratingLine: "{rating} von 5",
+  },
+  fr: {
+    metaTitle: "Contacter CTRL®, studio web à Aoste | CTRL®",
+    metaDescription: "Écrivez à CTRL® à Aoste pour un site, un hôtel, une application web ou une identité de marque. Réponse sous 24 heures.",
+    tag: "Contact", title: "Parlons-en.", lead: ["Un projet, une idée ou une question ?", "Nous sommes à votre écoute."],
+    write: "Nous écrire", emailLabel: "E-mail", emailNote: "Réponse sous 24 h", availLabel: "Disponibilité", avail: "Nouveaux projets", availNote: "Nouvelles collaborations", placeLabel: "Adresse", placeNote: "Nous travaillons à distance dans toute l’Italie", socialLabel: "Réseaux sociaux",
+    formKicker: "Écrivez-nous", formTitle: ["Parlez-nous", "de votre projet."], formText: "Une question à la fois. Nous vous répondrons personnellement sous 24 heures.",
+    name: "Nom", namePh: "Votre nom", email: "E-mail", emailPh: "Votre adresse e-mail", subject: "Sujet", subjectPh: "Choisissez une option", subjects: ["Nouveau site", "Refonte", "Application web / IA", "Collaboration", "Autre"], message: "Message", messagePh: "Écrivez votre message…", send: "Envoyer le message", required: "Champ obligatoire", badEmail: "Saisissez une adresse e-mail valide", successTitle: "Message envoyé.", successText: "Nous avons reçu votre message et vous répondrons dès que possible. Pour toute urgence, écrivez à", sending: "Envoi…", rateError: "Vous avez envoyé trop de messages en peu de temps. Réessayez dans une heure ou écrivez à", sendError: "Échec de l’envoi. Écrivez-nous directement à", consent: "En envoyant ce formulaire, vous acceptez que vos données soient utilisées uniquement pour vous répondre. Détails dans la", privacyLink: "politique de confidentialité", again: "Écrire un autre message", mailFrom: "De", whereKicker: "Où nous trouver", whereTitle: "Aoste.", whereText: "Notre studio est à Aoste, dans la Vallée d’Aoste, et travaille avec des clients partout en Italie.", maps: "Ouvrir dans Google Maps", mapTitle: "Carte d’Aoste", reviewKicker: "Avis", reviewTitle: "Laissez un avis", reviewText: "Si vous avez travaillé avec nous, un avis Google aidera d’autres personnes à découvrir le studio.", reviewAction: "Laisser un avis", ratingLine: "{rating} sur 5",
+  },
+});
 
-export type ContactCopy = (typeof contactCopy)["it"];
+export type ContactCopy = (typeof contactCopy)[Locale];

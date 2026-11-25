@@ -4,17 +4,19 @@ import { LANG_COOKIE, localeFromAcceptLanguage, localeFromPath, switchPath, type
 
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|lighthouse/i;
 
-/** Language the visitor wants: a manual choice (cookie) first, then the device language. */
+/** Manual selection is remembered; otherwise prefer visitors' country, then device language. */
 function preferred(req: NextRequest): Locale | null {
   const picked = req.cookies.get(LANG_COOKIE)?.value;
-  if (picked === "it" || picked === "en") return picked;
+  if (picked === "it" || picked === "en" || picked === "de" || picked === "fr") return picked;
+  if (req.headers.get("x-vercel-ip-country")?.toUpperCase() === "DE") return "de";
+  if (req.headers.get("x-vercel-ip-country")?.toUpperCase() === "FR") return "fr";
   return localeFromAcceptLanguage(req.headers.get("accept-language"));
 }
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  // Admin only: keep the area out of search engines and out of shared caches. Auth is checked server-side in every page and action.
+  // Keep the admin redirects, noindex and private-cache behavior intact.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     const legacy = legacyRubricaPath(pathname, req.nextUrl.searchParams);
     const requestHeaders = new Headers(req.headers);
@@ -23,13 +25,11 @@ export function proxy(req: NextRequest) {
     const response = legacy ? NextResponse.redirect(new URL(legacy, req.url), 307) : NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Cache-Control", "private, no-store");
-    // Invite and password reset links carry a single-use token in the URL: never leak it in a Referer header.
     if (pathname.startsWith("/admin/invito/") || pathname === "/admin/login/reimposta") response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   }
 
-  // Language: only full page loads by people (browser document navigations). Router/prefetch requests follow the links the user clicked,
-  // and crawlers keep indexing both /... (IT) and /en/... as they are.
+  // Only redirect full browser navigations. Router requests and crawlers keep their requested URL.
   const h = req.headers;
   if (req.method !== "GET" || h.get("sec-fetch-mode") !== "navigate" || h.has("rsc") || h.has("next-router-prefetch") || BOT.test(h.get("user-agent") ?? "")) {
     return NextResponse.next();
@@ -40,12 +40,9 @@ export function proxy(req: NextRequest) {
   url.pathname = switchPath(pathname, want);
   url.search = search;
   const response = NextResponse.redirect(url, 307);
-  response.headers.set("Vary", "Cookie, Accept-Language");
+  response.headers.set("Vary", "Cookie, Accept-Language, X-Vercel-IP-Country");
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
 
-export const config = {
-  // Pages only: skip API routes, Next internals and any file with an extension (icons, images, fonts, robots, sitemap).
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
-};
+export const config = { matcher: ["/((?!api|_next|.*\\..*).*)"] };

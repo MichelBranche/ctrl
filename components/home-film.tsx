@@ -5,12 +5,13 @@ import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { UI_SPRING, springEase } from "@/components/home/springs";
 import { CTRL_VIDEOS, formatDuration, type CtrlVideo } from "@/lib/ctrl-videos";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
-const COPY = {
+const COPY = withGermanFallback({
   it: { play: "Riproduci", now: "Nel player", list: "Altri video di CTRL®", open: "Guarda su YouTube", select: "Porta nel player" },
   en: { play: "Play", now: "Now playing", list: "More videos from CTRL®", open: "Watch on YouTube", select: "Load in the player" },
-};
+  fr: { play: "Lire", now: "En cours de lecture", list: "Autres vidéos de CTRL®", open: "Regarder sur YouTube", select: "Charger dans le lecteur" },
+});
 
 const ease = springEase(UI_SPRING);
 

@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
 export type ServiceDetail = {
   metaTitle: string;
@@ -551,11 +551,11 @@ const softwareEn: ServiceDetail = {
 };
 
 export const serviceDetails: Record<string, Record<Locale, ServiceDetail>> = {
-  "brand-identity": { it: brandIt, en: brandEn },
-  "product-development": { it: productIt, en: productEn },
-  "visual-communication": { it: visualIt, en: visualEn },
-  "growth-support": { it: growthIt, en: growthEn },
-  "software-ai": { it: softwareIt, en: softwareEn },
+  "brand-identity": withGermanFallback({ it: brandIt, en: brandEn }),
+  "product-development": withGermanFallback({ it: productIt, en: productEn }),
+  "visual-communication": withGermanFallback({ it: visualIt, en: visualEn }),
+  "growth-support": withGermanFallback({ it: growthIt, en: growthEn }),
+  "software-ai": withGermanFallback({ it: softwareIt, en: softwareEn }),
 };
 
 export function getServiceDetail(slug: string, lang: Locale): ServiceDetail | null {

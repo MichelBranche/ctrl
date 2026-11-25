@@ -4,6 +4,7 @@
  * Italian labels are what the team reads in the CRM and in Discord. The visitor's language
  * is only for the page and for the summary they copy.
  */
+import { withGermanFallback } from "@/lib/i18n";
 
 export const SERVICE_IDS = ["website", "hotel", "shop", "app", "brand", "other"] as const;
 export const GOAL_IDS = ["leads", "bookings", "rebuild", "scratch", "other"] as const;
@@ -14,7 +15,7 @@ export type ServiceId = (typeof SERVICE_IDS)[number];
 export type GoalId = (typeof GOAL_IDS)[number];
 export type BudgetId = (typeof BUDGET_IDS)[number];
 export type TimingId = (typeof TIMING_IDS)[number];
-export type InquiryLang = "it" | "en";
+export type InquiryLang = "it" | "en" | "de" | "fr";
 
 const SERVICE_SET = new Set<string>(SERVICE_IDS);
 const GOAL_SET = new Set<string>(GOAL_IDS);
@@ -95,7 +96,7 @@ type Copy = {
   noPhone: string;
 };
 
-export const inquiryCopy = {
+export const inquiryCopy = withGermanFallback<Copy>({
   it: {
     kicker: "Una domanda alla volta",
     continue: "Continua",
@@ -234,7 +235,23 @@ export const inquiryCopy = {
     vat: "VAT excluded",
     noPhone: "Not given",
   },
-} satisfies Record<InquiryLang, Copy>;
+  fr: {
+    kicker: "Une question à la fois", continue: "Continuer", send: "Envoyer", sending: "Envoi…", back: "Retour", step: "Étape", of: "sur", sent: "Envoyé",
+    questions: [
+      { title: "De quoi avez-vous besoin ?", hint: "Vous pouvez choisir plusieurs réponses." },
+      { title: "Quel est votre objectif ?", hint: "Une seule réponse suffit." },
+      { title: "Votre budget indicatif", hint: "Montants hors TVA. Une estimation suffit." },
+      { title: "Quand souhaitez-vous commencer ?", hint: "Même une période approximative nous aide." },
+      { title: "Comment vous contacter ?", hint: "Votre nom et votre e-mail suffisent. Le téléphone est facultatif." },
+    ],
+    services: { website: "Site web", hotel: "Site d’hôtel avec réservation directe", shop: "Boutique en ligne", app: "Application web ou logiciel", brand: "Marque et identité visuelle", other: "Autre" },
+    goals: { leads: "Plus de contacts et de clients", bookings: "Plus de réservations directes", rebuild: "Refondre un ancien site", scratch: "Partir de zéro", other: "Autre" },
+    budgets: { under_1500: "Moins de 1 500 €", to_3000: "1 500–3 000 €", to_6000: "3 000–6 000 €", over_6000: "Plus de 6 000 €", unsure: "Je ne sais pas encore" },
+    timings: { asap: "Dès que possible", quarter: "Dans 1 à 3 mois", exploring: "Je réfléchis encore" },
+    name: "Nom", email: "E-mail", phone: "Téléphone", note: "Note", noteHint: "Ajoutez un détail si vous le souhaitez.", needOne: "Choisissez au moins une réponse.", needChoice: "Choisissez une option.", needName: "Saisissez votre nom.", badEmail: "Saisissez une adresse e-mail valide.", badPhone: "Vérifiez le numéro ou laissez le champ vide.",
+    thanks: "Merci, {name}.", promise: "Nous vous répondrons personnellement sous 24 heures.", copy: "Copier le récapitulatif", copied: "Récapitulatif copié", home: "Retour à l’accueil", again: "Recommencer", summaryTitle: "Demande pour CTRL", summaryServices: "Votre besoin", summaryGoal: "Objectif", summaryBudget: "Budget", summaryTiming: "Délais", summaryPhone: "Téléphone", summaryNote: "Note", vat: "Hors TVA", noPhone: "Non renseigné",
+  },
+});
 
 const clipText = (v: string, max: number) => v.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").trim().slice(0, max);
 
@@ -318,7 +335,7 @@ export function parseInquiry(input: {
       email,
       phone: phone.phone,
       note: clipText(input.note ?? "", 2000),
-      lang: input.lang === "en" ? "en" : "it",
+      lang: input.lang === "de" ? "de" : input.lang === "fr" ? "fr" : input.lang === "en" ? "en" : "it",
     },
   };
 }

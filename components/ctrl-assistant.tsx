@@ -6,11 +6,12 @@ import gsap from "gsap";
 import { CtrlMascot } from "@/components/ctrl-mascot";
 import { useLocale } from "@/components/use-locale";
 import { whatsappLink } from "@/lib/content";
+import { withGermanFallback } from "@/lib/i18n";
 import type { ChatLink, ChatMessage } from "@/lib/assistant";
 
 type Msg = ChatMessage & { links?: ChatLink[] };
 
-const copy = {
+const copy = withGermanFallback({
   it: {
     open: "Apri l'assistente di CTRL®",
     close: "Chiudi assistente",
@@ -39,7 +40,8 @@ const copy = {
     humanHint: "Message us on WhatsApp",
     humanText: "Hi, I'm writing from the CTRL® website",
   },
-};
+  fr: { open: "Ouvrir l’assistant CTRL®", close: "Fermer l’assistant", status: "En ligne · réponses du site", greeting: "Bonjour ! Je suis l’assistant CTRL®. Posez-moi vos questions sur nos services, nos projets ou notre façon de travailler.", chips: ["Services", "Tarifs / Devis", "Délais", "Contact"], placeholder: "Écrivez un message…", send: "Envoyer", thinking: "Réflexion en cours", error: "Une erreur s’est produite. Réessayez dans un instant.", human: "Parler à quelqu’un", humanHint: "Écrivez-nous sur WhatsApp", humanText: "Bonjour, je vous écris depuis le site CTRL®" },
+});
 
 export function CtrlAssistant() {
   const { lang } = useLocale();

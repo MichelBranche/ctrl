@@ -31,7 +31,7 @@ export async function ContactView({ lang }: { lang: Locale }) {
   const rating = reviews && !reviews.fixture && typeof reviews.rating === "number" ? formatRating(reviews.rating, lang) : null;
   const address = STUDIO_PLACE.address[lang];
   const crumbs = [
-    { name: "Home", path: "/" },
+    { name: dict[lang].cmd.home, path: "/" },
     { name: c.tag, path: "/contact" },
   ];
   return (

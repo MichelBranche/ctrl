@@ -3,12 +3,12 @@
 import { useId, useState, type FormEvent } from "react";
 import { subscribe } from "@/app/actions/public";
 import { CONTACT_EMAIL } from "@/lib/content";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 type State = "idle" | "invalid" | "consent" | "busy" | "done" | "rate" | "error";
 
-const COPY = {
+const COPY = withGermanFallback({
   it: {
     title: "Newsletter",
     lead: "Ogni tanto, una nota dallo studio.",
@@ -35,7 +35,8 @@ const COPY = {
     rate: "Too many attempts. Try again in an hour.",
     error: `Signup failed. Email us at ${CONTACT_EMAIL}.`,
   },
-};
+  fr: { title: "Newsletter", lead: "Une note du studio de temps en temps.", label: "Votre e-mail", cta: "S’abonner", consent: "J’accepte de recevoir la newsletter de CTRL® conformément à la", privacy: "politique de confidentialité", invalid: "Saisissez une adresse e-mail valide.", needConsent: "Cochez la case de consentement pour vous abonner.", done: "Merci, votre inscription est confirmée. Vous pouvez vous désabonner à tout moment.", rate: "Trop de tentatives. Réessayez dans une heure.", error: `Échec de l’inscription. Écrivez-nous à ${CONTACT_EMAIL}.` },
+});
 
 /** Compact newsletter signup in the site footer (every page). Same server action as the Journal form. */
 export function FooterNewsletter({ lang }: { lang: Locale }) {
@@ -73,7 +74,7 @@ export function FooterNewsletter({ lang }: { lang: Locale }) {
       <label className="f-news-consent" data-error={state === "consent" || undefined}>
         <input type="checkbox" name="consent" onChange={reset} />
         <span>
-          {c.consent} <a href={lang === "en" ? "/en/privacy" : "/privacy"}>{c.privacy}</a>.
+          {c.consent} <a href={lang === "en" ? "/en/privacy" : lang === "de" ? "/de/privacy" : lang === "fr" ? "/fr/privacy" : "/privacy"}>{c.privacy}</a>.
         </span>
       </label>
       <p id={`${id}-msg`} className="f-news-msg" role="status" data-state={state}>{msg}</p>
