@@ -49,9 +49,10 @@ const AREAS = [
 
 export function alternates(itPath: string, lang: Locale, enPath = itPath === "/" ? "/en" : `/en${itPath}`): Metadata["alternates"] {
   const dePath = itPath === "/" ? "/de" : itPath === "/cookie" ? "/de/cookies" : `/de${itPath}`;
+  const frPath = itPath === "/" ? "/fr" : itPath === "/cookie" ? "/fr/cookies" : `/fr${itPath}`;
   return {
-    canonical: lang === "en" ? enPath : lang === "de" ? dePath : itPath,
-    languages: { "it-IT": itPath, "en-US": enPath, "de-DE": dePath, "x-default": itPath },
+    canonical: lang === "en" ? enPath : lang === "de" ? dePath : lang === "fr" ? frPath : itPath,
+    languages: { "it-IT": itPath, "en-US": enPath, "de-DE": dePath, "fr-FR": frPath, "x-default": itPath },
   };
 }
 
@@ -59,6 +60,7 @@ const OG_ALT = {
   it: "CTRL®, studio indipendente di creative technology ad Aosta",
   en: "CTRL®, independent creative technology studio in Aosta",
   de: "CTRL®, unabhängiges Creative-Technology-Studio in Aosta",
+  fr: "CTRL®, studio indépendant de creative technology à Aoste",
 } as const;
 
 /** Full Open Graph object. A page that sets openGraph replaces the layout value, so pass the extras here. */
@@ -66,8 +68,8 @@ export function openGraph(lang: Locale, extra?: Metadata["openGraph"]): Metadata
   return {
     type: "website",
     siteName: "CTRL®",
-    locale: lang === "en" ? "en_US" : lang === "de" ? "de_DE" : "it_IT",
-    alternateLocale: lang === "de" ? ["it_IT", "en_US"] : [lang === "en" ? "it_IT" : "en_US", ...(lang === "it" ? ["de_DE"] : [])],
+    locale: lang === "en" ? "en_US" : lang === "de" ? "de_DE" : lang === "fr" ? "fr_FR" : "it_IT",
+    alternateLocale: ["it_IT", "en_US", "de_DE", "fr_FR"].filter((locale) => locale !== (lang === "it" ? "it_IT" : lang === "en" ? "en_US" : lang === "de" ? "de_DE" : "fr_FR")),
     images: [{ url: "/images/home/hero.jpg", width: 1200, height: 630, alt: OG_ALT[lang] }],
     ...extra,
   };
@@ -79,6 +81,7 @@ type PublicMeta = {
   itPath: string;
   enPath?: string;
   dePath?: string;
+  frPath?: string;
   /** When false, hreflang only names the language that actually has this URL. */
   paired?: boolean;
   images?: NonNullable<Metadata["openGraph"]>["images"];
@@ -87,9 +90,9 @@ type PublicMeta = {
   robots?: Metadata["robots"];
 };
 
-function singleLanguageAlternates(itPath: string, lang: Locale, enPath: string, dePath: string): Metadata["alternates"] {
-  const canonical = lang === "en" ? enPath : lang === "de" ? dePath : itPath;
-  const code = lang === "en" ? "en-US" : lang === "de" ? "de-DE" : "it-IT";
+function singleLanguageAlternates(itPath: string, lang: Locale, enPath: string, dePath: string, frPath: string): Metadata["alternates"] {
+  const canonical = lang === "en" ? enPath : lang === "de" ? dePath : lang === "fr" ? frPath : itPath;
+  const code = lang === "en" ? "en-US" : lang === "de" ? "de-DE" : lang === "fr" ? "fr-FR" : "it-IT";
   return { canonical, languages: { [code]: canonical, "x-default": canonical } };
 }
 
@@ -97,7 +100,8 @@ function singleLanguageAlternates(itPath: string, lang: Locale, enPath: string, 
 export function publicMeta(lang: Locale, opts: PublicMeta): Metadata {
   const enPath = opts.enPath ?? (opts.itPath === "/" ? "/en" : `/en${opts.itPath}`);
   const dePath = opts.dePath ?? (opts.itPath === "/" ? "/de" : opts.itPath === "/cookie" ? "/de/cookies" : `/de${opts.itPath}`);
-  const path = lang === "en" ? enPath : lang === "de" ? dePath : opts.itPath;
+  const frPath = opts.frPath ?? (opts.itPath === "/" ? "/fr" : opts.itPath === "/cookie" ? "/fr/cookies" : `/fr${opts.itPath}`);
+  const path = lang === "en" ? enPath : lang === "de" ? dePath : lang === "fr" ? frPath : opts.itPath;
   const graph = openGraph(lang, {
     title: opts.title,
     description: opts.description,
@@ -109,7 +113,7 @@ export function publicMeta(lang: Locale, opts: PublicMeta): Metadata {
   return {
     title: { absolute: opts.title },
     description: opts.description,
-    alternates: opts.paired === false ? singleLanguageAlternates(opts.itPath, lang, enPath, dePath) : { canonical: path, languages: { "it-IT": opts.itPath, "en-US": enPath, "de-DE": dePath, "x-default": opts.itPath } },
+    alternates: opts.paired === false ? singleLanguageAlternates(opts.itPath, lang, enPath, dePath, frPath) : { canonical: path, languages: { "it-IT": opts.itPath, "en-US": enPath, "de-DE": dePath, "fr-FR": frPath, "x-default": opts.itPath } },
     openGraph: graph,
     twitter: { card: "summary_large_image", title: opts.title, description: opts.description, ...(images ? { images } : {}) },
     ...(opts.robots ? { robots: opts.robots } : {}),
@@ -173,11 +177,16 @@ const SHOP_DESC_EN = [
   " From the CTRL® shop in Aosta.",
   " CTRL® shop, Aosta.",
 ];
+const SHOP_DESC_FR = [
+  " De la boutique CTRL®, studio web à Aoste, en Vallée d’Aoste.",
+  " De la boutique CTRL® à Aoste.",
+  " Boutique CTRL®, Aoste.",
+];
 
 /** Description for a shop product. Starts from the published product text. */
 export function shopDocumentDescription(base: string, lang: Locale): string {
   const text = base.trim();
-  const tails = lang === "it" ? SHOP_DESC_IT : SHOP_DESC_EN;
+  const tails = lang === "it" ? SHOP_DESC_IT : lang === "fr" ? SHOP_DESC_FR : SHOP_DESC_EN;
   return pickInRange([text, ...tails.map((tail) => `${text}${tail}`)], 140, 160);
 }
 
@@ -191,10 +200,15 @@ const SHOP_TITLE_EN = [
   ", NFC and QR | CTRL® shop in Aosta",
   " | CTRL® shop in Aosta",
 ];
+const SHOP_TITLE_FR = [
+  " avec NFC et QR à Aoste | CTRL®",
+  ", NFC et QR | Boutique CTRL® à Aoste",
+  " | Boutique CTRL® à Aoste",
+];
 
 /** Document title for a shop product. The name is the published product title. */
 export function shopDocumentTitle(name: string, lang: Locale): string {
-  const suffixes = lang === "it" ? SHOP_TITLE_IT : SHOP_TITLE_EN;
+  const suffixes = lang === "it" ? SHOP_TITLE_IT : lang === "fr" ? SHOP_TITLE_FR : SHOP_TITLE_EN;
   return pickInRange(suffixes.map((suffix) => `${name}${suffix}`), 50, 60);
 }
 

@@ -18,6 +18,7 @@ type CartLine = { id: string; slug?: string; title: string; quantity: number; pr
 const text = withGermanFallback({
   it: { kicker: "SHOP / CHECKOUT", title: "Checkout.", lead: "Rivedi il tuo ordine prima di proseguire.", summary: "Il tuo ordine", empty: "Il carrello è vuoto.", back: "Torna allo shop", subtotal: "Subtotale", shipping: "Spedizione", later: "Da definire", total: "Totale", note: "Il checkout online e i pagamenti saranno attivati dopo la scelta del servizio di pagamento e della fornitura. Per ora il carrello è una bozza salvata in questo browser: i prezzi definitivi saranno sempre ricalcolati dal nostro server.", unavailable: "—" },
   en: { kicker: "SHOP / CHECKOUT", title: "Checkout.", lead: "Review your order before continuing.", summary: "Your order", empty: "Your cart is empty.", back: "Back to shop", subtotal: "Subtotal", shipping: "To be confirmed", later: "To be confirmed", total: "Total", note: "Online checkout and payments will be enabled after a payment and fulfillment service is chosen. For now, your cart is a draft saved in this browser: final prices will always be recalculated by our server.", unavailable: "—" },
+  fr: { kicker: "BOUTIQUE / COMMANDE", title: "Votre commande.", lead: "Vérifiez votre commande avant de continuer.", summary: "Votre commande", empty: "Votre panier est vide.", back: "Retour à la boutique", subtotal: "Sous-total", shipping: "À confirmer", later: "À confirmer", total: "Total", note: "Le paiement en ligne sera activé après le choix du prestataire de paiement et de livraison. Pour le moment, votre panier est enregistré dans ce navigateur ; les prix définitifs seront recalculés par notre serveur.", unavailable: "—" },
 });
 
 const form = withGermanFallback({
@@ -41,12 +42,22 @@ const form = withGermanFallback({
     errors: { invalid: "Check name, email and address (and the link, if any: it must start with https://).", empty: "Your cart has no available products.", rate: "Too many requests: please try again later.", unavailable: "Sending failed. Please try later or write to us from the contact page." },
     cta: "Fill in the order request",
   },
+  fr: {
+    badge: "Demande de commande", title: "Envoyez votre demande, nous vous recontacterons.",
+    lead: "Aucun paiement pour le moment. Envoyez votre demande : nous vérifierons la disponibilité et la livraison, puis nous vous contacterons pour confirmer.",
+    name: "Nom et prénom", email: "E-mail", phone: "Téléphone (facultatif)", address: "Adresse de livraison", addressHint: "Rue, numéro, code postal, ville, pays",
+    custom: "Personnalisation de la carte NFC (facultatif)", business: "Nom de l’entreprise", review: "Lien vers les avis Google", reviewHint: "https://g.page/r/…",
+    note: "Remarques (facultatif)", privacy: "Ces données servent uniquement à traiter votre demande.", submit: "Envoyer la demande", sending: "Envoi en cours…",
+    done: (n: number) => `Demande n° ${n} envoyée. Nous vous contacterons bientôt.`, doneLead: "Nous avons noté les prix indiqués ; nous vous écrirons pour confirmer la commande et la livraison.",
+    errors: { invalid: "Vérifiez votre nom, votre e-mail et votre adresse (le lien éventuel doit commencer par https://).", empty: "Votre panier ne contient aucun produit disponible.", rate: "Trop de demandes. Réessayez plus tard.", unavailable: "Échec de l’envoi. Réessayez plus tard ou écrivez-nous depuis la page contact." },
+    cta: "Remplir la demande de commande",
+  },
 });
 
 export function CheckoutContent({ lang }: { lang: Locale }) {
   const t = text[lang];
   const [items, setItems] = useState<CartLine[]>([]);
-  const money = useMemo(() => new Intl.NumberFormat(lang === "it" ? "it-IT" : "en-IE", { style: "currency", currency: "EUR" }), [lang]);
+  const money = useMemo(() => new Intl.NumberFormat(lang === "it" ? "it-IT" : lang === "fr" ? "fr-FR" : lang === "de" ? "de-DE" : "en-IE", { style: "currency", currency: "EUR" }), [lang]);
   useEffect(() => {
     let cart: CartLine[] = [];
     try {
@@ -60,7 +71,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
     } catch { cart = []; }
     let live = true;
     queueMicrotask(() => { if (live) setItems(cart); });
-    void refreshCartPrices(cart, lang === "de" ? "en" : lang).then((fresh) => { if (fresh && live) setItems(fresh); });
+    void refreshCartPrices(cart, lang === "de" || lang === "fr" ? "en" : lang).then((fresh) => { if (fresh && live) setItems(fresh); });
     return () => { live = false; };
   }, [lang]);
   const f = form[lang];
@@ -69,7 +80,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
   const [done, setDone] = useState<number | null>(null);
   const send = (data: FormData) => start(async () => {
     setError("");
-    data.set("lang", lang === "de" ? "en" : lang);
+      data.set("lang", lang === "de" || lang === "fr" ? "en" : lang);
     data.set("cart", JSON.stringify(items.filter((i) => i.slug).map((i) => ({ slug: i.slug, quantity: i.quantity }))));
     const res = await submitOrderRequest(data).catch(() => ({ ok: false as const, error: "unavailable" as const }));
     if (!res.ok) { setError(f.errors[res.error]); return; }
@@ -90,7 +101,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
         <section className="checkout-lines"><h2>{t.summary}<span>{items.reduce((n, item) => n + item.quantity, 0).toString().padStart(2, "0")}</span></h2>
           {items.map((item) => <article className="checkout-line" key={item.id}>
             <Link className="checkout-image" href={productHref(item)}><Image src={item.image || "/images/shop/review-card.webp"} alt="" fill sizes="88px" /></Link>
-            <div><Link className="checkout-name" href={productHref(item)}>{item.title}</Link><p>{lang === "it" ? "Quantità" : "Quantity"}: {item.quantity}</p></div>
+            <div><Link className="checkout-name" href={productHref(item)}>{item.title}</Link><p>{lang === "it" ? "Quantità" : lang === "fr" ? "Quantité" : lang === "de" ? "Menge" : "Quantity"}: {item.quantity}</p></div>
             <strong>{item.price === undefined ? t.unavailable : money.format(item.price * item.quantity)}</strong>
           </article>)}
           <form id="order-request" className="checkout-request" action={send} aria-busy={pending}>
@@ -115,7 +126,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
           </form>
           <p className="checkout-note">{t.note}</p>
         </section>
-        <aside className="checkout-totals"><h2>{lang === "it" ? "Riepilogo" : "Summary"}</h2><div><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><div><span>{t.shipping}</span><strong>{t.later}</strong></div><div className="checkout-total"><span>{t.total}</span><strong>{money.format(subtotal)}</strong></div><a className="checkout-totals-cta" href="#order-request">{f.cta}<ShopIcon name="arrowRight" /></a><p className="checkout-totals-hint">{lang === "it" ? "Pagamento online non ancora attivo: nessun addebito." : "Online payment not active yet: nothing is charged."}</p><Link href={shopHref}>{t.back}<ShopIcon name="arrowUpRight" /></Link></aside>
+        <aside className="checkout-totals"><h2>{lang === "it" ? "Riepilogo" : lang === "fr" ? "Récapitulatif" : lang === "de" ? "Übersicht" : "Summary"}</h2><div><span>{t.subtotal}</span><strong>{money.format(subtotal)}</strong></div><div><span>{t.shipping}</span><strong>{t.later}</strong></div><div className="checkout-total"><span>{t.total}</span><strong>{money.format(subtotal)}</strong></div><a className="checkout-totals-cta" href="#order-request">{f.cta}<ShopIcon name="arrowRight" /></a><p className="checkout-totals-hint">{lang === "it" ? "Pagamento online non ancora attivo: nessun addebito." : lang === "fr" ? "Paiement en ligne indisponible : aucun débit ne sera effectué." : lang === "de" ? "Online-Zahlung noch nicht aktiv: Es wird nichts abgebucht." : "Online payment not active yet: nothing is charged."}</p><Link href={shopHref}>{t.back}<ShopIcon name="arrowUpRight" /></Link></aside>
       </div>}
     </section>
   </main>;

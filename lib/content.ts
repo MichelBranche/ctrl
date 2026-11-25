@@ -11,7 +11,7 @@ function withGermanContentFallback<T>(value: T): T {
     const proxy = new Proxy(object, {
       get(target, property, receiver) {
         const current = Reflect.get(target, property, receiver);
-        if (property === "de" && current === undefined) return wrap(Reflect.get(target, "en", receiver));
+        if ((property === "de" || property === "fr") && current === undefined) return wrap(Reflect.get(target, "en", receiver));
         return wrap(current);
       },
     });
@@ -31,6 +31,7 @@ export const MAILBOX_LABEL = {
   it: { sales: "Vendite", admin: "Amministrazione" },
   en: { sales: "Sales", admin: "Administration" },
   de: { sales: "Vertrieb", admin: "Verwaltung" },
+  fr: { sales: "Commercial", admin: "Administration" },
 } as const;
 /** Michel's phone, international format. Single source for the WhatsApp link. */
 export const CONTACT_PHONE = "+393881660117";
@@ -108,6 +109,7 @@ export const STUDIO_PLACE = {
     it: STUDIO_ADDRESS,
     en: STUDIO_ADDRESS,
     de: STUDIO_ADDRESS,
+    fr: STUDIO_ADDRESS,
   },
   latitude: STUDIO_LATITUDE,
   longitude: STUDIO_LONGITUDE,
@@ -122,7 +124,7 @@ export function studioMapEmbedUrl(lang: Locale): string {
   const url = new URL("https://www.google.com/maps");
   url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude} (${STUDIO_PLACE.address.it})`);
   url.searchParams.set("z", "17");
-  url.searchParams.set("hl", lang === "de" ? "de" : lang === "en" ? "en" : "it");
+  url.searchParams.set("hl", lang === "de" ? "de" : lang === "fr" ? "fr" : lang === "en" ? "en" : "it");
   url.searchParams.set("output", "embed");
   return url.toString();
 }

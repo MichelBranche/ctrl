@@ -59,7 +59,7 @@ function bootReady() {
 
 /** Destination label shown on the cover: the page name in the destination language. */
 function labelFor(path: string) {
-  const lang: Locale = path === "/en" || path.startsWith("/en/") ? "en" : path === "/de" || path.startsWith("/de/") ? "de" : "it";
+  const lang: Locale = path === "/en" || path.startsWith("/en/") ? "en" : path === "/de" || path.startsWith("/de/") ? "de" : path === "/fr" || path.startsWith("/fr/") ? "fr" : "it";
   const prefix = lang === "it" ? 0 : 3;
   const rest = path.slice(prefix) || "/";
   const seg = rest.split("/")[1] ?? "";

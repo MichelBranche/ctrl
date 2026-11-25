@@ -40,6 +40,7 @@ const copy = withGermanFallback({
     humanHint: "Message us on WhatsApp",
     humanText: "Hi, I'm writing from the CTRL® website",
   },
+  fr: { open: "Ouvrir l’assistant CTRL®", close: "Fermer l’assistant", status: "En ligne · réponses du site", greeting: "Bonjour ! Je suis l’assistant CTRL®. Posez-moi vos questions sur nos services, nos projets ou notre façon de travailler.", chips: ["Services", "Tarifs / Devis", "Délais", "Contact"], placeholder: "Écrivez un message…", send: "Envoyer", thinking: "Réflexion en cours", error: "Une erreur s’est produite. Réessayez dans un instant.", human: "Parler à quelqu’un", humanHint: "Écrivez-nous sur WhatsApp", humanText: "Bonjour, je vous écris depuis le site CTRL®" },
 });
 
 export function CtrlAssistant() {

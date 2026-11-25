@@ -10,6 +10,7 @@ import { withGermanFallback, type Locale } from "@/lib/i18n";
 const COPY = withGermanFallback({
   it: { play: "Riproduci", now: "Nel player", list: "Altri video di CTRL®", open: "Guarda su YouTube", select: "Porta nel player" },
   en: { play: "Play", now: "Now playing", list: "More videos from CTRL®", open: "Watch on YouTube", select: "Load in the player" },
+  fr: { play: "Lire", now: "En cours de lecture", list: "Autres vidéos de CTRL®", open: "Regarder sur YouTube", select: "Charger dans le lecteur" },
 });
 
 const ease = springEase(UI_SPRING);

@@ -13,6 +13,7 @@ const STORAGE_KEY = "ctrl-shop-cart";
 const labels = withGermanFallback({
   it: { open: "Apri il carrello", title: "Il tuo carrello", close: "Chiudi carrello", empty: "Il carrello è vuoto.", shop: "Scopri lo shop", remove: "Rimuovi", subtotal: "Subtotale", return: "Torna allo shop", checkout: "Vai al checkout", decrease: "Diminuisci quantità", increase: "Aumenta quantità", unavailable: "—" },
   en: { open: "Open cart", title: "Your cart", close: "Close cart", empty: "Your cart is empty.", shop: "Discover the shop", remove: "Remove", subtotal: "Subtotal", return: "Back to shop", checkout: "Go to checkout", decrease: "Decrease quantity", increase: "Increase quantity", unavailable: "—" },
+  fr: { open: "Ouvrir le panier", title: "Votre panier", close: "Fermer le panier", empty: "Votre panier est vide.", shop: "Découvrir la boutique", remove: "Retirer", subtotal: "Sous-total", return: "Retour à la boutique", checkout: "Voir le panier", decrease: "Diminuer la quantité", increase: "Augmenter la quantité", unavailable: "—" },
 });
 
 function readCart(): CartItem[] {
@@ -63,7 +64,7 @@ export function CartDrawer({ lang }: { lang: Locale }) {
   const sync = useCallback(() => {
     const cart = readCart();
     setItems(cart);
-    void refreshCartPrices(cart, lang === "de" ? "en" : lang).then((fresh) => { if (fresh) setItems(fresh); });
+    void refreshCartPrices(cart, lang === "de" || lang === "fr" ? "en" : lang).then((fresh) => { if (fresh) setItems(fresh); });
   }, [lang]);
   useEffect(() => {
     // Initial read from localStorage, deferred so state is not set synchronously in the effect body.

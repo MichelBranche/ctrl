@@ -4,11 +4,12 @@ import { LANG_COOKIE, localeFromAcceptLanguage, localeFromPath, switchPath, type
 
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|lighthouse/i;
 
-/** Manual selection is remembered; otherwise prefer German visitors, then the device language. */
+/** Manual selection is remembered; otherwise prefer visitors' country, then device language. */
 function preferred(req: NextRequest): Locale | null {
   const picked = req.cookies.get(LANG_COOKIE)?.value;
-  if (picked === "it" || picked === "en" || picked === "de") return picked;
+  if (picked === "it" || picked === "en" || picked === "de" || picked === "fr") return picked;
   if (req.headers.get("x-vercel-ip-country")?.toUpperCase() === "DE") return "de";
+  if (req.headers.get("x-vercel-ip-country")?.toUpperCase() === "FR") return "fr";
   return localeFromAcceptLanguage(req.headers.get("accept-language"));
 }
 

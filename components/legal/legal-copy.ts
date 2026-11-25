@@ -7,7 +7,7 @@ import { withGermanFallback } from "@/lib/i18n";
  * one technical admin cookie, covers on Vercel Blob, FAQ assistant that stores nothing.
  * Update this file whenever a new processor, cookie or data flow is added.
  */
-export const LEGAL_UPDATED = withGermanFallback({ it: "24 novembre 2026", en: "24 November 2026", de: "24. November 2026" });
+export const LEGAL_UPDATED = withGermanFallback({ it: "24 novembre 2026", en: "24 November 2026", de: "24. November 2026", fr: "24 novembre 2026" });
 
 export const privacy = withGermanFallback({
   it: {
@@ -159,7 +159,54 @@ Die öffentliche Website verwendet keine Cookies. Ein technisches Cookie wird au
 
 ## Änderungen
 
-Wenn sich unsere Datenverarbeitung ändert, aktualisieren wir diese Seite und das Datum unten.`,
+    Wenn sich unsere Datenverarbeitung ändert, aktualisieren wir diese Seite und das Datum unten.`,
+  },
+  fr: {
+    title: "Politique de confidentialité",
+    lead: "Quelles données ce site recueille, pourquoi et pendant combien de temps, ainsi que vos droits. En bref : peu de données, aucun cookie de suivi et aucune revente à des tiers.",
+    body: `## Responsable du traitement
+
+CTRL® di Michel Branche, Vallée d’Aoste, Italie. Pour toute demande relative à vos données : [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).
+
+## Données traitées et finalités
+
+**Formulaire de contact.** Nom, adresse e-mail, sujet et message, langue de la page et date d’envoi. Ces données servent uniquement à répondre à votre demande. Base juridique : mesures précontractuelles prises à votre demande et intérêt légitime à vous répondre (art. 6, § 1, points b et f du RGPD).
+
+**Newsletter du Journal.** Adresse e-mail, langue et date d’inscription, ainsi qu’un code aléatoire de désabonnement. Base juridique : votre consentement, révocable à tout moment (art. 6, § 1, point a du RGPD).
+
+**Protection contre les abus.** Nous calculons une empreinte de l’adresse IP (hachée avec un sel renouvelé chaque jour) et comptons les tentatives pendant une heure. L’adresse IP en clair n’est jamais conservée. Base juridique : notre intérêt légitime à sécuriser le site (art. 6, § 1, point f du RGPD).
+
+**Statistiques.** Vercel Web Analytics fonctionne sans cookies ni suivi entre les sites. Le service recueille des données agrégées telles que la page consultée, le pays, l’appareil et le navigateur. Le visiteur est reconnu par un hachage réinitialisé chaque jour ; nous ne recevons aucune donnée permettant de vous identifier.
+
+**Journaux techniques.** Vercel conserve temporairement des données de requête (adresse IP, heure, page demandée) pour assurer le fonctionnement et la sécurité du service.
+
+**Assistant du site.** Les questions sont traitées à la volée pour sélectionner une réponse dans la FAQ et ne sont pas enregistrées. Nous n’utilisons pas vos données pour du profilage ou des décisions automatisées et nous ne les vendons pas.
+
+## Prestataires
+
+- **Vercel Inc.** (États-Unis) : hébergement, statistiques et stockage d’images (Vercel Blob).
+- **Turso / ChiselStrike Inc.** (États-Unis) : base de données des demandes de contact et des abonnements à la newsletter.
+
+Ces prestataires agissent comme sous-traitants au sens de l’article 28 du RGPD. Les transferts hors UE reposent sur les garanties prévues par le RGPD, notamment le cadre UE–États-Unis lorsque le prestataire y adhère ou les clauses contractuelles types de la Commission européenne.
+
+## Durée de conservation
+
+- Demandes de contact : jusqu’à 24 mois après le dernier échange ; les données liées à un projet suivent les délais légaux applicables.
+- Newsletter : jusqu’au désabonnement, puis suppression sous 30 jours.
+- Empreintes IP anti-abus : 48 heures maximum.
+- Statistiques agrégées : selon l’offre Vercel utilisée (environ un mois).
+
+## Vos droits
+
+Vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de vos données, et vous opposer aux traitements fondés sur l’intérêt légitime (art. 15 à 22 du RGPD). Vous pouvez retirer votre consentement à la newsletter à tout moment. Écrivez à [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}) ; nous répondons sous 30 jours. Vous pouvez aussi saisir l’autorité de protection des données compétente.
+
+## Cookies
+
+Le site public n’utilise aucun cookie. Un cookie technique est utilisé uniquement dans l’espace privé d’administration. Consultez la [politique relative aux cookies](/fr/cookies).
+
+## Modifications
+
+Si nos pratiques évoluent, nous mettrons à jour cette page et la date indiquée ci-dessous.`,
   },
 });
 
@@ -243,6 +290,33 @@ Sie können Cookies in den Browsereinstellungen löschen oder blockieren. Das Bl
 
 ## Kontakt
 
-Verantwortlicher: CTRL® di Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
+    Verantwortlicher: CTRL® di Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
+  },
+  fr: {
+    title: "Politique relative aux cookies",
+    lead: "Ce site n’utilise aucun cookie publicitaire, de suivi ou tiers. C’est pourquoi aucune bannière de consentement n’apparaît.",
+    body: `## Cookies utilisés
+
+| Nom | Type | Où | Durée | Finalité |
+| --- | --- | --- | --- | --- |
+| ctrl_admin | Technique, strictement nécessaire | Espace privé /admin uniquement | 12 heures, ou 3 jours si « Rester connecté » est choisi | Maintient la session d’administration. HttpOnly et inaccessible aux scripts. L’expiration est fixe et ne se renouvelle pas automatiquement. |
+
+Les visiteurs du site public ne reçoivent aucun cookie. Dans l’espace privé, le navigateur conserve localement une préférence d’interface (barre latérale ouverte ou réduite), qui n’est transmise à personne.
+
+## Statistiques sans cookies
+
+Vercel Web Analytics mesure la fréquentation sans cookies ni identifiants persistants. Détails dans la [politique de confidentialité](/fr/privacy).
+
+## Pourquoi il n’y a pas de bannière
+
+Les cookies techniques strictement nécessaires ne requièrent pas de consentement. Les statistiques sans cookies n’en requièrent pas non plus lorsque les données sont agrégées et ne permettent pas de vous identifier. Si nous ajoutons des cookies non techniques, nous demanderons votre accord avant de les activer.
+
+## Gérer les cookies
+
+Vous pouvez supprimer ou bloquer les cookies dans les paramètres du navigateur. Bloquer ctrl_admin empêche uniquement l’accès à l’espace privé.
+
+## Contact
+
+Responsable : CTRL® di Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
   },
 });

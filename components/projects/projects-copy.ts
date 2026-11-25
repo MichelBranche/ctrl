@@ -174,4 +174,23 @@ export const projectsCopy = withGermanFallback<ProjectsCopy>({
       shotMobile: "Mobile",
     },
   },
+  fr: {
+    metaTitle: "Projets web du studio CTRL® à Aoste | CTRL®",
+    metaDescription: "Sites web, applications, logiciels, marques et vidéos réalisés par CTRL® à Aoste, ainsi que des services de sécurité web.",
+    tag: "Projets", title: "Projets.", lead: ["Sites, applications et logiciels créés à Aoste.", "Les réalisations du studio CTRL®."],
+    all: "Tous les projets", filterLabel: "Filtrer par catégorie", filterAll: "Tout", viewLabel: "Affichage", gridView: "Vue en grille", listView: "Vue en liste", open: "Ouvrir la catégorie",
+    ctaKicker: "Vous avez un projet en tête ?", ctaTitle: "Parlons-en.", ctaText: "Parlez-nous de votre idée, nous sommes là pour la concrétiser.", ctaButton: "Nous contacter",
+    back: "Tous les projets", worksLabel: "Réalisations", updatingKicker: "Mise à jour en cours", emptyTitle: "Contenu en cours de mise à jour", emptyText: "Nous sélectionnons les projets à présenter dans cette catégorie. Revenez bientôt ou parlez-nous de votre projet.", emptyCta: "Parlez-nous de votre projet", client: "Client", visit: "Voir le projet", newTab: "(s’ouvre dans un nouvel onglet)", others: "Autres catégories", count: (n) => (n === 1 ? "1 projet" : `${n} projets`), categoryMeta: (label) => `${label} | Projets`,
+    categorySeo: {
+      websites: { title: "Sites web conçus à Aoste : projets et démonstrations | CTRL®", description: "Des sites pour l’hôtellerie, la gastronomie, la culture et les marques, conçus à Aoste par CTRL® avec Next.js, React et GSAP. Découvrez Residence Le Vele." },
+      software: { title: "Logiciels sur mesure du studio CTRL® à Aoste | CTRL®", description: "Outils internes, automatisations et intégrations adaptés au travail des équipes. Découvrez les projets logiciels de CTRL® à Aoste." },
+      "brand-identity": { title: "Projets d’identité de marque du studio CTRL® | CTRL®", description: "Logos, univers visuels et chartes graphiques conçus par le studio CTRL® à Aoste." },
+      "promo-videos": { title: "Vidéos promotionnelles du studio CTRL® à Aoste | CTRL®", description: "Animations, spots et vidéos courtes pour les réseaux sociaux et les lancements, réalisés par CTRL® à Aoste." },
+    },
+    sites: {
+      metaDescription: "Des sites pour l’hôtellerie, la gastronomie, la culture et les marques, conçus à Aoste par CTRL® avec Next.js, React et GSAP.",
+      filterLabel: "Filtrer les sites par secteur", madeBy: "Réalisé par", portfolioTab: "(portfolio de l’auteur, s’ouvre dans un nouvel onglet)", open: "Ouvrir la page du projet", back: "Sites web",
+      facts: { category: "Catégorie", place: "Contexte", year: "Année", author: "Réalisation", tech: "Technologies" }, live: "Visiter le site", prev: "Précédent", next: "Suivant", galleryLabel: "Captures du site", shotDesktop: "Ordinateur", shotMobile: "Mobile",
+    },
+  },
 });

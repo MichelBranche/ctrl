@@ -16,7 +16,7 @@ export function rowToPost(r: Row): Post & { updated_at: string } {
   return {
     id: String(r.id),
     slug: String(r.slug),
-    lang: r.lang === "en" ? "en" : r.lang === "de" ? "de" : "it",
+    lang: r.lang === "en" ? "en" : r.lang === "de" ? "de" : r.lang === "fr" ? "fr" : "it",
     title: String(r.title),
     category: String(r.category) as Category,
     excerpt: String(r.excerpt ?? ""),

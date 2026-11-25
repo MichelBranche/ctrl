@@ -9,6 +9,7 @@ import "./shop.css";
 const copy = withGermanFallback({
   it: { kicker: "SHOP", title: "Shop.", lead: ["Card NFC per le recensioni.", "E gli altri essenziali CTRL®."], madeToOrder: "Realizzata su ordinazione", none: "Stiamo preparando il prossimo drop." },
   en: { kicker: "SHOP", title: "Shop.", lead: ["NFC cards for reviews.", "And the other CTRL® essentials."], madeToOrder: "Made to order", none: "We’re preparing the next drop." },
+  fr: { kicker: "BOUTIQUE", title: "Boutique.", lead: ["Des cartes NFC pour recueillir des avis.", "Et les essentiels CTRL®."], madeToOrder: "Fabriqué sur commande", none: "Nous préparons la prochaine collection." },
 });
 
 export function ShopPage({ lang, products }: { lang: Locale; products: ShopProduct[] }) {

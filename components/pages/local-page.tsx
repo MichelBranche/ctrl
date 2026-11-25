@@ -105,6 +105,32 @@ const copy = withGermanFallback({
     ],
     cta: "Schreiben Sie unserem Studio", crumb: "Brotkrumennavigation", home: "Startseite",
   },
+  fr: {
+    metaTitle: "Studio web dans la Vallée d’Aoste, à Aoste | CTRL®",
+    metaDescription: "CTRL® conçoit des sites sur mesure, des réservations hôtelières, des boutiques en ligne, des applications web et des logiciels. Notre studio est à Aoste.",
+    title: "Un studio web dans la Vallée d’Aoste",
+    lead: "Nous sommes un studio de creative technology à Aoste. Nous concevons des sites, des identités et des logiciels pour les entreprises de la vallée et les hôtels du nord de l’Italie.",
+    whereTitle: "La vallée d’abord.",
+    where: ["Notre studio est à Aoste. Nous connaissons le territoire, les saisons touristiques et les entreprises qui vivent du bouche-à-oreille. Notre premier ancrage est ici, dans la Vallée d’Aoste.", "La suite ne consiste pas à créer une page pour chaque ville, mais à développer une expertise : des sites avec réservation directe pour les hôtels et hébergements du nord de l’Italie. Le reste vient ensuite, projet après projet."],
+    servicesTitle: "Nos services",
+    services: [
+      { href: "/services/visual-communication", kicker: "Sites web", label: "Sites sur mesure, refontes, boutiques en ligne et hôtels" },
+      { href: "/services/brand-identity", kicker: "Identité", label: "Identité de marque et univers visuel" },
+      { href: "/services/product-development", kicker: "Produits", label: "Applications web et produits numériques sur mesure" },
+      { href: "/services/webapp", kicker: "Applications web", label: "Applications avec espaces privés et tableaux de bord" },
+      { href: "/services/software-ai", kicker: "Logiciels", label: "Outils internes, automatisations et intelligence artificielle" },
+      { href: "/services/growth-support", kicker: "SEO", label: "Référencement Google et maintenance" },
+      { href: "/services/web-security", kicker: "Sécurité", label: "Certificats SSL/TLS, hébergement et protection du site" },
+    ],
+    faqTitle: "Questions fréquentes",
+    faqs: [
+      { q: "Où êtes-vous situés ?", a: "Via St. Martin de Corléans 179, 11100 Aoste. Téléphone : +39 388 166 0117. Notre numéro de TVA n’est pas encore publié." },
+      { q: "Travaillez-vous uniquement dans la Vallée d’Aoste ?", a: "Nous commençons dans la vallée, puis accompagnons des secteurs ciblés dans le nord de l’Italie, notamment les hôtels et hébergements." },
+      { q: "Créez-vous des sites d’hôtel avec réservation directe ?", a: "Oui. Le site présente les chambres, les dates et les tarifs, puis la réservation se termine directement sur le site de l’établissement. Les plateformes peuvent rester, mais ne sont pas indispensables." },
+      { q: "Combien coûte un site web ?", a: "Nous ne facturons pas un tarif fixe par page. Un site simple et un site hôtelier multilingue demandent des travaux différents. Nous établissons un devis après avoir étudié les contenus, les langues et les intégrations." },
+    ],
+    cta: "Écrire au studio", crumb: "Fil d’Ariane", home: "Accueil",
+  },
 });
 
 export function localMetadata(lang: Locale): Metadata {

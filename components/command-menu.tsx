@@ -53,7 +53,7 @@ export function CommandMenu() {
       {
         id: "local",
         group: nav.services,
-        label: lang === "de" ? "Webagentur im Aostatal" : lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
+        label: lang === "de" ? "Webagentur im Aostatal" : lang === "fr" ? "Agence web dans la Vallée d’Aoste" : lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
         run: () => go(localize(LOCAL_PATH, lang)),
       },
       {
@@ -65,7 +65,7 @@ export function CommandMenu() {
       {
         id: "s-webapp",
         group: nav.services,
-        label: lang === "de" ? "Skalierbare Web-Apps" : lang === "en" ? "Scalable web apps" : "Webapp scalabili",
+        label: lang === "de" ? "Skalierbare Web-Apps" : lang === "fr" ? "Applications web évolutives" : lang === "en" ? "Scalable web apps" : "Webapp scalabili",
         run: () => go(localize("/services/webapp", lang)),
       },
       {
@@ -80,7 +80,7 @@ export function CommandMenu() {
       {
         id: "lang",
         group: "CTRL®",
-        label: lang === "it" ? "English version" : lang === "en" ? "Deutsch" : "Italiano",
+        label: lang === "it" ? "English version" : lang === "en" ? "Deutsch" : lang === "de" ? "Français" : "Italiano",
         run: () => { const to = locales[(locales.indexOf(lang) + 1) % locales.length]; rememberLocale(to); go(switchPath(pathname, to)); },
       },
     ];
