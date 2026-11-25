@@ -7,7 +7,7 @@ import { getShopProducts } from "@/lib/shop";
 
 export const metadata: Metadata = {
   ...publicMeta("fr", {
-    title: "Shop in Aosta: NFC cards for Google reviews | CTRL®",
+    title: "Cartes NFC et QR pour les avis Google | CTRL®",
     description: "Des cartes NFC et QR qui invitent vos clients à laisser un avis Google. La boutique CTRL®, studio web à Aoste, en Vallée d’Aoste. Fabriqué sur commande pour votre comptoir.",
     itPath: "/shop",
     images: ["/images/shop/hero.webp"],

@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CheckoutContent } from "@/components/pages/checkout-content";
 
 export const metadata: Metadata = {
-  title: { absolute: "CTRL® shop checkout" },
+  title: { absolute: "Finaliser votre commande | CTRL®" },
   description: "Récapitulatif de votre commande dans la boutique CTRL®. Le paiement en ligne n’est pas encore activé : votre panier reste enregistré dans ce navigateur.",
   robots: { index: false, follow: true },
 };
