@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 export type ProjectsCopy = {
   metaTitle: string;
@@ -47,7 +47,7 @@ export type ProjectsCopy = {
   };
 };
 
-export const projectsCopy: Record<Locale, ProjectsCopy> = {
+export const projectsCopy = withGermanFallback<ProjectsCopy>({
   it: {
     metaTitle: "Progetti web ad Aosta: siti, webapp e software | CTRL®",
     metaDescription: "Siti web, webapp, software, brand e video dello studio CTRL® ad Aosta, più la sicurezza web e i certificati SSL/TLS gestiti. Guarda i lavori.",
@@ -174,4 +174,4 @@ export const projectsCopy: Record<Locale, ProjectsCopy> = {
       shotMobile: "Mobile",
     },
   },
-};
+});

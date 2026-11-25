@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CONTACT_EMAIL, LE_VELE, categoryPath, projectCategories, services } from "@/lib/content";
 import { LOCAL_PATH } from "@/lib/seo";
-import { dict, localeFromPath, localize, rememberLocale, switchPath } from "@/lib/i18n";
+import { dict, localeFromPath, localize, locales, rememberLocale, switchPath } from "@/lib/i18n";
 import { SHOP_ENABLED } from "@/lib/features";
 
 type Item = { id: string; group: string; label: string; run: () => void };
@@ -53,7 +53,7 @@ export function CommandMenu() {
       {
         id: "local",
         group: nav.services,
-        label: lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
+        label: lang === "de" ? "Webagentur im Aostatal" : lang === "en" ? "Web studio in Valle d'Aosta" : "Agenzia web in Valle d'Aosta",
         run: () => go(localize(LOCAL_PATH, lang)),
       },
       {
@@ -65,7 +65,7 @@ export function CommandMenu() {
       {
         id: "s-webapp",
         group: nav.services,
-        label: lang === "en" ? "Scalable web apps" : "Webapp scalabili",
+        label: lang === "de" ? "Skalierbare Web-Apps" : lang === "en" ? "Scalable web apps" : "Webapp scalabili",
         run: () => go(localize("/services/webapp", lang)),
       },
       {
@@ -80,8 +80,8 @@ export function CommandMenu() {
       {
         id: "lang",
         group: "CTRL®",
-        label: t.cmd.lang,
-        run: () => { const to = lang === "it" ? "en" : "it"; rememberLocale(to); go(switchPath(pathname, to)); },
+        label: lang === "it" ? "English version" : lang === "en" ? "Deutsch" : "Italiano",
+        run: () => { const to = locales[(locales.indexOf(lang) + 1) % locales.length]; rememberLocale(to); go(switchPath(pathname, to)); },
       },
     ];
   }, [t, lang, go, pathname]);

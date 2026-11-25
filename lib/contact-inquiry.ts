@@ -4,6 +4,7 @@
  * Italian labels are what the team reads in the CRM and in Discord. The visitor's language
  * is only for the page and for the summary they copy.
  */
+import { withGermanFallback } from "@/lib/i18n";
 
 export const SERVICE_IDS = ["website", "hotel", "shop", "app", "brand", "other"] as const;
 export const GOAL_IDS = ["leads", "bookings", "rebuild", "scratch", "other"] as const;
@@ -14,7 +15,7 @@ export type ServiceId = (typeof SERVICE_IDS)[number];
 export type GoalId = (typeof GOAL_IDS)[number];
 export type BudgetId = (typeof BUDGET_IDS)[number];
 export type TimingId = (typeof TIMING_IDS)[number];
-export type InquiryLang = "it" | "en";
+export type InquiryLang = "it" | "en" | "de";
 
 const SERVICE_SET = new Set<string>(SERVICE_IDS);
 const GOAL_SET = new Set<string>(GOAL_IDS);
@@ -95,7 +96,7 @@ type Copy = {
   noPhone: string;
 };
 
-export const inquiryCopy = {
+export const inquiryCopy = withGermanFallback<Copy>({
   it: {
     kicker: "Una domanda alla volta",
     continue: "Continua",
@@ -234,7 +235,7 @@ export const inquiryCopy = {
     vat: "VAT excluded",
     noPhone: "Not given",
   },
-} satisfies Record<InquiryLang, Copy>;
+});
 
 const clipText = (v: string, max: number) => v.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").trim().slice(0, max);
 
@@ -318,7 +319,7 @@ export function parseInquiry(input: {
       email,
       phone: phone.phone,
       note: clipText(input.note ?? "", 2000),
-      lang: input.lang === "en" ? "en" : "it",
+      lang: input.lang === "de" ? "de" : input.lang === "en" ? "en" : "it",
     },
   };
 }

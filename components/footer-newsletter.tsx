@@ -3,12 +3,12 @@
 import { useId, useState, type FormEvent } from "react";
 import { subscribe } from "@/app/actions/public";
 import { CONTACT_EMAIL } from "@/lib/content";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 type State = "idle" | "invalid" | "consent" | "busy" | "done" | "rate" | "error";
 
-const COPY = {
+const COPY = withGermanFallback({
   it: {
     title: "Newsletter",
     lead: "Ogni tanto, una nota dallo studio.",
@@ -35,7 +35,7 @@ const COPY = {
     rate: "Too many attempts. Try again in an hour.",
     error: `Signup failed. Email us at ${CONTACT_EMAIL}.`,
   },
-};
+});
 
 /** Compact newsletter signup in the site footer (every page). Same server action as the Journal form. */
 export function FooterNewsletter({ lang }: { lang: Locale }) {

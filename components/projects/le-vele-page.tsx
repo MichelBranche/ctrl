@@ -10,7 +10,7 @@ import { projectsCopy } from "@/components/projects/projects-copy";
 import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LE_VELE, LE_VELE_MEDIA, websiteGroups, websitesInOrder } from "@/lib/content";
-import { localize, type Locale } from "@/lib/i18n";
+import { localize, withGermanFallback, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, faqNode, publicMeta, ORG_ID, SITE_URL } from "@/lib/seo";
 import "./projects.css";
 import "./websites.css";
@@ -25,7 +25,7 @@ const ads = {
   en: new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(LE_VELE.adsEur),
 };
 
-const copy = {
+const copy = withGermanFallback({
   it: {
     metaTitle: "Residence Le Vele: 14 prenotazioni, zero ads | CTRL®",
     metaDescription: `Caso studio CTRL®: il sito di Residence Le Vele ha portato ${LE_VELE.bookings} prenotazioni e ${money.it} nel primo mese online, senza spesa in advertising. Caso reale.`,
@@ -80,7 +80,7 @@ const copy = {
       { q: "Where is the live site?", a: "The live site is https://www.residencelevelestintino.it." },
     ],
   },
-} as const;
+});
 
 export function leVeleMetadata(lang: Locale): Metadata {
   const c = copy[lang];

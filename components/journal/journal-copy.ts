@@ -1,6 +1,6 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
-export const journalCopy = {
+export const journalCopy = withGermanFallback({
   it: {
     metaTitle: "Journal su siti web, design e SEO ad Aosta | CTRL®",
     metaDescription: "Note di CTRL®, studio di Aosta, su siti web, design, software e posizionamento. Per chi costruisce un'attività in Valle d'Aosta e nel Nord Italia.",
@@ -65,6 +65,13 @@ export const journalCopy = {
     related: "More articles",
     minutes: "min read",
   },
-} satisfies Record<Locale, Record<string, string>>;
+  de: {
+    metaTitle: "Journal zu Websites, Design und SEO | CTRL®",
+    metaDescription: "Einblicke des CTRL® Studios zu Websites, Design, Software und Suchmaschinenoptimierung.",
+    tag: "Journal", title: "Journal.", lead: "Gedanken zu Websites, Design und SEO aus unserem Studio in Aosta.", all: "Alle", filterLabel: "Nach Kategorie filtern", read: "Artikel lesen",
+    emptyTitle: "Die ersten Artikel folgen bald.", emptyText: "Wir schreiben unsere ersten Beiträge zu Design, Technologie und Strategie. Abonnieren Sie den Newsletter, um von neuen Artikeln zu erfahren.", emptyCat: "In dieser Kategorie gibt es noch keine Artikel.", showAll: "Alle anzeigen", prev: "Vorherige Seite", next: "Nächste Seite", page: "Seite", pagination: "Seitennavigation",
+    newsTitle: "Bleiben Sie informiert.", newsText: "Abonnieren Sie unseren Newsletter und erhalten Sie neue Artikel, Projekte und Neuigkeiten.", newsPlaceholder: "Ihre E-Mail-Adresse", newsLabel: "E-Mail-Adresse", newsCta: "Abonnieren", newsInvalid: "Geben Sie eine gültige E-Mail-Adresse ein und stimmen Sie zu.", newsDone: "Vielen Dank für Ihr Abonnement. Sie können sich jederzeit über den Link in jeder E-Mail abmelden.", newsRate: "Zu viele Versuche. Bitte versuchen Sie es in einer Stunde erneut.", newsError: "Die Anmeldung ist fehlgeschlagen. Schreiben Sie an {email}.", newsConsent: "Ich möchte den Newsletter erhalten. Ihre E-Mail verwenden wir ausschließlich dafür. Weitere Informationen in der", newsPrivacy: "Datenschutzerklärung", back: "Alle Artikel", related: "Weitere Artikel", minutes: "Min. Lesezeit",
+  },
+});
 
 export type JournalCopy = (typeof journalCopy)[Locale];

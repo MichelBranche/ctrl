@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 import { ShopIcon } from "@/components/shop/shop-icons";
 import { refreshCartPrices } from "@/lib/shop-cart-sync";
 import { submitOrderRequest } from "@/lib/shop-order-actions";
@@ -15,12 +15,12 @@ import "./shop.css";
  * and build the amount on the server with quoteCart() in lib/shop.ts (prices from the database), never from this data.
  */
 type CartLine = { id: string; slug?: string; title: string; quantity: number; price?: number; image?: string };
-const text = {
+const text = withGermanFallback({
   it: { kicker: "SHOP / CHECKOUT", title: "Checkout.", lead: "Rivedi il tuo ordine prima di proseguire.", summary: "Il tuo ordine", empty: "Il carrello è vuoto.", back: "Torna allo shop", subtotal: "Subtotale", shipping: "Spedizione", later: "Da definire", total: "Totale", note: "Il checkout online e i pagamenti saranno attivati dopo la scelta del servizio di pagamento e della fornitura. Per ora il carrello è una bozza salvata in questo browser: i prezzi definitivi saranno sempre ricalcolati dal nostro server.", unavailable: "—" },
   en: { kicker: "SHOP / CHECKOUT", title: "Checkout.", lead: "Review your order before continuing.", summary: "Your order", empty: "Your cart is empty.", back: "Back to shop", subtotal: "Subtotal", shipping: "To be confirmed", later: "To be confirmed", total: "Total", note: "Online checkout and payments will be enabled after a payment and fulfillment service is chosen. For now, your cart is a draft saved in this browser: final prices will always be recalculated by our server.", unavailable: "—" },
-} as const;
+});
 
-const form = {
+const form = withGermanFallback({
   it: {
     badge: "Richiesta d'ordine", title: "Richiesta d'ordine, ti contattiamo noi.",
     lead: "Nessun pagamento ora. Invia la richiesta: verifichiamo disponibilità e spedizione e ti contattiamo per confermare l'ordine.",
@@ -41,7 +41,7 @@ const form = {
     errors: { invalid: "Check name, email and address (and the link, if any: it must start with https://).", empty: "Your cart has no available products.", rate: "Too many requests: please try again later.", unavailable: "Sending failed. Please try later or write to us from the contact page." },
     cta: "Fill in the order request",
   },
-} as const;
+});
 
 export function CheckoutContent({ lang }: { lang: Locale }) {
   const t = text[lang];
@@ -60,7 +60,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
     } catch { cart = []; }
     let live = true;
     queueMicrotask(() => { if (live) setItems(cart); });
-    void refreshCartPrices(cart, lang).then((fresh) => { if (fresh && live) setItems(fresh); });
+    void refreshCartPrices(cart, lang === "de" ? "en" : lang).then((fresh) => { if (fresh && live) setItems(fresh); });
     return () => { live = false; };
   }, [lang]);
   const f = form[lang];
@@ -69,7 +69,7 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
   const [done, setDone] = useState<number | null>(null);
   const send = (data: FormData) => start(async () => {
     setError("");
-    data.set("lang", lang);
+    data.set("lang", lang === "de" ? "en" : lang);
     data.set("cart", JSON.stringify(items.filter((i) => i.slug).map((i) => ({ slug: i.slug, quantity: i.quantity }))));
     const res = await submitOrderRequest(data).catch(() => ({ ok: false as const, error: "unavailable" as const }));
     if (!res.ok) { setError(f.errors[res.error]); return; }
@@ -80,8 +80,8 @@ export function CheckoutContent({ lang }: { lang: Locale }) {
     setItems([]);
   });
   const subtotal = items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
-  const shopHref = lang === "en" ? "/en/shop" : "/shop";
-  const productHref = (item: CartLine) => item.slug ? `${lang === "en" ? "/en" : ""}/shop/${item.slug}` : shopHref;
+  const shopHref = lang === "it" ? "/shop" : `/${lang}/shop`;
+  const productHref = (item: CartLine) => item.slug ? `${lang === "it" ? "" : `/${lang}`}/shop/${item.slug}` : shopHref;
 
   return <main className="shop-page checkout-page">
     <section className="checkout-shell">

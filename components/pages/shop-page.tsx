@@ -2,14 +2,14 @@ import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ShopCatalog } from "@/components/shop/shop-catalog";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 import type { ShopProduct } from "@/lib/shop-data";
 import "./shop.css";
 
-const copy = {
+const copy = withGermanFallback({
   it: { kicker: "SHOP", title: "Shop.", lead: ["Card NFC per le recensioni.", "E gli altri essenziali CTRL®."], madeToOrder: "Realizzata su ordinazione", none: "Stiamo preparando il prossimo drop." },
   en: { kicker: "SHOP", title: "Shop.", lead: ["NFC cards for reviews.", "And the other CTRL® essentials."], madeToOrder: "Made to order", none: "We’re preparing the next drop." },
-} as const;
+});
 
 export function ShopPage({ lang, products }: { lang: Locale; products: ShopProduct[] }) {
   const t = copy[lang];

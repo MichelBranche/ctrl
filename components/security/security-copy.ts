@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 /** Managed security and SSL/TLS service: shared by the /projects section and /services/web-security. */
 export const SECURITY_PATH = "/services/web-security";
@@ -61,7 +61,7 @@ export type SecurityCopy = {
   };
 };
 
-export const securityCopy: Record<Locale, SecurityCopy> = {
+export const securityCopy = withGermanFallback<SecurityCopy>({
   it: {
     kicker: "Sicurezza & Infrastruttura Managed",
     title: ["Sicuro, veloce,", "sempre online."],
@@ -332,4 +332,4 @@ export const securityCopy: Record<Locale, SecurityCopy> = {
       back: "All services",
     },
   },
-};
+});

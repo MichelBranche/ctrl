@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale } from "@/components/use-locale";
 import { TESTIMONIALS, type Testimonial } from "@/lib/testimonials";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 import "./home-testimonials.css";
 
 /**
@@ -42,10 +43,10 @@ const IN_STAGGER = 85;
 const OUT_STAGGER = 30;
 const OUT_MS = 460;
 
-const COPY = {
+const COPY = withGermanFallback({
   it: { kicker: "Recensioni", title: "Chi ha lavorato con noi", em: "lo racconta", based: (n: number) => `Basato su ${n} recensioni`, prev: "Recensioni precedenti", next: "Recensioni successive", page: (n: number) => `Pagina ${n}`, stars: (n: number) => `${n} stelle su 5` },
   en: { kicker: "Reviews", title: "The people we work with", em: "say it best", based: (n: number) => `Based on ${n} reviews`, prev: "Previous reviews", next: "Next reviews", page: (n: number) => `Page ${n}`, stars: (n: number) => `${n} out of 5 stars` },
-};
+});
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
@@ -91,8 +92,9 @@ function sizeOf(text: string) {
   return text.length > 380 ? "l" : text.length > 200 ? "m" : "s";
 }
 
-function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slot; lang: "it" | "en"; index: number; stars: string }) {
-  const quote = item.quote[lang];
+function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slot; lang: Locale; index: number; stars: string }) {
+  const localized = (copy: { [lang: string]: string; en: string }) => copy[lang] ?? copy.en;
+  const quote = localized(item.quote);
   const short = `${item.name.split(" ")[0]} ${item.name.split(" ").slice(-1)[0][0]}.`;
   const avatar = <Avatar item={item} />;
   const person = (
@@ -112,7 +114,7 @@ function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slo
             <Image
               className="tm-zoom"
               src={item.cover.src}
-              alt={item.cover.alt[lang]}
+              alt={localized(item.cover.alt)}
               fill
               sizes="(max-width: 809px) 100vw, 33vw"
               quality={72}
@@ -125,11 +127,11 @@ function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slo
               <div className="tm-txt tm-t1">{person}</div>
               <blockquote className="tm-txt tm-t2 tm-quote">
                 <p>
-                  <Quote text={quote} mark={item.mark[lang]} />
+                  <Quote text={quote} mark={localized(item.mark)} />
                 </p>
               </blockquote>
               <figcaption className="tm-txt tm-t2 tm-meta">
-                <span>{short}</span> <span>·</span> <span>{item.role[lang]}</span>
+                <span>{short}</span> <span>·</span> <span>{localized(item.role)}</span>
               </figcaption>
             </>
           ) : null}
@@ -139,11 +141,11 @@ function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slo
                 <span className="tm-glyph" aria-hidden="true">
                   “
                 </span>
-                <span className="tm-txt tm-t1 tm-tag">{item.role[lang]}</span>
+                <span className="tm-txt tm-t1 tm-tag">{localized(item.role)}</span>
               </div>
               <blockquote className="tm-txt tm-t2 tm-quote">
                 <p>
-                  <Quote text={quote} mark={item.mark[lang]} />
+                  <Quote text={quote} mark={localized(item.mark)} />
                 </p>
               </blockquote>
               <figcaption className="tm-txt tm-t3 tm-foot">{person}</figcaption>
@@ -151,19 +153,19 @@ function Card({ item, slot, lang, index, stars }: { item: Testimonial; slot: Slo
           ) : null}
           {slot.kind === "cover" ? (
             <>
-              <span className="tm-txt tm-t0 tm-tag tm-tag-top">{item.role[lang]}</span>
+              <span className="tm-txt tm-t0 tm-tag tm-tag-top">{localized(item.role)}</span>
               <div className="tm-cover-text">
                 <div className="tm-txt tm-t1">
                   <Stars value={item.stars} label={stars} />
                   <blockquote className="tm-quote">
                     <p>
-                      <Quote text={quote} mark={item.mark[lang]} />
+                      <Quote text={quote} mark={localized(item.mark)} />
                     </p>
                   </blockquote>
                 </div>
                 <figcaption className="tm-txt tm-t2 tm-foot">
                   <span className="tm-name">{item.name}</span>
-                  <span className="tm-role">{item.role[lang]}</span>
+                  <span className="tm-role">{localized(item.role)}</span>
                 </figcaption>
               </div>
             </>

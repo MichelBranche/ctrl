@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 /** Official CTRL® Quotes site (live app, landing, trial and pricing). */
 export const QUOTES_URL = "https://quotes.ctrlagency.dev";
@@ -18,7 +18,7 @@ export const QUOTES_TEMPLATES = [
  * Page copy. Only features the product really has (see quotes.ctrlagency.dev).
  * Acceptance is a consent + "Conferma accettazione" click: never call it a signature.
  */
-export const QUOTES_COPY = {
+export const QUOTES_COPY = withGermanFallback({
   it: {
     metaTitle: "CTRL® Quotes: preventivi che convincono | CTRL®",
     metaDesc:
@@ -97,4 +97,4 @@ export const QUOTES_COPY = {
     soonLink: "Join the newsletter",
     by: "by CTRL® Agency",
   },
-} satisfies Record<Locale, unknown>;
+});

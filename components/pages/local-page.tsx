@@ -7,7 +7,7 @@ import { ProjectsMotion } from "@/components/projects/projects-motion";
 import { Crumbs } from "@/components/seo/crumbs";
 import { FaqList } from "@/components/seo/faq";
 import { JsonLd } from "@/components/seo/json-ld";
-import { localize, type Locale } from "@/lib/i18n";
+import { localize, withGermanFallback, type Locale } from "@/lib/i18n";
 import { breadcrumbNode, faqNode, LOCAL_PATH, publicMeta } from "@/lib/seo";
 import { ProjectsCta } from "@/components/projects/cta";
 import { projectsCopy } from "@/components/projects/projects-copy";
@@ -16,7 +16,7 @@ import "@/components/services/webapp.css";
 import "./service-detail.css";
 import "@/components/ds/legacy-frame.css";
 
-const copy = {
+const copy = withGermanFallback({
   it: {
     metaTitle: "Agenzia web in Valle d'Aosta, con sede ad Aosta | CTRL®",
     metaDescription: "Cerchi un'agenzia web in Valle d'Aosta? CTRL® ha sede ad Aosta e realizza siti su misura, hotel, e-commerce, web app e software. Scrivi allo studio.",
@@ -79,7 +79,33 @@ const copy = {
     crumb: "Breadcrumbs",
     home: "Home",
   },
-} as const;
+  de: {
+    metaTitle: "Webagentur im Aostatal mit Sitz in Aosta | CTRL®",
+    metaDescription: "CTRL® entwickelt maßgeschneiderte Websites, Hotelbuchungen, Shops, Web-Apps und Software. Unser Studio sitzt in Aosta.",
+    title: "Ein Webstudio im Aostatal",
+    lead: "Wir sind ein Creative-Technology-Studio in Aosta. Wir gestalten Websites, Marken und Software für Unternehmen im Aostatal sowie Hotels und Marken in ganz Norditalien.",
+    whereTitle: "Zuerst das Aostatal.",
+    where: ["Unser Studio sitzt in Aosta. Wir kennen die Region, die Tourismussaisons und Unternehmen, die von Empfehlungen leben. Unser erster Schwerpunkt liegt hier im Aostatal.", "Der nächste Schritt ist keine Seite für jede Stadt, sondern eine Spezialisierung: Websites mit Direktbuchung für Hotels und Unterkünfte in Norditalien. Weitere Regionen folgen von Projekt zu Projekt."],
+    servicesTitle: "Was wir anbieten",
+    services: [
+      { href: "/services/visual-communication", kicker: "Websites", label: "Maßgeschneiderte Websites, Relaunches, Shops und Hotelseiten" },
+      { href: "/services/brand-identity", kicker: "Marke", label: "Markenidentität und visuelle Systeme" },
+      { href: "/services/product-development", kicker: "Produkte", label: "Individuelle Web-Apps und digitale Produkte" },
+      { href: "/services/webapp", kicker: "Web-Apps", label: "Web-Apps mit geschützten Bereichen und Dashboards" },
+      { href: "/services/software-ai", kicker: "Software", label: "Individuelle Tools, Automatisierungen und KI" },
+      { href: "/services/growth-support", kicker: "SEO", label: "SEO, Google-Sichtbarkeit und Wartung" },
+      { href: "/services/web-security", kicker: "Sicherheit", label: "SSL/TLS-Zertifikate, Hosting und Website-Schutz" },
+    ],
+    faqTitle: "Häufige Fragen",
+    faqs: [
+      { q: "Wo sind Sie ansässig?", a: "In der Via St. Martin de Corléans 179, 11100 Aosta. Telefon: +39 388 166 0117. Eine Umsatzsteuer-Identifikationsnummer ist noch nicht veröffentlicht." },
+      { q: "Arbeiten Sie nur im Aostatal?", a: "Wir beginnen im Aostatal und betreuen anschließend ausgewählte Branchen in Norditalien, besonders Hotels und Unterkünfte." },
+      { q: "Gestalten Sie Hotelseiten mit Direktbuchung?", a: "Ja. Die Website zeigt Zimmer, Daten und Preise; die Buchung wird direkt auf der Website der Unterkunft abgeschlossen. Buchungsportale können bestehen bleiben, sind aber nicht erforderlich." },
+      { q: "Was kostet eine Website?", a: "Wir berechnen keinen pauschalen Seitenpreis. Eine einfache Website und eine mehrsprachige Hotelwebsite sind unterschiedlich aufwendig. Ein Angebot erstellen wir, nachdem wir Inhalte, Sprachen und Integrationen kennen." },
+    ],
+    cta: "Schreiben Sie unserem Studio", crumb: "Brotkrumennavigation", home: "Startseite",
+  },
+});
 
 export function localMetadata(lang: Locale): Metadata {
   const c = copy[lang];

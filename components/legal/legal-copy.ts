@@ -1,5 +1,5 @@
 import { ADMIN_EMAIL } from "@/lib/content";
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 /**
  * Privacy and cookie policies, written against what the site actually does:
@@ -7,9 +7,9 @@ import type { Locale } from "@/lib/i18n";
  * one technical admin cookie, covers on Vercel Blob, FAQ assistant that stores nothing.
  * Update this file whenever a new processor, cookie or data flow is added.
  */
-export const LEGAL_UPDATED: Record<Locale, string> = { it: "24 novembre 2026", en: "24 November 2026" };
+export const LEGAL_UPDATED = withGermanFallback({ it: "24 novembre 2026", en: "24 November 2026", de: "24. November 2026" });
 
-export const privacy: Record<Locale, { title: string; lead: string; body: string }> = {
+export const privacy = withGermanFallback({
   it: {
     title: "Privacy policy",
     lead: "Quali dati raccoglie questo sito, perché, per quanto tempo e quali diritti hai. In breve: pochi dati, nessun cookie di profilazione, nessuna vendita a terzi.",
@@ -112,9 +112,58 @@ The public site uses no cookies. The only cookie is a technical one for the priv
 
 If we change how we handle data we update this page and the date below.`,
   },
-};
+  de: {
+    title: "Datenschutzerklärung",
+    lead: "Welche Daten diese Website erhebt, warum und wie lange – und welche Rechte Sie haben. Kurz gesagt: wenige Daten, keine Tracking-Cookies und kein Verkauf an Dritte.",
+    body: `## Verantwortlicher
 
-export const cookies: Record<Locale, { title: string; lead: string; body: string }> = {
+CTRL® di Michel Branche, Aostatal, Italien. Für Datenschutzanfragen: [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).
+
+## Welche Daten wir verarbeiten und warum
+
+**Kontaktformular.** Name, E-Mail-Adresse, Thema und Nachricht sowie Seitensprache und Zeitpunkt der Anfrage. Wir nutzen diese Angaben ausschließlich zur Beantwortung und Bearbeitung Ihres Anliegens. Rechtsgrundlage sind vorvertragliche Maßnahmen auf Ihre Anfrage und unser berechtigtes Interesse an der Beantwortung (Art. 6 Abs. 1 lit. b und f DSGVO).
+
+**Journal-Newsletter.** E-Mail-Adresse, Sprache und Anmeldedatum sowie ein zufälliger Abmeldecode. Rechtsgrundlage ist Ihre jederzeit widerrufbare Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+
+**Missbrauchsschutz.** Um automatisierte Einsendungen zu begrenzen, erstellen wir einen täglich neu gesalzenen Hash Ihrer IP-Adresse und zählen Versuche eine Stunde lang. Die IP-Adresse speichern wir nicht im Klartext. Rechtsgrundlage ist unser berechtigtes Interesse an der Sicherheit der Website (Art. 6 Abs. 1 lit. f DSGVO).
+
+**Besuchsstatistik.** Vercel Web Analytics arbeitet ohne Cookies und ohne websiteübergreifendes Tracking. Erfasst werden aggregierte Angaben wie besuchte Seite, Herkunft, Land, Gerät und Browser. Ein Besucher wird nur über einen täglich zurückgesetzten Hash erkannt. Wir erhalten keine Daten, die Sie identifizieren. Rechtsgrundlage ist unser berechtigtes Interesse, die Nutzung der Website zu verstehen (Art. 6 Abs. 1 lit. f DSGVO).
+
+**Technische Protokolle.** Vercel protokolliert vorübergehend technische Anfragedaten, etwa IP-Adresse, Zeitpunkt und angeforderte Seite, um den Dienst bereitzustellen und zu schützen.
+
+**Website-Assistent.** Fragen an den Assistenten werden unmittelbar verarbeitet, um eine passende FAQ-Antwort auszuwählen, und nicht gespeichert.
+
+Wir verwenden Ihre Daten nicht für Profiling oder automatisierte Entscheidungen und verkaufen sie nicht.
+
+## Dienstleister
+
+- **Vercel Inc.** (USA): Hosting, Besuchsstatistik und Bildspeicherung (Vercel Blob).
+- **Turso / ChiselStrike Inc.** (USA): Datenbank für Kontaktanfragen und Newsletter-Abonnements.
+
+Die Anbieter sind durch Vereinbarungen gemäß Art. 28 DSGVO als Auftragsverarbeiter eingebunden. Daten können außerhalb der EU verarbeitet werden; dafür gelten die vorgesehenen Garantien, etwa das EU-US Data Privacy Framework, soweit der Anbieter zertifiziert ist, oder Standardvertragsklauseln der Europäischen Kommission.
+
+## Speicherdauer
+
+- Kontaktanfragen: bis zu 24 Monate nach dem letzten Austausch. Bei einem Auftrag gelten für erforderliche Daten die gesetzlichen Aufbewahrungsfristen.
+- Newsletter: bis zur Abmeldung; danach löschen wir die Adresse innerhalb von 30 Tagen.
+- IP-Hashes zum Missbrauchsschutz: höchstens 48 Stunden.
+- Besuchsstatistiken: aggregierte Daten gemäß dem verwendeten Vercel-Tarif (etwa einen Monat).
+
+## Ihre Rechte
+
+Sie können Auskunft, Berichtigung, Löschung, Einschränkung und Übertragbarkeit Ihrer Daten verlangen sowie der Verarbeitung aufgrund berechtigter Interessen widersprechen (Art. 15–22 DSGVO). Ihre Newsletter-Einwilligung können Sie jederzeit widerrufen. Schreiben Sie an [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}); wir antworten innerhalb von 30 Tagen. Sie können sich außerdem bei Ihrer zuständigen Datenschutzaufsichtsbehörde beschweren.
+
+## Cookies
+
+Die öffentliche Website verwendet keine Cookies. Ein technisches Cookie wird ausschließlich im privaten Administrationsbereich verwendet. Einzelheiten finden Sie in der [Cookie-Richtlinie](/de/cookies).
+
+## Änderungen
+
+Wenn sich unsere Datenverarbeitung ändert, aktualisieren wir diese Seite und das Datum unten.`,
+  },
+});
+
+export const cookies = withGermanFallback({
   it: {
     title: "Cookie policy",
     lead: "Questo sito non usa cookie di profilazione, pubblicitari o di terze parti. Per questo non trovi nessun banner.",
@@ -169,4 +218,31 @@ You can delete or block cookies in your browser settings. Blocking ctrl_admin on
 
 Controller: CTRL® by Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
   },
-};
+  de: {
+    title: "Cookie-Richtlinie",
+    lead: "Diese Website verwendet keine Tracking-, Werbe- oder Drittanbieter-Cookies. Deshalb gibt es kein Cookie-Banner.",
+    body: `## Verwendete Cookies
+
+| Name | Typ | Bereich | Dauer | Zweck |
+| --- | --- | --- | --- | --- |
+| ctrl_admin | Technisch, unbedingt erforderlich | Nur privater Bereich /admin | 12 Stunden oder 3 Tage bei Auswahl von „Angemeldet bleiben“ | Hält die Administrationssitzung aufrecht. HttpOnly und nicht durch Skripte lesbar. Die Frist ist fest und wird nicht automatisch verlängert. |
+
+Besucherinnen und Besucher der öffentlichen Website erhalten keine Cookies. Im privaten Bereich speichert der Browser zusätzlich eine Oberflächeneinstellung (eingeklappte oder geöffnete Seitenleiste) lokal; sie wird nicht übermittelt.
+
+## Statistik ohne Cookies
+
+Besuchsstatistiken werden mit Vercel Web Analytics ohne Cookies oder dauerhafte Kennungen erhoben. Einzelheiten stehen in der [Datenschutzerklärung](/de/privacy).
+
+## Warum es kein Banner gibt
+
+Technisch notwendige Cookies erfordern nach den geltenden Datenschutzregeln keine Einwilligung. Auch unsere cookielose Statistik verlangt keine Einwilligung, wenn die Daten aggregiert sind und keine Identifizierung ermöglichen. Sollten wir künftig nicht notwendige Cookies einsetzen, bitten wir vorher um Ihre Einwilligung.
+
+## Cookies verwalten
+
+Sie können Cookies in den Browsereinstellungen löschen oder blockieren. Das Blockieren von ctrl_admin verhindert nur den Zugang zum privaten Administrationsbereich.
+
+## Kontakt
+
+Verantwortlicher: CTRL® di Michel Branche, [${ADMIN_EMAIL}](mailto:${ADMIN_EMAIL}).`,
+  },
+});

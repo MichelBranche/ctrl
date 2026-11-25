@@ -14,8 +14,14 @@ function enPath(itPath: string): string {
   return `/en${itPath}`;
 }
 
+function dePath(itPath: string): string {
+  if (itPath === "/") return "/de";
+  if (itPath === "/cookie") return "/de/cookies";
+  return `/de${itPath}`;
+}
+
 function priorityFor(path: string): number {
-  if (path === "/" || path === "/en") return 1;
+  if (path === "/" || path === "/en" || path === "/de") return 1;
   if (path.includes("agenzia-web")) return 0.9;
   if (path.includes("residence-le-vele") || path.includes("/services")) return 0.8;
   return 0.7;
@@ -37,8 +43,9 @@ function entry(path: string, lastModified: Date, languages: Record<string, strin
 
 function paired(itPath: string, lastModified: Date): MetadataRoute.Sitemap {
   const en = enPath(itPath);
-  const languages = { "it-IT": `${siteUrl}${itPath}`, "en-US": `${siteUrl}${en}` };
-  return [entry(itPath, lastModified, languages), entry(en, lastModified, languages)];
+  const de = dePath(itPath);
+  const languages = { "it-IT": `${siteUrl}${itPath}`, "en-US": `${siteUrl}${en}`, "de-DE": `${siteUrl}${de}` };
+  return [entry(itPath, lastModified, languages), entry(en, lastModified, languages), entry(de, lastModified, languages)];
 }
 
 function dated(value: string | undefined): Date {
@@ -67,25 +74,35 @@ const staticItalianPaths = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [italianPosts, englishPosts, shopProducts] = await Promise.all([getPublishedPosts("it"), getPublishedPosts("en"), getShopProducts()]);
+  const [italianPosts, englishPosts, germanPosts, shopProducts] = await Promise.all([getPublishedPosts("it"), getPublishedPosts("en"), getPublishedPosts("de"), getShopProducts()]);
   const englishBySlug = new Map(englishPosts.map((post) => [post.slug, post]));
+  const germanBySlug = new Map(germanPosts.map((post) => [post.slug, post]));
   const italianSlugs = new Set(italianPosts.map((post) => post.slug));
 
   const journal: MetadataRoute.Sitemap = [];
   for (const post of italianPosts) {
     const when = dated(post.published_at);
     const english = englishBySlug.get(post.slug);
+    const german = germanBySlug.get(post.slug);
     const itUrl = `${siteUrl}/journal/${post.slug}`;
     const enUrl = `${siteUrl}/en/journal/${post.slug}`;
+    const deUrl = `${siteUrl}/de/journal/${post.slug}`;
     const languages: Record<string, string> = { "it-IT": itUrl };
     if (english) languages["en-US"] = enUrl;
+    if (german) languages["de-DE"] = deUrl;
     journal.push(entry(`/journal/${post.slug}`, when, languages));
     if (english) journal.push(entry(`/en/journal/${post.slug}`, dated(english.published_at), languages));
+    if (german) journal.push(entry(`/de/journal/${post.slug}`, dated(german.published_at), languages));
   }
   for (const post of englishPosts) {
     if (italianSlugs.has(post.slug)) continue;
     const enUrl = `${siteUrl}/en/journal/${post.slug}`;
     journal.push(entry(`/en/journal/${post.slug}`, dated(post.published_at), { "en-US": enUrl }));
+  }
+  for (const post of germanPosts) {
+    if (italianSlugs.has(post.slug) || englishBySlug.has(post.slug)) continue;
+    const deUrl = `${siteUrl}/de/journal/${post.slug}`;
+    journal.push(entry(`/de/journal/${post.slug}`, dated(post.published_at), { "de-DE": deUrl }));
   }
 
   // Shop hidden (lib/features): neither /shop nor product pages go in the sitemap.

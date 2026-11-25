@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback, type Locale } from "@/lib/i18n";
 
 /** One Google review we are allowed to show. Text and author are copied from Places, never written here. */
 export type GoogleReviewCard = {
@@ -35,7 +35,7 @@ export type PresentedReviews = {
   reviews: PresentedReview[];
 };
 
-const COPY = {
+const COPY = withGermanFallback({
   it: {
     attribution: "Recensioni Google",
     fixture: "Anteprima locale",
@@ -62,7 +62,7 @@ const COPY = {
       return parts.join(", ");
     },
   },
-} as const;
+});
 
 /** Dev/test sample only. Production builds ignore the flag even if it is set. */
 export function reviewsFixtureEnabled(env: NodeJS.ProcessEnv = process.env): boolean {

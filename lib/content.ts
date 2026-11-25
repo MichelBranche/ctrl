@@ -1,5 +1,26 @@
 import type { L, Locale } from "@/lib/i18n";
 
+/** Fill missing German content from English until a specific German translation exists. */
+function withGermanContentFallback<T>(value: T): T {
+  const cache = new WeakMap<object, object>();
+  const wrap = (input: unknown): unknown => {
+    if (!input || typeof input !== "object") return input;
+    const object = input as object;
+    const known = cache.get(object);
+    if (known) return known;
+    const proxy = new Proxy(object, {
+      get(target, property, receiver) {
+        const current = Reflect.get(target, property, receiver);
+        if (property === "de" && current === undefined) return wrap(Reflect.get(target, "en", receiver));
+        return wrap(current);
+      },
+    });
+    cache.set(object, proxy);
+    return proxy;
+  };
+  return wrap(value) as T;
+}
+
 /** Public sales mailbox on ctrlagency.dev. */
 export const SALES_EMAIL = "vendite@ctrlagency.dev";
 /** Public administration, privacy and company-data mailbox on ctrlagency.dev. */
@@ -9,6 +30,7 @@ export const CONTACT_EMAIL = SALES_EMAIL;
 export const MAILBOX_LABEL = {
   it: { sales: "Vendite", admin: "Amministrazione" },
   en: { sales: "Sales", admin: "Administration" },
+  de: { sales: "Vertrieb", admin: "Verwaltung" },
 } as const;
 /** Michel's phone, international format. Single source for the WhatsApp link. */
 export const CONTACT_PHONE = "+393881660117";
@@ -85,6 +107,7 @@ export const STUDIO_PLACE = {
   address: {
     it: STUDIO_ADDRESS,
     en: STUDIO_ADDRESS,
+    de: STUDIO_ADDRESS,
   },
   latitude: STUDIO_LATITUDE,
   longitude: STUDIO_LONGITUDE,
@@ -99,7 +122,7 @@ export function studioMapEmbedUrl(lang: Locale): string {
   const url = new URL("https://www.google.com/maps");
   url.searchParams.set("q", `${STUDIO_PLACE.latitude},${STUDIO_PLACE.longitude} (${STUDIO_PLACE.address.it})`);
   url.searchParams.set("z", "17");
-  url.searchParams.set("hl", lang === "en" ? "en" : "it");
+  url.searchParams.set("hl", lang === "de" ? "de" : lang === "en" ? "en" : "it");
   url.searchParams.set("output", "embed");
   return url.toString();
 }
@@ -124,7 +147,7 @@ export type ProjectCategory = {
   href?: string;
 };
 
-export const projectCategories: ProjectCategory[] = [
+export const projectCategories: ProjectCategory[] = withGermanContentFallback([
   {
     slug: "websites",
     label: { it: "Siti web", en: "Websites" },
@@ -194,7 +217,7 @@ export const projectCategories: ProjectCategory[] = [
     },
     image: "/images/projects/promo-videos.webp",
   },
-];
+]);
 
 export type Project = {
   slug: string;
@@ -274,20 +297,20 @@ const MOCKUPS = ["mockup-hero", "mockup-sections"];
 export type WebsiteGroup = { slug: string; label: L };
 
 /** Filters on /projects/websites, in display order. */
-export const websiteGroups: WebsiteGroup[] = [
+export const websiteGroups: WebsiteGroup[] = withGermanContentFallback([
   { slug: "hospitality", label: { it: "Hospitality", en: "Hospitality" } },
   { slug: "food", label: { it: "Food & wine", en: "Food & wine" } },
   { slug: "culture", label: { it: "Cultura & istituzioni", en: "Culture & institutions" } },
   { slug: "brand", label: { it: "Brand & e-commerce", en: "Brand & e-commerce" } },
   { slug: "interfaces", label: { it: "Interfacce & tool", en: "Interfaces & tools" } },
-];
+]);
 
 // TODO(Michel): add real works here; they appear on /projects/[category]
 // automatically. Example:
 // { slug: "acme", category: "websites", title: { it: "Sito istituzionale", en: "Corporate website" },
 //   client: "Acme Srl", image: "/images/projects/works/acme.webp", url: "https://acme.it", year: "2026" },
 /* Websites: real work from michelbranche.it/portfolio (copy condensed from it). */
-export const projects: Project[] = [
+export const projects: Project[] = withGermanContentFallback([
   {
     slug: LE_VELE.slug,
     category: "websites",
@@ -558,7 +581,7 @@ export const projects: Project[] = [
     },
     author: AUTHORS.michel,
   },
-];
+]);
 
 /** Unlocalized link for a category: its own page, or `href` when it lives elsewhere (Webapp, /services/webapp). */
 export function categoryPath(category: ProjectCategory) {
@@ -598,7 +621,7 @@ const HOME_TINTS: Record<string, string> = {
   orma: "linear-gradient(115deg, #f3efea 0%, #a87a4f 45%, #6a4423 100%)",
   omama: "linear-gradient(90deg, #ec3538 0%, #f5c430 35%, #2fae5a 65%, #2f6fe4 100%)",
 };
-export const homeFeatured: HomeFeatured[] = HOME_SLUGS.map((slug, i) => {
+export const homeFeatured: HomeFeatured[] = withGermanContentFallback(HOME_SLUGS.map((slug, i) => {
   const p = projects.find((x) => x.slug === slug);
   if (!p) throw new Error(`homeFeatured: unknown project ${slug}`);
   const group = websiteGroups.find((g) => g.slug === p.group);
@@ -611,7 +634,7 @@ export const homeFeatured: HomeFeatured[] = HOME_SLUGS.map((slug, i) => {
     tint: HOME_TINTS[slug],
     href: `/projects/websites/${slug}`,
   };
-});
+}));
 
 export type Service = {
   slug: string;
@@ -625,7 +648,7 @@ export type Service = {
   sub?: { href: string; label: L; note: L };
 };
 
-export const services: Service[] = [
+export const services: Service[] = withGermanContentFallback([
   {
     slug: "brand-identity",
     index: "01",
@@ -721,7 +744,7 @@ export const services: Service[] = [
     },
     icon: "spark",
   },
-];
+]);
 
 /** Optional contact links for a team card; only the ones present are rendered. */
 export type TeamSocials = { linkedin?: string; email?: string; website?: string; github?: string };
@@ -754,7 +777,7 @@ export const TEAM_PHOTOS: Record<string, string> = {
 };
 
 /** Studio team. Add new members here; the Team page renders them in order. */
-export const team: TeamMember[] = [
+export const team: TeamMember[] = withGermanContentFallback([
   {
     slug: "michel-branche",
     name: "Michel Branche",
@@ -817,7 +840,7 @@ export const team: TeamMember[] = [
     photo: TEAM_PHOTOS["jacopo-manzalini"],
     socials: {},
   },
-];
+]);
 
 export function getService(slug: string) {
   return services.find((service) => service.slug === slug);

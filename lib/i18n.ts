@@ -1,22 +1,34 @@
-export const locales = ["it", "en"] as const;
+export const locales = ["it", "en", "de"] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "it";
 
-export type L<T = string> = Record<Locale, T>;
+/** Content authored before German can continue to fall back to English until translated. */
+export type L<T = string> = Record<"it" | "en", T> & Record<string, T>;
+
+/** Keep older copy tables usable until their German text is supplied; never render an empty label. */
+export function withGermanFallback<T>(translations: { it: T; en: T; de?: T }): Record<Locale, T> {
+  return new Proxy(translations, {
+    get(target, property, receiver) {
+      if (property === "de") return target.de ?? target.en;
+      return Reflect.get(target, property, receiver);
+    },
+  }) as Record<Locale, T>;
+}
 
 /** Prefix an internal path with the locale segment (Italian is the default, unprefixed). */
 export function localize(path: string, lang: Locale) {
   if (lang === defaultLocale) return path;
-  if (path === "/") return "/en";
-  if (path.startsWith("/#")) return `/en${path.slice(1)}`;
-  return `/en${path}`;
+  if (lang === "de" && (path === "/cookie" || path === "/cookies")) return "/de/cookies";
+  if (path === "/") return `/${lang}`;
+  if (path.startsWith("/#")) return `/${lang}${path.slice(1)}`;
+  return `/${lang}${path}`;
 }
 
 /** Return the same page in the other locale. */
 export function switchPath(pathname: string, to: Locale) {
-  const bare = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  const bare = pathname.replace(/^\/(?:en|de)(?=\/|$)/, "") || "/";
   // The cookie policy is the one page whose slug differs per language.
-  if (bare === "/cookie" || bare === "/cookies") return to === "en" ? "/en/cookies" : "/cookie";
+  if (bare === "/cookie" || bare === "/cookies") return to === "it" ? "/cookie" : `/${to}/cookies`;
   return localize(bare, to);
 }
 
@@ -25,9 +37,11 @@ export const LANG_COOKIE = "ctrl-lang";
 
 /** Device language to site language: Italian for any "it*" tag, English for every other language. */
 export function localeFromAcceptLanguage(header: string | null): Locale | null {
-  const first = header?.split(",")[0]?.trim().toLowerCase();
-  if (!first || first === "*") return null;
-  return first.startsWith("it") ? "it" : "en";
+  const preferred = header?.split(",").map((item) => item.trim().split(";")[0]?.toLowerCase()).find((item) => item && item !== "*");
+  if (!preferred) return null;
+  if (preferred.startsWith("de")) return "de";
+  if (preferred.startsWith("it")) return "it";
+  return "en";
 }
 
 /** Persist a manual language choice for a year (client only). */
@@ -36,7 +50,9 @@ export function rememberLocale(lang: Locale) {
 }
 
 export function localeFromPath(pathname: string | null): Locale {
-  return pathname && /^\/en(\/|$)/.test(pathname) ? "en" : "it";
+  if (pathname && /^\/en(\/|$)/.test(pathname)) return "en";
+  if (pathname && /^\/de(\/|$)/.test(pathname)) return "de";
+  return "it";
 }
 
 export const dict = {
@@ -283,6 +299,32 @@ export const dict = {
       soonText: "Online booking is not active yet. In the meantime you can write to us through the form.",
       fromContact: "Prefer a call? Book an introduction.",
     },
+  },
+  de: {
+    nav: { work: "Projekte", team: "Team", services: "Leistungen", journal: "Journal", shop: "Shop", contact: "Kontakt" },
+    cta: "Sprechen wir über Ihr Projekt",
+    menu: "Menü", close: "Schließen", langLabel: "Sprache",
+    cmd: { label: "Schnellmenü", placeholder: "Wohin möchten Sie?", open: "Schnellmenü öffnen", email: "E-Mail schreiben", lang: "English version", empty: "Keine Ergebnisse", home: "Startseite" },
+    home: {
+      kicker: ["Unabhängiges Studio", "für Creative Technology"], title: ["Von der Identität", "zum Produkt.", "Ein einziger", "Partner."],
+      lead: "Webagentur in Aosta: maßgeschneiderte Websites, Hotelbuchungen, Software und Marken für Unternehmen in Italien und ganz Europa.", approach: "Unseren Ansatz entdecken",
+      heroAlt: "Brutalistische Betonarchitektur mit Blick auf einen See und die Berge", heroTags: ["Ideen", "Technologie", "Erlebnisse"], place: ["Aosta", "Aostatal"],
+      servicesKicker: "Was wir tun", servicesTitle: ["Mehr als eine Website.", "Ein digitaler Auftritt", "der mit Ihrer Marke wächst."],
+      servicesLead: "Wir gestalten Identitäten, Websites, Web-Apps und maßgeschneiderte Software für Unternehmen in Italien und Europa.", portraitAlt: "Schwarz-Weiß-Porträt im Profil",
+      workKicker: "Aktuelle Projekte", allProjects: "Alle Projekte", discover: "Projekt entdecken", whyKicker: "Warum CTRL®", whyWords: ["Strategie.", "Design.", "Technologie.", "Ergebnisse."],
+      whyLead: "Ein ganzheitlicher Ansatz, der komplexe Ideen in einfache, schöne und leistungsstarke Lösungen verwandelt.",
+      stats: [{ value: "6", label: ["Bereiche", "Von Websites bis Software"] }, { value: "5", label: ["Sprachen", "Im Team gesprochen"] }, { value: "100%", label: ["Individuell", "Keine Vorlagen"] }, { value: "∞", label: ["Neugier", "Auf die Zukunft"] }],
+      closeTitle: "Sprechen wir.", closeKicker: ["Neue Projekte", "Neue Partnerschaften"], closeLead: "Erzählen Sie uns von Ihrer Marke, Ihrem Produkt oder Ihrer Herausforderung. Gemeinsam entwickeln wir etwas Besonderes.", closeCta: "E-Mail schreiben",
+      location: "Aosta, Aostatal", proofKicker: "Fallstudie", proofTitle: "Residence Le Vele", proofText: "14 Buchungen und 11.947 € im ersten Monat online – ohne Ausgaben für Werbung.", proofCta: "Fallstudie lesen",
+      heroLine: ["Marken, Websites und individuelle Software.", "Für Unternehmen in ganz Europa."], heroPill: "CTRL® Studio", heroCta: "Projekte ansehen", servicesIntro: "Wir gestalten Identitäten, Websites und Software, die zusammenarbeiten.",
+      platesAlt: "Drei Ebenen: Identität, Website und Software", navMore: "Mehr", navAllServices: "Alle Leistungen", navTalk: "Sprechen wir", marquee: "TAKE CTRL", servicesMore: "Entdecken",
+      filmKicker: "Studiofilm", filmTitle: "CTRL® stellt sich vor", ecoKicker: "CTRL® Ökosystem", ecoTitle: "Lösungen von CTRL®.", ecoLead: "Werkzeuge für Termine, Kunden und Angebote.", ecoQuotes: "Angebote, die überzeugen.", ecoAgenda: "Ihr Kalender – endlich einfach.", ecoOpen: "öffnet in einem neuen Tab", ecoSoonTitle: "Demnächst", ecoSoonSub: "Neue CTRL®-Werkzeuge folgen bald.",
+      workTitle: "Projekte, die für sich sprechen.", openProject: "Projekt öffnen", proofStats: [{ value: "14", label: "Buchungen" }, { value: "11.947 €", label: "im ersten Monat online" }, { value: "0 €", label: "für Werbung ausgegeben" }], talkMarquee: "SPRECHEN WIR",
+    },
+    services: { back: "Alle Leistungen", next: "Weiter", fallback: "Leistungen", wipKicker: "In Arbeit", wipTitle: "Seite im Aufbau", wipText: "Wir ergänzen diese Seite um Beispiele, unsere Arbeitsweise und weitere Details. Erzählen Sie uns inzwischen, was Sie brauchen – wir antworten persönlich.", wipContact: "Kontaktieren Sie uns", wipOthers: "Weitere Leistungen" },
+    team: { metaTitle: "Das Team der Webagentur CTRL® in Aosta | CTRL®", description: "Michel Branche, Kallebe Gallo und Jacopo Manzalini. Design, Entwicklung, KI und Vertrieb im CTRL® Studio in Aosta.", tag: "Team", title: ["Menschen,", "die Ideen", "Wirklichkeit werden lassen."], lead: "Das Team von CTRL®: Design, Entwicklung, KI und Vertrieb.", scroll: "Team kennenlernen" },
+    meta: { title: "Maßgeschneiderte Websites und Software | CTRL®", description: "CTRL® entwickelt individuelle Websites, Marken, E-Commerce, Web-Apps und Software für Unternehmen in Italien und Europa." },
+    bookings: { nav: "Termin buchen", metaTitle: "Kennenlerngespräch mit CTRL® buchen | CTRL®", metaDescription: "Kostenloses Erstgespräch von etwa 20–30 Minuten mit CTRL® über Google Meet. Wählen Sie einen Termin oder schreiben Sie uns.", tag: "Termin buchen", title: "Lernen wir uns kennen.", lead: ["Ein kostenloses Erstgespräch von etwa 20–30 Minuten über Google Meet.", "Erzählen Sie uns von Ihrem Projekt und wir besprechen die nächsten Schritte."], bookCta: "Termin auswählen", frameTitle: "Termin über Google Calendar buchen", open: "In neuem Tab öffnen", fallback: "Lieber schreiben? Nutzen Sie unser Kontaktformular.", soon: "Demnächst verfügbar", soonText: "Die Online-Terminbuchung ist noch nicht aktiv. Schreiben Sie uns gerne über das Formular.", fromContact: "Lieber ein Gespräch? Buchen Sie ein erstes Kennenlernen." },
   },
 } as const;
 

@@ -48,15 +48,17 @@ const AREAS = [
 ] as const;
 
 export function alternates(itPath: string, lang: Locale, enPath = itPath === "/" ? "/en" : `/en${itPath}`): Metadata["alternates"] {
+  const dePath = itPath === "/" ? "/de" : itPath === "/cookie" ? "/de/cookies" : `/de${itPath}`;
   return {
-    canonical: lang === "en" ? enPath : itPath,
-    languages: { "it-IT": itPath, "en-US": enPath, "x-default": itPath },
+    canonical: lang === "en" ? enPath : lang === "de" ? dePath : itPath,
+    languages: { "it-IT": itPath, "en-US": enPath, "de-DE": dePath, "x-default": itPath },
   };
 }
 
 const OG_ALT = {
   it: "CTRL®, studio indipendente di creative technology ad Aosta",
   en: "CTRL®, independent creative technology studio in Aosta",
+  de: "CTRL®, unabhängiges Creative-Technology-Studio in Aosta",
 } as const;
 
 /** Full Open Graph object. A page that sets openGraph replaces the layout value, so pass the extras here. */
@@ -64,8 +66,8 @@ export function openGraph(lang: Locale, extra?: Metadata["openGraph"]): Metadata
   return {
     type: "website",
     siteName: "CTRL®",
-    locale: lang === "en" ? "en_US" : "it_IT",
-    alternateLocale: [lang === "en" ? "it_IT" : "en_US"],
+    locale: lang === "en" ? "en_US" : lang === "de" ? "de_DE" : "it_IT",
+    alternateLocale: lang === "de" ? ["it_IT", "en_US"] : [lang === "en" ? "it_IT" : "en_US", ...(lang === "it" ? ["de_DE"] : [])],
     images: [{ url: "/images/home/hero.jpg", width: 1200, height: 630, alt: OG_ALT[lang] }],
     ...extra,
   };
@@ -76,6 +78,7 @@ type PublicMeta = {
   description: string;
   itPath: string;
   enPath?: string;
+  dePath?: string;
   /** When false, hreflang only names the language that actually has this URL. */
   paired?: boolean;
   images?: NonNullable<Metadata["openGraph"]>["images"];
@@ -84,16 +87,17 @@ type PublicMeta = {
   robots?: Metadata["robots"];
 };
 
-function singleLanguageAlternates(itPath: string, lang: Locale, enPath: string): Metadata["alternates"] {
-  const canonical = lang === "en" ? enPath : itPath;
-  const code = lang === "en" ? "en-US" : "it-IT";
+function singleLanguageAlternates(itPath: string, lang: Locale, enPath: string, dePath: string): Metadata["alternates"] {
+  const canonical = lang === "en" ? enPath : lang === "de" ? dePath : itPath;
+  const code = lang === "en" ? "en-US" : lang === "de" ? "de-DE" : "it-IT";
   return { canonical, languages: { [code]: canonical, "x-default": canonical } };
 }
 
 /** Absolute title, description, canonical, hreflang, Open Graph and Twitter for one public URL. */
 export function publicMeta(lang: Locale, opts: PublicMeta): Metadata {
   const enPath = opts.enPath ?? (opts.itPath === "/" ? "/en" : `/en${opts.itPath}`);
-  const path = lang === "en" ? enPath : opts.itPath;
+  const dePath = opts.dePath ?? (opts.itPath === "/" ? "/de" : opts.itPath === "/cookie" ? "/de/cookies" : `/de${opts.itPath}`);
+  const path = lang === "en" ? enPath : lang === "de" ? dePath : opts.itPath;
   const graph = openGraph(lang, {
     title: opts.title,
     description: opts.description,
@@ -105,7 +109,7 @@ export function publicMeta(lang: Locale, opts: PublicMeta): Metadata {
   return {
     title: { absolute: opts.title },
     description: opts.description,
-    alternates: opts.paired === false ? singleLanguageAlternates(opts.itPath, lang, enPath) : alternates(opts.itPath, lang, enPath),
+    alternates: opts.paired === false ? singleLanguageAlternates(opts.itPath, lang, enPath, dePath) : { canonical: path, languages: { "it-IT": opts.itPath, "en-US": enPath, "de-DE": dePath, "x-default": opts.itPath } },
     openGraph: graph,
     twitter: { card: "summary_large_image", title: opts.title, description: opts.description, ...(images ? { images } : {}) },
     ...(opts.robots ? { robots: opts.robots } : {}),

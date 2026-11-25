@@ -1,11 +1,11 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 export const AGENDA_EASY_LIVE = "https://agendaeasy.it";
 export const AGENDA_EASY_VIDEO = "0ZbTfrsfgcM";
 
 type Icon = "calendar" | "user" | "layers" | "chart";
 
-export const agendaCopy: Record<Locale, {
+export const agendaCopy = withGermanFallback<{
   metaTitle: string; metaDescription: string; crumbs: [string, string]; back: string;
   tag: string; status: string; lead: string; visit: string; watch: string; newTab: string;
   heroAlt: string;
@@ -16,7 +16,7 @@ export const agendaCopy: Record<Locale, {
   factsKicker: string; factsTitle: [string, string];
   facts: { value: string; label: string }[];
   ctaKicker: string; ctaTitle: string; ctaText: string; ctaButton: string;
-}> = {
+}>({
   it: {
     metaTitle: "Agenda Easy, webapp per appuntamenti ad Aosta | CTRL®",
     metaDescription: "Agenda Easy è la webapp di CTRL® per appuntamenti, clienti e servizi. Per studi e attività, da 9,90 € al mese, sviluppata ad Aosta. Attivala ora.",
@@ -97,4 +97,4 @@ export const agendaCopy: Record<Locale, {
     ctaText: "Tell us your idea, we are here to make it real.",
     ctaButton: "Contact us",
   },
-};
+});

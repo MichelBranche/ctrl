@@ -6,6 +6,7 @@ export type Category = (typeof CATEGORIES)[number];
 export const CATEGORY_LABEL: Record<Locale, Record<Category, string>> = {
   it: { design: "Design", tecnologia: "Tecnologia", strategia: "Strategia", innovazione: "Innovazione", brand: "Brand", sicurezza: "Sicurezza", "case-study": "Case study" },
   en: { design: "Design", tecnologia: "Technology", strategia: "Strategy", innovazione: "Innovation", brand: "Brand", sicurezza: "Security", "case-study": "Case study" },
+  de: { design: "Design", tecnologia: "Technologie", strategia: "Strategie", innovazione: "Innovation", brand: "Marke", sicurezza: "Sicherheit", "case-study": "Fallstudie" },
 };
 
 export type PostStatus = "draft" | "published";
@@ -27,7 +28,7 @@ export type Post = {
 export function formatPostDate(iso: string, lang: Locale) {
   const d = new Date(iso);
   const day = String(d.getUTCDate()).padStart(2, "0");
-  const month = d.toLocaleString(lang === "it" ? "it-IT" : "en-GB", { month: "short", timeZone: "UTC" }).replace(".", "");
+  const month = d.toLocaleString(lang === "it" ? "it-IT" : lang === "de" ? "de-DE" : "en-GB", { month: "short", timeZone: "UTC" }).replace(".", "");
   return `${day} ${month} ${d.getUTCFullYear()}`;
 }
 

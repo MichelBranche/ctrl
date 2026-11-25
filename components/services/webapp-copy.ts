@@ -1,16 +1,16 @@
-import type { Locale } from "@/lib/i18n";
+import { withGermanFallback } from "@/lib/i18n";
 
 
 type Feature = { icon: "layers" | "lock" | "users" | "bolt"; title: string; text: string };
 type Slide = { image: string; alt: string; kicker: string; title: string; text: string; cta: string; href: string; external: boolean };
 
-export const webappCopy: Record<Locale, {
+export const webappCopy = withGermanFallback<{
   metaTitle: string; metaDescription: string; crumbs: [string, string]; back: string;
   tag: string; title: [string, string]; lead: string;
   serviceKicker: string; serviceTitle: [string, string]; serviceText: string; consult: string;
   features: Feature[]; slidesLabel: string; prev: string; next: string; goTo: (n: number) => string; newTab: string; slides: Slide[];
   processKicker: string; processTitle: [string, string]; steps: { title: string; text: string }[];
-}> = {
+}>({
   it: {
     metaTitle: "Webapp su misura ad Aosta, con aree riservate | CTRL®",
     metaDescription: "Webapp con aree riservate, dashboard e flussi su misura. CTRL® le sviluppa ad Aosta per team in Valle d'Aosta e nel Nord Italia. Scrivici. Senza template.",
@@ -99,4 +99,4 @@ export const webappCopy: Record<Locale, {
       { title: "Launch and growth", text: "Release, monitoring and continuous optimisation." },
     ],
   },
-};
+});
