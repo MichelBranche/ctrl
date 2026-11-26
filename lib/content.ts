@@ -776,6 +776,7 @@ export const TEAM_PHOTOS: Record<string, string> = {
   "jacopo-manzalini": "/team/photo-c.webp",
   "matteo-riva": "/team/matteo-riva.webp",
   "giulia-moretti": "/team/giulia-moretti.webp",
+  katia: "/team/katia.jpg",
 };
 
 /** Studio team. Add new members here; the Team page renders them in order. */
@@ -830,6 +831,15 @@ export const team: TeamMember[] = withGermanContentFallback([
     bio: { it: "", en: "" },
     skills: [],
     photo: TEAM_PHOTOS["giulia-moretti"],
+    socials: {},
+  },
+  {
+    slug: "katia-micello",
+    name: "Katia Micello",
+    role: { it: "Junior Sales", en: "Junior Sales" },
+    bio: { it: "", en: "" },
+    skills: [],
+    photo: TEAM_PHOTOS.katia,
     socials: {},
   },
   {
