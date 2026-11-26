@@ -61,7 +61,7 @@ function parseContact(f: FormData): ContactInput | string {
   const owner = txt(f, "owner_user_id", 64);
   return {
     businessName, type: txt(f, "type", 80), contactName: txt(f, "contact_name", 120), email, phone: txt(f, "phone", 40), website: txt(f, "website", 300),
-    address: txt(f, "address", 300), city: txt(f, "city", 100), region: txt(f, "region", 100), source: isSource(source) ? source : "manuale",
+    address: txt(f, "address", 300), city: txt(f, "city", 100), region: txt(f, "region", 100), country: txt(f, "country", 100), source: isSource(source) ? source : "manuale",
     score, valueEur, nextAction: txt(f, "next_action", 300), nextActionAt, ownerUserId: owner, notes: txt(f, "notes", 5000),
   };
 }

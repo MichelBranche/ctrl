@@ -10,7 +10,7 @@ import { canAccess, type Perms } from "@/lib/team-types";
 
 export type Contact = {
   id: string; businessName: string; type: string | null; contactName: string | null; email: string | null; phone: string | null;
-  website: string | null; address: string | null; city: string | null; region: string | null; source: Source; score: number | null;
+  website: string | null; address: string | null; city: string | null; region: string | null; country: string | null; source: Source; score: number | null;
   scoreReasons: string[]; stage: Stage; valueEur: number | null; nextAction: string | null; nextActionAt: string | null;
   ownerUserId: string | null; ownerName: string | null; notes: string | null; createdAt: string; updatedAt: string; archived: boolean;
   /** Optimistic-lock counter: every write bumps it, conditional writes compare it. */
@@ -28,7 +28,7 @@ export type Contact = {
 };
 export type ContactInput = {
   businessName: string; type?: string | null; contactName?: string | null; email?: string | null; phone?: string | null; website?: string | null;
-  address?: string | null; city?: string | null; region?: string | null; source: Source; score?: number | null; scoreReasons?: string[] | null;
+  address?: string | null; city?: string | null; region?: string | null; country?: string | null; source: Source; score?: number | null; scoreReasons?: string[] | null;
   stage?: Stage; valueEur?: number | null; nextAction?: string | null; nextActionAt?: string | null; ownerUserId?: string | null; notes?: string | null;
 };
 export type Draft = { id: string; contactId: string; subject: string; bodyHtml: string | null; bodyText: string; status: DraftStatus; createdAt: string; sentAt: string | null; sentBy: string | null };
@@ -40,7 +40,7 @@ function reasons(v: unknown): string[] {
   try { const a = JSON.parse(String(v ?? "[]")); return Array.isArray(a) ? a.map(String) : []; } catch { return []; }
 }
 
-const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.source, c.score,
+const COLS = `c.id, c.business_name, c.type, c.contact_name, c.email, c.phone, c.website, c.address, c.city, c.region, c.country, c.source, c.score,
   c.score_reasons, c.stage, c.value_eur, c.next_action, c.next_action_at, c.owner_user_id, u.name AS owner_name, c.notes, c.created_at, c.updated_at, c.archived,
   c.version, c.stage_changed_at, c.kind, c.estimated_value_cents, c.estimated_value_note, c.iris_request_id,
   CASE WHEN c.owner_user_id IS NULL THEN NULL WHEN u.id IS NOT NULL AND u.active = 1 AND u.invite_state IS NULL AND u.removed_at IS NULL THEN 1 ELSE 0 END AS owner_active`;
@@ -49,7 +49,7 @@ const FROM = "FROM crm_contacts c LEFT JOIN admin_users u ON u.id = c.owner_user
 function toContact(r: Record<string, unknown>): Contact {
   return {
     id: String(r.id), businessName: String(r.business_name), type: s(r.type), contactName: s(r.contact_name), email: s(r.email), phone: s(r.phone),
-    website: s(r.website), address: s(r.address), city: s(r.city), region: s(r.region), source: isSource(r.source) ? r.source : "manuale",
+    website: s(r.website), address: s(r.address), city: s(r.city), region: s(r.region), country: s(r.country), source: isSource(r.source) ? r.source : "manuale",
     score: n(r.score), scoreReasons: reasons(r.score_reasons), stage: isStage(r.stage) ? r.stage : "nuovo", valueEur: n(r.value_eur),
     nextAction: s(r.next_action), nextActionAt: s(r.next_action_at), ownerUserId: s(r.owner_user_id), ownerName: s(r.owner_name), notes: s(r.notes),
     createdAt: String(r.created_at), updatedAt: String(r.updated_at), archived: Number(r.archived) === 1,
@@ -78,14 +78,14 @@ const fieldArgs = (c: ContactInput): InValue[] => {
   const k = dedupeKeys(c);
   return [
     c.businessName, c.type ?? null, c.contactName ?? null, c.email?.trim() || null, c.phone?.trim() || null, c.website?.trim() || null,
-    c.address ?? null, c.city ?? null, c.region ?? null, c.score ?? null, c.scoreReasons?.length ? JSON.stringify(c.scoreReasons) : null,
+    c.address ?? null, c.city ?? null, c.region ?? null, c.country ?? null, c.score ?? null, c.scoreReasons?.length ? JSON.stringify(c.scoreReasons) : null,
     c.valueEur ?? null, c.nextAction ?? null, c.nextActionAt ?? null, c.ownerUserId ?? null, c.notes ?? null, k.email, k.phone, k.domain,
   ];
 };
 
-const INSERT_CONTACT = `INSERT INTO crm_contacts (business_name, type, contact_name, email, phone, website, address, city, region, score, score_reasons, value_eur,
+const INSERT_CONTACT = `INSERT INTO crm_contacts (business_name, type, contact_name, email, phone, website, address, city, region, country, score, score_reasons, value_eur,
   next_action, next_action_at, owner_user_id, notes, email_norm, phone_norm, domain, id, source, stage, created_by, request_id, iris_request_id, created_at, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ','now')), strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
 
 /**
  * Inserts unless a duplicate exists. The check and the insert share one write transaction, so two concurrent
@@ -141,7 +141,7 @@ export async function updateContact(id: string, c: ContactInput, expectedVersion
   if (dup) return { duplicate: dup };
   const v = expectedVersion ?? null;
   const res = await db().execute({
-    sql: `UPDATE crm_contacts SET business_name = ?, type = ?, contact_name = ?, email = ?, phone = ?, website = ?, address = ?, city = ?, region = ?,
+    sql: `UPDATE crm_contacts SET business_name = ?, type = ?, contact_name = ?, email = ?, phone = ?, website = ?, address = ?, city = ?, region = ?, country = ?,
       score = ?, score_reasons = ?, value_eur = ?, next_action = ?, next_action_at = ?, owner_user_id = ?, notes = ?, email_norm = ?, phone_norm = ?, domain = ?,
       ${BUMP} WHERE id = ? AND (? IS NULL OR version = ?)`,
     args: [...fieldArgs(c), id, v, v],
@@ -207,7 +207,7 @@ export async function setArchived(id: string, archived: boolean) {
 
 export type ContactSort = "aggiornato" | "nome" | "fase" | "citta" | "punteggio" | "azione";
 export type ContactFilter = {
-  q?: string; stage?: Stage; type?: string; city?: string; source?: Source; archived?: boolean; limit?: number; offset?: number;
+  q?: string; stage?: Stage; type?: string; city?: string; region?: string; country?: string; source?: Source; archived?: boolean; limit?: number; offset?: number;
   /** "none" = without responsible person; otherwise a user id. */
   owner?: string; sort?: ContactSort; dir?: "asc" | "desc";
   /** Resolved kind: stored value, or the deduction when the column is null. */
@@ -229,10 +229,12 @@ function contactWhere(f: ContactFilter): { where: string; args: InValue[] } {
   if (f.source) { where.push("c.source = ?"); args.push(f.source); }
   if (f.type) { where.push("c.type = ?"); args.push(f.type); }
   if (f.city) { where.push("c.city = ? COLLATE NOCASE"); args.push(f.city); }
+  if (f.region) { where.push("c.region = ? COLLATE NOCASE"); args.push(f.region); }
+  if (f.country) { where.push("c.country = ? COLLATE NOCASE"); args.push(f.country); }
   if (f.q) {
     const like = `%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`;
-    where.push("(c.business_name LIKE ? ESCAPE '\\' OR c.contact_name LIKE ? ESCAPE '\\' OR c.email LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\' OR c.website LIKE ? ESCAPE '\\' OR c.city LIKE ? ESCAPE '\\')");
-    args.push(like, like, like, like, like, like);
+    where.push("(c.business_name LIKE ? ESCAPE '\\' OR c.contact_name LIKE ? ESCAPE '\\' OR c.email LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\' OR c.website LIKE ? ESCAPE '\\' OR c.city LIKE ? ESCAPE '\\' OR c.region LIKE ? ESCAPE '\\' OR c.country LIKE ? ESCAPE '\\')");
+    args.push(like, like, like, like, like, like, like, like);
   }
   if (f.noScore) where.push("c.score IS NULL");
   else if (f.scoreMin !== undefined || f.scoreMax !== undefined) { where.push("c.score BETWEEN ? AND ?"); args.push(f.scoreMin ?? 0, f.scoreMax ?? 100); }
@@ -409,15 +411,17 @@ export async function getContact(id: string): Promise<Contact | null> {
   return res.rows[0] ? toContact(res.rows[0] as Record<string, unknown>) : null;
 }
 
-/** Distinct categories and cities for the filter menus. */
-export async function facets(source?: Source): Promise<{ types: string[]; cities: string[] }> {
+/** Distinct categories and places for the CRM filter menus. */
+export async function facets(source?: Source): Promise<{ types: string[]; cities: string[]; regions: string[]; countries: string[] }> {
   await ensureCrmSchema();
   const only = source ? " AND source = ?" : "", args = source ? [source] : [];
-  const [t, c] = await Promise.all([
+  const [t, c, r, countries] = await Promise.all([
     db().execute({ sql: `SELECT DISTINCT type FROM crm_contacts WHERE archived = 0 AND type IS NOT NULL AND type <> ''${only} ORDER BY type LIMIT 200`, args }),
     db().execute({ sql: `SELECT DISTINCT city FROM crm_contacts WHERE archived = 0 AND city IS NOT NULL AND city <> ''${only} ORDER BY city COLLATE NOCASE LIMIT 300`, args }),
+    db().execute({ sql: `SELECT DISTINCT region FROM crm_contacts WHERE archived = 0 AND region IS NOT NULL AND region <> ''${only} ORDER BY region COLLATE NOCASE LIMIT 300`, args }),
+    db().execute({ sql: `SELECT DISTINCT country FROM crm_contacts WHERE archived = 0 AND country IS NOT NULL AND country <> ''${only} ORDER BY country COLLATE NOCASE LIMIT 200`, args }),
   ]);
-  return { types: t.rows.map((r) => String(r.type)), cities: c.rows.map((r) => String(r.city)) };
+  return { types: t.rows.map((r) => String(r.type)), cities: c.rows.map((r) => String(r.city)), regions: r.rows.map((row) => String(row.region)), countries: countries.rows.map((row) => String(row.country)) };
 }
 
 export type Note = { id: string; body: string; createdAt: string; author: string | null };
@@ -461,7 +465,7 @@ export async function addDraft(contactId: string, d: { subject: string; bodyText
 export async function ingestContact(c: IngestContact, irisRequestId?: string | null): Promise<{ id: string; duplicate: boolean }> {
   const r = await createContact({
     businessName: c.business_name, type: c.type, contactName: c.contact_name, email: c.email || null, phone: c.phone, website: c.website,
-    address: c.address, city: c.city, region: c.region, source: "radar", score: c.score ?? null, scoreReasons: c.score_reasons ?? null, notes: c.notes,
+    address: c.address, city: c.city, region: c.region, country: c.country, source: "radar", score: c.score ?? null, scoreReasons: c.score_reasons ?? null, notes: c.notes,
   }, null, { irisRequestId: irisRequestId ?? null });
   if (!r.duplicate && c.draft) await addDraft(r.id, { subject: c.draft.subject, bodyText: c.draft.body_text, bodyHtml: c.draft.body_html });
   // Creation only. A duplicate keeps the value already stored.

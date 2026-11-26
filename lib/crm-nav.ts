@@ -24,7 +24,7 @@ export function crmCrumb(path: string): string | null {
 }
 
 /** Query keys of the rubrica, which lived on /admin/crm before the Oggi page. */
-export const RUBRICA_PARAMS = ["q", "fase", "categoria", "citta", "fonte", "archivio", "archiviato", "nuovo"] as const;
+export const RUBRICA_PARAMS = ["q", "fase", "categoria", "citta", "regione", "stato", "fonte", "archivio", "archiviato", "nuovo"] as const;
 
 /** Old filtered links (/admin/crm?fase=call) keep working: same query on the rubrica. Null when nothing to redirect. */
 export function legacyRubricaPath(pathname: string, search: URLSearchParams): string | null {
@@ -55,7 +55,7 @@ export const RUBRICA_VIEWS = ["lista", "griglia"] as const;
 export type RubricaLayout = (typeof RUBRICA_VIEWS)[number];
 
 export type RubricaQuery = {
-  q: string; fase: string; categoria: string; citta: string; fonte: string; resp: string; archivio: boolean;
+  q: string; fase: string; categoria: string; citta: string; regione: string; stato: string; fonte: string; resp: string; archivio: boolean;
   ordina: RubricaSort; dir: "asc" | "desc"; p: number; c: string; tab: PanelTab;
   seg: RubricaSegment; vista: RubricaLayout;
 };
@@ -77,7 +77,7 @@ export function parseRubricaQuery(sp: Raw): RubricaQuery {
   const seg = read(sp, "seg");
   const vista = read(sp, "vista");
   return {
-    q: read(sp, "q"), fase: read(sp, "fase"), categoria: read(sp, "categoria"), citta: read(sp, "citta"), fonte: read(sp, "fonte"),
+    q: read(sp, "q"), fase: read(sp, "fase"), categoria: read(sp, "categoria"), citta: read(sp, "citta"), regione: read(sp, "regione"), stato: read(sp, "stato"), fonte: read(sp, "fonte"),
     resp: RESP_RE.test(read(sp, "resp")) ? read(sp, "resp") : "", archivio: read(sp, "archivio") === "1",
     ordina: sort, dir: dir === "asc" || dir === "desc" ? dir : sort === "nome" || sort === "citta" || sort === "azione" ? "asc" : "desc",
     p: Number.isFinite(page) && page > 1 ? Math.min(page, 10_000) : 1,
@@ -92,7 +92,7 @@ export function parseRubricaQuery(sp: Raw): RubricaQuery {
 export function rubricaSearch(q: RubricaQuery, patch: Partial<RubricaQuery> = {}): string {
   const v = { ...q, ...patch };
   const out = new URLSearchParams();
-  for (const k of ["q", "fase", "categoria", "citta", "fonte", "resp"] as const) if (v[k]) out.set(k, v[k]);
+  for (const k of ["q", "fase", "categoria", "citta", "regione", "stato", "fonte", "resp"] as const) if (v[k]) out.set(k, v[k]);
   if (v.seg !== "tutti") out.set("seg", v.seg);
   if (v.vista !== "lista") out.set("vista", v.vista);
   if (v.archivio) out.set("archivio", "1");
@@ -108,7 +108,7 @@ export function rubricaSearch(q: RubricaQuery, patch: Partial<RubricaQuery> = {}
  * Saved views keep only filter metadata: never the free-text search (it can hold names or emails), the open contact
  * or the page. Stored per user in the browser.
  */
-export const SAVED_VIEW_KEYS = ["fase", "categoria", "citta", "fonte", "resp", "archivio", "ordina", "dir"] as const;
+export const SAVED_VIEW_KEYS = ["fase", "categoria", "citta", "regione", "stato", "fonte", "resp", "archivio", "ordina", "dir"] as const;
 export function savedViewParams(search: string): string {
   const src = new URLSearchParams(search);
   const out = new URLSearchParams();
@@ -239,7 +239,7 @@ export type PipelineView = (typeof PIPELINE_VIEWS)[number];
 export const PIPELINE_BOARDS = ["contatti", "opportunita"] as const;
 export type PipelineBoard = (typeof PIPELINE_BOARDS)[number];
 export type PipelineQuery = {
-  q: string; resp: string; fonte: string; prio: string; periodo: PipelinePeriod; vista: PipelineView; tipo: PipelineBoard;
+  q: string; resp: string; fonte: string; citta: string; regione: string; stato: string; prio: string; periodo: PipelinePeriod; vista: PipelineView; tipo: PipelineBoard;
   c: string; o: string; tab: PanelTab; perso: boolean; nuova: boolean; contatto: string; apri: string;
 };
 
@@ -253,6 +253,9 @@ export function parsePipelineQuery(sp: Raw): PipelineQuery {
     q: read(sp, "q"),
     resp: RESP_RE.test(resp) ? resp : "",
     fonte: read(sp, "fonte"),
+    citta: read(sp, "citta"),
+    regione: read(sp, "regione"),
+    stato: read(sp, "stato"),
     prio: prio === "alta" || prio === "media" || prio === "bassa" || prio === "nessuna" ? prio : "",
     periodo: (PIPELINE_PERIODS as readonly string[]).includes(periodo) ? (periodo as PipelinePeriod) : "mese",
     vista: vista === "lista" ? "lista" : "kanban",
@@ -273,6 +276,9 @@ export function pipelineSearch(q: PipelineQuery, patch: Partial<PipelineQuery> =
   if (v.q) out.set("q", v.q);
   if (v.resp) out.set("resp", v.resp);
   if (v.fonte) out.set("fonte", v.fonte);
+  if (v.citta) out.set("citta", v.citta);
+  if (v.regione) out.set("regione", v.regione);
+  if (v.stato) out.set("stato", v.stato);
   if (v.prio) out.set("prio", v.prio);
   if (v.periodo !== "mese") out.set("periodo", v.periodo);
   if (v.vista === "lista") out.set("vista", "lista");

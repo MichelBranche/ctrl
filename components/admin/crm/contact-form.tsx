@@ -29,6 +29,7 @@ export function ContactForm({ contact, owners }: { contact?: Contact; owners: Ow
         {f("Indirizzo", "address", c?.address, { maxLength: 300 })}
         {f("Città", "city", c?.city, { maxLength: 100 })}
         {f("Regione", "region", c?.region, { maxLength: 100 })}
+        {f("Stato / Paese", "country", c?.country, { maxLength: 100, placeholder: "Es. Italia, Germania, Francia" })}
         {f("Valore (€)", "value_eur", c?.valueEur, { inputMode: "decimal", maxLength: 20 })}
         {f("Prossima azione", "next_action", c?.nextAction, { maxLength: 300, placeholder: "Es. richiamare per il preventivo" })}
         {f("Entro il", "next_action_at", c?.nextActionAt?.slice(0, 10), { type: "date" })}

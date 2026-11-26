@@ -99,6 +99,7 @@ export const ingestContactSchema = z.object({
   address: opt(300),
   city: opt(100),
   region: opt(100),
+  country: opt(100),
   score: z.number().int().min(0).max(100).optional().nullable(),
   score_reasons: z.array(z.string().max(300)).max(20).optional().nullable(),
   notes: opt(5000),

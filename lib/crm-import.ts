@@ -95,7 +95,7 @@ export async function confirmImport(input: unknown, createdBy: string): Promise<
     const created = await createContact({
       businessName: text.businessName ?? "",
       type: text.type ?? null, contactName: text.contactName ?? null, email: text.email ?? null, phone: text.phone ?? null,
-      website: text.website ?? null, address: text.address ?? null, city: text.city ?? null, region: text.region ?? null, notes: text.notes ?? null,
+      website: text.website ?? null, address: text.address ?? null, city: text.city ?? null, region: text.region ?? null, country: text.country ?? null, notes: text.notes ?? null,
       source: "manuale", stage: "nuovo", score: null, scoreReasons: null, ownerUserId: null, valueEur: null, nextAction: null, nextActionAt: null,
     }, createdBy);
     if (created.duplicate) skipped++;

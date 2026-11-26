@@ -65,7 +65,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   const today = romeToday();
   const founder = isFounder(me);
   const filter: ContactFilter = {
-    q: query.q || undefined, stage: isStage(query.fase) ? query.fase : undefined, type: query.categoria || undefined, city: query.citta || undefined,
+    q: query.q || undefined, stage: isStage(query.fase) ? query.fase : undefined, type: query.categoria || undefined, city: query.citta || undefined, region: query.regione || undefined, country: query.stato || undefined,
     source: isSource(query.fonte) ? query.fonte : undefined, archived: query.archivio,
     owner: query.seg === "liberi" ? "none" : query.resp === "me" ? me.id : query.resp || undefined,
     kind: query.seg === "aziende" ? "azienda" : query.seg === "persone" ? "persona" : undefined,
@@ -107,7 +107,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
     };
   });
   const from = total ? (page - 1) * RUBRICA_PAGE_SIZE + 1 : 0;
-  const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.source || filter.owner || filter.archived || filter.kind);
+  const filtered = Boolean(filter.q || filter.stage || filter.type || filter.city || filter.region || filter.country || filter.source || filter.owner || filter.archived || filter.kind);
   const listKey = rubricaSearch(view, { c: "", tab: "dettagli" });
   const panelLinks = {
     close: href({ c: "" }), tabs: Object.fromEntries(PANEL_TABS.map((t) => [t, href({ tab: t })])) as Record<PanelTab, string>,
@@ -143,7 +143,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             hrefs={Object.fromEntries(Object.keys(stages).map((st) => [st, href({ fase: view.fase === st ? "" : st, p: 1 })])) as Record<keyof typeof stages, string>} />
 
           <section className="rb-list" aria-label="Contatti">
-            <RubricaToolbar query={view} counts={segments} views={views} founder={founder} cities={f.cities} types={f.types} owners={owners} />
+            <RubricaToolbar query={view} counts={segments} views={views} founder={founder} cities={f.cities} regions={f.regions} countries={f.countries} types={f.types} owners={owners} />
             {rows.length ? (
               <RubricaBoard key={listKey} rows={rows} layout={view.vista} activeId={view.c} sort={sort} owners={owners} today={today} canEmail={mailOk}
                 pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
