@@ -85,7 +85,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
   const kind = resolveKind(c);
   const site = siteHref(c.website), tel = telHref(c.phone), mailSearch = c.email ? null : websiteDomain(c.website);
   const mailView = links.email ?? { list: contactEmailPath(c.id), compose: `${contactEmailPath(c.id)}?compose=new` };
-  const place = [c.address, c.city, c.region].filter(Boolean).join(", ");
+  const place = [c.address, c.city, c.region, c.country].filter(Boolean).join(", ");
   const versioned = { id: c.id, version: c.version };
   const extra = tab === "analisi" && analysis ? await analysis.render(c) : null;
   const facts = (
@@ -112,7 +112,7 @@ export async function ContactPanel({ id, tab: asked, me, links, analysis, deal, 
           <div className="crm-panel-title">
             <h2 id={labelId} className="adm-h2" tabIndex={-1}>{c.businessName}</h2>
             {banner ? <p className="crm-pipe-banner">{banner}</p> : null}
-            <p className="adm-muted">{[rubrica ? (kind === "persona" ? "Persona" : c.type ?? "Azienda") : c.type, c.city && `${c.city}${c.region ? ` (${c.region})` : ""}`].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
+            <p className="adm-muted">{[rubrica ? (kind === "persona" ? "Persona" : c.type ?? "Azienda") : c.type, [c.city, c.region, c.country].filter(Boolean).join(" · ")].filter(Boolean).join(" · ") || SOURCE_LABEL[c.source]}</p>
             {rubrica ? (
               <div className="crm-panel-meta">
                 {!c.archived && !deal

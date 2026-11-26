@@ -297,6 +297,7 @@ export function ensureCrmSchema(): Promise<void> {
     await db().batch(CRM_DDL.map((sql) => ({ sql })), "write");
     // Additive only: optimistic-lock counter for contacts (every write bumps it), then the owner index for "Responsabile" filters.
     await addColumn("crm_contacts", "version", "INTEGER NOT NULL DEFAULT 1");
+    await addColumn("crm_contacts", "country", "TEXT");
     await db().execute("CREATE INDEX IF NOT EXISTS crm_contacts_owner ON crm_contacts (archived, owner_user_id)");
     // Additive only: outreach state per contact (last send, unknown outcome, short send lease). See lib/crm-outreach.ts.
     // Rollback: the app ignores it if absent after a code rollback; DROP TABLE crm_outreach removes it with no other effect.
@@ -350,7 +351,7 @@ export function ensureCrmSchema(): Promise<void> {
 const CRM_DDL = [
   `CREATE TABLE IF NOT EXISTS crm_contacts (
  id TEXT PRIMARY KEY, business_name TEXT NOT NULL, type TEXT, contact_name TEXT, email TEXT, phone TEXT, website TEXT,
- address TEXT, city TEXT, region TEXT,
+ address TEXT, city TEXT, region TEXT, country TEXT,
  source TEXT NOT NULL DEFAULT 'manuale' CHECK (source IN ('sito','manuale','radar')),
  score INTEGER, score_reasons TEXT,
  stage TEXT NOT NULL DEFAULT 'nuovo' CHECK (stage IN ('nuovo','contattato','call','preventivo','vinto','perso')),

@@ -66,9 +66,9 @@ export function PopDismiss() {
   return null;
 }
 
-export function RubricaToolbar({ query, counts, views, founder, cities, types, owners }: {
+export function RubricaToolbar({ query, counts, views, founder, cities, regions, countries, types, owners }: {
   query: RubricaQuery; counts: Record<RubricaSegment, number>; views: SavedView[]; founder: boolean;
-  cities: string[]; types: string[]; owners: { id: string; name: string }[];
+  cities: string[]; regions: string[]; countries: string[]; types: string[]; owners: { id: string; name: string }[];
 }) {
   const seg = (s: RubricaSegment) => `${RUBRICA}${rubricaSearch(query, { seg: s, p: 1, resp: s === "liberi" ? "" : query.resp })}`;
   const listHref = `${RUBRICA}${rubricaSearch(query, { vista: "lista", p: 1 })}`;
@@ -94,13 +94,13 @@ export function RubricaToolbar({ query, counts, views, founder, cities, types, o
           </div>
         </div>
       </div>
-      <Filters key={formKey} query={query} cities={cities} types={types} owners={owners} />
+      <Filters key={formKey} query={query} cities={cities} regions={regions} countries={countries} types={types} owners={owners} />
       <Chips query={query} owners={owners} />
     </div>
   );
 }
 
-function Filters({ query, cities, types, owners }: { query: RubricaQuery; cities: string[]; types: string[]; owners: { id: string; name: string }[] }) {
+function Filters({ query, cities, regions, countries, types, owners }: { query: RubricaQuery; cities: string[]; regions: string[]; countries: string[]; types: string[]; owners: { id: string; name: string }[] }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const search = useRef<HTMLInputElement>(null);
@@ -131,7 +131,7 @@ function Filters({ query, cities, types, owners }: { query: RubricaQuery; cities
     if (queued.current) window.clearTimeout(queued.current);
     queued.current = window.setTimeout(() => go(), 200);
   };
-  const extra = [query.fase, query.citta, query.categoria, query.fonte, query.resp, query.archivio ? "1" : ""].filter(Boolean).length;
+  const extra = [query.fase, query.citta, query.regione, query.stato, query.categoria, query.fonte, query.resp, query.archivio ? "1" : ""].filter(Boolean).length;
   return (
     <form ref={form} className="rb-filters" role="search" aria-label="Cerca e filtra la rubrica" action={RUBRICA} onSubmit={go}>
       {query.seg !== "tutti" ? <input type="hidden" name="seg" value={query.seg} /> : null}
@@ -141,7 +141,7 @@ function Filters({ query, cities, types, owners }: { query: RubricaQuery; cities
       <label className="rb-search">
         <CrmIcon d={SEARCH} />
         <span className="adm-sr">Cerca</span>
-        <input ref={search} name="q" data-rubrica-search defaultValue={query.q} placeholder="Cerca nome, email, telefono, sito, città" aria-keyshortcuts="Meta+F Control+F" onInput={queueSearch} autoComplete="off" />
+        <input ref={search} name="q" data-rubrica-search defaultValue={query.q} placeholder="Cerca nome, email, telefono, sito, città, regione, paese" aria-keyshortcuts="Meta+F Control+F" onInput={queueSearch} autoComplete="off" />
         <kbd aria-hidden="true">⌘F</kbd>
         <button className="adm-sr" type="submit">Cerca</button>
       </label>
@@ -155,6 +155,12 @@ function Filters({ query, cities, types, owners }: { query: RubricaQuery; cities
             </label>
             <label className="rb-field"><span>Città</span>
               <select name="citta" defaultValue={query.citta} onChange={() => go()}><option value="">Tutte</option>{cities.map((c) => <option key={c}>{c}</option>)}</select>
+            </label>
+            <label className="rb-field"><span>Regione</span>
+              <select name="regione" defaultValue={query.regione} onChange={() => go()}><option value="">Tutte</option>{regions.map((r) => <option key={r}>{r}</option>)}</select>
+            </label>
+            <label className="rb-field"><span>Stato / Paese</span>
+              <select name="stato" defaultValue={query.stato} onChange={() => go()}><option value="">Tutti</option>{countries.map((c) => <option key={c}>{c}</option>)}</select>
             </label>
             <label className="rb-field"><span>Categoria</span>
               <select name="categoria" defaultValue={query.categoria} onChange={() => go()}><option value="">Tutte</option>{types.map((t) => <option key={t}>{t}</option>)}</select>
@@ -198,6 +204,8 @@ function Chips({ query, owners }: { query: RubricaQuery; owners: { id: string; n
     ...(query.q ? [{ key: "q", label: "Cerca", value: `“${query.q}”`, href: drop({ q: "" }) }] : []),
     ...(query.fase && (STAGES as readonly string[]).includes(query.fase) ? [{ key: "fase", label: "Fase", value: STAGE_LABEL[query.fase as Stage], href: drop({ fase: "" }), stage: query.fase }] : []),
     ...(query.citta ? [{ key: "citta", label: "Città", value: query.citta, href: drop({ citta: "" }) }] : []),
+    ...(query.regione ? [{ key: "regione", label: "Regione", value: query.regione, href: drop({ regione: "" }) }] : []),
+    ...(query.stato ? [{ key: "stato", label: "Stato / Paese", value: query.stato, href: drop({ stato: "" }) }] : []),
     ...(query.categoria ? [{ key: "categoria", label: "Categoria", value: query.categoria, href: drop({ categoria: "" }) }] : []),
     ...(query.fonte ? [{ key: "fonte", label: "Fonte", value: SOURCE_LABEL[query.fonte as keyof typeof SOURCE_LABEL] ?? query.fonte, href: drop({ fonte: "" }) }] : []),
     ...(query.resp ? [{ key: "resp", label: "Responsabile", value: resp, href: drop({ resp: "" }) }] : []),

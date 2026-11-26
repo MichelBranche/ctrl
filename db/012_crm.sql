@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS crm_contacts (
   address TEXT,
   city TEXT,
   region TEXT,
+  country TEXT,
   source TEXT NOT NULL DEFAULT 'manuale' CHECK (source IN ('sito','manuale','radar')),
   score INTEGER,
   score_reasons TEXT,

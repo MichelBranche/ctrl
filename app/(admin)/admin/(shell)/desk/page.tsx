@@ -3,6 +3,7 @@ import "@/components/ds/status.css";
 import "@/components/ds/rubrica.css";
 import "@/components/ds/desk.css";
 import { Suspense } from "react";
+import Link from "next/link";
 import { requireSection } from "@/lib/admin";
 import { canAccess, isFounder } from "@/lib/team-types";
 import { dueActions, type DueAction } from "@/lib/crm";
@@ -82,7 +83,10 @@ async function Body({ searchParams }: { searchParams: Search }) {
               <h1>{t.desk.title} <span className="rb-count">{interpolate(t.desk.countLabel, { n: open })}</span></h1>
               <p className="dk-lead">{interpolate(t.desk.lead, { name: me.name })}</p>
             </div>
-            <DeskNew />
+            <div className="rb-head-actions">
+              {emailAccess ? <Link className="rb-btn" href="/admin/desk/inviate">{t.desk.sentHistory}</Link> : null}
+              <DeskNew />
+            </div>
           </div>
         </header>
         <DeskBoard rows={rows} today={today} emailAccess={emailAccess} crmAccess={crmAccess} initial={deskQuery(params)} />

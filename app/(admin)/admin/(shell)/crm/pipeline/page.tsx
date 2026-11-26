@@ -9,7 +9,7 @@ import { OpportunityBoard, type DealCard } from "@/components/admin/crm/opportun
 import { OpportunityDialog } from "@/components/admin/crm/opportunity-dialog";
 import { SavedDealViews } from "@/components/admin/crm/saved-deal-views";
 import { requireSection } from "@/lib/admin";
-import { contactTouches, countContacts, crmOwners, getContact, listContacts, type Contact } from "@/lib/crm";
+import { contactTouches, countContacts, crmOwners, facets, getContact, listContacts, type Contact } from "@/lib/crm";
 import { conversionRate, isDealPriority, isSource, isStage, SOURCE_LABEL, STAGES } from "@/lib/crm-core";
 import { kpiWeekChange, recordOggiKpis } from "@/lib/crm-kpi";
 import {
@@ -59,17 +59,21 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   };
   const contactFilter = {
     q: query.q || undefined,
+    city: contactsMode ? query.citta || undefined : undefined,
     owner: query.resp === "me" ? me.id : query.resp || undefined,
     source: isSource(query.fonte) ? query.fonte : undefined,
+    region: contactsMode ? query.regione || undefined : undefined,
+    country: contactsMode ? query.stato || undefined : undefined,
     limit: BOARD_LIMIT,
   };
-  const [deals, totals, contacts, contactCount, snap, book] = await Promise.all([
+  const [deals, totals, contacts, contactCount, snap, book, locations] = await Promise.all([
     contactsMode ? Promise.resolve([]) : listOpportunities(filter),
     contactsMode ? Promise.resolve(null) : opportunityTotals(filter),
     contactsMode ? listContacts(contactFilter) : Promise.resolve([]),
     contactsMode ? countContacts(contactFilter) : Promise.resolve(0),
     recordOggiKpis(),
     countContacts(),
+    contactsMode ? facets() : Promise.resolve({ regions: [], countries: [], cities: [], types: [] }),
   ]);
   const potentialPct = await kpiWeekChange("potential_value_cents");
   const touches = contactsMode ? await contactTouches(contacts.map((c) => c.id)) : new Map();
@@ -162,6 +166,9 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           </label>
           {query.resp ? <input type="hidden" name="resp" value={query.resp} /> : null}
           {query.fonte ? <input type="hidden" name="fonte" value={query.fonte} /> : null}
+          {contactsMode && query.citta ? <input type="hidden" name="citta" value={query.citta} /> : null}
+          {contactsMode && query.regione ? <input type="hidden" name="regione" value={query.regione} /> : null}
+          {contactsMode && query.stato ? <input type="hidden" name="stato" value={query.stato} /> : null}
           {!contactsMode && query.prio ? <input type="hidden" name="prio" value={query.prio} /> : null}
           {!contactsMode && query.periodo !== "mese" ? <input type="hidden" name="periodo" value={query.periodo} /> : null}
           {query.vista === "lista" ? <input type="hidden" name="vista" value="lista" /> : null}
@@ -174,6 +181,9 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <Filter label="Fonte" current={isSource(query.fonte) ? SOURCE_LABEL[query.fonte] : "Tutte"} options={[
             ["", "Tutte le fonti"], ["radar", "Radar"], ["sito", "Sito"], ["manuale", "Manuale"],
           ]} href={(fonte) => href({ fonte })} />
+          {contactsMode ? <Filter label="Città" current={query.citta || "Tutte"} options={[["", "Tutte le città"], ...locations.cities.map((c) => [c, c] as [string, string])]} href={(citta) => href({ citta })} /> : null}
+          {contactsMode ? <Filter label="Regione" current={query.regione || "Tutte"} options={[["", "Tutte le regioni"], ...locations.regions.map((r) => [r, r] as [string, string])]} href={(regione) => href({ regione })} /> : null}
+          {contactsMode ? <Filter label="Stato / Paese" current={query.stato || "Tutti"} options={[["", "Tutti i paesi"], ...locations.countries.map((c) => [c, c] as [string, string])]} href={(stato) => href({ stato })} /> : null}
           {!contactsMode ? (
             <Filter label="Priorità" current={query.prio === "nessuna" ? "Senza" : isDealPriority(query.prio) ? query.prio : "Tutte"} options={[
               ["", "Tutte"], ["alta", "Alta"], ["media", "Media"], ["bassa", "Bassa"], ["nessuna", "Senza priorità"],
@@ -185,7 +195,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
         {contactsMode ? (
           <>
             {!people.length ? <p className="crm-notice" role="note">Nessun contatto con questi filtri. Un arrivo di Iris o un contatto già in rubrica compare qui nella sua fase, senza essere ricreato.</p> : null}
-            <div key={`${query.q}|${query.resp}|${query.fonte}|${view.vista}`} className="crm-pipe-results">
+            <div key={`${query.q}|${query.resp}|${query.fonte}|${query.citta}|${query.regione}|${query.stato}|${view.vista}`} className="crm-pipe-results">
               <ContactBoard cards={people} vista={view.vista} />
             </div>
             <footer className="crm-pipe-foot">

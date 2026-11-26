@@ -6,11 +6,11 @@
  * A later row in the same file that matches an earlier importable row is skipped the same way.
  */
 
-export const IMPORT_FIELDS = ["businessName", "contactName", "email", "phone", "website", "city", "region", "address", "type", "notes"] as const;
+export const IMPORT_FIELDS = ["businessName", "contactName", "email", "phone", "website", "city", "region", "country", "address", "type", "notes"] as const;
 export type ImportField = (typeof IMPORT_FIELDS)[number];
 export const IMPORT_FIELD_LABEL: Record<ImportField, string> = {
   businessName: "Azienda", contactName: "Referente", email: "Email", phone: "Telefono", website: "Sito",
-  city: "Città", region: "Provincia / regione", address: "Indirizzo", type: "Categoria", notes: "Note",
+  city: "Città", region: "Provincia / regione", country: "Stato / Paese", address: "Indirizzo", type: "Categoria", notes: "Note",
 };
 
 /** One confirm, small enough to check by hand and to stay inside the app (nothing is uploaded elsewhere). */
@@ -18,7 +18,7 @@ export const IMPORT_MAX_ROWS = 200;
 export const IMPORT_MAX_BYTES = 700_000;
 const MAX_COLUMNS = 40;
 const FIELD_MAX: Record<ImportField, number> = {
-  businessName: 200, contactName: 120, email: 200, phone: 40, website: 300, city: 100, region: 100, address: 300, type: 80, notes: 5000,
+  businessName: 200, contactName: 120, email: 200, phone: 40, website: 300, city: 100, region: 100, country: 100, address: 300, type: 80, notes: 5000,
 };
 
 /** Same shape as the contact form. */
@@ -106,6 +106,7 @@ const SYNONYMS: Record<string, ImportField> = {
   sito: "website", website: "website", web: "website", url: "website",
   citta: "city", comune: "city", city: "city", localita: "city",
   provincia: "region", regione: "region", region: "region",
+  stato: "country", paese: "country", country: "country", nation: "country",
   indirizzo: "address", via: "address", address: "address",
   categoria: "type", tipo: "type", settore: "type", type: "type",
   note: "notes", notes: "notes", annotazioni: "notes",

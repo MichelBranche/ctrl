@@ -62,10 +62,10 @@ export function ScoreBadge({ score }: { score: number | null }) {
   return <span className="adm-badge crm-score" data-level={level} title={`Punteggio ${score} su 100`}>{score}</span>;
 }
 
-type Place = { businessName: string; address: string | null; city: string | null; region: string | null };
+type Place = { businessName: string; address: string | null; city: string | null; region: string | null; country?: string | null };
 /** Free Google Maps search URL (no API key): business name + address, or city + region. */
 export const mapsUrl = (c: Place) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([c.businessName, ...(c.address ? [c.address, c.city] : [c.city, c.region])].filter(Boolean).join(", "))}`;
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([c.businessName, ...(c.address ? [c.address, c.city, c.region, c.country] : [c.city, c.region, c.country])].filter(Boolean).join(", "))}`;
 
 export function MapPin() {
   return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>;
