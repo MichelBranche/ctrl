@@ -1,9 +1,14 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/crm.css";
+import "@/components/ds/status.css";
+import "@/components/ds/rubrica.css";
+import "@/components/ds/pipeline.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ContactBoard, PipelineSearch, type ContactCard } from "@/components/admin/crm/contact-board";
 import { ContactPanel } from "@/components/admin/crm/contact-panel";
-import { CrmHeader, CrmIcon, CrmTabs, eur } from "@/components/admin/crm/crm-ui";
+import { CrmIcon, CrmTabs, eur } from "@/components/admin/crm/crm-ui";
 import { KeyShortcut } from "@/components/admin/crm/follow-up-client";
 import { OpportunityBoard, type DealCard } from "@/components/admin/crm/opportunity-board";
 import { OpportunityDialog } from "@/components/admin/crm/opportunity-dialog";
@@ -23,8 +28,8 @@ const BOARD_LIMIT = 500;
 
 export default function PipelinePage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
-    <main className="adm-main crm-main crm-main-rubrica crm-pipeline-page">
-      <Suspense fallback={<p className="adm-muted" aria-busy="true">Caricamento della pipeline…</p>}><Body searchParams={searchParams} /></Suspense>
+    <main className="ds-page cr rb pl crm-pipeline-page">
+      <Suspense fallback={<div className="pl-skel" aria-busy="true" aria-label="Caricamento della pipeline"><span /><span /><span /></div>}><Body searchParams={searchParams} /></Suspense>
     </main>
   );
 }
@@ -126,27 +131,37 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
   } : null;
 
   return (
-    <div className="crm-rubrica" data-panel={panelContact ? "open" : undefined}>
-      <div className="crm-rubrica-main">
+    <div className="crm-rubrica crm-rubrica-page" data-panel={panelContact ? "open" : undefined}>
+      <div className="crm-rubrica-main pl-main">
         <KeyShortcut href={href({ nuova: true, apri: "", tipo: "opportunita" })} keyName="o" />
-        <CrmHeader className="crm-pipeline-glow" title="Pipeline" intro={contactsMode
+        <header className="rb-head pl-head">
+          <div className="rb-head-row">
+            <div className="rb-head-title">
+              <p className="rb-kicker">CRM</p>
+              <h1>Pipeline <span className="rb-count">{contactsMode ? `${contactCount.toLocaleString("it-IT")} contatti` : `${snap.opportunitiesActive} attive`}</span></h1>
+              <p className="pl-lead">{contactsMode
           ? "I contatti, nella fase in cui sono oggi. Iris li aggiunge da solo. Un'opportunità è una trattativa a parte."
-          : "Trattative aperte a mano. I contatti restano nella vista Contatti e non diventano opportunità da soli."}>
-          <div className="crm-pipe-kpis">
-            <p>
-              <CrmIcon d="M4 16l5-5 3 3 7-8" />
-              <strong>{snap.opportunitiesActive}</strong>
-              <span>Opportunità attive</span>
-            </p>
-            <p>
-              <CrmIcon d="M12 3v18M16 7.5c0-1.5-1.8-2.5-4-2.5S8 6 8 7.5 9.8 10 12 10s4 1 4 2.5-1.8 2.5-4 2.5-4-1-4-2.5" />
-              <strong>{eur(snap.potentialValueCents / 100) || "0 €"}</strong>
-              <span>Valore pipeline</span>
-              {potentialPct !== null ? <em>{potentialPct > 0 ? `+${potentialPct}%` : `${potentialPct}%`}</em> : null}
-            </p>
+          : "Trattative aperte a mano. I contatti restano nella vista Contatti e non diventano opportunità da soli."}</p>
+            </div>
+            <div className="rb-head-actions pl-head-actions">
+              <div className="pl-kpis">
+                <p data-kpi="active">
+                  <CrmIcon d="M4 16l5-5 3 3 7-8" />
+                  <strong>{snap.opportunitiesActive}</strong>
+                  <span>Opportunità attive</span>
+                </p>
+                <p data-kpi="value">
+                  <CrmIcon d="M12 3v18M16 7.5c0-1.5-1.8-2.5-4-2.5S8 6 8 7.5 9.8 10 12 10s4 1 4 2.5-1.8 2.5-4 2.5-4-1-4-2.5" />
+                  <strong>{eur(snap.potentialValueCents / 100) || "0 €"}</strong>
+                  <span>Valore pipeline</span>
+                  {potentialPct !== null ? <em>{potentialPct > 0 ? `+${potentialPct}%` : `${potentialPct}%`}</em> : null}
+                </p>
+              </div>
+              <OpportunityDialog query={view} stage={stage} owners={owners} me={me.id} preset={presetContact && !presetContact.archived ? { id: presetContact.id, name: presetContact.businessName, city: presetContact.city } : null} />
+            </div>
           </div>
-          <OpportunityDialog query={view} stage={stage} owners={owners} me={me.id} preset={presetContact && !presetContact.archived ? { id: presetContact.id, name: presetContact.businessName, city: presetContact.city } : null} />
-        </CrmHeader>
+          <CrmTabs current={PIPELINE} />
+        </header>
         <div className="crm-pipe-bar">
           <div className="crm-switch" role="group" aria-label="Cosa mostra la pipeline">
             <Link href={href({ tipo: "contatti", o: "", nuova: false }) as Route} aria-current={contactsMode ? "page" : undefined}>Contatti <span>{book}</span></Link>
@@ -157,7 +172,6 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
             <Link href={href({ vista: "lista" }) as Route} aria-current={view.vista === "lista" ? "page" : undefined}>Lista</Link>
           </div>
         </div>
-        <CrmTabs current={PIPELINE} />
 
         <PipelineSearch action={PIPELINE}>
           <label className="crm-search">

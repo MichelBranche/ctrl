@@ -1,0 +1,447 @@
+/* Pipeline /admin/crm/pipeline (.pl). Sits on top of the Rubrica layer (.rb) and the CRM shell (.cr):
+   header, switches, toolbar, kanban columns tinted by stage, cards, list view, footer, toasts.
+   Markup and behaviour stay in components/admin/crm/*; this file only restyles. Tokens only. */
+
+/* ---------- Entrance ---------- */
+.ds-page.pl .crm-pipe-bar,
+.ds-page.pl .crm-toolbar,
+.ds-page.pl .crm-pipe-results,
+.ds-page.pl .crm-board,
+.ds-page.pl .crm-import-scroll { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) backwards; }
+.ds-page.pl .crm-pipe-bar { animation-delay: 0.04s; }
+.ds-page.pl .crm-toolbar { animation-delay: 0.07s; }
+.ds-page.pl .crm-board, .ds-page.pl .crm-pipe-results, .ds-page.pl .crm-import-scroll { animation-delay: 0.1s; }
+
+/* ---------- Header ---------- */
+.pl-head .rb-head-row { align-items: flex-end; }
+.pl-head .rb-head-title { flex: 1 1 22rem; min-width: 0; }
+.pl-lead {
+  max-width: 56ch;
+  margin: 0.55rem 0 0;
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  line-height: 1.5;
+}
+.pl-head-actions { flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; }
+.pl-kpis { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pl-kpis p {
+  --c: var(--ds-info);
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: "icon num" "icon label";
+  align-items: center;
+  gap: 0.05rem 0.6rem;
+  min-width: 9.5rem;
+  margin: 0;
+  padding: 0.5rem 0.85rem 0.5rem 0.6rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card-2);
+}
+.pl-kpis p[data-kpi="value"] { --c: var(--ds-ok); }
+.pl-kpis svg {
+  grid-area: icon;
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 0.45rem;
+  border-radius: var(--ds-r-sm);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+}
+.pl-kpis strong {
+  grid-area: num;
+  font-family: var(--ds-font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.pl-kpis span { grid-area: label; color: var(--ds-dim); font-size: 0.72rem; }
+.pl-kpis em { grid-area: num; justify-self: end; align-self: start; color: var(--ds-ok); font-size: 0.7rem; font-style: normal; font-weight: 600; }
+
+/* CTA "Nuova opportunità" and the dialog's primary action */
+.ds-page.pl .pl-main .adm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: var(--ds-control);
+  padding: 0 1rem;
+  border: 0;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.pl .pl-main .adm-btn-primary:hover { background: var(--ds-accent-hover); }
+.ds-page.pl .pl-main .adm-btn-primary:active { transform: scale(0.97); }
+.ds-page.pl .pl-main .adm-btn-primary:disabled { opacity: 0.5; transform: none; }
+.ds-page.pl .pl-main .adm-btn-primary svg { width: 15px; height: 15px; }
+
+/* ---------- Secondary buttons, inputs, menus (main column only, the contact panel keeps the Rubrica look) ---------- */
+.ds-page.pl .pl-main .adm-btn:not(.adm-btn-primary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: var(--ds-control);
+  padding: 0 0.95rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), border-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.pl .pl-main .adm-btn-sm:not(.adm-btn-primary) { height: 36px; padding: 0 0.85rem; }
+.ds-page.pl .pl-main .adm-btn:not(.adm-btn-primary):hover { border-color: color-mix(in srgb, var(--ds-fg) 26%, transparent); background: color-mix(in srgb, var(--ds-fg) 7%, var(--ds-card-2)); }
+.ds-page.pl .pl-main .adm-btn:not(.adm-btn-primary):active { transform: scale(0.97); }
+.ds-page.pl .pl-main :is(.adm-btn, .crm-col-add, .crm-pipe-more, .crm-switch a, .crm-chip):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+.ds-page.pl .pl-main .adm-input {
+  height: 36px;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-sm);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font-size: var(--ds-text-small);
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.ds-page.pl .pl-main .adm-input:focus-visible { border-color: var(--ds-accent); outline: none; }
+
+/* ---------- Switches: Contatti / Opportunità, Kanban / Lista, periodo ---------- */
+.ds-page.pl .crm-pipe-bar { gap: 0.5rem; margin: 0; padding: 0 0.15rem; }
+.ds-page.pl .crm-switch {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card);
+}
+.ds-page.pl .crm-switch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 32px;
+  padding: 0 0.8rem;
+  border-radius: var(--ds-r-pill);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.ds-page.pl .crm-switch a:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
+.ds-page.pl .crm-switch a[aria-current="page"] { background: var(--ds-fg); color: var(--ds-ink); }
+.ds-page.pl .crm-switch a span {
+  margin: 0;
+  min-width: 1.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-faint);
+  color: var(--ds-dim);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.ds-page.pl .crm-switch a[aria-current="page"] span { background: var(--ds-accent); color: var(--ds-accent-ink); }
+
+/* ---------- Toolbar: search + filters ---------- */
+.ds-page.pl .crm-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.ds-page.pl .crm-search { flex: 1 1 16rem; }
+.ds-page.pl .crm-search > svg { left: 0.85rem; width: 15px; height: 15px; color: var(--ds-dim); }
+.ds-page.pl .crm-search .adm-input {
+  width: 100%;
+  height: var(--ds-control);
+  padding-left: 2.3rem;
+  border-radius: var(--ds-r-pill);
+}
+.ds-page.pl .crm-menu > summary.adm-btn { cursor: pointer; }
+.ds-page.pl .crm-menu[open] > summary.adm-btn { border-color: color-mix(in srgb, var(--ds-accent) 55%, transparent); }
+.ds-page.pl .crm-menu-list { animation: rb-pop-in var(--ds-dur-fast) var(--ds-ease) backwards; }
+.ds-page.pl .crm-menu-list > a[aria-current] { color: var(--ds-accent); }
+
+/* ---------- Notices ---------- */
+.ds-page.pl .crm-notice {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ds-faint);
+  border-left: 3px solid var(--ds-info);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+}
+
+/* ---------- Board ---------- */
+.pl-main { display: flex; flex-direction: column; gap: var(--ds-gap); min-width: 0; }
+.ds-page.pl .crm-board {
+  grid-auto-columns: minmax(15.5rem, 1fr);
+  gap: var(--ds-gap);
+  padding: 0 0 0.6rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-faint) transparent;
+}
+.ds-page.pl .crm-col {
+  position: relative;
+  min-height: 14rem;
+  padding: 0.85rem 0.7rem 0.7rem;
+  border: 1px solid var(--ds-faint);
+  border-top: 3px solid var(--c);
+  border-radius: var(--ds-r-tile);
+  background: color-mix(in srgb, var(--c) 4%, var(--ds-card));
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std), background-color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.ds-page.pl .crm-col[data-over] {
+  outline: 0;
+  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  border-top-color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, var(--ds-card));
+}
+.ds-page.pl .crm-col-head { margin-bottom: 0.45rem; padding: 0 0.15rem; }
+.ds-page.pl .crm-col-head h2 {
+  gap: 0.5rem;
+  font-family: var(--ds-font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.ds-page.pl .crm-stage-dot { flex: none; width: 8px; height: 8px; border-radius: var(--ds-r-pill); background: var(--c); }
+.ds-page.pl .crm-pipe-count {
+  min-width: 1.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ds-page.pl .crm-col-sum { margin-top: 0.25rem; color: var(--ds-fg); font-size: var(--ds-text-small); font-weight: 500; }
+.ds-page.pl .crm-col-sub { margin: 0 0 0.6rem; padding: 0 0.15rem; color: var(--ds-dim); font-size: 0.72rem; }
+.ds-page.pl .crm-cards { gap: 0.45rem; }
+.ds-page.pl .crm-col-empty {
+  border: 1px dashed color-mix(in srgb, var(--c) 35%, var(--ds-faint));
+  border-radius: var(--ds-r-tile);
+  color: var(--ds-dim);
+  font-size: 0.75rem;
+}
+.ds-page.pl .crm-col-empty svg { color: var(--c); }
+.ds-page.pl .crm-col.is-collapsed { min-height: 0; background: var(--ds-card); }
+.ds-page.pl .crm-col.is-collapsed .adm-btn { margin-top: auto; }
+
+.ds-page.pl .crm-col-add {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--ds-r-pill);
+  color: var(--ds-dim);
+  font-size: 0.75rem;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.ds-page.pl .crm-col-add:hover { background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card)); color: var(--c); }
+.ds-page.pl .crm-pipe-more { margin-top: 0.5rem; color: var(--ds-dim); font-size: 0.75rem; }
+.ds-page.pl .crm-pipe-more:hover { color: var(--ds-fg); }
+
+/* ---------- Cards ---------- */
+.ds-page.pl .crm-card {
+  padding: 0.75rem 0.8rem 0.7rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card-2);
+  box-shadow: none;
+  animation: rb-row-in var(--ds-dur) var(--ds-ease) backwards;
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std), background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.pl .crm-card::after { display: none; }
+.ds-page.pl .crm-card:hover {
+  border-color: color-mix(in srgb, var(--c) 45%, var(--ds-faint));
+  background: color-mix(in srgb, var(--ds-fg) 4%, var(--ds-card-2));
+  transform: translateY(-1px);
+}
+.ds-page.pl .crm-card:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.ds-page.pl .crm-card[data-active] {
+  border-color: var(--ds-accent);
+  box-shadow: inset 0 0 0 1px var(--ds-accent);
+}
+.ds-page.pl .crm-card[data-dragging] { opacity: 0.4; transform: none; }
+.ds-page.pl .crm-card p { font-size: var(--ds-text-small); }
+.ds-page.pl .crm-card-head a,
+.ds-page.pl .crm-card-top a { color: var(--ds-fg); font-weight: 600; text-decoration: none; }
+.ds-page.pl .crm-card-head a:hover,
+.ds-page.pl .crm-card-top a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ds-faint); }
+.ds-page.pl .crm-card-sub,
+.ds-page.pl .crm-card-meta .adm-muted { color: var(--ds-dim); font-size: 0.72rem; }
+.ds-page.pl .crm-card-meta { margin-top: 0.45rem; align-items: center; }
+.ds-page.pl .crm-pipe-money strong { font-family: var(--ds-font-display); font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ds-page.pl .crm-pipe-est { padding: 0.05rem 0.4rem; border-radius: var(--ds-r-pill); background: var(--ds-faint); color: var(--ds-dim); font-size: 0.66rem; }
+.ds-page.pl .crm-card-who span { color: var(--ds-dim); }
+
+/* Stage badge on opportunity cards */
+.ds-page.pl .pl-main .crm-stage {
+  margin: 0;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Score chip */
+.ds-page.pl .pl-main .crm-score {
+  --c: var(--ds-stage-nuovo);
+  padding: 0.1rem 0.45rem;
+  border: 0;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ds-page.pl .pl-main .crm-score[data-level="alto"] { --c: var(--ds-ok); }
+.ds-page.pl .pl-main .crm-score[data-level="medio"] { --c: var(--ds-warn); }
+
+/* Avatars: stable hue from the DS tones */
+.ds-page.pl .pl-main .crm-card .crm-avatar { border: 0; border-radius: var(--ds-r-sm); font-weight: 600; }
+.ds-page.pl .pl-main .crm-avatar { --t: var(--ds-tone-1); background: color-mix(in srgb, var(--t) 22%, var(--ds-card)); color: var(--t); }
+.ds-page.pl .pl-main .crm-avatar[data-hue="1"] { --t: var(--ds-tone-2); }
+.ds-page.pl .pl-main .crm-avatar[data-hue="2"] { --t: var(--ds-tone-3); }
+.ds-page.pl .pl-main .crm-avatar[data-hue="3"] { --t: var(--ds-tone-4); }
+.ds-page.pl .pl-main .crm-avatar[data-hue="4"] { --t: var(--ds-tone-5); }
+.ds-page.pl .pl-main .crm-avatar[data-hue="5"] { --t: var(--ds-tone-6); }
+.ds-page.pl .pl-main .crm-avatar-mini { --t: var(--ds-dim); border-radius: var(--ds-r-pill); }
+
+.ds-page.pl .pl-main .crm-chip {
+  border-color: var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: transparent;
+  color: var(--ds-dim);
+  font-size: 0.7rem;
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.ds-page.pl .pl-main .crm-chip:hover { border-color: color-mix(in srgb, var(--ds-fg) 26%, transparent); color: var(--ds-fg); }
+.ds-page.pl .crm-grip:focus-visible { color: var(--ds-fg); outline: 2px solid var(--ds-accent); }
+.ds-page.pl .crm-card-face.is-lifted {
+  border-color: var(--ds-accent);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card-2);
+}
+
+/* ---------- List view ---------- */
+.ds-page.pl .crm-import-scroll {
+  overflow-x: auto;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.ds-page.pl .crm-deal-table { width: 100%; border-collapse: collapse; font-size: var(--ds-text-small); }
+.ds-page.pl .crm-deal-table th {
+  padding: 0.85rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--ds-faint);
+  color: var(--ds-dim);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.ds-page.pl .crm-deal-table td { padding: 0.55rem 1rem; border-bottom: 1px solid var(--ds-faint); vertical-align: middle; }
+.ds-page.pl .crm-deal-table tbody tr { animation: rb-row-in var(--ds-dur) var(--ds-ease) backwards; transition: background-color var(--ds-dur-fast) var(--ds-ease-std); }
+.ds-page.pl .crm-deal-table tbody tr:hover { background: color-mix(in srgb, var(--ds-fg) 4%, transparent); }
+.ds-page.pl .crm-deal-table tbody tr[data-active] { box-shadow: inset 3px 0 0 var(--ds-accent); }
+.ds-page.pl .crm-deal-table tbody tr:last-child td { border-bottom: 0; }
+.ds-page.pl .crm-deal-table a { color: var(--ds-fg); font-weight: 600; text-decoration: none; }
+.ds-page.pl .crm-deal-table select.adm-input { min-width: 9rem; }
+
+/* ---------- Footer ---------- */
+.ds-page.pl .crm-pipe-foot {
+  gap: 0.5rem 1.2rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  font-variant-numeric: tabular-nums;
+}
+.ds-page.pl .crm-pipe-foot .crm-switch { margin-left: auto; }
+
+/* ---------- Move confirm + toast ---------- */
+.ds-page.pl .crm-pipe-confirm {
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card-2);
+  font-size: var(--ds-text-small);
+  animation: rb-pop-in var(--ds-dur) var(--ds-ease) backwards;
+}
+.ds-page.pl .crm-pipe-toast {
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font-size: var(--ds-text-small);
+  animation: rb-pop-up var(--ds-dur) var(--ds-ease) backwards;
+}
+.ds-page.pl .crm-pipe-toast[data-ok] { border-color: color-mix(in srgb, var(--ds-ok) 50%, transparent); }
+.ds-page.pl .crm-pipe-toast:not([data-ok]) { border-color: color-mix(in srgb, var(--ds-danger) 50%, transparent); }
+
+/* ---------- New-opportunity dialog ---------- */
+.ds-page.pl .crm-deal-dialog {
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-card);
+  padding: 1.25rem 1.35rem 1.1rem;
+  background: var(--ds-card);
+  color: var(--ds-fg);
+  box-shadow: none;
+}
+.ds-page.pl .crm-deal-dialog[open] { animation: rb-pop-in var(--ds-dur) var(--ds-ease) backwards; }
+.ds-page.pl .crm-deal-dialog::backdrop { background: var(--ds-scrim); }
+.ds-page.pl .crm-deal-dialog .adm-h2 { font-family: var(--ds-font-display); font-weight: 600; }
+.ds-page.pl .crm-deal-dialog .adm-field > span,
+.ds-page.pl .crm-deal-dialog label > span { color: var(--ds-dim); font-size: 0.72rem; }
+
+/* ---------- Loading skeleton ---------- */
+.pl-skel { display: grid; gap: var(--ds-gap); }
+.pl-skel span { display: block; height: 7rem; border-radius: var(--ds-r-card); background: var(--ds-card); animation: rb-skel 1.4s var(--ds-ease-inout) infinite alternate; }
+.pl-skel span:last-child { height: 22rem; }
+
+/* ---------- Wide screens: keep columns readable instead of stretching cards ---------- */
+@media (min-width: 1900px) {
+  .ds-page.pl .crm-board { grid-auto-columns: minmax(16rem, 24rem); justify-content: start; }
+}
+@media (max-width: 40rem) {
+  .ds-page.pl .crm-board { grid-auto-columns: minmax(14rem, 82vw); }
+  .ds-page.pl .crm-pipe-foot .crm-switch { margin-left: 0; }
+  .pl-kpis p { min-width: 0; flex: 1 1 9rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-page.pl *, .ds-page.pl *::before, .ds-page.pl *::after, .pl-skel span {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ds-page.pl .crm-card:hover { transform: none; }
+}
