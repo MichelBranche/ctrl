@@ -119,7 +119,8 @@ export function TeamBadge({ member, lang, priority = false }: { member: TeamMemb
       sizes="240px"
       quality={90}
       priority={priority}
-      style={{ objectPosition: FACE[member.slug] ?? "50% 30%" } as CSSProperties}
+      style={{ objectPosition: member.photoFocus ?? FACE[member.slug] ?? "50% 30%" } as CSSProperties}
+      unoptimized={member.photo.startsWith("http") || member.photo.startsWith("/api/")}
     />
   ) : null;
 

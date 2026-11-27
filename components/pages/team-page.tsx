@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { team } from "@/lib/content";
+import { getPublicTeam } from "@/lib/site-team";
 import { TeamBadge } from "@/components/team-badge";
 import { dict, type Locale } from "@/lib/i18n";
 import { publicMeta } from "@/lib/seo";
@@ -14,8 +14,9 @@ export function teamMetadata(lang: Locale): Metadata {
   return publicMeta(lang, { title: dict[lang].team.metaTitle, description: dict[lang].team.description, itPath: "/team" });
 }
 
-export function TeamView({ lang }: { lang: Locale }) {
+export async function TeamView({ lang }: { lang: Locale }) {
   const t = dict[lang].team;
+  const team = await getPublicTeam();
   return (
     <>
       <SiteHeader />

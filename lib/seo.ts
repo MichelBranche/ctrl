@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ADMIN_EMAIL, CONTACT_PHONE, SALES_EMAIL, STUDIO_PLACE, services, team } from "@/lib/content";
+import { ADMIN_EMAIL, CONTACT_PHONE, SALES_EMAIL, STUDIO_PLACE, services, team as staticTeam, type TeamMember } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export const SITE_URL = "https://www.ctrlagency.dev";
@@ -217,7 +217,7 @@ export function schemaName(title: string): string {
   return title.replace(/\s*\|\s*CTRL®$/, "");
 }
 
-function personNode(member: (typeof team)[number]): Record<string, unknown> {
+function personNode(member: TeamMember): Record<string, unknown> {
   return {
     "@type": "Person",
     name: member.name,
@@ -226,7 +226,7 @@ function personNode(member: (typeof team)[number]): Record<string, unknown> {
   };
 }
 
-export function organizationNode(): Record<string, unknown> {
+export function organizationNode(members: readonly TeamMember[] = staticTeam): Record<string, unknown> {
   const address: Record<string, unknown> = {
     "@type": "PostalAddress",
     addressLocality: "Aosta",
@@ -236,7 +236,7 @@ export function organizationNode(): Record<string, unknown> {
   if (businessProfile.streetAddress) address.streetAddress = businessProfile.streetAddress;
   if (businessProfile.postalCode) address.postalCode = businessProfile.postalCode;
 
-  const founders = team.filter((member) => member.slug === "michel-branche" || member.slug === "kallebe-gallo").map(personNode);
+  const founders = members.filter((member) => member.group === "founder" || member.slug === "michel-branche" || member.slug === "kallebe-gallo").map(personNode);
 
   const node: Record<string, unknown> = {
     "@type": ["ProfessionalService", "LocalBusiness", "Organization"],
@@ -251,7 +251,7 @@ export function organizationNode(): Record<string, unknown> {
     hasMap: MAPS_URL,
     areaServed: AREAS,
     founder: founders,
-    employee: team.map(personNode),
+    employee: members.map(personNode),
     sameAs: SAME_AS,
   };
   if (businessProfile.legalName) node.legalName = businessProfile.legalName;
@@ -324,9 +324,9 @@ export function websiteNode(): Record<string, unknown> {
   };
 }
 
-export function organizationGraph(): Record<string, unknown> {
+export function organizationGraph(members: readonly TeamMember[] = staticTeam): Record<string, unknown> {
   const offered = offeredServices();
-  const organization = organizationNode();
+  const organization = organizationNode(members);
   organization.hasOfferCatalog = {
     "@type": "OfferCatalog",
     name: "Servizi digitali CTRL®",

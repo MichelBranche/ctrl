@@ -751,6 +751,8 @@ export const services: Service[] = withGermanContentFallback([
 /** Optional contact links for a team card; only the ones present are rendered. */
 export type TeamSocials = { linkedin?: string; email?: string; website?: string; github?: string };
 
+export type TeamGroup = "founder" | "team";
+
 export type TeamMember = {
   slug: string;
   name: string;
@@ -760,8 +762,13 @@ export type TeamMember = {
   /**
    * Optional portrait. Put the file at /public/images/team/<slug>.jpg and set
    * photo: "/images/team/<slug>.jpg". When null, an initials block is shown.
+   * Uploaded photos are served from /api/public/team-photo/<id>.
    */
   photo?: string | null;
+  /** CSS object-position, e.g. "50% 30%". */
+  photoFocus?: string;
+  /** Used in structured data to mark the studio founders. */
+  group?: TeamGroup;
   socials: TeamSocials;
 };
 
@@ -791,6 +798,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     },
     skills: ["React", "Next.js", "TypeScript", "Tailwind", "GSAP", "UI/UX"],
     photo: TEAM_PHOTOS["michel-branche"],
+    photoFocus: "50% 30%",
+    group: "founder",
     socials: {
       linkedin: "https://www.linkedin.com/in/michelbranche",
       email: "michel.lavoro@gmail.com",
@@ -808,6 +817,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     },
     skills: ["LLM", "RAG", "Node.js", "PostgreSQL", "MongoDB", "Docker"],
     photo: TEAM_PHOTOS["kallebe-gallo"],
+    photoFocus: "50% 28%",
+    group: "founder",
     socials: {
       linkedin: "https://www.linkedin.com/in/kallebe-gallo-a55b01211/",
       email: "kallebesiqueira@gmail.com",
@@ -822,6 +833,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     bio: { it: "", en: "" },
     skills: [],
     photo: TEAM_PHOTOS["matteo-riva"],
+    photoFocus: "50% 32%",
+    group: "team",
     socials: {},
   },
   {
@@ -831,6 +844,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     bio: { it: "", en: "" },
     skills: [],
     photo: TEAM_PHOTOS["giulia-moretti"],
+    photoFocus: "50% 30%",
+    group: "team",
     socials: {},
   },
   {
@@ -840,6 +855,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     bio: { it: "", en: "" },
     skills: [],
     photo: TEAM_PHOTOS.katia,
+    photoFocus: "50% 30%",
+    group: "team",
     socials: {},
   },
   {
@@ -850,6 +867,8 @@ export const team: TeamMember[] = withGermanContentFallback([
     bio: { it: "", en: "" },
     skills: [],
     photo: TEAM_PHOTOS["jacopo-manzalini"],
+    photoFocus: "50% 30%",
+    group: "team",
     socials: {},
   },
 ]);

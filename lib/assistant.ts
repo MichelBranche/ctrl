@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, projectCategories, services, team } from "@/lib/content";
+import { CONTACT_EMAIL, projectCategories, services, team as staticTeam, type TeamMember } from "@/lib/content";
 import { localize, type Locale } from "@/lib/i18n";
 
 export type ChatRole = "user" | "assistant";
@@ -40,7 +40,7 @@ function detect(text: string): Intent | null {
   return null;
 }
 
-export function faqAnswer(text: string, lang: Locale): ChatReply {
+export function faqAnswer(text: string, lang: Locale, members: readonly TeamMember[] = staticTeam): ChatReply {
   const it = lang === "it";
   const contact: ChatLink = { label: it ? "Contatti" : "Contact", href: contactHref(lang) };
   const book: ChatLink = { label: it ? "Prenota una call" : "Book a call", href: localize("/bookings", lang) };
@@ -78,7 +78,7 @@ export function faqAnswer(text: string, lang: Locale): ChatReply {
     case "team":
       return out(
         (it ? "Siamo un piccolo team:\n" : "We are a small team:\n") +
-          team.map((m) => `${m.name}: ${m.role[lang]}`).join("\n"),
+          members.map((m) => `${m.name}: ${m.role[lang]}`).join("\n"),
         [{ label: "Team", href: localize("/team", lang) }],
       );
     case "work":
@@ -105,6 +105,13 @@ export function faqAnswer(text: string, lang: Locale): ChatReply {
 export const faqProvider: AssistantProvider = {
   async answer(messages, lang) {
     const last = [...messages].reverse().find((m) => m.role === "user");
-    return faqAnswer(last?.content ?? "", lang);
+    let members: readonly TeamMember[] = staticTeam;
+    try {
+      const { getPublicTeam } = await import("@/lib/site-team");
+      members = await getPublicTeam();
+    } catch {
+      members = staticTeam;
+    }
+    return faqAnswer(last?.content ?? "", lang, members);
   },
 };

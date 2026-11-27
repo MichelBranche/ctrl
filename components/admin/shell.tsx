@@ -42,6 +42,7 @@ const NAV: { href: string; key: NavKey; icon: ReactNode; badge?: "requests" | "e
   { href: "/admin/audit", key: "audit", icon: I("M9 4h6v3H9zM6 6h12v15H6zM9 11h6M9 15h4") },
   { href: "/admin/stats", key: "stats", icon: I("M4 20V10M10 20V4M16 20v-7M22 20H2") },
   { href: "/admin/status", key: "status", icon: I("M3 12h4l3-7 4 14 3-7h4") },
+  { href: "/admin/sito/contenuti", key: "siteContent", icon: I("M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z") },
   { href: "/admin/settings", key: "settings", icon: I("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .2-1.3-1.3L17 5l-3-1-1 2h-2L10 4 7 5l.2 2L6 8.3 4 8l-1 3 2 1v1l-2 1 1 3 2-.2L7.3 17 7 19l3 1 1-2h2l1 2 3-1-.2-2 1.3-1.3 2 .3 1-3-2-1z") },
 ];
 
@@ -52,6 +53,7 @@ const ACTION_DEFS: { key: keyof AdminDict["actions"]; href: string; group: Searc
   { key: "logJob", href: "/admin/introiti#nuovo", group: "azioni" },
   { key: "exportSubscribers", href: "/admin/newsletter/export", group: "azioni", needs: "/admin/newsletter" },
   { key: "socialLinks", href: "/admin/settings/sito", group: "sezioni", needs: "/admin/settings/sito" },
+  { key: "siteContent", href: "/admin/sito/contenuti", group: "sezioni", needs: "/admin/sito/contenuti" },
   { key: "openSite", href: "/", group: "azioni" },
 ];
 
@@ -181,7 +183,7 @@ export function AdminShell({ userId, email, name, avatarUrl, allowed, badges, no
             <NavGroup key={`content:${path}`} id="content" label={t.nav.contents} icon={I("M4 6h6l2 2h8v12H4z")} items={nav.filter(n => n.href === "/admin/journal" || (n.href === "/admin/journal/media" && !allowed.includes("/admin/journal")))} path={path} collapsed={collapsed} counts={counts} />
             {nav.filter(n => n.href === "/admin/introiti" || n.href === "/admin/ecosistema").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}
             <NavGroup key={`team:${path}`} id="team" label={t.nav.team} icon={I("M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8")} items={nav.filter(n => ["/admin/team", "/admin/audit"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
-            <NavGroup key={`site:${path}`} id="site" label={t.nav.site} icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
+            <NavGroup key={`site:${path}`} id="site" label={t.nav.site} icon={I("M4 20V4M4 20h17M8 15l4-5 4 2 4-7")} items={nav.filter(n => ["/admin/stats", "/admin/status", "/admin/sito/contenuti"].includes(n.href))} path={path} collapsed={collapsed} counts={counts} />
           </ul>
           <ul className="adm-nav adm-nav-footer">
             {nav.filter(n => n.href === "/admin/settings").map(n => <NavItem key={n.href} item={n} path={path} collapsed={collapsed} counts={counts} />)}

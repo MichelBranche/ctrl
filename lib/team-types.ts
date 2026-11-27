@@ -82,7 +82,7 @@ export const AREA_LABEL: Record<Area, string> = {
 export const isArea = (v: unknown): v is Area => AREAS.includes(v as Area);
 
 /** Admin sections. Each maps to the URL prefix(es) it owns. */
-export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "settings" | "introiti" | "ecosistema" | "team" | "audit" | "email" | "meetings" | "crm";
+export type Section = "overview" | "desk" | "journal" | "media" | "shop" | "requests" | "newsletter" | "social" | "stats" | "status" | "siteContent" | "settings" | "introiti" | "ecosistema" | "team" | "audit" | "email" | "meetings" | "crm";
 
 export const SECTION_HREF: Record<Section, string> = {
   overview: "/admin",
@@ -95,6 +95,7 @@ export const SECTION_HREF: Record<Section, string> = {
   social: "/admin/settings/sito",
   stats: "/admin/stats",
   status: "/admin/status",
+  siteContent: "/admin/sito/contenuti",
   settings: "/admin/settings",
   introiti: "/admin/introiti",
   ecosistema: "/admin/ecosistema",
@@ -116,6 +117,7 @@ export const SECTION_LABEL: Record<Section, string> = {
   social: "Social",
   stats: "Statistiche",
   status: "Stato sito",
+  siteContent: "Contenuti",
   settings: "Impostazioni",
   introiti: "Introiti",
   ecosistema: "Ecosistema",
@@ -129,7 +131,7 @@ export const SECTION_LABEL: Record<Section, string> = {
 /** Every signed-in user: overview, desk, their own earnings and their own account. */
 export const EVERYONE: readonly Section[] = ["overview", "desk", "introiti", "settings"];
 /** Never granted by a non-founder role. */
-const FOUNDER_ONLY: readonly Section[] = ["ecosistema", "team", "audit"];
+const FOUNDER_ONLY: readonly Section[] = ["ecosistema", "team", "audit", "siteContent"];
 
 /**
  * THE permission map. Sections each role adds on top of EVERYONE. Founder: everything (see canAccess).

@@ -463,3 +463,47 @@ export function ensurePasswordResetSchema(): Promise<void> {
   ], "write"); }).catch((error) => { passwordResetReady = null; throw error; });
   return passwordResetReady;
 }
+
+let siteTeamReady: Promise<void> | null = null;
+
+/**
+ * Public site team (db/023_site_team.sql). Additive CREATE TABLE IF NOT EXISTS.
+ * Seed of the current catalogue runs in lib/site-team.ts when the table is empty.
+ * Rollback: DROP TABLE site_team_photos; DROP TABLE site_team_members.
+ */
+export function ensureSiteTeamSchema(): Promise<void> {
+  siteTeamReady ??= retryBusy(async () => {
+    await db().batch([
+      { sql: `CREATE TABLE IF NOT EXISTS site_team_members (
+        id TEXT PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        role_it TEXT NOT NULL DEFAULT '',
+        role_en TEXT NOT NULL DEFAULT '',
+        bio_it TEXT NOT NULL DEFAULT '',
+        bio_en TEXT NOT NULL DEFAULT '',
+        skills_json TEXT NOT NULL DEFAULT '[]',
+        photo TEXT,
+        photo_focus TEXT,
+        group_key TEXT NOT NULL DEFAULT 'team' CHECK (group_key IN ('founder', 'team')),
+        linkedin TEXT,
+        email TEXT,
+        website TEXT,
+        github TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        has_photo_blob INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+      { sql: "CREATE INDEX IF NOT EXISTS site_team_members_order ON site_team_members (sort_order, name)" },
+      { sql: `CREATE TABLE IF NOT EXISTS site_team_photos (
+        member_id TEXT PRIMARY KEY REFERENCES site_team_members(id) ON DELETE CASCADE,
+        mime TEXT NOT NULL,
+        bytes BLOB NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      )` },
+    ], "write");
+  }).catch((error) => { siteTeamReady = null; throw error; });
+  return siteTeamReady;
+}
