@@ -1,3 +1,4 @@
+import { QuotesDirectory } from "@/components/admin/ecosystem/quotes-directory";
 import { ArrowUpRight } from "@/components/ds/arrow-up-right";
 import { DsEmptyState } from "@/components/ds/empty-state";
 import { DsMetricBars } from "@/components/ds/metric-bars";
@@ -135,7 +136,7 @@ function QuotesFigures({ t, lang, data }: { t: AdminDict["ecosystem"]; lang: Adm
         <DsMetricCard label={t.stripeSubs} value={t.statusPayments} pending hint={t.paymentsBody} />
         <DsMetricCard label={t.mrr} value={t.statusPayments} pending />
       </section>
-      <DsEmptyState title={t.paymentsTitle} body={t.paymentsBody} />
+      <QuotesDirectory t={t} lang={lang} users={data.userList} workspaces={data.workspaceList} />
       <DsMetricBars title={t.signupsTitle} caption={t.signupsCaption} data={bars} empty={t.emptyChart} />
       {data.signups.some((row) => row.workspaces > 0) ? (
         <DsTable
@@ -147,6 +148,7 @@ function QuotesFigures({ t, lang, data }: { t: AdminDict["ecosystem"]; lang: Adm
           rows={data.signups.map((row) => ({ month: monthFull(row.month, lang), workspaces: row.workspaces }))}
         />
       ) : null}
+      <DsEmptyState title={t.paymentsTitle} body={t.paymentsBody} />
     </>
   );
 }

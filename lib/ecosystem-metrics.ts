@@ -1,33 +1,137 @@
 import "server-only";
 
-export const ECOSYSTEM_APPS = ["quotes", "agenda"] as const;
-export type EcosystemAppId = (typeof ECOSYSTEM_APPS)[number];
+export {
+  ECOSYSTEM_APPS,
+  isEcosystemApp,
+  type EcosystemAppId,
+  type EcosystemAccessStatus,
+  type EcosystemMemberRef,
+  type EcosystemUserRow,
+  type EcosystemUserWorkspace,
+  type EcosystemWorkspaceRow,
+  type QuotesMetrics,
+  type QuotesMetricsResult,
+} from "@/lib/ecosystem-types";
 
-export const isEcosystemApp = (value: unknown): value is EcosystemAppId =>
-  value === "quotes" || value === "agenda";
-
-export type QuotesMetrics = {
-  app: "quotes";
-  generatedAt: string;
-  workspacesAlive: number;
-  users: number;
-  quotes: number;
-  trialsActive: number;
-  trialsExpired: number;
-  lifetimeOverrides: number;
-  stripeSubscriptionsActive: number;
-  stripeByPlan: { starter: number; pro: number; business: number };
-  signups: { month: string; workspaces: number }[];
-};
-
-export type QuotesMetricsResult =
-  | { status: "ok"; data: QuotesMetrics }
-  | { status: "unconfigured" }
-  | { status: "unavailable" };
+import { ECOSYSTEM_ACCESS_STATUSES, type EcosystemAccessStatus, type EcosystemMemberRef, type EcosystemUserRow, type EcosystemUserWorkspace, type EcosystemWorkspaceRow, type QuotesMetrics, type QuotesMetricsResult } from "@/lib/ecosystem-types";
 
 function asCount(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function asText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text ? text : null;
+}
+
+function asStatus(value: unknown): EcosystemAccessStatus | null {
+  return typeof value === "string" && (ECOSYSTEM_ACCESS_STATUSES as readonly string[]).includes(value)
+    ? (value as EcosystemAccessStatus)
+    : null;
+}
+
+function asRole(value: unknown): EcosystemMemberRef["role"] | null {
+  return value === "owner" || value === "admin" || value === "member" ? value : null;
+}
+
+function asIso(value: unknown): string | null {
+  if (value == null) return null;
+  return asText(value);
+}
+
+function parseMember(value: unknown): EcosystemMemberRef | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const id = asText(row.id);
+  const name = asText(row.name);
+  const email = asText(row.email);
+  const role = asRole(row.role);
+  if (!id || !name || !email || !role) return null;
+  return { id, name, email, role };
+}
+
+function parseUserWorkspace(value: unknown): EcosystemUserWorkspace | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const id = asText(row.id);
+  const name = asText(row.name);
+  const slug = asText(row.slug);
+  const role = asRole(row.role);
+  const status = asStatus(row.status);
+  const planId = asText(row.planId);
+  if (!id || !name || !slug || !role || !status || !planId) return null;
+  return { id, name, slug, role, status, planId, trialEndsAt: asIso(row.trialEndsAt) };
+}
+
+function parseUserRow(value: unknown): EcosystemUserRow | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const id = asText(row.id);
+  const name = asText(row.name);
+  const email = asText(row.email);
+  const createdAt = asText(row.createdAt);
+  const status = asStatus(row.status);
+  if (!id || !name || !email || !createdAt || !status) return null;
+  const workspaces = Array.isArray(row.workspaces)
+    ? row.workspaces.flatMap((item) => {
+        const parsed = parseUserWorkspace(item);
+        return parsed ? [parsed] : [];
+      })
+    : [];
+  return {
+    id,
+    name,
+    email,
+    createdAt,
+    lastSeenAt: asIso(row.lastSeenAt),
+    status,
+    trialEndsAt: asIso(row.trialEndsAt),
+    workspaces,
+  };
+}
+
+function parseWorkspaceRow(value: unknown): EcosystemWorkspaceRow | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const id = asText(row.id);
+  const name = asText(row.name);
+  const slug = asText(row.slug);
+  const createdAt = asText(row.createdAt);
+  const status = asStatus(row.status);
+  const planId = asText(row.planId);
+  if (!id || !name || !slug || !createdAt || !status || !planId) return null;
+  const members = Array.isArray(row.members)
+    ? row.members.flatMap((item) => {
+        const parsed = parseMember(item);
+        return parsed ? [parsed] : [];
+      })
+    : [];
+  return {
+    id,
+    name,
+    slug,
+    createdAt,
+    status,
+    planId,
+    trialEndsAt: asIso(row.trialEndsAt),
+    overrideUntil: asIso(row.overrideUntil),
+    subscriptionStatus: asText(row.subscriptionStatus),
+    subscriptionPlan: asText(row.subscriptionPlan),
+    periodEnd: asIso(row.periodEnd),
+    cancelAtPeriodEnd: row.cancelAtPeriodEnd === true,
+    quoteCount: asCount(row.quoteCount),
+    members,
+  };
+}
+
+function parseList<T>(value: unknown, parse: (item: unknown) => T | null): T[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.flatMap((item) => {
+    const parsed = parse(item);
+    return parsed ? [parsed] : [];
+  });
 }
 
 function parseMetrics(body: unknown): QuotesMetrics | null {
@@ -59,6 +163,8 @@ function parseMetrics(body: unknown): QuotesMetrics | null {
       business: asCount(byPlan.business),
     },
     signups,
+    userList: parseList(row.userList, parseUserRow),
+    workspaceList: parseList(row.workspaceList, parseWorkspaceRow),
   };
 }
 
@@ -67,7 +173,7 @@ function quotesBaseUrl(): string {
   return raw.replace(/\/+$/, "");
 }
 
-/** Fetch aggregated Quotes metrics. Never logs the token. No PII is expected in the payload. */
+/** Fetch Quotes metrics and directories for founders. Never logs the token. */
 export async function fetchQuotesMetrics(): Promise<QuotesMetricsResult> {
   const secret = process.env.ECOSYSTEM_METRICS_SECRET?.trim();
   if (!secret || secret.length < 16) return { status: "unconfigured" };
