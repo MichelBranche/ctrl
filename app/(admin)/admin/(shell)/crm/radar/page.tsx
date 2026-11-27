@@ -1,9 +1,15 @@
+import "@/components/ds/admin-ui.css";
+import "@/components/ds/crm.css";
+import "@/components/ds/status.css";
+import "@/components/ds/rubrica.css";
+import "@/components/ds/radar.css";
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { CopyBriefButton, PasteResultDialog } from "@/components/admin/crm/ai-fallback";
 import { ContactPanel, type PanelAnalysis } from "@/components/admin/crm/contact-panel";
 import { ImportDialog } from "@/components/admin/crm/import-dialog";
-import { CrmHeader, CrmIcon, CRM_ICON, CrmTabs, day, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
+import { CrmIcon, CRM_ICON, CrmTabs, day, romeToday, ScoreBadge } from "@/components/admin/crm/crm-ui";
 import { DraftEditor } from "@/components/admin/crm/draft-editor";
 import { RubricaTable, type RubricaRow, type SortHead } from "@/components/admin/crm/rubrica-table";
 import { RADAR_LAYOUT, RubricaToolbar } from "@/components/admin/crm/rubrica-toolbar";
@@ -16,6 +22,7 @@ import {
 } from "@/lib/crm-nav";
 import { IrisRequestDialog } from "@/components/admin/crm/iris-request-dialog";
 import { currentIrisNotice, listIrisRequests, type IrisHistoryItem } from "@/lib/crm-iris";
+import { buildAiBrief } from "@/lib/crm-ai-import-core";
 import { irisNoticeText } from "@/lib/crm-iris-core";
 import { canAccess, isFounder } from "@/lib/team-types";
 
@@ -23,7 +30,7 @@ type SP = Record<string, string | string[] | undefined>;
 
 export default function RadarPage({ searchParams }: { searchParams: Promise<SP> }) {
   return (
-    <main className="adm-main crm-main crm-main-rubrica">
+    <main className="ds-page cr rb rd">
       <Suspense fallback={<RadarSkeleton />}><Body searchParams={searchParams} /></Suspense>
     </main>
   );
@@ -31,11 +38,10 @@ export default function RadarPage({ searchParams }: { searchParams: Promise<SP> 
 
 function RadarSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Caricamento del Radar">
-      <div className="adm-skel" style={{ height: "4.5rem", width: "min(28rem, 80%)", borderRadius: ".6rem" }} />
-      <div className="crm-kpis crm-kpis-5" style={{ marginTop: "2rem" }}>{[0, 1, 2, 3, 4].map((i) => <div key={i} className="adm-skel crm-kpi" style={{ height: "5.5rem" }} />)}</div>
-      <div className="adm-skel" style={{ height: "2.6rem", borderRadius: ".6rem", marginBottom: "1rem" }} />
-      <div className="adm-skel" style={{ height: "24rem", borderRadius: ".9rem" }} />
+    <div className="rd-skel" aria-busy="true" aria-label="Caricamento del Radar">
+      <span className="rb-skel" data-h="head" />
+      <div className="rd-skel-kpis">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="rb-skel" />)}</div>
+      <span className="rb-skel" data-h="list" />
     </div>
   );
 }
@@ -125,35 +131,53 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
       compose: contactMailHref(view.c, "radar", radarSearch(view, { c: "", tab: "analisi" }).slice(1), true),
     } : undefined,
   };
+  const noticeParams = notice ? history.find((h) => h.id === notice.id)?.params ?? null : null;
+  const noticeBrief = noticeParams ? buildAiBrief(noticeParams) : null;
   const analysis: PanelAnalysis = { href: href({ tab: "analisi" }), render: (c) => <IrisAnalysis contact={c} canSend={canSend} /> };
 
   return (
-    <div className="crm-rubrica crm-radar" data-panel={view.c ? "open" : undefined}>
-      <div className="crm-rubrica-main">
-        <CrmHeader title="Radar" intro="I prospect trovati da Iris, con punteggio e motivazioni: valutali e scegli chi contattare.">
-          {founder ? <IrisRequestDialog notice={notice} /> : null}
-          <span className="crm-import"><ImportDialog /></span>
-        </CrmHeader>
-        <CrmTabs current={RADAR} />
+    <div className="crm-rubrica crm-rubrica-page crm-radar" data-panel={view.c ? "open" : undefined}>
+      <div className="crm-rubrica-main rd-main">
+        <header className="rb-head rd-head">
+          <div className="rb-head-row">
+            <div className="rb-head-title">
+              <p className="rb-kicker">CRM</p>
+              <h1>Radar <span className="rb-count" aria-label={`${stats.total} prospect`}>{stats.total.toLocaleString("it-IT")}</span></h1>
+              <p className="rd-lead">I prospect trovati da Iris, con punteggio e motivazioni: valutali e scegli chi contattare.</p>
+            </div>
+            {founder ? (
+              <div className="rb-head-actions rd-head-actions">
+                <span className="crm-import rb-import"><ImportDialog /></span>
+                <PasteResultDialog />
+                <IrisRequestDialog notice={notice} />
+              </div>
+            ) : null}
+          </div>
+          <CrmTabs current={RADAR} />
+        </header>
         {founder && notice ? (
-          <div className="crm-iris-banner" role="status">
-            <p>{irisNoticeText(notice)}</p>
-            <p className="adm-muted">{notice.zone} · {notice.sectors.join(", ")}</p>
-            {notice.phase === "ready" ? <Link href={`${RADAR}?iris=${notice.id}` as Route}>Vedi i lead in Radar</Link> : null}
+          <div className="crm-iris-banner rd-banner" role="status" data-phase={notice.phase}>
+            <div>
+              <p>{irisNoticeText(notice)}</p>
+              <p className="adm-muted">{notice.zone} · {notice.sectors.join(", ")}</p>
+            </div>
+            <div className="rd-banner-actions">
+              {notice.phase === "ready" ? <Link className="adm-btn adm-btn-sm" href={`${RADAR}?iris=${notice.id}` as Route}>Vedi i lead in Radar</Link> : null}
+              {notice.phase !== "ready" && noticeBrief ? <><CopyBriefButton brief={noticeBrief} small /><PasteResultDialog small irisRequestId={notice.id} context={`la ricerca «${notice.zone}»`} /></> : null}
+            </div>
           </div>
         ) : null}
-        <p className="crm-hint crm-iris-filter">
-          {query.iris
-            ? <>Filtro attivo: da richiesta Iris. <Link href={href({ iris: "", p: 1 }) as Route}>Azzera</Link></>
-            : <Link href={href({ iris: "si", p: 1 }) as Route}>Da richiesta Iris</Link>}
-        </p>
+        <nav className="rd-scope" aria-label="Origine dei prospect">
+          <Link href={href({ iris: "", p: 1 }) as Route} aria-current={query.iris ? undefined : "page"}>Tutti</Link>
+          <Link href={href({ iris: "si", p: 1 }) as Route} aria-current={query.iris ? "page" : undefined}><CrmIcon d={I.spark} />Da richiesta Iris</Link>
+        </nav>
 
-        <section className="crm-kpis crm-kpis-5" aria-label="Numeri del Radar">
-          <Link href={RADAR as Route} className="crm-kpi is-hero"><CrmIcon d={CRM_ICON[RADAR]} /><span className="crm-kpi-num">{stats.total}</span><span className="crm-kpi-label">Prospect dal Radar</span></Link>
-          <Link href={`${RADAR}?fase=nuovo` as Route} className="crm-kpi" title="Prospect ancora in fase Nuovo"><CrmIcon d={I.eye} /><span className="crm-kpi-num">{stats.toReview}</span><span className="crm-kpi-label">Da valutare</span></Link>
-          <Link href={`${RADAR}?fase=nuovo&prio=alta` as Route} className="crm-kpi" title="Ancora da valutare, con punteggio Iris 70 o più"><CrmIcon d={I.star} /><span className="crm-kpi-num">{stats.priority}</span><span className="crm-kpi-label">Priorità alta</span></Link>
-          <div className="crm-kpi" title="Bozze email di Iris in attesa di revisione: nessuna parte senza un clic su Invia"><CrmIcon d={I.mail} /><span className="crm-kpi-num">{stats.draftsReady}</span><span className="crm-kpi-label">Bozze da rivedere</span></div>
-          <Link href={`${CRM_HOME}/pipeline` as Route} className="crm-kpi" title="Prospect in fase Call o Preventivo"><CrmIcon d={I.funnel} /><span className="crm-kpi-num">{stats.inDeal}</span><span className="crm-kpi-label">In trattativa</span></Link>
+        <section className="crm-kpis crm-kpis-5 rd-kpis" aria-label="Numeri del Radar">
+          <Link href={RADAR as Route} className="crm-kpi is-hero" data-tone="info"><CrmIcon d={CRM_ICON[RADAR]} /><span className="crm-kpi-num">{stats.total}</span><span className="crm-kpi-label">Prospect dal Radar</span></Link>
+          <Link href={`${RADAR}?fase=nuovo` as Route} className="crm-kpi" data-tone="nuovo" title="Prospect ancora in fase Nuovo"><CrmIcon d={I.eye} /><span className="crm-kpi-num">{stats.toReview}</span><span className="crm-kpi-label">Da valutare</span></Link>
+          <Link href={`${RADAR}?fase=nuovo&prio=alta` as Route} className="crm-kpi" data-tone="warn" title="Ancora da valutare, con punteggio Iris 70 o più"><CrmIcon d={I.star} /><span className="crm-kpi-num">{stats.priority}</span><span className="crm-kpi-label">Priorità alta</span></Link>
+          <div className="crm-kpi" data-tone="call" title="Bozze email di Iris in attesa di revisione: nessuna parte senza un clic su Invia"><CrmIcon d={I.mail} /><span className="crm-kpi-num">{stats.draftsReady}</span><span className="crm-kpi-label">Bozze da rivedere</span></div>
+          <Link href={`${CRM_HOME}/pipeline` as Route} className="crm-kpi" data-tone="ok" title="Prospect in fase Call o Preventivo"><CrmIcon d={I.funnel} /><span className="crm-kpi-num">{stats.inDeal}</span><span className="crm-kpi-label">In trattativa</span></Link>
         </section>
 
         <RubricaToolbar query={view} types={f.types} cities={f.cities} owners={owners} userId={me.id} layout={RADAR_LAYOUT} />
@@ -162,7 +186,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
           <RubricaTable key={listKey} variant="radar" rows={rows} activeId={view.c} sort={sort} owners={owners} today={today}
             pager={{ from, to: from + rows.length - 1, total, prev: page > 1 ? href({ p: page - 1 }) : null, next: page < pages ? href({ p: page + 1 }) : null }} />
         ) : (
-          <div className="crm-card-panel crm-empty-state">
+          <div className="crm-card-panel crm-empty-state rd-empty">
             {filtered
               ? <><p>Nessun prospect con questi filtri.</p><Link className="adm-btn adm-btn-sm" href={(view.c ? `${RADAR}?c=${view.c}` : RADAR) as Route}>Azzera i filtri</Link></>
               : <><p>Ancora nessun prospect dal Radar.</p><p className="adm-muted">Li invia Iris quando trova aziende interessanti: arrivano qui con punteggio, motivazioni ed eventuale bozza email.</p></>}
@@ -170,15 +194,21 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
         )}
         <p className="crm-hint adm-muted crm-radar-note">I prospect del Radar sono già contatti della <Link href={`${RUBRICA}?fonte=radar` as Route}>Rubrica</Link> (fonte Radar). Niente parte da solo: nessuna email senza un clic su Invia, nessuna opportunità creata dal punteggio.</p>
         {founder && history.length ? (
-          <details className="crm-iris-history">
-            <summary>Richieste a Iris</summary>
+          <details className="crm-iris-history rd-history" open={history.some((item) => item.phase !== "ready")}>
+            <summary><CrmIcon d={I.spark} />Richieste a Iris <span className="rd-history-n">{history.length}</span></summary>
             <ul>
               {history.map((item) => (
                 <li key={item.id}>
-                  <span className="crm-iris-phase">{PHASE_LABEL[item.phase]}</span>
-                  <span>{item.name} · {item.zone}{item.sectors.length ? ` · ${item.sectors.join(", ")}` : ""}</span>
-                  {item.phase === "ready" ? <Link href={`${RADAR}?iris=${item.id}` as Route}>{item.inserted ?? 0} lead</Link> : null}
-                  {item.error ? <span className="adm-muted">{item.error}</span> : null}
+                  <span className="crm-iris-phase" data-phase={item.phase}>{PHASE_LABEL[item.phase]}</span>
+                  <span className="rd-history-what">
+                    <span>{item.name} · {item.zone}{item.sectors.length ? ` · ${item.sectors.join(", ")}` : ""}</span>
+                    {item.error ? <span className="adm-muted">{item.error}</span> : null}
+                  </span>
+                  <span className="rd-history-actions">
+                    {item.phase === "ready" ? <Link className="rd-history-link" href={`${RADAR}?iris=${item.id}` as Route}>{item.inserted ?? 0} lead</Link> : null}
+                    {item.params ? <CopyBriefButton brief={buildAiBrief(item.params)} small /> : null}
+                    <PasteResultDialog small irisRequestId={item.id} context={`la richiesta «${item.zone}»`} />
+                  </span>
                 </li>
               ))}
             </ul>

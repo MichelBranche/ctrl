@@ -90,6 +90,8 @@ export async function currentIrisNotice(now = new Date()): Promise<IrisNotice | 
 export type IrisHistoryItem = {
   id: string; name: string; zone: string; sectors: string[]; phase: IrisPhase | "error";
   inserted: number | null; duplicates: number | null; error: string | null; createdAt: string;
+  /** Full search parameters, for the "Copia brief per AI" fallback. Null when the stored row is unreadable. */
+  params: IrisParams | null;
 };
 
 export async function listIrisRequests(limit = 20, now = new Date()): Promise<IrisHistoryItem[]> {
@@ -100,7 +102,7 @@ export async function listIrisRequests(limit = 20, now = new Date()): Promise<Ir
     const params = readParams(row.params);
     return {
       id: row.id, name: row.name?.trim() || "un founder", zone: params?.zone ?? "", sectors: params?.sectors ?? [],
-      phase: phaseOf(row, now), inserted: row.inserted, duplicates: row.duplicates, error: row.error_message, createdAt: row.created_at,
+      phase: phaseOf(row, now), inserted: row.inserted, duplicates: row.duplicates, error: row.error_message, createdAt: row.created_at, params,
     };
   });
 }

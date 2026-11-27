@@ -128,7 +128,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                 <h1>Rubrica <span className="rb-count" aria-label={`${segments.tutti} contatti`}>{segments.tutti.toLocaleString("it-IT")}</span></h1>
               </div>
               <div className="rb-head-actions">
-                <span className="crm-import rb-import"><ImportDialog autoOpen={sp.importa === "1"} /></span>
+                {founder ? <span className="crm-import rb-import"><ImportDialog autoOpen={sp.importa === "1"} /></span> : null}
                 <Link className="rb-cta" href={NEW_CONTACT as Route} aria-keyshortcuts="N">
                   <CrmIcon d="M12 5v14M5 12h14" /><span>Nuovo contatto</span><kbd aria-hidden="true">N</kbd>
                 </Link>

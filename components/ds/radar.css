@@ -1,0 +1,301 @@
+/* Radar /admin/crm/radar (.rd). Sits on top of the Rubrica layer (.rb, list and toolbar) and the CRM shell (.cr):
+   header, KPI tiles, Iris banner and history, the AI fallback (copy brief, paste result) and the Iris dialog.
+   Tokens only; the accent is kept for the main CTA, focus and selection. */
+
+.rd-main { display: flex; flex-direction: column; gap: var(--ds-gap); min-width: 0; }
+.ds-page.rd .rd-main > * { margin: 0; }
+.ds-page.rd :is(.rd-kpis, .rd-scope, .rd-banner, .rd-history, .rd-empty) { animation: eco-rise var(--ds-dur-slow) var(--ds-ease) backwards; }
+.ds-page.rd .rd-kpis { animation-delay: 0.04s; }
+.ds-page.rd .rd-scope { animation-delay: 0.07s; }
+
+/* ---------- Header ---------- */
+.rd-head .rb-head-title { flex: 1 1 22rem; min-width: 0; }
+.rd-lead { max-width: 58ch; margin: 0.55rem 0 0; color: var(--ds-dim); font-size: var(--ds-text-small); line-height: 1.5; }
+.rd-head-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+/* Buttons in the main column: DS pills; "Chiedi a Iris" and dialog confirms are the only accent CTAs */
+.ds-page.rd .rd-main .adm-btn:not(.adm-btn-primary),
+.ds-page.rd .rd-paste .adm-btn:not(.adm-btn-primary),
+.ds-page.rd .crm-iris-dialog .adm-btn:not(.adm-btn-primary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: var(--ds-control);
+  padding: 0 0.95rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), border-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-sm:not(.adm-btn-primary) { height: 34px; padding: 0 0.8rem; font-size: 0.78rem; }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn:not(.adm-btn-primary):hover { border-color: color-mix(in srgb, var(--ds-fg) 26%, transparent); background: color-mix(in srgb, var(--ds-fg) 7%, var(--ds-card-2)); }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn:not(.adm-btn-primary):active { transform: scale(0.97); }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn svg { width: 15px; height: 15px; color: var(--ds-dim); }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: var(--ds-control);
+  padding: 0 1rem;
+  border: 0;
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-primary:hover { background: var(--ds-accent-hover); }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-primary:active { transform: scale(0.97); }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-primary:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) .adm-btn-primary svg { width: 15px; height: 15px; }
+.ds-page.rd :is(.rd-main, .rd-paste, .crm-iris-dialog) :is(.adm-btn, a, summary):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+/* ---------- KPI tiles: one tone each, no accent ---------- */
+.ds-page.rd .rd-kpis { gap: var(--ds-gap); }
+.ds-page.rd .rd-kpis .crm-kpi {
+  --c: var(--ds-info);
+  min-height: 5.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+  color: var(--ds-fg);
+  text-decoration: none;
+  box-shadow: none;
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-std), background-color var(--ds-dur-fast) var(--ds-ease-std), transform var(--ds-dur-fast) var(--ds-ease);
+}
+.ds-page.rd .rd-kpis .crm-kpi[data-tone="nuovo"] { --c: var(--ds-stage-nuovo); }
+.ds-page.rd .rd-kpis .crm-kpi[data-tone="warn"] { --c: var(--ds-warn); }
+.ds-page.rd .rd-kpis .crm-kpi[data-tone="call"] { --c: var(--ds-stage-call); }
+.ds-page.rd .rd-kpis .crm-kpi[data-tone="ok"] { --c: var(--ds-ok); }
+.ds-page.rd .rd-kpis .crm-kpi > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 0.45rem;
+  border-radius: var(--ds-r-sm);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+}
+.ds-page.rd .rd-kpis .crm-kpi-num { font-family: var(--ds-font-display); font-size: var(--ds-text-title); font-weight: 600; }
+.ds-page.rd .rd-kpis .crm-kpi-label { color: var(--ds-dim); font-size: var(--ds-text-small); }
+.ds-page.rd .rd-kpis a.crm-kpi:hover { border-color: color-mix(in srgb, var(--c) 45%, var(--ds-faint)); background: color-mix(in srgb, var(--c) 6%, var(--ds-card)); transform: translateY(-2px); box-shadow: none; }
+.ds-page.rd .rd-kpis .crm-kpi:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+/* ---------- Scope switch (Tutti / Da richiesta Iris) ---------- */
+.rd-scope {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-pill);
+  background: var(--ds-card);
+}
+.rd-scope a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 32px;
+  padding: 0 0.85rem;
+  border-radius: var(--ds-r-pill);
+  color: var(--ds-dim);
+  font-size: var(--ds-text-small);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-std), color var(--ds-dur-fast) var(--ds-ease-std);
+}
+.rd-scope a svg { width: 14px; height: 14px; color: var(--ds-stage-call); }
+.rd-scope a:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
+.rd-scope a[aria-current="page"] { background: var(--ds-fg); color: var(--ds-ink); }
+.rd-scope a[aria-current="page"] svg { color: inherit; }
+.rd-scope a:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+
+/* ---------- Iris banner ---------- */
+.ds-page.rd .rd-banner {
+  --c: var(--ds-info);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--ds-faint);
+  border-left: 3px solid var(--c);
+  border-radius: var(--ds-r-tile);
+  background: var(--ds-card);
+  font-size: var(--ds-text-small);
+}
+.ds-page.rd .rd-banner[data-phase="ready"] { --c: var(--ds-ok); }
+.ds-page.rd .rd-banner[data-phase="expired"] { --c: var(--ds-danger); }
+.ds-page.rd .rd-banner[data-phase="working"] { --c: var(--ds-stage-call); }
+.rd-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+
+/* ---------- Requests to Iris ---------- */
+.ds-page.rd .rd-history {
+  padding: 0.35rem 1rem;
+  border-radius: var(--ds-r-card);
+  background: var(--ds-card);
+}
+.ds-page.rd .rd-history summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  color: var(--ds-fg);
+  font-family: var(--ds-font-display);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.ds-page.rd .rd-history summary::-webkit-details-marker { display: none; }
+.ds-page.rd .rd-history summary svg { width: 15px; height: 15px; color: var(--ds-stage-call); }
+.rd-history-n { padding: 0.1rem 0.45rem; border-radius: var(--ds-r-pill); background: var(--ds-faint); color: var(--ds-dim); font-family: inherit; font-size: 0.7rem; font-weight: 600; }
+.ds-page.rd .rd-history ul { gap: 0; margin: 0 0 0.4rem; }
+.ds-page.rd .rd-history li {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--ds-faint);
+  font-size: var(--ds-text-small);
+  animation: rb-row-in var(--ds-dur) var(--ds-ease) backwards;
+}
+.rd-history-what { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.rd-history-what > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-history-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.35rem; }
+.rd-history-link { color: var(--ds-ok); font-weight: 600; text-decoration: none; }
+.rd-history-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ds-page.rd .crm-iris-phase {
+  --c: var(--ds-stage-nuovo);
+  justify-self: start;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ds-page.rd .crm-iris-phase[data-phase="working"] { --c: var(--ds-stage-call); }
+.ds-page.rd .crm-iris-phase[data-phase="ready"] { --c: var(--ds-ok); }
+.ds-page.rd .crm-iris-phase[data-phase="error"] { --c: var(--ds-danger); }
+.ds-page.rd .crm-iris-phase[data-phase="expired"] { --c: var(--ds-warn); }
+
+/* ---------- AI fallback: copy brief ---------- */
+.rd-copy { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.rd-copy[data-state="done"] .adm-btn { border-color: color-mix(in srgb, var(--ds-ok) 55%, transparent); }
+.rd-copy[data-state="done"] .adm-btn svg { color: var(--ds-ok); }
+.rd-copy-hint { flex-basis: 100%; color: var(--ds-dim); font-size: 0.72rem; animation: rb-pop-in var(--ds-dur-fast) var(--ds-ease) backwards; }
+.rd-copy[data-state="fail"] .rd-copy-hint { color: var(--ds-warn); }
+.rd-history-actions .rd-copy-hint { text-align: right; }
+
+.ds-page.rd .rd-ai-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed var(--ds-faint);
+  border-radius: var(--ds-r-tile);
+  font-size: var(--ds-text-small);
+}
+.rd-ai-fallback p { flex: 1 1 16rem; margin: 0; }
+
+/* ---------- Dialogs: Chiedi a Iris + Incolla risultato ---------- */
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste) {
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-card);
+  padding: 1.35rem 1.4rem 1.15rem;
+  background: var(--ds-card);
+  color: var(--ds-fg);
+  box-shadow: none;
+}
+.ds-page.rd .rd-paste { width: min(40rem, calc(100vw - 1.5rem)); max-height: min(88dvh, 46rem); margin: auto; overflow: auto; }
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste)[open] { animation: rb-pop-in var(--ds-dur) var(--ds-ease) backwards; }
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste)::backdrop { background: var(--ds-scrim); }
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste) .adm-h2 { margin: 0 0 0.35rem; font-family: var(--ds-font-display); font-size: 1.25rem; font-weight: 600; }
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste) .adm-input {
+  border: 1px solid var(--ds-faint);
+  border-radius: var(--ds-r-sm);
+  background: var(--ds-card-2);
+  color: var(--ds-fg);
+  font-size: var(--ds-text-small);
+}
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste) .adm-input:focus-visible { border-color: var(--ds-accent); outline: none; }
+.ds-page.rd .crm-iris-dialog legend, .ds-page.rd .crm-iris-dialog .adm-field > span { color: var(--ds-dim); font-size: 0.75rem; }
+.ds-page.rd .crm-iris-dialog .crm-iris-chip { border-color: var(--ds-faint); border-radius: var(--ds-r-pill); background: var(--ds-card-2); color: var(--ds-fg); }
+.ds-page.rd .crm-iris-warn { border: 1px solid var(--ds-faint); border-left: 3px solid var(--ds-warn); border-radius: var(--ds-r-tile); background: var(--ds-card-2); font-size: var(--ds-text-small); }
+.ds-page.rd :is(.crm-iris-dialog, .rd-paste) .adm-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+
+.rd-paste-area { width: 100%; min-height: 12rem; margin-top: 0.6rem; padding: 0.75rem; font-family: ui-monospace, monospace; line-height: 1.45; resize: vertical; }
+.rd-paste-note { margin: 0.6rem 0 0; color: var(--ds-warn); font-size: var(--ds-text-small); }
+.rd-paste-preview { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; animation: rb-pop-in var(--ds-dur-fast) var(--ds-ease) backwards; }
+.rd-paste-count { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; }
+.rd-paste-count > * {
+  --c: var(--ds-ok);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--ds-r-pill);
+  background: color-mix(in srgb, var(--c) var(--ds-tint), var(--ds-card));
+  color: var(--c);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.rd-paste-count > [data-tone="warn"] { --c: var(--ds-warn); }
+.rd-paste-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; font-size: var(--ds-text-small); }
+.rd-paste-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.2rem 0.75rem; padding: 0.4rem 0; border-top: 1px solid var(--ds-faint); }
+.rd-paste-rejected { font-size: var(--ds-text-small); }
+.rd-paste-rejected summary { color: var(--ds-dim); cursor: pointer; }
+.rd-paste-rejected ul { margin: 0.4rem 0 0; padding-left: 1rem; color: var(--ds-dim); }
+.rd-paste-done { display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.5rem; }
+.rd-paste-big { display: flex; align-items: center; gap: 0.6rem; margin: 0; font-family: var(--ds-font-display); font-size: 1.35rem; font-weight: 600; animation: rb-pop var(--ds-dur) var(--ds-ease) backwards; }
+.rd-paste-big svg { box-sizing: content-box; width: 18px; height: 18px; padding: 0.4rem; border-radius: var(--ds-r-pill); background: color-mix(in srgb, var(--ds-ok) var(--ds-tint), var(--ds-card)); color: var(--ds-ok); }
+.rd-paste-done p { margin: 0; font-size: var(--ds-text-small); }
+
+/* ---------- Empty state, footnote, analysis in the panel ---------- */
+.ds-page.rd .rd-empty { margin: 0; padding: var(--ds-pad); border: 0; border-radius: var(--ds-r-card); background: var(--ds-card); color: var(--ds-dim); font-size: var(--ds-text-small); }
+.ds-page.rd .rd-empty > p:first-child { color: var(--ds-fg); font-family: var(--ds-font-display); font-size: 1.1rem; font-weight: 600; }
+.ds-page.rd .crm-radar-note { padding: 0 0.25rem; color: var(--ds-dim); font-size: 0.75rem; }
+.ds-page.rd .crm-radar-note a { color: var(--ds-fg); }
+.ds-page.rd .crm-iris h3 svg { color: var(--ds-stage-call); }
+.ds-page.rd .crm-iris-points li::before { background: var(--ds-stage-call); }
+
+/* ---------- Skeleton ---------- */
+.rd-skel { display: grid; gap: var(--ds-gap); }
+.rd-skel > .rb-skel[data-h="head"] { height: 9rem; }
+.rd-skel > .rb-skel[data-h="list"] { height: 26rem; }
+.rd-skel-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--ds-gap); }
+.rd-skel-kpis .rb-skel { height: 5.6rem; }
+
+/* ---------- Responsive ---------- */
+@media (min-width: 1900px) {
+  .ds-page.rd .rd-kpis { grid-template-columns: repeat(5, minmax(0, 18rem)); }
+}
+@media (max-width: 760px) {
+  .ds-page.rd .rd-history li { grid-template-columns: 1fr; }
+  .rd-history-actions { justify-content: flex-start; }
+  .rd-head-actions { justify-content: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-page.rd *, .ds-page.rd *::before, .ds-page.rd *::after, .rd-skel .rb-skel {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ds-page.rd .rd-kpis a.crm-kpi:hover { transform: none; }
+}

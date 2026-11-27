@@ -5,7 +5,9 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { askIrisAction } from "@/app/admin/crm-iris-actions";
+import { CopyBriefButton } from "@/components/admin/crm/ai-fallback";
 import { CrmIcon } from "@/components/admin/crm/crm-ui";
+import { buildAiBrief } from "@/lib/crm-ai-import-core";
 import { irisNoticeText, SITE_CRITERIA, SITE_CRITERION_LABEL, type IrisNotice, type SiteCriterion } from "@/lib/crm-iris-core";
 import { RADAR } from "@/lib/crm-nav";
 
@@ -16,6 +18,7 @@ const SEARCH = "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3";
  */
 export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const form = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const [sectors, setSectors] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
@@ -33,6 +36,17 @@ export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
     setDraft("");
   };
   const toggle = (c: SiteCriterion) => setCriteria((cur) => cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]);
+
+  /** Same fields as the request, for the AI fallback: works even when Iris is busy (fields disabled). */
+  const brief = (): { brief: string } | { error: string } => {
+    const el = form.current?.elements;
+    const value = (name: string) => String((el?.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? "").trim();
+    const zone = value("zone");
+    const all = draft.trim().length >= 2 && !sectors.includes(draft.trim()) ? [...sectors, draft.trim()] : sectors;
+    if (zone.length < 2) return { error: "Indica prima la zona." };
+    if (!all.length) return { error: "Indica prima almeno un settore." };
+    return { brief: buildAiBrief({ zone, sectors: all, count: Number(value("count")) || 30, siteCriteria: criteria, notes: value("notes") }) };
+  };
 
   const submit = async (form: FormData) => {
     if (blocked || pending) return;
@@ -57,7 +71,7 @@ export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
         <CrmIcon d={SEARCH} />Chiedi a Iris
       </button>
       <dialog ref={dialog} className="crm-iris-dialog" aria-labelledby="crm-iris-title" onClose={reset}>
-        <form action={(fd) => { void submit(fd); }}>
+        <form ref={form} action={(fd) => { void submit(fd); }}>
           <h2 id="crm-iris-title" className="adm-h2">Chiedi a Iris</h2>
           <p className="crm-hint adm-muted">Una ricerca al giorno per founder. Iris cerca i lead e li unisce al Radar, senza inviare email.</p>
           {notice ? (
@@ -68,9 +82,9 @@ export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
             </div>
           ) : null}
           <label className="adm-field"><span>Zona</span>
-            <input className="adm-input" name="zone" required maxLength={120} disabled={blocked} placeholder="Alba, Cuneo, Langhe" />
+            <input className="adm-input" name="zone" required maxLength={120} placeholder="Alba, Cuneo, Langhe" />
           </label>
-          <fieldset className="adm-field" disabled={blocked}>
+          <fieldset className="adm-field">
             <legend>Settori</legend>
             <div className="crm-iris-chips">
               {sectors.map((s) => (
@@ -78,16 +92,16 @@ export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
               ))}
             </div>
             <div className="crm-iris-add">
-              <input className="adm-input" value={draft} maxLength={60} placeholder="Cantine, poi Invio" disabled={blocked}
+              <input className="adm-input" value={draft} maxLength={60} placeholder="Cantine, poi Invio"
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSector(); } }} />
-              <button type="button" className="adm-btn adm-btn-sm" onClick={addSector} disabled={blocked}>Aggiungi</button>
+              <button type="button" className="adm-btn adm-btn-sm" onClick={addSector}>Aggiungi</button>
             </div>
           </fieldset>
           <label className="adm-field"><span>Numero di lead</span>
-            <input className="adm-input" name="count" type="number" min={10} max={50} defaultValue={30} required disabled={blocked} />
+            <input className="adm-input" name="count" type="number" min={10} max={50} defaultValue={30} required />
           </label>
-          <fieldset className="adm-field" disabled={blocked}>
+          <fieldset className="adm-field">
             <legend>Criterio sito</legend>
             <div className="crm-iris-checks">
               {SITE_CRITERIA.map((c) => (
@@ -96,9 +110,13 @@ export function IrisRequestDialog({ notice }: { notice: IrisNotice | null }) {
             </div>
           </fieldset>
           <label className="adm-field"><span>Note <span className="adm-muted">(facoltative)</span></span>
-            <textarea className="adm-input" name="notes" maxLength={1000} rows={3} disabled={blocked} placeholder="Solo cantine con sala, evita le catene" />
+            <textarea className="adm-input" name="notes" maxLength={1000} rows={3} placeholder="Solo cantine con sala, evita le catene" />
           </label>
           {error ? <p className="adm-error" role="alert">{error}</p> : null}
+          <div className="rd-ai-fallback">
+            <p><strong>Iris è ferma o occupata?</strong> <span className="adm-muted">Copia la ricerca e falla fare a un&apos;altra AI, poi usa «Incolla risultato» nel Radar.</span></p>
+            <CopyBriefButton getBrief={brief} small />
+          </div>
           <div className="adm-row-actions">
             <button type="button" className="adm-btn" onClick={close}>Chiudi</button>
             <button type="submit" className="adm-btn adm-btn-primary" disabled={blocked || pending}>{pending ? "Invio…" : "Invia la richiesta"}</button>

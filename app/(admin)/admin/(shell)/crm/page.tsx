@@ -268,7 +268,7 @@ async function Body({ searchParams }: { searchParams: Promise<SP> }) {
                   <summary className="rb-btn" aria-label="Altre azioni"><span>Altro</span><CrmIcon d="M6 9l6 6 6-6" /></summary>
                   <div className="rb-pop-panel og-more-panel" role="menu">
                     <Link role="menuitem" href={`${PIPELINE}?nuova=1` as Route}><CrmIcon d={CRM_ICON["/admin/crm/pipeline"]} /><span>Aggiungi opportunità</span><kbd>O</kbd></Link>
-                    <Link role="menuitem" href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span></Link>
+                    {founder ? <Link role="menuitem" href={`${RUBRICA}?importa=1` as Route}><CrmIcon d="M12 4v11M7 10l5 5 5-5M5 20h14" /><span>Importa contatti</span></Link> : null}
                     <Link role="menuitem" href={"/admin/crm/radar" as Route}><CrmIcon d={CRM_ICON["/admin/crm/radar"]} /><span>Prospect Radar</span></Link>
                   </div>
                 </details>
