@@ -94,6 +94,9 @@ const nextConfig: NextConfig = {
       { source: "/projects/web-security", destination: "/services/web-security", permanent: true },
       { source: "/en/projects/web-security", destination: "/en/services/web-security", permanent: true },
       { source: "/en/work/:slug", destination: "/en/projects/websites", permanent: true },
+      // OMAMA Social Hotel left the showcase; its slot went to the Valli & Associati demo.
+      { source: "/projects/websites/omama", destination: "/projects/websites/valli-associati", permanent: true },
+      { source: "/:lang(en|de|fr)/projects/websites/omama", destination: "/:lang/projects/websites/valli-associati", permanent: true },
       // The Studio page was removed; the home has no about section, so send it home.
       { source: "/about", destination: "/", permanent: true },
       { source: "/en/about", destination: "/en", permanent: true },

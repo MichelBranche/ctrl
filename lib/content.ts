@@ -299,8 +299,9 @@ const MOCKUPS = ["mockup-hero", "mockup-sections"];
 export type WebsiteGroup = { slug: string; label: L };
 
 /** Filters on /projects/websites, in display order. */
-export const websiteGroups: WebsiteGroup[] = withGermanContentFallback([
+export const websiteGroups: WebsiteGroup[] = withGermanContentFallback<WebsiteGroup[]>([
   { slug: "hospitality", label: { it: "Hospitality", en: "Hospitality" } },
+  { slug: "legal", label: { it: "Studi legali & professionali", en: "Legal & professional firms", de: "Kanzleien & Beratung", fr: "Cabinets juridiques & conseil" } },
   { slug: "food", label: { it: "Food & wine", en: "Food & wine" } },
   { slug: "culture", label: { it: "Cultura & istituzioni", en: "Culture & institutions" } },
   { slug: "brand", label: { it: "Brand & e-commerce", en: "Brand & e-commerce" } },
@@ -312,7 +313,7 @@ export const websiteGroups: WebsiteGroup[] = withGermanContentFallback([
 // { slug: "acme", category: "websites", title: { it: "Sito istituzionale", en: "Corporate website" },
 //   client: "Acme Srl", image: "/images/projects/works/acme.webp", url: "https://acme.it", year: "2026" },
 /* Websites: real work from michelbranche.it/portfolio (copy condensed from it). */
-export const projects: Project[] = withGermanContentFallback([
+export const projects: Project[] = withGermanContentFallback<Project[]>([
   {
     slug: LE_VELE.slug,
     category: "websites",
@@ -329,19 +330,19 @@ export const projects: Project[] = withGermanContentFallback([
     },
   },
   {
-    slug: "omama",
+    slug: "valli-associati",
     category: "websites",
-    gallery: shots("omama", MOCKUPS),
-    group: "hospitality",
-    title: { it: "OMAMA Social Hotel", en: "OMAMA Social Hotel" },
-    client: "Aosta",
-    place: { it: "Aosta", en: "Aosta" },
-    image: "/images/projects/works/omama.webp",
-    url: "https://demo-omama.vercel.app/", year: "2026",
+    gallery: shots("valli-associati", MOCKUPS),
+    group: "legal",
+    title: { it: "Valli & Associati", en: "Valli & Associati" },
+    client: "Milano",
+    place: { it: "Milano", en: "Milan", de: "Mailand", fr: "Milan" },
+    image: "/images/projects/works/valli-associati.webp",
+    url: "https://demo-valli-associati.vercel.app/", year: "2026",
     tech: ["Next.js", "GSAP", "Lenis", "Tailwind"],
     description: {
-      it: "Demo hospitality multilingua: SEO statico su 4 lingue, sezione Instagram curata, mappa interattiva e motion GSAP.",
-      en: "Multilingual hospitality demo: static SEO across 4 languages, a curated Instagram section, an interactive map and GSAP motion.",
+      it: "Demo per uno studio legale indipendente a Milano: tipografia editoriale, palette travertino, manifesto che si accende allo scroll, aree di attività e richiesta di contatto riservata.",
+      en: "Demo for an independent law firm in Milan: editorial typography, a travertine palette, a manifesto that lights up on scroll, practice areas and a confidential contact request.",
     },
     author: AUTHORS.michel,
   },
@@ -615,13 +616,13 @@ export type HomeFeatured = {
 };
 
 // "Progetti recenti" on the home: real website projects, linked to their detail pages.
-const HOME_SLUGS = ["sbrano", "maison-altura", "orma", "omama"];
+const HOME_SLUGS = ["sbrano", "maison-altura", "orma", "valli-associati"];
 /** Brand gradients (sampled from each project's site) shown through the giant word on hover. */
 const HOME_TINTS: Record<string, string> = {
   sbrano: "linear-gradient(115deg, #ddec87 0%, #89a60b 45%, #3f5004 100%)",
   "maison-altura": "linear-gradient(115deg, #ded6c2 0%, #8c2a35 50%, #37291e 100%)",
   orma: "linear-gradient(115deg, #f3efea 0%, #a87a4f 45%, #6a4423 100%)",
-  omama: "linear-gradient(90deg, #ec3538 0%, #f5c430 35%, #2fae5a 65%, #2f6fe4 100%)",
+  "valli-associati": "linear-gradient(115deg, #efe6d6 0%, #b08d63 45%, #2a231c 100%)",
 };
 export const homeFeatured: HomeFeatured[] = withGermanContentFallback(HOME_SLUGS.map((slug, i) => {
   const p = projects.find((x) => x.slug === slug);
